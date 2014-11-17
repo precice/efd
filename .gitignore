@@ -29,8 +29,13 @@
 !/documentation/user/BuildGuide.md
 
 !/source
-!/source/**
-!/source/**
+!/source/parallelManagers/
+!/source/solvers/
+!/source/stencils/
+!/source/turbulence_algebraic/
+!/source/turbulence_algebraic/parallelManagers
+!/source/turbulence_algebraic/stencils
+!/source/Iterators.cpph
 !/source/**/*.c
 !/source/**/*.cpp
 !/source/**/*.h
