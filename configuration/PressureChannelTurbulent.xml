@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+    <flow Re="100" />
+    <simulation finalTime="20.0" >
+        <scenario>pressure-channel</scenario>
+        <type>turbulence</type>
+    </simulation>
+    <backwardFacingStep xRatio="0." yRatio="0." />
+    <timestep dt="0.001" tau="0.5" />
+    <solver gamma="0.5" />
+    <geometry dx="0.1" dy="0.1" dz="0.1" sizeX="50" sizeY="20" sizeZ="0" />
+    <environment gx="0" gy="0" gz="0" />
+    <walls>
+        <left>
+            <vector x="0" y="0" z="0" />
+            <scalar value="1.0" />
+        </left>
+        <right>
+            <vector x="0" y="0" z="0" />
+        </right>
+        <top>
+            <vector x="0" y="0" z="0" />
+        </top>
+        <bottom>
+            <vector x="0" y="0" z="0" />
+        </bottom>
+        <front>
+            <vector x="0" y="0" z="0" />
+        </front>
+        <back>
+            <vector x="0" y="0" z="0" />
+        </back>
+    </walls>
+    <vtk interval="1.0">channel_result</vtk>
+    <stdOut interval="0.2" />
+    <parallel numProcessorsX="1" numProcessorsY="1" numProcessorsZ="1" />
+    <turbulence_model kappa="0.123" delta99="1.0">prandtl</turbulence_model>
+</configuration>

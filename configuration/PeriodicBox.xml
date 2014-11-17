@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+    <flow Re="1" />
+    <simulation finalTime="10" >
+        <type>dns</type>
+        <scenario>periodic-box</scenario>
+    </simulation>
+    <timestep dt="1" tau="0.5" />
+    <solver gamma="0.5" />
+    <geometry
+      lengthX="0.5" lengthY="0.5" lengthZ="0.5" sizeX="5" sizeY="5" sizeZ="5"
+    >
+      <mesh>uniform</mesh>
+    </geometry>
+    <environment gx="0" gy="0" gz="0" />
+    <walls>
+        <left>
+            <vector x="0" y="0" z="0" />
+        </left>
+        <right>
+            <vector x="0" y="0" z="0" />
+        </right>
+        <top>
+            <vector x="1" y="0" z="0" />
+        </top>
+        <bottom>
+            <vector x="0" y="0" z="0" />
+        </bottom>
+        <front>
+            <vector x="0" y="0" z="0" />
+        </front>
+        <back>
+            <vector x="0" y="0" z="0" />
+        </back>
+    </walls>
+    <vtk interval="0.1">periodicbox_result</vtk>
+    <stdOut interval="0.1" />
+    <parallel numProcessorsX="1" numProcessorsY="1" numProcessorsZ="1" />
+</configuration>

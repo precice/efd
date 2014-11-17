@@ -1,0 +1,2745 @@
+# NOTE: The minimum required version of Uncrustify is "0.60".
+
+# General {{{
+# ------------------------------------------------------------------------------
+#   @brief The type of line endings.
+#    @type enumeration {auto, lf, crlf, cr}
+# @default auto
+newlines = lf
+# ------------------------------------------------------------------------------
+#   @brief The original size of tabs in the input.
+#    @type integer
+# @default 8
+input_tab_size = 2
+# ------------------------------------------------------------------------------
+#   @brief The size of tabs in the output.
+#
+# Only used if `align_with_tabs` is `true`.
+#
+#    @type integer
+# @default 8
+output_tab_size = 2
+# ------------------------------------------------------------------------------
+#   @brief The ASCII value of the string escape char.
+#
+# Usually `92` (`\`) or `94` (`^`).
+#
+#    @type integer
+# @default 92
+string_escape_char = 92
+# ------------------------------------------------------------------------------
+#   @brief Alternate string escape char for Pawn.
+#
+# Only works right before the quote char.
+#
+#    @type integer
+# @default 0
+string_escape_char2 = 0
+# ------------------------------------------------------------------------------
+#   @brief Allow interpreting `>=` and `>>=` as part of template in
+#          `void function(List<List<E>>=value)`.
+#
+# If `true`, `assert(x<0 && y>=3)` will be broken. Improvements to template
+# detection may make this option obsolete.
+#
+#    @type boolean
+# @default false
+tok_split_gte = false
+# ------------------------------------------------------------------------------
+#   @brief Control what to do with the UTF-8 BOM.
+#
+# Recommended value is `remove`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+utf8_bom = remove
+# ------------------------------------------------------------------------------
+#   @brief If the file contains bytes with values between `128` and `255`, but
+#          is not UTF-8, then output as UTF-8.
+#    @type boolean
+# @default false
+utf8_byte = true
+# ------------------------------------------------------------------------------
+#   @brief Force the output encoding to UTF-8.
+#    @type boolean
+# @default false
+utf8_force = true
+# ------------------------------------------------------------------------------
+# }}} General
+
+# Indentation {{{
+# ------------------------------------------------------------------------------
+#   @brief The number of columns to indent per level.
+#
+# Usually `2`, `3`, `4`, or `8`.
+#
+#    @type integer
+# @default 8
+indent_columns = 2
+# ------------------------------------------------------------------------------
+#   @brief The continuation indent.
+#
+# If not `0`, this overrides the indent of `(` and `=` continuation indents. For
+# FreeBSD, this is set to `4`. Negative value is absolute and not increased for
+# each `(` level.
+#
+#    @type integer
+# @default 0
+indent_continue = 0
+# ------------------------------------------------------------------------------
+#   @brief How to use tabs when indenting code.
+#
+# `0` - spaces only;
+# `1` - indent with tabs to brace level, align with spaces;
+# `2` - indent and align with tabs, using spaces when not on a tab stop.
+#
+#    @type integer
+# @default 1
+indent_with_tabs = 0
+# ------------------------------------------------------------------------------
+#   @brief Comments that are not at brace level are indented with tabs on a tab
+#          stop.
+#
+# Requires `indent_with_tabs` to be `2`. If `false`, will use spaces.
+#
+#    @type boolean
+# @default false
+indent_cmt_with_tabs = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to indent strings broken by `\` so that they line up.
+#    @type boolean
+# @default false
+indent_align_string = true
+# ------------------------------------------------------------------------------
+#   @brief The number of spaces to indent multi-line XML strings.
+#
+# Requires `indent_align_string` to be `true`.
+#
+#    @type integer
+# @default 0
+indent_xml_string = 0
+# ------------------------------------------------------------------------------
+#   @brief Spaces to indent `{` from level.
+#    @type integer
+# @default 0
+indent_brace = 0
+# ------------------------------------------------------------------------------
+#   @brief Whether braces are indented to the body level.
+#    @type boolean
+# @default false
+indent_braces = false
+# ------------------------------------------------------------------------------
+#   @brief Disabled indenting function braces if `indent_braces` is `true`.
+#    @type boolean
+# @default false
+indent_braces_no_func = false
+# ------------------------------------------------------------------------------
+#   @brief Disabled indenting class braces if `indent_braces` is `true`.
+#    @type boolean
+# @default false
+indent_braces_no_class = false
+# ------------------------------------------------------------------------------
+#   @brief Disabled indenting structure braces if `indent_braces` is `true`.
+#    @type boolean
+# @default false
+indent_braces_no_struct = false
+# ------------------------------------------------------------------------------
+#   @brief Indent based on the size of the brace parent.
+#
+# `if`  - 3 spaces;
+# `for` - 4 spaces;
+# etc.
+#
+#    @type boolean
+# @default false
+indent_brace_parent = false
+# ------------------------------------------------------------------------------
+#   @brief Whether the namespace body is indented.
+#    @type boolean
+# @default false
+indent_namespace = false
+# ------------------------------------------------------------------------------
+#   @brief The number of spaces to indent namespace block.
+#    @type integer
+# @default 0
+indent_namespace_level = 0
+# ------------------------------------------------------------------------------
+#   @brief If the body of the namespace is longer than this number, it won't be
+#          indented.
+#
+# Requires `indent_namespace` to be `true`.
+#
+#    @type integer
+# @default 0
+indent_namespace_limit = 0
+# ------------------------------------------------------------------------------
+#   @brief Whether the `extern "C"` body is indented.
+#    @type boolean
+# @default false
+indent_extern = false
+# ------------------------------------------------------------------------------
+#   @brief Whether the class body is indented.
+#    @type boolean
+# @default false
+indent_class = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to indent the stuff after leading class colon.
+#    @type boolean
+# @default false
+indent_class_colon = true
+# ------------------------------------------------------------------------------
+#   @brief Virtual indent from the `:` for member initializers.
+#    @type integer
+# @default 2
+indent_ctor_init_leading = indent_columns
+# ------------------------------------------------------------------------------
+#   @brief Additional indenting for constructor initializer list.
+#    @type integer
+# @default 0
+indent_ctor_init = 0
+# ------------------------------------------------------------------------------
+#   @brief How to treat `else<newline>if` for indenting purposes.
+#
+# `false` - as `else if`;
+# `true`  - indent the `if` one level.
+#
+#    @type boolean
+# @default false
+indent_else_if = true
+# ------------------------------------------------------------------------------
+#   @brief Amount to indent variable declarations after `{`.
+#
+# negative - relative;
+# positive - absolute.
+#
+#    @type integer
+# @default 0
+indent_var_def_blk = 0
+# ------------------------------------------------------------------------------
+#   @brief Indent continued variable declarations instead of aligning.
+#    @type boolean
+# @default false
+indent_var_def_cont = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to force indentation of function definition to start in the
+#          first column.
+#    @type boolean
+# @default false
+indent_func_def_force_col1 = false
+# ------------------------------------------------------------------------------
+#   @brief How to indent continued function call parameters.
+#
+# `false` - align parameters under the `(`;
+# `true`  - indent one level.
+#
+#    @type boolean
+# @default false
+indent_func_call_param = false
+# ------------------------------------------------------------------------------
+#   @brief Same as `indent_func_call_param`, but for function definitions.
+#    @type boolean
+# @default false
+indent_func_def_param = false
+# ------------------------------------------------------------------------------
+#   @brief Same as `indent_func_call_param`, but for function prototypes.
+#    @type boolean
+# @default false
+indent_func_proto_param = false
+# ------------------------------------------------------------------------------
+#   @brief Same as `indent_func_call_param`, but for method declarations.
+#    @type boolean
+# @default false
+indent_func_class_param = false
+# ------------------------------------------------------------------------------
+#   @brief Same as `indent_func_call_param`, but for constructor calls.
+#    @type boolean
+# @default false
+indent_func_ctor_var_param = false
+# ------------------------------------------------------------------------------
+#   @brief Same as `indent_func_call_param`, but for templates.
+#    @type boolean
+# @default false
+indent_template_param = false
+# ------------------------------------------------------------------------------
+#   @brief Double the indent for `indent_func_*_param` options.
+#    @type boolean
+# @default false
+indent_func_param_double = true
+# ------------------------------------------------------------------------------
+#   @brief Indentation column for standalone `const` qualifier for function
+#          declaration/prototype.
+#    @type integer
+# @default 0
+indent_func_const = 0
+# ------------------------------------------------------------------------------
+#   @brief Indentation column for standalone `throw` qualifier for function
+#          declaration/prototype.
+#    @type integer
+# @default 0
+indent_func_throw = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of spaces to indent continued `->` or `.`.
+#
+# Usually `0`, `1`, or `indent_columns`.
+#
+#    @type integer
+# @default 0
+indent_member = 0
+# ------------------------------------------------------------------------------
+#   @brief Spaces to indent single line (`//`) comments on lines before code.
+#    @type integer
+# @default 0
+indent_sing_line_comments = 0
+# ------------------------------------------------------------------------------
+#   @brief Whether to indent trailing single line (`//`) comments relative to
+#          the code instead of trying to keep the same absolute column.
+#    @type boolean
+# @default false
+indent_relative_single_line_comments = false
+# ------------------------------------------------------------------------------
+#   @brief Spaces to indent `case` from `switch`.
+#
+# Usually `0` or `indent_columns`.
+#
+#    @type integer
+# @default 0
+indent_switch_case = 0
+# ------------------------------------------------------------------------------
+#   @brief Spaces to shift the `case` line, without affecting any other lines.
+#
+# Usually `0`.
+#
+#    @type integer
+# @default 0
+indent_case_shift = 0
+# ------------------------------------------------------------------------------
+#   @brief Spaces to indent `{` from `case`.
+#
+# By default, the brace will appear under the `c` in `case`. Usually `0` or
+# `indent_columns`.
+#
+#    @type integer
+# @default 0
+indent_case_brace = indent_columns
+# ------------------------------------------------------------------------------
+#   @brief Whether to indent comments found in the first column.
+#    @type boolean
+# @default false
+indent_col1_comment = true
+# ------------------------------------------------------------------------------
+#   @brief How to indent `goto` labels.
+#
+# negative - subtract from brace indent;
+# positive - absolute column, where `1` is the leftmost column.
+#
+#    @type integer
+# @default 1
+indent_label = 1
+# ------------------------------------------------------------------------------
+#   @brief Same as `indent_label`, but for access specifiers that are followed
+#          by `:`.
+#    @type integer
+# @default 1
+indent_access_spec = 1
+# ------------------------------------------------------------------------------
+#   @brief Indent the code after access specifier by one level.
+#
+# If `true`, this option forces `indent_access_spec` to be `0`.
+#
+#    @type boolean
+# @default false
+indent_access_spec_body = false
+# ------------------------------------------------------------------------------
+#   @brief If `(` is followed by newline, indent the next line so that it lines
+#          up after the `(`.
+#
+# Not recommended.
+#
+#    @type boolean
+# @default false
+indent_paren_nl = false
+# ------------------------------------------------------------------------------
+#   @brief Controls the indent of `)` after newline.
+#
+# `0` - indent to body level;
+# `1` - align under the `(`
+# `2` - indent to the brace level.
+#
+#    @type integer
+# @default 0
+indent_paren_close = 0
+# ------------------------------------------------------------------------------
+#   @brief Controls the indent of `,` when inside parentheses.
+#
+# If `true`, aligns under the `(`.
+#
+#    @type boolean
+# @default false
+indent_comma_paren = false
+# ------------------------------------------------------------------------------
+#   @brief Controls the indent of boolean operator when inside parentheses.
+#
+# If `true`, aligns under the `(`.
+#
+#    @type boolean
+# @default false
+indent_bool_paren = false
+# ------------------------------------------------------------------------------
+#   @brief If `indent_bool_paren` is `true`, controls the indent of the first
+#          expression.
+#
+# If `true`, aligns the first expression to the following ones.
+#
+#    @type boolean
+# @default false
+indent_first_bool_expr = false
+# ------------------------------------------------------------------------------
+#   @brief If `[` is followed by newline, indent the next line so that it lines
+#          up after the `[`.
+#
+# Not recommended.
+#
+#    @type boolean
+# @default false
+indent_square_nl = false
+# ------------------------------------------------------------------------------
+#   @brief Don't change the relative indent of ESQL/C `EXEC SQL` bodies.
+#    @type boolean
+# @default false
+indent_preserve_sql = false
+# ------------------------------------------------------------------------------
+#   @brief Align continued statements at `=`.
+#
+# If `false` or the `=` is followed by a newline, the next line is indented one
+# tab.
+#
+#    @type boolean
+# @default true
+indent_align_assign = true
+# ------------------------------------------------------------------------------
+# }}} Indentation
+
+# Spacing {{{
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around arithmetic operators: `+`, `-`, `*`, `/`,
+#          etc.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_arith = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around assignment operators: `=`, `+=`, `-=`,
+#          `*=`, `/=`, etc.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_assign = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before assignment operators: `=`, `+=`, `-=`,
+#          `*=`, `/=`, etc.
+#
+# Overrides `sp_assign`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_assign = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after assignment operators: `=`, `+=`, `-=`,
+#          `*=`, `/=`, etc.
+#
+# Overrides `sp_assign`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_assign = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around `=` in C++11 lambda capture
+#          specifications.
+#
+# Overrides `sp_assign`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_cpp_lambda_assign = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after the capture specification in C++11 lambda.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_cpp_lambda_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around assignment operator `=` in prototype.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_assign_default = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around assignment operator `=` in `enum`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_enum_assign = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before assignment operator `=` in `enum`.
+#
+# Overrides `sp_enum_assign`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_enum_before_assign = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after assignment operator `=` in `enum`.
+#
+# Overrides `sp_enum_assign`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_enum_after_assign = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around preprocessor concatenation operator `##`.
+#    @type enumeration {ignore, add, remove, force}
+# @default add
+sp_pp_concat = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after preprocessor stringify operator `#`.
+#
+# Also affects preprocessor charizing operator `#@`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_pp_stringify = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before preprocessor stringify operator `#`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_pp_stringify = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around boolean operators: `&&` and `||`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_bool = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around comparison operators: `<`, `>`, `==`, etc.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_compare = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside `(` and `)`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between nested `(` and `)`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_paren_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Whether to balance spaces inside nested `(` and `)`.
+#    @type boolean
+# @default false
+sp_balance_nested_parens = false
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `)` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_paren_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before pointer star `*`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_ptr_star = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before pointer star `*` that isn't followed by
+#          variable name.
+#
+# If `ignore`, `sp_before_ptr_star` is used instead.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_unnamed_ptr_star = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between pointer stars `*`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_between_ptr_star = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after pointer star `*`, if followed by word.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_ptr_star = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after pointer star `*`, if followed by function
+#          prototype/definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_ptr_star_func = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after pointer star `*`, if followed by `(` (e.g.
+#          function pointer types).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_ptr_star_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before pointer star `*`, if followed by function
+#          prototype/definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_ptr_star_func = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before reference sign `&`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_byref = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before reference sign `&` that isn't followed by
+#          variable name.
+#
+# If `ignore`, `sp_before_byref` is used instead.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_unnamed_byref = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after reference sign `&`, if followed by word.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_byref = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after reference sign `&`, if followed by function
+#          prototype/definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_byref_func = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before reference sign `&`, if followed by
+#          function prototype/definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_byref_func = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between type and word.
+#    @type enumeration {ignore, add, remove, force}
+# @default force
+sp_after_type = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `(` in the D constructs: `template Foo(`
+#          and `class Foo(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_template_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `<` in `template<`.
+#
+# If `ignore`, `sp_before_angle` is used.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_template_angle = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `<`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_angle = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside `<` and `>`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_angle = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `>`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_angle = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `>` and `(` as in `List<byte>()`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_angle_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `>` and word as in `List<byte> list`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_angle_word = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `>` and `>` in `>>` (C++/C#).
+#    @type enumeration {ignore, add, remove, force}
+# @default add
+sp_angle_shift = remove
+# ------------------------------------------------------------------------------
+#   @brief Permit removal of the space between `>` and `>` in `foo<bar<int> >`
+#          (C++11).
+#
+# `sp_angle_shift` cannot remove the space without this option.
+#
+#    @type boolean
+# @default false
+sp_permit_cpp11_shift = true
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `(` of `if`, `for`, `switch`, and `while`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_sparen = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside `if` condition `(` and `)`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_sparen = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `if` condition `)`.
+#
+# Overrides `sp_inside_sparen`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_sparen_close = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `if` condition `(`.
+#
+# Overrides `sp_inside_sparen`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_sparen_open = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `)` of `if`, `for`, `switch`, and `while`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_sparen = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `)` and `{` of `if`, `for`, `switch`, and
+#          `while`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_sparen_brace = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `invariant` and `(` in D.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_invariant_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `)` in `invariant (C) c` in D.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_invariant_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before empty statement `;` on `if`, `for` and
+#          `while`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_special_semi = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `;`.
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_before_semi = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `;` in non-empty `for` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_semi_for = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `;` of empty part of `for` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_semi_for_empty = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `;`, except when followed by comment.
+#    @type enumeration {ignore, add, remove, force}
+# @default add
+sp_after_semi = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `;` in non-empty `for` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default force
+sp_after_semi_for = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after the final `;` of empty part of `for`
+#          statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_semi_for_empty = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `[` (except `[]`).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_square = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `[]`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_squares = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside non-empty `[` and `]`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_square = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `,`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_comma = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `,`.
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_before_comma = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `(` and `,`.
+#    @type enumeration {ignore, add, remove, force}
+# @default force
+sp_paren_comma = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `...` when preceded by non-punctuator.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_ellipsis = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after class `:`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_class_colon = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before class `:`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_class_colon = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before case `:`.
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_before_case_colon = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `operator` and operator sign.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_operator = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between operator sign and `(` as in `operator+(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_operator_sym = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after C/D cast.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_cast = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove spaces inside cast `(` and `)`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_paren_cast = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between type and `(` in C++ cast.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_cpp_cast_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `sizeof` and `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_sizeof_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after the tag keyword (Pawn).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_tag = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside `enum` `{` and `}`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_braces_enum = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside `struct` or `union` `{` and `}`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_braces_struct = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside `{` and `}`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_braces = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside `{}`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_braces_empty = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between return type and function name.
+#
+# A minimum of one is forced except for pointer return types.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_type_func = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between function name and `(` in function
+#          declaration.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_func_proto_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between function name and `(` in function
+#          definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_func_def_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside parameterless function `()`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_fparens = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside function `(` and `)`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_fparen = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space inside the first `(` and `)` in function type:
+#          `void (*x)(...)`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_inside_tparen = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `)` and `(` in function type:
+#          `void (*x)(...)`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_tparen_close = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `]` and `(` when part of function call.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_square_fparen = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `)` and `{` of function.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_fparen_brace = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between function name and `(` on function call.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_func_call_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between function name and `()` on parameterless
+#          function call.
+#
+# If `ignore`, `sp_func_call_paren` is used.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_func_call_paren_empty = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between user function name and `(` on user
+#          function call.
+#
+# You need to set keyword to create user function, e.g.: `set func_call_user _`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_func_call_user_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between constructor/destructor and `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_func_class_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `return` and `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_return_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `__attribute__` and `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_attribute_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between preprocessor `defined` and `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_defined_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `throw` and `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_throw_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `throw` and anything other than `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_throw = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `catch` and `(`.
+#
+# If `ignore`, `sp_before_sparen` is used.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_catch_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `version` and `(` (D).
+#
+# If `ignore`, `sp_before_sparen` is used.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_version_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `scope` and `(` (D).
+#
+# If `ignore`, `sp_before_sparen` is used.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_scope_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between macro and value.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_macro = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between macro function `)` and value.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_macro_func = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `else` and `{` if on the same line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_else_brace = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `}` and `else` if on the same line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_brace_else = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `}` and the name of `typedef` on the same
+#          line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_brace_typedef = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `catch` and `{` if on the same line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_catch_brace = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `}` and `catch` if on the same line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_brace_catch = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `finally` and `{` if on the same line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_finally_brace = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `}` and `finally` if on the same line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_brace_finally = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `try` and `{` if on the same line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_try_brace = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `get`/`set` and `{` if on the same line.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_getset_brace = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `::`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_dc = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `::`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_dc = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove around the D named array initializer operator `:`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_d_array_colon = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after negation operator `!`.
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_not = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after invert operator `~`.
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_inv = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after the address-of operator `&`.
+#
+# This does not affect the spacing after `&` that is part of type.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_addr = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around `.`/`->`.
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_member = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after dereference operator `*`.
+#
+# This does not affect the spacing after `*` that is part of type.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_deref = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after unary sign operators: `+` and `-`.
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_sign = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before or after prefix/postfix
+#          increment/decrement operators: `++` and `--`.
+#    @type enumeration {ignore, add, remove, force}
+# @default remove
+sp_incdec = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before line continuation symbol `\`.
+#    @type enumeration {ignore, add, remove, force}
+# @default add
+sp_before_nl_cont = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around `:` in ternary conditional operator.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_cond_colon = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around `?` in ternary conditional operator.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_cond_question = add
+# ------------------------------------------------------------------------------
+#   @brief Fix spacing between `case` and label.
+#
+# Only `ignore` and `force` make sense here.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_case_label = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space around range operator `..` (D).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_range = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `:` in `for` (Java).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_for_colon = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before `:` in `for` (Java).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_for_colon = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space in `extern (C)` (D).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_extern_paren = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after C++ comment leader `//`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_cmt_cpp_start = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between `#else` or `#endif` and trailing comment.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_endif_cmt = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `new`, `delete`, and `delete[]`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_after_new = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space before trailing or embedded comment.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_before_tr_emb_cmt = force
+# ------------------------------------------------------------------------------
+#   @brief Number of spaces before trailing or embedded comment.
+#    @type integer
+# @default 0
+sp_num_before_tr_emb_cmt = 1
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space between Java annotation and `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+sp_annotation_paren = remove
+# ------------------------------------------------------------------------------
+# }}} Spacing
+
+# Alignment {{{
+# ------------------------------------------------------------------------------
+#   @brief Whether to keep non-indenting tabs.
+#    @type boolean
+# @default false
+align_keep_tabs = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to use tabs for aligning.
+#    @type boolean
+# @default false
+align_with_tabs = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to bump out to the next tab when aligning.
+#    @type boolean
+# @default false
+align_on_tabstop = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to left-align numbers.
+#    @type boolean
+# @default false
+align_number_left = false
+# ------------------------------------------------------------------------------
+#   @brief Align variable definitions in prototypes and functions.
+#    @type boolean
+# @default false
+align_func_params = true
+# ------------------------------------------------------------------------------
+#   @brief Align parameters in single-line functions that have the same name.
+#
+# The function names must already be aligned with each other.
+#
+#    @type boolean
+# @default false
+align_same_func_call_params = true
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning variable definitions.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_var_def_span = 1
+# ------------------------------------------------------------------------------
+#   @brief The threshold for aligning variable definitions.
+#
+# `0` - no limit.
+#
+#    @type integer
+# @default 0
+align_var_def_thresh = 0
+# ------------------------------------------------------------------------------
+#   @brief How to align `*` in variable definitions.
+#
+# `0` - part of type;
+# `1` - part of variable;
+# `2` - dangling.
+#
+#    @type integer
+# @default 0
+align_var_def_star_style = 0
+# ------------------------------------------------------------------------------
+#   @brief How to align `&` in variable definitions.
+#
+# `0` - part of type;
+# `1` - part of variable;
+# `2` - dangling.
+#
+#    @type integer
+# @default 0
+align_var_def_amp_style = 0
+# ------------------------------------------------------------------------------
+#   @brief The gap for aligning variable definitions.
+#    @type integer
+# @default 0
+align_var_def_gap = 0
+# ------------------------------------------------------------------------------
+#   @brief Whether to align `:` in struct bit fields.
+#    @type boolean
+# @default false
+align_var_def_colon = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to align any attribute after variable name.
+#    @type boolean
+# @default false
+align_var_def_attribute = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to align inline `struct`/`enum`/`union` variable definitions.
+#    @type boolean
+# @default false
+align_var_def_inline = true
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning on `=` in assignments.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_assign_span = 1
+# ------------------------------------------------------------------------------
+#   @brief The threshold for aligning on `=` in assignments.
+#
+# `0` - no limit.
+#
+#    @type integer
+# @default 0
+align_assign_thresh = 0
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning on `=` in `enum`.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_enum_equ_span = 1
+# ------------------------------------------------------------------------------
+#   @brief The threshold for aligning on `=` in `enum`.
+#
+# `0` - no limit.
+#
+#    @type integer
+# @default 0
+align_enum_equ_thresh = 0
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning `struct`/`union` member definitions.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_var_struct_span = 1
+# ------------------------------------------------------------------------------
+#   @brief The threshold for aligning `struct`/`union` member definitions.
+#
+# `0` - no limit.
+#
+#    @type integer
+# @default 0
+align_var_struct_thresh = 0
+# ------------------------------------------------------------------------------
+#   @brief The gap for aligning `struct`/`union` member definitions.
+#    @type integer
+# @default 0
+align_var_struct_gap = 0
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning `struct` initializer values.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_struct_init_span = 1
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning single-line `typedefs`.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_typedef_span = 1
+# ------------------------------------------------------------------------------
+#   @brief The minimum space between type and synonym of `typedef`.
+#    @type integer
+# @default 0
+align_typedef_gap = 0
+# ------------------------------------------------------------------------------
+#   @brief How to align `typedef` functions with other `typedef`.
+#
+# `0` - don't mix them at all;
+# `1` - align `(` with types;
+# `2` - align function type name with other type names.
+#
+#    @type integer
+# @default 0
+align_typedef_func = 0
+# ------------------------------------------------------------------------------
+#   @brief Controls the positioning of `*` in `typedef`.
+#
+# `0` - align on `typedef` type, ignore `*`;
+# `1` - `*` is part of type;
+# `2` - `*` is part of type, but dangling.
+#
+#    @type integer
+# @default 0
+align_typedef_star_style = 0
+# ------------------------------------------------------------------------------
+#   @brief Controls the positioning of `&` in `typedef`.
+#
+# `0` - align on `typedef` type, ignore `&`;
+# `1` - `&` is part of type;
+# `2` - `&` is part of type, but dangling.
+#
+#    @type integer
+# @default 0
+align_typedef_amp_style = 0
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning comments that end lines.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_right_cmt_span = 0
+# ------------------------------------------------------------------------------
+#   @brief If aligning comments, mix with comments after `}` and `#endif` with
+#          less than 3 spaces before the comment.
+#    @type boolean
+# @default false
+align_right_cmt_mix = false
+# ------------------------------------------------------------------------------
+#   @brief If trailing comment is more than this number of columns away from the
+#          code it follows, it will qualify for being aligned.
+#
+# This has to be positive to do anything.
+#
+#    @type integer
+# @default 0
+align_right_cmt_gap = 0
+# ------------------------------------------------------------------------------
+#   @brief Align trailing comment at or beyond this column number.
+#
+# Pulls in comments as a bonus side effect. `0` - ignore.
+#
+#    @type integer
+# @default 0
+align_right_cmt_at_col = 0
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning function prototypes.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_func_proto_span = 1
+# ------------------------------------------------------------------------------
+#   @brief Minimum gap between return type and function name.
+#    @type integer
+# @default 0
+align_func_proto_gap = 0
+# ------------------------------------------------------------------------------
+#   @brief Align function prototypes on `operator` keyword instead of what
+#          follows.
+#    @type boolean
+# @default false
+align_on_operator = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to mix aligning prototype and variable declarations.
+#
+# If `true`, `align_var_def_*` options are used instead of `align_func_proto_*`
+# options.
+#
+#    @type boolean
+# @default false
+align_mix_var_proto = false
+# ------------------------------------------------------------------------------
+#   @brief Align single-line functions with function prototypes.
+#
+# Uses `align_func_proto_span`.
+#
+#    @type boolean
+# @default false
+align_single_line_func = true
+# ------------------------------------------------------------------------------
+#   @brief Aligning `{` of single-line functions.
+#
+# Requires `align_single_line_func` to be `true`, uses `align_func_proto_span`.
+#
+#    @type boolean
+# @default false
+align_single_line_brace = true
+# ------------------------------------------------------------------------------
+#   @brief The gap for `align_single_line_brace`.
+#    @type integer
+# @default 0
+align_single_line_brace_gap = 0
+# ------------------------------------------------------------------------------
+#   @brief Whether to align macros wrapped with line continuation `\`.
+#
+# This will not work right if the macro contains a multi-line comment.
+#
+#    @type boolean
+# @default false
+align_nl_cont = true
+# ------------------------------------------------------------------------------
+#   @brief Align macro functions and variables together.
+#    @type boolean
+# @default false
+align_pp_define_together = true
+# ------------------------------------------------------------------------------
+#   @brief The minimum space between label and value of preprocessor `#define`.
+#    @type integer
+# @default 0
+align_pp_define_gap = 0
+# ------------------------------------------------------------------------------
+#   @brief The span for aligning on `#define` bodies.
+#
+# `0` - don't align.
+#
+#    @type integer
+# @default 0
+align_pp_define_span = 1
+# ------------------------------------------------------------------------------
+#   @brief Align lines that start with `<<` with previous `<<`.
+#    @type boolean
+# @default true
+align_left_shift = true
+# ------------------------------------------------------------------------------
+# }}} Alignment
+
+# Newline {{{
+# ------------------------------------------------------------------------------
+#   @brief Whether to collapse empty blocks between `{` and `}`.
+#    @type boolean
+# @default false
+nl_collapse_empty_body = true
+# ------------------------------------------------------------------------------
+#   @brief Don't split one-line braced assignments, e.g. `foo f = {1, 2};`.
+#    @type boolean
+# @default false
+nl_assign_leave_one_liners = true
+# ------------------------------------------------------------------------------
+#   @brief Don't split one-line braced statements inside `class`.
+#    @type boolean
+# @default false
+nl_class_leave_one_liners = true
+# ------------------------------------------------------------------------------
+#   @brief Don't split one-line `enum` definition.
+#    @type boolean
+# @default false
+nl_enum_leave_one_liners = true
+# ------------------------------------------------------------------------------
+#   @brief Don't split one-line `get`/`set` function.
+#    @type boolean
+# @default false
+nl_getset_leave_one_liners = true
+# ------------------------------------------------------------------------------
+#   @brief Don't split one-line function definition.
+#    @type boolean
+# @default false
+nl_func_leave_one_liners = true
+# ------------------------------------------------------------------------------
+#   @brief Don't split one-line `if`/`else` statement.
+#    @type boolean
+# @default false
+nl_if_leave_one_liners = false
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline at the start of file.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_start_of_file = remove
+# ------------------------------------------------------------------------------
+#   @brief The number of newline at the start of file.
+#
+# Only used if `nl_start_of_file` is `add` or `force`.
+#
+#    @type integer
+# @default 0
+nl_start_of_file_min = 0
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline at the end of file.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_end_of_file = remove
+# ------------------------------------------------------------------------------
+#   @brief The number of newline at the end of file.
+#
+# Only used if `nl_end_of_file` is `add` or `force`.
+#
+#    @type integer
+# @default 0
+nl_end_of_file_min = 0
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `=` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_assign_brace = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `=` and `[` (D).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_assign_square = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline after `= [` (D).
+#
+# Will also affect the newline before `]`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_after_square_assign = ignore
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines before block of `typedef` declarations.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_typedef_blk_start = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after block of `typedef` declarations.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_typedef_blk_end = 0
+# ------------------------------------------------------------------------------
+#   @brief The maximum consecutive newlines within block of `typedef`.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_typedef_blk_in = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of blank lines after block of variable definitions at the
+#          top of function body.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_func_var_def_blk = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines before block of variable definitions not at
+#          the top of function body.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_var_def_blk_start = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after block of variable definitions not at the
+#          top of function body.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_var_def_blk_end = 0
+# ------------------------------------------------------------------------------
+#   @brief The maximum consecutive newlines within block of variable
+#          definitions.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_var_def_blk_in = 0
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between function call `)` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_fcall_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `enum` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_enum_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `struct` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_struct_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `union` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_union_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `if` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_if_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `}` and `else`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_brace_else = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `else if` and `{`.
+#
+# If `ignore`, `nl_if_brace` is used instead.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_elseif_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `else` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_else_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `else` and `if`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_else_if = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `}` and `finally`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_brace_finally = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `finally` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_finally_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `try` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_try_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `get`/`set` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_getset_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `for` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_for_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `catch` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_catch_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `}` and `catch`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_brace_catch = remove
+# ------------------------------------------------------------------------------
+#    @brief Add or remove newline between `while` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_while_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `scope` and `{` (D).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_scope_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `unittest` and `{` (D).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_unittest_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `version` and `{` (D).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_version_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `using` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_using_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `{` and `{` or `}` and `}`.
+#
+# Due to general newline/brace handling, `remove` may not work.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_brace_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `do` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_do_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `}` and `while` of `do` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_brace_while = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `switch` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_switch_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add newline between `)` and `{` if the `)` is on different line than
+#          `if`, `for`, etc.
+#
+# Overrides `nl_for_brace`, `nl_if_brace`, `nl_switch_brace`, `nl_while_switch`,
+# and `nl_catch_brace`.
+#
+#    @type boolean
+# @default false
+nl_multi_line_cond = false
+# ------------------------------------------------------------------------------
+#   @brief Force newline in multi-line `#define` after macro name.
+#    @type boolean
+# @default false
+nl_multi_line_define = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline before `case` statement.
+#    @type boolean
+# @default false
+nl_before_case = true
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `)` and `throw`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_before_throw = force
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline after `case` statement.
+#    @type boolean
+# @default false
+nl_after_case = true
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `:` and `{` in `case` statement.
+#
+# Overrides `nl_after_case`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_case_colon_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `namespace` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_namespace_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `template <...>` and whatever follows.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_template_class = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `class` and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_class_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline after each `,` in constructor member
+#          initialization.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_class_init_args = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between return type and function name in
+#          function definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_type_name = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between return type and function name inside
+#          `class`.
+#
+# If `ignore`, uses `nl_func_type_name` or `nl_func_proto_type_name`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_type_name_class = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline after `::` in function definition/declaration.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_scope_name = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between return type and function name in
+#          prototype.
+#
+# BUG: Applies to function call in assignment.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_proto_type_name = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between function name and `(`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between function name and `(` in definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_def_paren = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline after `(` in function declaration.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_decl_start = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline after `(` in function definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_def_start = ignore
+# ------------------------------------------------------------------------------
+#   @brief Overrides `nl_func_decl_start` when there is only one parameter.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_decl_start_single = ignore
+# ------------------------------------------------------------------------------
+#   @brief Overrides `nl_func_def_start` when there is only one parameter.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_def_start_single = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline after each `,` in function declaration.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_decl_args = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline after each `,` in function definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_def_args = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline before `)` in function declaration.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_decl_end = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline before `)` in function definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_def_end = remove
+# ------------------------------------------------------------------------------
+#   @brief Overrides `nl_func_decl_end` when there is only one parameter.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_decl_end_single = remove
+# ------------------------------------------------------------------------------
+#   @brief Overrides `nl_func_def_end` when there is only one parameter.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_def_end_single = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `()` in function declaration.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_decl_empty = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `()` in function definition.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_func_def_empty = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between function signature and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_fdef_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between `return` keyword and return expression.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_return_expr = remove
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline after `;`, except in `for` statement.
+#    @type boolean
+# @default false
+nl_after_semicolon = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline after `{`.
+#
+# This also adds a newline before the matching `}`.
+#
+#    @type boolean
+# @default false
+nl_after_brace_open = false
+# ------------------------------------------------------------------------------
+#   @brief If `nl_after_brace_open` and `nl_after_brace_open_cmt` are `true`,
+#          newline is placed between `{` and trailing single-line comment.
+#    @type boolean
+# @default false
+nl_after_brace_open_cmt = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline after virtual `{` with non-empty body.
+#
+# This occurs in unbraced `if`/`while`/`do`/`for` statement bodies.
+#
+#    @type boolean
+# @default false
+nl_after_vbrace_open = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline after virtual `{` with empty body.
+#
+# This occurs in unbraced `if`/`while`/`do`/`for` statement bodies.
+#
+#    @type boolean
+# @default false
+nl_after_vbrace_open_empty = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline after `}`.
+#
+# Does not apply if followed by necessary `;`.
+#
+#    @type boolean
+# @default false
+nl_after_brace_close = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline after virtual `}`.
+#
+# Would add newline before `return` in `if (foo) foo++; return;`.
+#
+#    @type boolean
+# @default false
+nl_after_vbrace_close = true
+# ------------------------------------------------------------------------------
+#   @brief Control newline between `}` in `struct` definition and following
+#          variable declaration.
+#
+# Affects `enum`, `union`, and `struct`. If `ignore`, uses
+# `nl_after_brace_close`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_brace_struct_var = remove
+# ------------------------------------------------------------------------------
+#   @brief Whether to alter newlines in `#define` macros.
+#    @type boolean
+# @default false
+nl_define_macro = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to not put blanks after `#if*`, `#el*`, or before `#endif`.
+#    @type boolean
+# @default false
+nl_squeeze_ifdef = false
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line before `if`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_before_if = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line after `if`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_after_if = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line before `for`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_before_for = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line after `for`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_after_for = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line before `while`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_before_while = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line after `while`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_after_while = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line before `switch`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_before_switch = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line after `switch`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_after_switch = ignore
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line before `do`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_before_do = force
+# ------------------------------------------------------------------------------
+#   @brief Add or remove blank line after `do`/`while`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_after_do = ignore
+# ------------------------------------------------------------------------------
+#   @brief Whether to double-space commented entries in `struct`/`enum`.
+#    @type boolean
+# @default false
+nl_ds_struct_enum_cmt = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to double-space before `}` of `struct`/`union`/`enum`.
+#
+# Lower priority than `eat_blanks_before_close_brace`.
+#
+#    @type boolean
+# @default false
+nl_ds_struct_enum_close_brace = false
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline around `class` `:`.
+#
+# Related to `pos_class_colon`, `nl_class_init_args`, and `pos_comma`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_class_colon = ignore
+# ------------------------------------------------------------------------------
+#   @brief Change simple unbraced `if` statement into one-liner.
+#    @type boolean
+# @default false
+nl_create_if_one_liner = false
+# ------------------------------------------------------------------------------
+#   @brief Change simple unbraced `for` statement into one-liner.
+#    @type boolean
+# @default false
+nl_create_for_one_liner = false
+# ------------------------------------------------------------------------------
+#   @brief Change simple unbraced `while` statement into one-liner.
+#    @type boolean
+# @default false
+nl_create_while_one_liner = false
+# ------------------------------------------------------------------------------
+# }}} Newline
+
+# Positioning {{{
+# ------------------------------------------------------------------------------
+#   @brief The position of arithmetic operators in wrapped expressions.
+#    @type enumeration {
+#            ignore,
+#            join,
+#            lead,
+#            lead_break,
+#            lead_force,
+#            trail,
+#            trail_break,
+#            trail_force
+#          }
+# @default ignore
+pos_arith = ignore
+# ------------------------------------------------------------------------------
+#   @brief The position of assignment in wrapped expressions.
+#
+# Does not affect `=` followed by `{`.
+#
+#    @type enumeration {
+#            ignore,
+#            join,
+#            lead,
+#            lead_break,
+#            lead_force,
+#            trail,
+#            trail_break,
+#            trail_force
+#          }
+# @default ignore
+pos_assign = ignore
+# ------------------------------------------------------------------------------
+#   @brief The position of boolean operators in wrapped expressions.
+#    @type enumeration {
+#            ignore,
+#            join,
+#            lead,
+#            lead_break,
+#            lead_force,
+#            trail,
+#            trail_break,
+#            trail_force
+#          }
+# @default ignore
+pos_bool = ignore
+# ------------------------------------------------------------------------------
+#   @brief The position of comparison operators in wrapped expressions.
+#    @type enumeration {
+#            ignore,
+#            join,
+#            lead,
+#            lead_break,
+#            lead_force,
+#            trail,
+#            trail_break,
+#            trail_force
+#          }
+# @default ignore
+pos_compare = ignore
+# ------------------------------------------------------------------------------
+#   @brief The position of ternary conditional operators in wrapped expressions.
+#    @type enumeration {
+#            ignore,
+#            join,
+#            lead,
+#            lead_break,
+#            lead_force,
+#            trail,
+#            trail_break,
+#            trail_force
+#          }
+# @default ignore
+pos_conditional = ignore
+# ------------------------------------------------------------------------------
+#   @brief The position of the comma in wrapped expressions.
+#    @type enumeration {
+#            ignore,
+#            join,
+#            lead,
+#            lead_break,
+#            lead_force,
+#            trail,
+#            trail_break,
+#            trail_force
+#          }
+# @default ignore
+pos_comma = trail
+# ------------------------------------------------------------------------------
+#   @brief The position of the comma in the constructor initialization list.
+#    @type enumeration {
+#            ignore,
+#            join,
+#            lead,
+#            lead_break,
+#            lead_force,
+#            trail,
+#            trail_break,
+#            trail_force
+#          }
+# @default ignore
+pos_class_comma = trail
+# ------------------------------------------------------------------------------
+#   @brief The position of colon between constructor and member initialization.
+#    @type enumeration {
+#            ignore,
+#            join,
+#            lead,
+#            lead_break,
+#            lead_force,
+#            trail,
+#            trail_break,
+#            trail_force
+#          }
+# @default ignore
+pos_class_colon = lead
+# ------------------------------------------------------------------------------
+# }}} Positioning
+
+# Line Splitting {{{
+# ------------------------------------------------------------------------------
+#   @brief Try to limit code width.
+#    @type integer
+# @default 0
+code_width = 80
+# ------------------------------------------------------------------------------
+#   @brief Whether to fully split long `for` statements at `;`.
+#    @type boolean
+# @default false
+ls_for_split_full = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to fully split long function prototypes/calls at `,`.
+#    @type boolean
+# @default false
+ls_func_split_full = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to split lines as close to `code_width` as possible and
+#          ignore some groupings.
+#    @type boolean
+# @default false
+ls_code_width = true
+# ------------------------------------------------------------------------------
+# }}} Line Splitting
+
+# Blanks {{{
+# ------------------------------------------------------------------------------
+#   @brief The maximum consecutive newlines.
+#    @type integer
+# @default 0
+nl_max = 2
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after function prototype, if followed by
+#          another function prototype.
+#    @type integer
+# @default 0
+nl_after_func_proto = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after function prototype, if not followed by
+#          another function prototype.
+#    @type integer
+# @default 0
+nl_after_func_proto_group = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after `}` of multi-line function body.
+#    @type integer
+# @default 0
+nl_after_func_body = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after `}` of multi-line function body in
+#          `class` declaration.
+#    @type integer
+# @default 0
+nl_after_func_body_class = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after `}` of single-line function body.
+#    @type integer
+# @default 0
+nl_after_func_body_one_liner = 0
+# ------------------------------------------------------------------------------
+#   @brief The minimum number of newlines before multi-line comment.
+#
+# Doesn't apply if after `{` or another multi-line comment.
+#
+#    @type integer
+# @default 0
+nl_before_block_comment = 1
+# ------------------------------------------------------------------------------
+#   @brief The minimum number of newlines before single-line C comment.
+#
+# Doesn't apply if after `{` or another single-line C comment.
+#
+#    @type integer
+# @default 0
+nl_before_c_comment = 1
+# ------------------------------------------------------------------------------
+#   @brief The minimum number of newlines before C++ comment.
+#
+# Doesn't apply if after `{` or another C++ comment.
+#
+#    @type integer
+# @default 0
+nl_before_cpp_comment = 1
+# ------------------------------------------------------------------------------
+#   @brief Whether to force newline after multi-line comment.
+#    @type boolean
+# @default false
+nl_after_multiline_comment = true
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after `}` or `;` of a `struct`/`enum`/`union`
+#          definition.
+#    @type integer
+# @default 0
+nl_after_struct = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after `}` or `;` of `class` definition.
+#    @type integer
+# @default 0
+nl_after_class = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines before `private:`, `public:`, `protected:`,
+#          `signals:`, or `slots:`.
+#
+# Will not change newline count if after `{`. `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_before_access_spec = 2
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after `private:`, `public:`, `protected:`,
+#          `signals:`, or `slots:`.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_after_access_spec = 1
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines between function definition and the function
+#          comment.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_comment_func_def = 1
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines after `try`-`catch`-`finally` block that isn't
+#          followed by `}`.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_after_try_catch_finally = 2
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines before and after property, indexer or event
+#          declarations.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_around_cs_property = 1
+# ------------------------------------------------------------------------------
+#   @brief The number of newlines between the `get`/`set`/`add`/`remove`
+#          handlers in C#.
+#
+# `0` - no change.
+#
+#    @type integer
+# @default 0
+nl_between_get_set = 2
+# ------------------------------------------------------------------------------
+#   @brief Add or remove newline between C# property and `{`.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_property_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief Whether to remove blank lines after `{`.
+#    @type boolean
+# @default false
+eat_blanks_after_open_brace = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to remove blank lines before `}`.
+#    @type boolean
+# @default false
+eat_blanks_before_close_brace = true
+# ------------------------------------------------------------------------------
+#   @brief How aggressively to remove extra newlines not in preprocessor.
+#
+# `0` - no change;
+# `1` - remove most newlines not handled by other configuration;
+# `2` - remove all newlines and reformat completely by configuration.
+#
+#    @type integer
+# @default 0
+nl_remove_extra_newlines = 0
+# ------------------------------------------------------------------------------
+#   @brief Whether to put blank line before `return`, unless after `{`.
+#    @type boolean
+# @default false
+nl_before_return = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to put a blank line after `return`, unless followed by `}`.
+#    @type boolean
+# @default false
+nl_after_return = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to put a newline after Java annotation statement.
+#
+# Only affects annotations that are after newline.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_after_annotation = add
+# ------------------------------------------------------------------------------
+#   @brief Controls newline between two annotations.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+nl_between_annotation = add
+# ------------------------------------------------------------------------------
+# }}} Blanks
+
+# Modifications {{{
+# ------------------------------------------------------------------------------
+#   @brief Add or remove braces on single-line `do` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+mod_full_brace_do = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove braces on single-line `for` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+mod_full_brace_for = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove braces on single-line function definition (Pawn).
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+mod_full_brace_function = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove braces on single-line `if` statement.
+#
+# Will not remove braces if they contain `else`.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+mod_full_brace_if = add
+# ------------------------------------------------------------------------------
+#   @brief Make all `if`/`else if`/`else` statements in chain be braced or not.
+#
+# Overrides `mod_full_brace_if`.
+#
+#    @type boolean
+# @default false
+mod_full_brace_if_chain = false
+# ------------------------------------------------------------------------------
+#   @brief Don't remove braces around statements that span this number of
+#          newlines.
+#    @type integer
+# @default 0
+mod_full_brace_nl = 0
+# ------------------------------------------------------------------------------
+#   @brief Add or remove braces on single-line `while` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+mod_full_brace_while = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove braces on single-line `using (...)` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+mod_full_brace_using = add
+# ------------------------------------------------------------------------------
+#   @brief Add or remove unnecessary `(` and `)` on `return` statement.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+mod_paren_on_return = remove
+# ------------------------------------------------------------------------------
+#   @brief Whether to change optional `;` to real `;` (Pawn).
+#    @type boolean
+# @default false
+mod_pawn_semicolon = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to add `(` and `)` on `while` and `if` statement around
+#          booleans.
+#    @type boolean
+# @default false
+mod_full_paren_if_bool = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to remove superfluous semicolons.
+#    @type boolean
+# @default false
+mod_remove_extra_semicolon = true
+# ------------------------------------------------------------------------------
+#   @brief If function body exceeds the specified number of newlines and doesn't
+#          have comment after `}`, the comment will be added.
+#    @type integer
+# @default 0
+mod_add_long_function_closebrace_comment = 0
+# ------------------------------------------------------------------------------
+#   @brief If `switch` body exceeds the specified number of newlines and doesn't
+#          have comment after `}`, the comment will be added.
+#    @type integer
+# @default 0
+mod_add_long_switch_closebrace_comment = 0
+# ------------------------------------------------------------------------------
+#   @brief If `#ifdef` body exceeds the specified number of newlines and doesn't
+#          have comment after `#endif`, the comment will be added.
+#    @type integer
+# @default 0
+mod_add_long_ifdef_endif_comment = 0
+# ------------------------------------------------------------------------------
+#   @brief If `#ifdef` or `#else` body exceeds the specified number of newlines
+#          and doesn't have comment after `#else`, the comment will be added.
+#    @type integer
+# @default 0
+mod_add_long_ifdef_else_comment = 0
+# ------------------------------------------------------------------------------
+#   @brief If `true`, will sort consecutive single-line `import` statements
+#          (Java/D).
+#    @type boolean
+# @default false
+mod_sort_import = true
+# ------------------------------------------------------------------------------
+#   @brief If `true`, will sort consecutive single-line `using` statements (C#).
+#    @type boolean
+# @default false
+mod_sort_using = true
+# ------------------------------------------------------------------------------
+#   @brief If `true`, will sort consecutive single-line `#include` statements
+#          (C/C++) and `#import` statements (Objective-C/C++).
+#
+# Theoretically may break your code, but if so, then it's a good indication of
+# poor design.
+#
+#    @type boolean
+# @default false
+mod_sort_include = true
+# ------------------------------------------------------------------------------
+#   @brief If `true`, will move `break` that appears after fully braced `case`
+#          before `}`.
+#    @type boolean
+# @default false
+mod_move_case_break = true
+# ------------------------------------------------------------------------------
+#   @brief Add or remove `{` and `}` around fully braced `case` statement.
+#
+# Will only remove the braces if there are no variable declarations in the
+# block.
+#
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+mod_case_brace = remove
+# ------------------------------------------------------------------------------
+#   @brief If `true`, will remove void `return;` that appears as the last
+#          statement in function.
+#    @type boolean
+# @default false
+mod_remove_empty_return = true
+# ------------------------------------------------------------------------------
+# }}} Modifications
+
+# Comments {{{
+# ------------------------------------------------------------------------------
+#   @brief Try to wrap comments at `cmt_width` columns.
+#    @type integer
+# @default 0
+cmt_width = 80
+# ------------------------------------------------------------------------------
+#   @brief Control comment reflow mode.
+#
+# `0` - no reflowing, apart from the line wrapping due to `cmt_width`;
+# `1` - no touching at all;
+# `2` - full reflow.
+#
+#    @type integer
+# @default 0
+cmt_reflow_mode = 0
+# ------------------------------------------------------------------------------
+#   @brief If `false`, disable all multi-line comment changes, including
+#          `cmt_width`.
+#    @type boolean
+# @default true
+cmt_indent_multi = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to group C comments that look like they are in block.
+#    @type boolean
+# @default false
+cmt_c_group = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to put standalone `/*` on the first line of combined C
+#          comment.
+#    @type boolean
+# @default false
+cmt_c_nl_start = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline before `*/` of combined C comment.
+#    @type boolean
+# @default false
+cmt_c_nl_end = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to group C++ comments that look like they are in block.
+#    @type boolean
+# @default false
+cmt_cpp_group = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to put standalone `/*` on the first line of combined C++
+#          comment.
+#    @type boolean
+# @default false
+cmt_cpp_nl_start = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to put newline before `*/` of combined C++ comment.
+#    @type boolean
+# @default false
+cmt_cpp_nl_end = true
+# ------------------------------------------------------------------------------
+#   @brief Whether to change C++ comments into C comments.
+#    @type boolean
+# @default false
+cmt_cpp_to_c = false
+# ------------------------------------------------------------------------------
+#   @brief Whether to put `*` on subsequent comment lines.
+#    @type boolean
+# @default false
+cmt_star_cont = true
+# ------------------------------------------------------------------------------
+#   @brief The number of spaces to insert at the start of subsequent comment
+#          lines.
+#    @type integer
+# @default 0
+cmt_sp_before_star_cont = 0
+# ------------------------------------------------------------------------------
+#   @brief The number of spaces to insert after `*` on subsequent comment lines.
+#    @type integer
+# @default 0
+cmt_sp_after_star_cont = 1
+# ------------------------------------------------------------------------------
+#   @brief For multi-line comments with `*` leader, remove leading spaces if the
+#          first and last lines of the comment are the same length.
+#    @type boolean
+# @default true
+cmt_multi_check_last = true
+# ------------------------------------------------------------------------------
+#   @brief The file name that contains text to insert at the start of file if
+#          the file doesn't start with C/C++ comment.
+#
+# Will substitute `$(filename)` with the current file's name.
+#
+#    @type string
+# @default ""
+cmt_insert_file_header = ""
+# ------------------------------------------------------------------------------
+#   @brief The file name that contains text to insert at the end of file if the
+#          file doesn't end with C/C++ comment.
+#
+# Will substitute `$(filename)` with the current file's name.
+#
+#    @type string
+# @default ""
+cmt_insert_file_footer = ""
+# ------------------------------------------------------------------------------
+#   @brief The file name that contains text to insert before function
+#          implementation if the function isn't preceded with C/C++ comment.
+#
+# Will substitute `$(function)` with function name and `$(javaparam)` with
+# Javadoc `@param` and `@return` stuff. Will also substitute `$(fclass)` with
+# class name.
+#
+#    @type string
+# @default ""
+cmt_insert_func_header = ""
+# ------------------------------------------------------------------------------
+#   @brief The file name that contains text to insert before class if the class
+#          isn't preceded with C/C++ comment.
+#
+# Will substitute `$(class)` with the class name.
+#
+#    @type string
+# @default ""
+cmt_insert_class_header = ""
+# ------------------------------------------------------------------------------
+#   @brief If preprocessor is encountered when stepping backwards from function
+#          name, then this option decides whether comment should be inserted.
+#
+# Affects `cmt_insert_oc_msg_header`, `cmt_insert_func_header`, and
+# `cmt_insert_class_header`.
+#
+#    @type boolean
+# @default false
+cmt_insert_before_preproc = false
+# ------------------------------------------------------------------------------
+# }}} Comments
+
+# Preprocessor {{{
+# ------------------------------------------------------------------------------
+#   @brief Control indent of preprocessors inside `#if` blocks at brace level 0.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+pp_indent = add
+# ------------------------------------------------------------------------------
+#   @brief How to indent `#if`/`#else`/`#endif`.
+#
+# `true`  - at the brace level;
+# `false` - from column 1.
+#
+#    @type boolean
+# @default false
+pp_indent_at_level = false
+# ------------------------------------------------------------------------------
+#   @brief If `pp_indent_at_level` is `false`, specifies the number of columns
+#          to indent per level.
+#    @type integer
+# @default 1
+pp_indent_count = 0
+# ------------------------------------------------------------------------------
+#   @brief Add or remove space after `#` based on `pp_level` of `#if` blocks.
+#    @type enumeration {ignore, add, remove, force}
+# @default ignore
+pp_space = add
+# ------------------------------------------------------------------------------
+#   @brief Sets the number of spaces added with `pp_space`.
+#    @type integer
+# @default 0
+pp_space_count = 2
+# ------------------------------------------------------------------------------
+#   @brief The indent for `#region` and `#endregion` in C# and `#pragma region`
+#          in C/C++
+#    @type integer
+# @default 0
+pp_indent_region = 0
+# ------------------------------------------------------------------------------
+#   @brief Whether to indent code between `#region` and `#endregion`.
+#    @type boolean
+# @default false
+pp_region_indent_code = false
+# ------------------------------------------------------------------------------
+#   @brief If `pp_indent_at_level` is `true`, sets the indent for `#if`,
+#          `#else`, and `#endif` when not at file level.
+#    @type integer
+# @default 0
+pp_indent_if = 0
+# ------------------------------------------------------------------------------
+#   @brief Control whether to indent the code between `#if`, `#else`, and
+#          `#endif` when not at file level.
+#    @type boolean
+# @default false
+pp_if_indent_code = false
+# ------------------------------------------------------------------------------
+#   @brief How to indent `#define`.
+#
+# `true`  - at brace level;
+# `false` - from column 1.
+#
+#    @type boolean
+# @default false
+pp_define_at_level = false
+# ------------------------------------------------------------------------------
+# }}} Preprocessor
+
+# vim:ft=uncrustify:fenc=utf-8:ff=unix:fdm=marker:ts=2:sw=2:tw=80:et:
