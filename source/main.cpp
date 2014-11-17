@@ -1,108 +1,127 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
 #include "Configuration.h"
+#include "MeshsizeFactory.h"
 #include "Simulation.h"
 #include "TurbulentSimulation.h"
 #include "parallelManagers/PetscParallelConfiguration.h"
-#include "MeshsizeFactory.h"
 #include <iomanip>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 
-int main (int argc, char *argv[]) {
+int
+main(int argc, char* argv[]) {
+  // Parallelization related. Initialize and identify
+  // ---------------------------------------------------
+  int rank;     // This processor's identifier
+  int nproc;    // Number of processors in the group
+  PetscInitialize(&argc, &argv, "petsc_commandline_arg", PETSC_NULL);
+  MPI_Comm_size(PETSC_COMM_WORLD, &nproc);
+  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+  std::cout << "Rank: " << rank << ", Nproc: " << nproc << std::endl;
+  // ----------------------------------------------------
 
-    // Parallelization related. Initialize and identify
-    // ---------------------------------------------------
-    int rank;   // This processor's identifier
-    int nproc;  // Number of processors in the group
-    PetscInitialize(&argc, &argv, "petsc_commandline_arg", PETSC_NULL);
-    MPI_Comm_size(PETSC_COMM_WORLD, &nproc);
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-    std::cout << "Rank: " << rank << ", Nproc: " << nproc << std::endl;
-    //----------------------------------------------------
+  // TODO probably remove this error check in future to play around with petsc
+  // if (argc != 2){
+  // handleError(1, "A configuration file is required! Call the program by
+  // ./main configfile.xml");
+  // }
 
-    // TODO probably remove this error check in future to play around with petsc 
-    //if (argc != 2){
-    //    handleError(1, "A configuration file is required! Call the program by ./main configfile.xml");
-    //}
+  // read configuration and store information in parameters object
+  Configuration configuration(argv[1]);
+  Parameters    parameters;
+  configuration.loadParameters(parameters);
+  PetscParallelConfiguration parallelConfiguration(parameters);
+  MeshsizeFactory::getInstance().initMeshsize(parameters);
+  FlowField*  flowField  = NULL;
+  Simulation* simulation = NULL;
 
-    // read configuration and store information in parameters object
-    Configuration configuration(argv[1]);
-    Parameters parameters;
-    configuration.loadParameters(parameters);
-    PetscParallelConfiguration parallelConfiguration(parameters);
-    MeshsizeFactory::getInstance().initMeshsize(parameters);
-    FlowField *flowField = NULL;
-    Simulation *simulation = NULL;
-    
-    #ifdef DEBUG
-    std::cout << "Processor " << parameters.parallel.rank << " with index ";
-    std::cout << parameters.parallel.indices[0] << ",";
-    std::cout << parameters.parallel.indices[1] << ",";
-    std::cout << parameters.parallel.indices[2];
-    std::cout <<    " is computing the size of its subdomain and obtains ";
-    std::cout << parameters.parallel.localSize[0] << ", ";
-    std::cout << parameters.parallel.localSize[1] << " and ";
-    std::cout << parameters.parallel.localSize[2];
-    std::cout << ". Left neighbour: " << parameters.parallel.leftNb;
-    std::cout << ", right neighbour: " << parameters.parallel.rightNb;
-    std::cout << std::endl;
-    std::cout << "Min. meshsizes: " << parameters.meshsize->getDxMin() << ", " << parameters.meshsize->getDyMin() << ", " << parameters.meshsize->getDzMin() << std::endl;
-    #endif
+#ifdef DEBUG
+  std::cout << "Processor " << parameters.parallel.rank << " with index ";
+  std::cout << parameters.parallel.indices[0] << ",";
+  std::cout << parameters.parallel.indices[1] << ",";
+  std::cout << parameters.parallel.indices[2];
+  std::cout <<    " is computing the size of its subdomain and obtains ";
+  std::cout << parameters.parallel.localSize[0] << ", ";
+  std::cout << parameters.parallel.localSize[1] << " and ";
+  std::cout << parameters.parallel.localSize[2];
+  std::cout << ". Left neighbour: " << parameters.parallel.leftNb;
+  std::cout << ", right neighbour: " << parameters.parallel.rightNb;
+  std::cout << std::endl;
+  std::cout << "Min. meshsizes: " << parameters.meshsize->getDxMin() << ", " <<
+  parameters.meshsize->getDyMin() << ", " << parameters.meshsize->getDzMin() <<
+  std::endl;
+#endif
 
-    // initialise simulation
-    if (parameters.simulation.type=="turbulence"){
-      if (rank==0){ std::cout << "Start turbulence simulation in " << parameters.geometry.dim << "D" << std::endl; }
-      TurbulentFlowField *turbulentFlowField = new TurbulentFlowField(parameters);
-      if(turbulentFlowField == NULL){ handleError(1, "turbulentFlowField==NULL!"); }
-      flowField = turbulentFlowField;
-      simulation = new TurbulentSimulation(parameters,*turbulentFlowField);
-    } else if (parameters.simulation.type=="dns"){
-      if(rank==0){ std::cout << "Start DNS simulation in " << parameters.geometry.dim << "D" << std::endl; }
-      flowField = new FlowField(parameters);
-      if(flowField == NULL){ handleError(1, "flowField==NULL!"); }
-      simulation = new Simulation(parameters,*flowField);
-    } else {
-      handleError(1, "Unknown simulation type! Currently supported: dns, turbulence");
+  // initialise simulation
+  if (parameters.simulation.type == "turbulence") {
+    if (rank == 0) {
+      std::cout << "Start turbulence simulation in " <<
+      parameters.geometry.dim << "D" << std::endl;
     }
-    // call initialization of simulation (initialize flow field)
-    if(simulation == NULL){ handleError(1, "simulation==NULL!"); }
-    simulation->initializeFlowField();
-    //flowField->getFlags().show();
+    TurbulentFlowField* turbulentFlowField = new TurbulentFlowField(parameters);
 
-    FLOAT time = 0.0;
-    FLOAT timeVtk=parameters.vtk.interval;
-    FLOAT timeStdOut=parameters.stdOut.interval;
-    int timeSteps = 0;
+    if (turbulentFlowField == NULL) {
+      handleError(1, "turbulentFlowField==NULL!");
+    }
+    flowField  = turbulentFlowField;
+    simulation = new TurbulentSimulation(parameters, *turbulentFlowField);
+  } else if (parameters.simulation.type == "dns") {
+    if (rank == 0) {
+      std::cout << "Start DNS simulation in " << parameters.geometry.dim <<
+      "D" << std::endl;
+    }
+    flowField = new FlowField(parameters);
 
-    // plot initial state
-    simulation->plotVTK(timeSteps);
+    if (flowField == NULL) {
+      handleError(1, "flowField==NULL!");
+    }
+    simulation = new Simulation(parameters, *flowField);
+  } else {
+      handleError(1,
+                "Unknown simulation type! Currently supported: dns, turbulence");
+  }
 
-    // time loop
-    while (time < parameters.simulation.finalTime){
+  // call initialization of simulation (initialize flow field)
+  if (simulation == NULL) {
+      handleError(1, "simulation==NULL!");
+  }
+  simulation->initializeFlowField();
+  // flowField->getFlags().show();
 
-      simulation->solveTimestep();
+  FLOAT time       = 0.0;
+  FLOAT timeVtk    = parameters.vtk.interval;
+  FLOAT timeStdOut = parameters.stdOut.interval;
+  int   timeSteps  = 0;
 
-      time += parameters.timestep.dt;
+  // plot initial state
+  simulation->plotVTK(timeSteps);
 
-      // std-out: terminal info
-      if ( (rank==0) && (timeStdOut <= time) ){
-          std::cout << "Current time: " << time << "\ttimestep: " <<
-                        parameters.timestep.dt << std::endl;
-          timeStdOut += parameters.stdOut.interval;
-      }
-      // VTK output
-      if ( timeVtk <= time ) {
-        simulation->plotVTK(timeSteps);
-        timeVtk += parameters.vtk.interval;
-      }
-      timeSteps++;
+  // time loop
+  while (time < parameters.simulation.finalTime) {
+    simulation->solveTimestep();
+
+    time += parameters.timestep.dt;
+
+    // std-out: terminal info
+    if ((rank == 0) && (timeStdOut <= time)) {
+      std::cout << "Current time: " << time << "\ttimestep: " <<
+        parameters.timestep.dt << std::endl;
+      timeStdOut += parameters.stdOut.interval;
     }
 
-    // plot final output
-    simulation->plotVTK(timeSteps);
+    // VTK output
+    if (timeVtk <= time) {
+      simulation->plotVTK(timeSteps);
+      timeVtk += parameters.vtk.interval;
+    }
+    timeSteps++;
+  }
 
-    delete simulation; simulation=NULL;
-    delete flowField;  flowField= NULL;
+  // plot final output
+  simulation->plotVTK(timeSteps);
 
-    PetscFinalize();
+  delete simulation; simulation = NULL;
+  delete flowField;  flowField  = NULL;
+
+  PetscFinalize();
 }
