@@ -84,19 +84,20 @@ The lookup of the following dependencies could be configured:
       resides.
     + *(optional)* `Precice_DIR` --- directory, where PreCICE resides.
 
-    > **NOTE:**
-    > Using variables above the order of search is described below, it moves to
-    > the next step until the check of some conditions succeed.
+    Using variables above the order of search is described below, it moves to
+    the next step until the check of some conditions succeed.
 
-    > Lookup for includes in values of the variables in the order:
-    > 1. `Precice_INCLUDE_DIRS`
-    > 2. `Precice_DIR`
+    Lookup for includes in values of the variables in the order:
 
-    > Lookup for libraries in values of the variables in the order:
-    > 1. `Precice_LIBRARY_DIRS`
-    > 2. `Precice_DIR`
+    1. `Precice_INCLUDE_DIRS`
+    2. `Precice_DIR`
 
-#Optional Instructions
+    Lookup for libraries in values of the variables in the order:
+
+    1. `Precice_LIBRARY_DIRS`
+    2. `Precice_DIR`
+
+# Optional Instructions
 
 ## Prerequisites
 
