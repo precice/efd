@@ -166,9 +166,14 @@ install(
   RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
   )
 
-install(DIRECTORY "${PROJECT_DIR}/configuration/"
-  DESTINATION ${INSTALL_BINARY_DIR}
-  REGEX "(.*.cpp|.*.hpp|.*.c|.*.h)$" EXCLUDE
+install(DIRECTORY "${PROJECT_DIR}/configuration/FluidScenarios"
+  DESTINATION "${INSTALL_BINARY_DIR}"
+  FILES_MATCHING REGEX "(.*\\.xml)$"
+  )
+
+install(DIRECTORY "${PROJECT_DIR}/configuration/FluidPetsc/"
+  DESTINATION "${INSTALL_BINARY_DIR}"
+  REGEX "(.*\\..*)$" EXCLUDE
   )
 # ==============================================================================
 # }}} Installation

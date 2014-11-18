@@ -15,8 +15,10 @@
 !/cmake/modules/*.cmake
 
 !/configuration
-!/configuration/*.xml
-!/configuration/petsc_commandline_arg
+!/configuration/FluidScenarios
+!/configuration/FluidPetsc
+!/configuration/FluidScenarios/*.xml
+!/configuration/FluidPetsc/petsc_commandline_arg
 
 !/documentation
 !/documentation/development
