@@ -1,4 +1,9 @@
 # To Do
+**Priority:**
+Medium  
+**Definition:**
+Employ XDMF/HDF5 for output.  
+**Date:** 18.11.14
 
 **Priority:**
 Major  
