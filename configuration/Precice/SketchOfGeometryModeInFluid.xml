@@ -1,0 +1,221 @@
+<?xml version = "1.0"?>
+
+<precice-configuration
+  xmlns:data = "precice.data"
+  xmlns:geometry = "precice.geometry"
+  xmlns:spacetree = "precice.spacetree"
+  xmlns:communication = "precice.communication"
+  xmlns:mapping = "precice.mapping"
+  xmlns:export = "precice.export"
+  xmlns:action = "precice.action"
+  xmlns:server = "precice.server"
+  xmlns:coupling-scheme = "precice.coupling-scheme"
+  xmlns:post-processing = "precice.post-processing">
+
+  <log-filter
+    component = ""
+    target = "info"
+    switch = "on"/>
+
+  <log-filter
+    component = "precice"
+    target = "debug"
+    switch = "on"/>
+
+  <solver-interface
+    dimensions = "2"
+    geometry-mode = "1"
+    restart-mode = "0">
+
+    <data:scalar name = "Pressure"/>
+
+    <data:vector name = "Velocity"/>
+
+    <!-- TAG mesh
+         Surface mesh consisting of vertices and (optional) of edges and
+         triangles (only in 3D). The vertices of a mesh can carry data,
+         configured by tag <use-data>. The geometry of a mesh is either defined
+         by a tag <geometry>, or by a participant (see tag <use-mesh>).
+         (can occur 1..* times)
+         ATTR name: Unique name for the mesh.
+         ATTR flip-normals: Flips mesh normal vector directions. -->
+    <mesh
+      name = "MeshName"
+      flip-normals = "0">
+
+      <use-data name = "Pressure"/>
+      <use-data name = "Velocity"/>
+
+      <!-- TAG sub-id Every mesh has a global ID (determined by preCICE). It is
+           possible to set additional sub-ids. This sub-ids are used by certain
+           geomtries (see tag <geometry>) to distinguish parts of the mesh in
+           geometry queries.
+           (can occur 0..* times)
+           ATTR side:  -->
+      <sub-id            side = "{integer}"/>
+
+      <!-- TAG use-spacetree A defined spacetree (see tag <spacetree>) can be
+           used to accelerate spatial queries on the mesh.
+           (can occur 0..1 times)
+           ATTR name: Name of the spacetree -->
+      <use-spacetree            name = "{string}"/>
+
+    </mesh>
+
+
+    <!-- TAG geometry:builtin-cuboid Rectangle in 2d, hexahedron in 3d.
+         (can occur 0..* times)
+         ATTR of-mesh: Name of mesh to build the geometry from. -->
+    <geometry:builtin-cuboid of-mesh = "{string}">
+      <discretization-width value = "{float}"/>
+      <length value = "{vector}"/>
+      <offset value = "{vector}"/>
+    </geometry:builtin-cuboid>
+
+    <!-- TAG geometry:builtin-sphere Circle in 2d, sphere in 3d.
+         (can occur 0..* times)
+         ATTR of-mesh: Name of mesh to build the geometry from. -->
+    <geometry:builtin-sphere of-mesh = "{string}">
+      <discretization-width value = "{float}"/>
+      <radius value = "{float}"/>
+      <offset value = "{vector}"/>
+    </geometry:builtin-sphere>
+
+    <!-- TAG geometry:builtin-bubble Bubble-like geometry.
+         (can occur 0..* times)
+         ATTR of-mesh: Name of mesh to build the geometry from. -->
+    <geometry:builtin-bubble of-mesh = "{string}">
+      <discretization-width value = "{float}"/>
+      <radius value = "{float}"/>
+      <deformation value = "{float}"/>
+      <offset value = "{vector}"/>
+    </geometry:builtin-bubble>
+
+    <!-- TAG geometry:builtin-dratchet In 2d a channel with periodically
+         varying height, in 3d a cylinder with periodically varying diameter.
+         (can occur 0..* times)
+         ATTR of-mesh: Name of mesh to build the geometry from. -->
+    <geometry:builtin-dratchet of-mesh = "{string}">
+      <discretization-width value = "{float}"/>
+      <length value = "{float}"/>
+      <pores value = "{float}"/>
+      <radius value = "{float}"/>
+      <offset value = "{vector}"/>
+    </geometry:builtin-dratchet>
+
+    <!-- TAG spacetree:dynamic-octree
+         (can occur 0..* times)
+         ATTR max-meshwidth:
+         ATTR name:
+         ATTR halflength:
+         ATTR offset:  -->
+    <spacetree:dynamic-octree
+      max-meshwidth = "{float}"
+      name = "{string}"
+      halflength = "{vector}"
+      offset = "0, 0, 0"/>
+
+    <!-- TAG spacetree:static-octree
+         (can occur 0..* times)
+         ATTR max-meshwidth:
+         ATTR name:
+         ATTR halflength:
+         ATTR offset:  -->
+    <spacetree:static-octree
+      max-meshwidth = "{float}"
+      name = "{string}"
+      halflength = "{vector}"
+      offset = "0, 0, 0"/>
+
+    <!-- TAG participant Represents one solver using preCICE. In a coupled
+         simulation, two participants have to be defined, while in geometry
+         mode (see tag <solver-interface>) only one participant is necessary.
+         (can occur 1..* times)
+         ATTR name: Name of the participant. Has to match the name given on
+         construction of the precice::SolverInterface object used by the
+         participant. -->
+    <participant name = "{string}">
+
+      <!-- TAG write-data Sets data to be written by the participant to
+           preCICE. Data is defined by using the <data> tag.
+           (can occur 0..* times)
+           ATTR mesh: Mesh the data belongs to. If data should be read/written
+           to several meshes, this has to be specified separately for each
+           mesh.
+           ATTR name: Name of the data. -->
+      <write-data
+        mesh = "{string}"
+        name = "{string}"/>
+
+      <!-- TAG read-data Sets data to be read by the participant from preCICE.
+           Data is defined by using the <data> tag.
+           (can occur 0..* times)
+           ATTR mesh: Mesh the data belongs to. If data should be read/written
+           to several meshes, this has to be specified separately for each
+           mesh.
+           ATTR name: Name of the data. -->
+      <read-data
+        mesh = "{string}"
+        name = "{string}"/>
+
+
+      <!-- TAG use-mesh Makes a mesh (see tag <mesh> available to a
+           participant.
+           (can occur 0..* times)
+           ATTR from: A mesh might not be constructed by a geometry (see tags
+           <geometry:...>), but by a solver directly. If a solver created mesh
+           should be used by another solver, this attribute has to specify the
+           creating participant's name. The creator has to use the attribute
+           "provide" to signal he is providing
+           the mesh geometry.
+           ATTR name: Name of the mesh.
+           ATTR provide: A mesh might not be constructed by a geometry (see
+           tags<geometry:...>), but by a solver directly. If this attribute is
+           set to "on", the participant has to create the mesh geometry before
+           initializing preCICE.
+           ATTR offset: The mesh can have an offset only applied for the local
+           participant. -->
+      <use-mesh
+        from = "{string}(default:'')"
+        name = "{string}"
+        provide = "{boolean}(default:'0')"
+        offset = "0, 0, 0"/>
+
+      <!-- TAG server:sockets When a solver runs in parallel, it has to use
+           preCICE in form of a separatly running server. This is enabled by
+           this tag. The communication between participant and server is done
+           by sockets.
+           (can occur 0..1 times)
+           ATTR port: Port number to be used by server for socket communiation.
+           ATTR exchange-directory: Directory where connection information is
+           exchanged. By default, the directory of startup is chosen, and both
+           solvers have to be started in the same directory.
+           ATTR network: Network name to be used for socket communiation.
+           Default is "lo", i.e., the local host loopback. -->
+      <server:sockets
+        port = "{integer}(default:'51235')"
+        exchange-directory = "{string}(default:'')"
+        network = "{string}(default:'lo')"/>
+
+      <!-- TAG server:mpi When a solver runs in parallel, it has to use preCICE
+           in form of a separatly running server. This is enabled by this tag.
+           The communication between participant and server is done by mpi with
+           startup in separated communication spaces.
+           (can occur 0..1 times)
+           ATTR exchange-directory: Directory where connection information is
+           exchanged. By default, the directory of startup is chosen, and both
+           solvers have to be started in the same directory. -->
+      <server:mpi exchange-directory = "{string}(default:'')"/>
+
+      <!-- TAG server:mpi-single When a solver runs in parallel, it has to use
+           preCICE in form of a separatly running server. This is enabled by
+           this tag. The communication between participant and server is done
+           by mpi with startup in a common communication space.
+           (can occur 0..1 times) -->
+      <server:mpi-single/>
+    </participant>
+  </solver-interface>
+</precice-configuration>
+
+
+

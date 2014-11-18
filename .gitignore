@@ -17,8 +17,10 @@
 !/configuration
 !/configuration/FluidScenarios
 !/configuration/FluidPetsc
-!/configuration/FluidScenarios/*.xml
+!/configuration/Precice
 !/configuration/FluidPetsc/petsc_commandline_arg
+!/configuration/FluidScenarios/*.xml
+!/configuration/Precice/*.xml
 
 !/documentation
 !/documentation/development
