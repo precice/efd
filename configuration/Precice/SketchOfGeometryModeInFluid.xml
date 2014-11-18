@@ -16,7 +16,6 @@
     component = ""
     target = "info"
     switch = "on"/>
-
   <log-filter
     component = "precice"
     target = "debug"
@@ -52,56 +51,64 @@
            geometry queries.
            (can occur 0..* times)
            ATTR side:  -->
-      <sub-id            side = "{integer}"/>
+      <!--
+      <sub-id side = "{integer}"/> -->
 
       <!-- TAG use-spacetree A defined spacetree (see tag <spacetree>) can be
            used to accelerate spatial queries on the mesh.
            (can occur 0..1 times)
            ATTR name: Name of the spacetree -->
-      <use-spacetree            name = "{string}"/>
-
+      <!--
+      <use-spacetree name = "SpaceTreeName"/>
+        -->
     </mesh>
 
 
     <!-- TAG geometry:builtin-cuboid Rectangle in 2d, hexahedron in 3d.
          (can occur 0..* times)
          ATTR of-mesh: Name of mesh to build the geometry from. -->
-    <geometry:builtin-cuboid of-mesh = "{string}">
-      <discretization-width value = "{float}"/>
-      <length value = "{vector}"/>
-      <offset value = "{vector}"/>
+    <geometry:builtin-cuboid of-mesh = "MeshName">
+      <discretization-width value = "0.1"/>
+      <length value = "1.0, 1.0, 1.0"/>
+      <offset value = "0, 0, 0"/>
     </geometry:builtin-cuboid>
 
     <!-- TAG geometry:builtin-sphere Circle in 2d, sphere in 3d.
          (can occur 0..* times)
          ATTR of-mesh: Name of mesh to build the geometry from. -->
-    <geometry:builtin-sphere of-mesh = "{string}">
+    <!--
+    <geometry:builtin-sphere of-mesh = "MeshName">
       <discretization-width value = "{float}"/>
       <radius value = "{float}"/>
       <offset value = "{vector}"/>
     </geometry:builtin-sphere>
+      -->
 
     <!-- TAG geometry:builtin-bubble Bubble-like geometry.
          (can occur 0..* times)
          ATTR of-mesh: Name of mesh to build the geometry from. -->
-    <geometry:builtin-bubble of-mesh = "{string}">
+    <!--
+    <geometry:builtin-bubble of-mesh = "MeshName">
       <discretization-width value = "{float}"/>
       <radius value = "{float}"/>
       <deformation value = "{float}"/>
       <offset value = "{vector}"/>
     </geometry:builtin-bubble>
+      -->
 
     <!-- TAG geometry:builtin-dratchet In 2d a channel with periodically
          varying height, in 3d a cylinder with periodically varying diameter.
          (can occur 0..* times)
          ATTR of-mesh: Name of mesh to build the geometry from. -->
-    <geometry:builtin-dratchet of-mesh = "{string}">
+    <!--
+    <geometry:builtin-dratchet of-mesh = "MeshName">
       <discretization-width value = "{float}"/>
       <length value = "{float}"/>
       <pores value = "{float}"/>
       <radius value = "{float}"/>
       <offset value = "{vector}"/>
     </geometry:builtin-dratchet>
+      -->
 
     <!-- TAG spacetree:dynamic-octree
          (can occur 0..* times)
@@ -109,11 +116,13 @@
          ATTR name:
          ATTR halflength:
          ATTR offset:  -->
+    <!--
     <spacetree:dynamic-octree
       max-meshwidth = "{float}"
-      name = "{string}"
+      name = "SpaceTreeName"
       halflength = "{vector}"
       offset = "0, 0, 0"/>
+      -->
 
     <!-- TAG spacetree:static-octree
          (can occur 0..* times)
@@ -121,11 +130,13 @@
          ATTR name:
          ATTR halflength:
          ATTR offset:  -->
+    <!--
     <spacetree:static-octree
       max-meshwidth = "{float}"
       name = "{string}"
       halflength = "{vector}"
       offset = "0, 0, 0"/>
+      -->
 
     <!-- TAG participant Represents one solver using preCICE. In a coupled
          simulation, two participants have to be defined, while in geometry
@@ -134,7 +145,7 @@
          ATTR name: Name of the participant. Has to match the name given on
          construction of the precice::SolverInterface object used by the
          participant. -->
-    <participant name = "{string}">
+    <participant name = "Fluid">
 
       <!-- TAG write-data Sets data to be written by the participant to
            preCICE. Data is defined by using the <data> tag.
@@ -143,9 +154,14 @@
            to several meshes, this has to be specified separately for each
            mesh.
            ATTR name: Name of the data. -->
+      <!--
       <write-data
-        mesh = "{string}"
-        name = "{string}"/>
+        mesh = "MeshName"
+        name = "Pressure"/>
+      <write-data
+        mesh = "MeshName"
+        name = "Velocity"/>
+        -->
 
       <!-- TAG read-data Sets data to be read by the participant from preCICE.
            Data is defined by using the <data> tag.
@@ -154,20 +170,23 @@
            to several meshes, this has to be specified separately for each
            mesh.
            ATTR name: Name of the data. -->
+      <!--
       <read-data
-        mesh = "{string}"
-        name = "{string}"/>
+        mesh = "MeshName"
+        name = "Pressure"/>
+      <read-data
+        mesh = "MeshName"
+        name = "Velocity"/>
+        -->
 
-
-      <!-- TAG use-mesh Makes a mesh (see tag <mesh> available to a
+      <!-- TAG use-mesh Makes a mesh (see tag <mesh>) available to a
            participant.
            (can occur 0..* times)
            ATTR from: A mesh might not be constructed by a geometry (see tags
            <geometry:...>), but by a solver directly. If a solver created mesh
            should be used by another solver, this attribute has to specify the
            creating participant's name. The creator has to use the attribute
-           "provide" to signal he is providing
-           the mesh geometry.
+           "provide" to signal he is providing the mesh geometry.
            ATTR name: Name of the mesh.
            ATTR provide: A mesh might not be constructed by a geometry (see
            tags<geometry:...>), but by a solver directly. If this attribute is
@@ -176,9 +195,9 @@
            ATTR offset: The mesh can have an offset only applied for the local
            participant. -->
       <use-mesh
-        from = "{string}(default:'')"
-        name = "{string}"
-        provide = "{boolean}(default:'0')"
+        from = ""
+        name = "MeshName"
+        provide = "0"
         offset = "0, 0, 0"/>
 
       <!-- TAG server:sockets When a solver runs in parallel, it has to use
@@ -192,10 +211,12 @@
            solvers have to be started in the same directory.
            ATTR network: Network name to be used for socket communiation.
            Default is "lo", i.e., the local host loopback. -->
+      <!--
       <server:sockets
         port = "{integer}(default:'51235')"
         exchange-directory = "{string}(default:'')"
         network = "{string}(default:'lo')"/>
+        -->
 
       <!-- TAG server:mpi When a solver runs in parallel, it has to use preCICE
            in form of a separatly running server. This is enabled by this tag.
@@ -205,14 +226,18 @@
            ATTR exchange-directory: Directory where connection information is
            exchanged. By default, the directory of startup is chosen, and both
            solvers have to be started in the same directory. -->
+      <!--
       <server:mpi exchange-directory = "{string}(default:'')"/>
+        -->
 
       <!-- TAG server:mpi-single When a solver runs in parallel, it has to use
            preCICE in form of a separatly running server. This is enabled by
            this tag. The communication between participant and server is done
            by mpi with startup in a common communication space.
            (can occur 0..1 times) -->
+      <!--
       <server:mpi-single/>
+        -->
     </participant>
   </solver-interface>
 </precice-configuration>
