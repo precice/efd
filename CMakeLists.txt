@@ -44,6 +44,9 @@ find_package(Petsc COMPONENTS CXX REQUIRED)
 set(MPI_CXX_COMPILER ${PETSC_COMPILER})
 find_package(MPI REQUIRED)
 find_package(Precice REQUIRED)
+find_package(Uni REQUIRED)
+find_package(Boost COMPONENTS locale REQUIRED)
+find_package(Eigen REQUIRED)
 # ==============================================================================
 # }}} Packages
 
@@ -125,11 +128,14 @@ target_include_directories(Simulation PRIVATE
 target_include_directories(Simulation SYSTEM PRIVATE
   ${Precice_INCLUDE_DIRS}
   ${PETSC_INCLUDES}
-
+  ${Eigen_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
   )
 target_link_libraries(Simulation PRIVATE
+  Uni
   ${Precice_LIBRARIES}
   ${PETSC_LIBRARIES}
+  ${Boost_LIBRARIES}
   )
 # ==============================================================================
 # }}} Targets
