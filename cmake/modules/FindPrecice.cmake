@@ -1,79 +1,79 @@
-
 # Precice root directory {{{
 # ============================================================================
-if (NOT Precice_DIR)
-  set(Precice_DIR $ENV{Precice_DIR})
+if (NOT PRECICE_DIR)
+  set(PRECICE_DIR $ENV{PRECICE_DIR})
 endif()
 # ============================================================================
 # }}} Precice root directory
 
 # Include {{{
 # ============================================================================
-if (NOT Precice_INCLUDE_DIRS)
-  set(Precice_INCLUDE_DIRS $ENV{Precice_INCLUDE_DIRS})
+if (NOT PRECICE_INCLUDE_DIRS)
+  set(PRECICE_INCLUDE_DIRS $ENV{PRECICE_INCLUDE_DIRS})
 endif()
 
-if (Precice_INCLUDE_DIRS)
-  find_path(PRECICE_INCLUDE_DIR
+if (PRECICE_INCLUDE_DIRS)
+  find_path(Precice_INCLUDE_DIR
     NAMES precice/MeshHandle.hpp
-    PATHS ${Precice_INCLUDE_DIRS}
+    PATHS ${PRECICE_INCLUDE_DIRS}
     NO_DEFAULT_PATH
     )
 endif()
 
-if (Precice_DIR)
-  find_path(PRECICE_INCLUDE_DIR
-    NAMES src/precice/MeshHandle.hpp
-    PATHS ${Precice_DIR}
+if (PRECICE_DIR)
+  find_path(Precice_INCLUDE_DIR
+    NAMES precice/MeshHandle.hpp
+    PATHS ${PRECICE_DIR}
+    PATH_SUFFIXES src
     NO_DEFAULT_PATH
     )
 endif()
 
-if (NOT PRECICE_INCLUDE_DIR)
-  find_path(PRECICE_INCLUDE_DIR
+if (NOT Precice_INCLUDE_DIR)
+  find_path(Precice_INCLUDE_DIR
     NAMES precice/MeshHandle.hpp
     PATH_SUFFIXES src
     )
 endif()
 
-if (PRECICE_INCLUDE_DIR)
-  set(PRECICE_INCLUDE_DIRS ${PRECICE_INCLUDE_DIR})
+if (Precice_INCLUDE_DIR)
+  set(Precice_INCLUDE_DIRS ${Precice_INCLUDE_DIR})
 endif()
 # ============================================================================
 # }}} Include
 
 # Library {{{
 # ============================================================================
-if (NOT Precice_LIBRARY_DIRS)
-  set(Precice_LIBRARY_DIRS $ENV{Precice_LIBRARY_DIRS})
+if (NOT PRECICE_LIBRARY_DIRS)
+  set(PRECICE_LIBRARY_DIRS $ENV{PRECICE_LIBRARY_DIRS})
 endif()
 
-if (Precice_LIBRARY_DIRS)
-  find_library(PRECICE_LIBRARY
+if (PRECICE_LIBRARY_DIRS)
+  find_library(Precice_LIBRARY
     NAMES precice
-    PATHS ${Precice_LIBRARY_DIRS}
+    PATHS ${PRECICE_LIBRARY_DIRS}
+    NO_DEFAULT_PATH
+    )
+endif()
+
+if (PRECICE_DIR)
+  find_library(Precice_LIBRARY
+    NAMES precice
+    PATHS ${PRECICE_DIR}
     PATH_SUFFIXES build/release
     NO_DEFAULT_PATH
     )
 endif()
 
-if (Precice_DIR)
-  find_library(PRECICE_LIBRARY
-    NAMES precice
-    PATHS ${Precice_DIR}
-    NO_DEFAULT_PATH
-    )
-endif()
-
-if (NOT PRECICE_LIBRARY)
-  find_library(PRECICE_LIBRARY
+if (NOT Precice_LIBRARY)
+  find_library(Precice_LIBRARY
     NAMES precice
     PATH_SUFFIXES build/release
     )
 endif()
 
-if (PRECICE_LIBRARY)
-  set(PRECICE_LIBRARIES ${PRECICE_LIBRARY})
+if (Precice_LIBRARY)
+  set(Precice_LIBRARIES ${Precice_LIBRARY})
 endif()
 # ============================================================================
 # }}} Library
@@ -85,13 +85,13 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   "PreCICE"
   REQUIRED_VARS
-  PRECICE_INCLUDE_DIRS
-  PRECICE_LIBRARIES
+  Precice_INCLUDE_DIRS
+  Precice_LIBRARIES
   )
 
 mark_as_advanced(
-  PRECICE_INCLUDE_DIR
-  PRECICE_LIBRARY
+  Precice_INCLUDE_DIR
+  Precice_LIBRARY
   )
 # ============================================================================
 # }}} Finalize

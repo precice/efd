@@ -78,24 +78,24 @@ The lookup of the following dependencies could be configured:
 
 *   **PreCICE**
 
-    + *(optional)* `Precice_INCLUDE_DIRS` --- directories, where PreCICE's includes
+    + *(optional)* `PRECICE_INCLUDE_DIRS` --- directories, where PreCICE's includes
       resides.
-    + *(optional)* `Precice_LIBRARY_DIRS` --- directories, where PreCICE's libraries
+    + *(optional)* `PRECICE_LIBRARY_DIRS` --- directories, where PreCICE's libraries
       resides.
-    + *(optional)* `Precice_DIR` --- directory, where PreCICE resides.
+    + *(optional)* `PRECICE_DIR` --- directory, where PreCICE resides.
 
     Using variables above the order of search is described below, it moves to
     the next step until the check of some conditions succeed.
 
     Lookup for includes in values of the variables in the order:
 
-    1. `Precice_INCLUDE_DIRS`
-    2. `Precice_DIR`
+    1. `PRECICE_INCLUDE_DIRS`
+    2. `PRECICE_DIR`
 
     Lookup for libraries in values of the variables in the order:
 
-    1. `Precice_LIBRARY_DIRS`
-    2. `Precice_DIR`
+    1. `PRECICE_LIBRARY_DIRS`
+    2. `PRECICE_DIR`
 
 # Optional Instructions
 

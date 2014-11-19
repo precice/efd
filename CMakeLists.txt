@@ -123,12 +123,12 @@ target_include_directories(Simulation PRIVATE
   "${PROJECT_DIR}/3rdParty"
   )
 target_include_directories(Simulation SYSTEM PRIVATE
-  ${PRECICE_INCLUDE_DIRS}
+  ${Precice_INCLUDE_DIRS}
   ${PETSC_INCLUDES}
 
   )
 target_link_libraries(Simulation PRIVATE
-  ${PRECICE_LIBRARIES}
+  ${Precice_LIBRARIES}
   ${PETSC_LIBRARIES}
   )
 # ==============================================================================
