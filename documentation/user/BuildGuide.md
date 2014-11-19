@@ -107,8 +107,8 @@ The lookup of the following dependencies could be configured:
 *   **Boost**
 
     + `BOOST_ROOT` (or `BOOSTROOT`) --- preferred installation prefix.
-    + `BOOST_INCLUDEDIR`--- preferred include directory e.g. '<prefix>/include'.
-    + `BOOST_LIBRARYDIR`--- preferred library directory e.g. '<prefix>/lib'.
+    + `BOOST_INCLUDEDIR` --- preferred include directory e.g. '<prefix>/include'.
+    + `BOOST_LIBRARYDIR` --- preferred library directory e.g. '<prefix>/lib'.
     + `Boost_NO_SYSTEM_PATHS` --- set to 'ON' to disable searching in locations
       not specified by these hint variables. Default is 'OFF'.
     + `Boost_ADDITIONAL_VERSIONS` --- list of Boost versions not known to this
