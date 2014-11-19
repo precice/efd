@@ -11,6 +11,9 @@
 * For compiling:
     1. PreCiCe;
     2. PETSc: version 3.3, with enabled MPI support.
+    3. [Uni][UniRepository]: branch 'big-update'
+    4. Eigen: version 3.2 >=
+    5. Boost: version 1.50 >=, with filesystem, locale, system components
 
 ## Building instructions
 
@@ -96,6 +99,20 @@ The lookup of the following dependencies could be configured:
 
     1. `PRECICE_LIBRARY_DIRS`
     2. `PRECICE_DIR`
+
+*   **Eigen**
+
+    + `EIGEN_INCLUDE_DIRS` --- directories, where Eigen's includes resides.
+
+*   **Boost**
+
+    + `BOOST_ROOT` (or `BOOSTROOT`) --- preferred installation prefix.
+    + `BOOST_INCLUDEDIR`--- preferred include directory e.g. '<prefix>/include'.
+    + `BOOST_LIBRARYDIR`--- preferred library directory e.g. '<prefix>/lib'.
+    + `Boost_NO_SYSTEM_PATHS` --- set to 'ON' to disable searching in locations
+      not specified by these hint variables. Default is 'OFF'.
+    + `Boost_ADDITIONAL_VERSIONS` --- list of Boost versions not known to this
+      module (Boost install locations may contain the version).
 
 # Optional Instructions
 
@@ -189,3 +206,4 @@ to be self-explanatory, the usage examples are presented below.
         ./install -MyFlagToBuildSystem # Any flags will be passed
                   ...                  # to build system command
 
+[UniRepository]: https://bitbucket.org/WscriChy/uni/
