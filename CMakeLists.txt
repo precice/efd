@@ -45,7 +45,10 @@ set(MPI_CXX_COMPILER ${PETSC_COMPILER})
 find_package(MPI REQUIRED)
 find_package(Precice REQUIRED)
 find_package(Uni REQUIRED)
-find_package(Boost COMPONENTS locale REQUIRED)
+find_package(Boost COMPONENTS filesystem locale system REQUIRED)
+set(Boost_USE_STATIC_LIBS    ON)
+set(Boost_USE_MULTITHREADED  ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Eigen REQUIRED)
 # ==============================================================================
 # }}} Packages
