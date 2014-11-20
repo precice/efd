@@ -2,15 +2,15 @@
 **Priority:**
 Medium  
 **Definition:**
-Employ XDMF/HDF5 for output.  
-**Date:** 18.11.14
+Employ Boost.Program_options.
+Implement output directory, PreCICE and PETSc configurations paths options.  
+**Date:** 20.11.14
 
 **Priority:**
-High  
+Medium  
 **Definition:**
-Implement PETSc argument file path to be independent of the application
-execution location.  
-**Date:** 17.11.14
+Employ XDMF/HDF5 for output.  
+**Date:** 18.11.14
 
 # In Progress
 **Priority:**
@@ -22,6 +22,12 @@ Implement PreCICE geometry in the fluid solver.
 Sketch PreCICE geometry mode configuration file
 
 # To Verify
+**Priority:**
+High  
+**Definition:**
+Implement PETSc argument file path to be independent of the application
+execution location.  
+**Date:** 17.11.14 / 20.11.14 /20.11.14
 
 # Done
 

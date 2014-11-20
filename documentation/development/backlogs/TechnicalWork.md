@@ -8,7 +8,9 @@ High
 Format, restructure the original code.  
 **Date:** 17.11.14 / 18.11.14  
 **Notes:**  
-Code formatting while visiting the code.
+Code formatting while visiting the code.  
+Finish code formating.  
+Start step by step redesign, restructure.
 
 # To Verify
 
