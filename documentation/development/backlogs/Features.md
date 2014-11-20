@@ -1,6 +1,6 @@
 # To Do
 **Priority:**
-Medium  
+High  
 **Definition:**
 Employ Boost.Program_options.
 Implement output directory, PreCICE and PETSc configurations paths options.  
@@ -27,7 +27,7 @@ High
 **Definition:**
 Implement PETSc argument file path to be independent of the application
 execution location.  
-**Date:** 17.11.14 / 20.11.14 /20.11.14
+**Date:** 17.11.14 / 20.11.14 / 20.11.14
 
 # Done
 
