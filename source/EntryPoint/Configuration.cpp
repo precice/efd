@@ -1,12 +1,14 @@
-#include "Configuration.h"
-#include "Parameters.h"
+#include "Configuration.hpp"
+
 #include "TinyXml2/tinyxml2.h"
-#include <string>
+
+using FsiSimulation::EntryPoint::Configuration;
 
 void
-readFloatMandatory(FLOAT& storage, tinyxml2::XMLElement* node, const
-                   char* tag) {
-  double value;     // Use to be able to select precision
+readFloatMandatory(FLOAT&                storage,
+                   tinyxml2::XMLElement* node,
+                   char const*           tag) {
+  double value; // Use to be able to select precision
 
   if (node->QueryDoubleAttribute(tag, &value) != tinyxml2::XML_NO_ERROR) {
     handleError(1, "Error while reading mandatory argument");
@@ -16,9 +18,11 @@ readFloatMandatory(FLOAT& storage, tinyxml2::XMLElement* node, const
 }
 
 void
-readFloatOptional(FLOAT& storage, tinyxml2::XMLElement* node, const char* tag,
-                  FLOAT defaultValue = 0) {
-  double value;     // Use to be able to select precision
+readFloatOptional(FLOAT&                storage,
+                  tinyxml2::XMLElement* node,
+                  char const*           tag,
+                  FLOAT                 defaultValue = 0) {
+  double value; // Use to be able to select precision
   int    result = node->QueryDoubleAttribute(tag, &value);
 
   if (result == tinyxml2::XML_NO_ATTRIBUTE) {
@@ -31,7 +35,9 @@ readFloatOptional(FLOAT& storage, tinyxml2::XMLElement* node, const char* tag,
 }
 
 void
-readIntMandatory(int& storage, tinyxml2::XMLElement* node, const char* tag) {
+readIntMandatory(int&                  storage,
+                 tinyxml2::XMLElement* node,
+                 char const*           tag) {
   int value;
 
   if (node->QueryIntAttribute(tag, &value) != tinyxml2::XML_NO_ERROR) {
@@ -42,8 +48,10 @@ readIntMandatory(int& storage, tinyxml2::XMLElement* node, const char* tag) {
 }
 
 void
-readIntOptional(int& storage, tinyxml2::XMLElement* node, const char* tag,
-                int defaultValue = 0) {
+readIntOptional(int&                  storage,
+                tinyxml2::XMLElement* node,
+                char const*           tag,
+                int                   defaultValue = 0) {
   int result = node->QueryIntAttribute(tag, &storage);
 
   if (result == tinyxml2::XML_NO_ATTRIBUTE) {
@@ -54,7 +62,9 @@ readIntOptional(int& storage, tinyxml2::XMLElement* node, const char* tag,
 }
 
 void
-readBoolMandatory(bool& storage, tinyxml2::XMLElement* node, const char* tag) {
+readBoolMandatory(bool&                 storage,
+                  tinyxml2::XMLElement* node,
+                  char const*           tag) {
   bool value;
 
   if (node->QueryBoolAttribute(tag, &value) != tinyxml2::XML_NO_ERROR) {
@@ -65,8 +75,10 @@ readBoolMandatory(bool& storage, tinyxml2::XMLElement* node, const char* tag) {
 }
 
 void
-readBoolOptional(bool& storage, tinyxml2::XMLElement* node, const char* tag,
-                 bool defaultValue = false) {
+readBoolOptional(bool&                 storage,
+                 tinyxml2::XMLElement* node,
+                 char const*           tag,
+                 bool                  defaultValue = false) {
   int result = node->QueryBoolAttribute(tag, &storage);
 
   if (result == tinyxml2::XML_NO_ATTRIBUTE) {
@@ -77,11 +89,12 @@ readBoolOptional(bool& storage, tinyxml2::XMLElement* node, const char* tag,
 }
 
 void
-readStringMandatory(std::string& storage, tinyxml2::XMLElement* node) {
-  const char* myText = node->GetText();
+readStringMandatory(std::string&          storage,
+                    tinyxml2::XMLElement* node) {
+  char const* myText = node->GetText();
 
   if (myText == NULL) {
-    const std::string nodename = node->Name();
+    std::string const nodename = node->Name();
     std::cerr << "ERROR in file " << __FILE__ << ", line " << __LINE__ << ": ";
     std::cerr << "No string specified for this node: " << nodename << std::endl;
     exit(2);
@@ -95,7 +108,9 @@ readStringMandatory(std::string& storage, tinyxml2::XMLElement* node) {
 }
 
 void
-readWall(tinyxml2::XMLElement* wall, FLOAT* vector, FLOAT& scalar) {
+readWall(tinyxml2::XMLElement* wall,
+         FLOAT*                vector,
+         FLOAT&                scalar) {
   tinyxml2::XMLElement* quantity = wall->FirstChildElement("vector");
 
   if (quantity != NULL) {
@@ -111,8 +126,9 @@ readWall(tinyxml2::XMLElement* wall, FLOAT* vector, FLOAT& scalar) {
 }
 
 void
-broadcastString(std::string& target, const MPI_Comm& communicator, int root =
-                  0) {
+broadcastString(std::string&    target,
+                MPI_Comm const& communicator,
+                int             root = 0) {
   int stringSize, rank;
   MPI_Comm_rank(communicator, &rank);
 
@@ -120,7 +136,7 @@ broadcastString(std::string& target, const MPI_Comm& communicator, int root =
     stringSize = target.size();
   }
   MPI_Bcast(&stringSize, 1, MPI_INT, 0, communicator);
-  char* name = new char[stringSize + 1];      // One more for the null character
+  char* name = new char[stringSize + 1]; // One more for the null character
 
   if (rank == root) {
     target.copy(name, stringSize, 0);
@@ -140,19 +156,20 @@ Configuration() {
 }
 
 Configuration::
-Configuration(const std::string& filename) {
+Configuration(std::string const& filename) {
   _filename = filename;
 }
 
 void
 Configuration::
-setFileName(const std::string& filename) {
+setFileName(std::string const& filename) {
   _filename = filename;
 }
 
 void
 Configuration::
-loadParameters(Parameters& parameters, const MPI_Comm& communicator) {
+loadParameters(Parameters&     parameters,
+               MPI_Comm const& communicator) {
   tinyxml2::XMLDocument confFile;
   tinyxml2::XMLElement* node;
   tinyxml2::XMLElement* subNode;
@@ -542,7 +559,7 @@ loadParameters(Parameters& parameters, const MPI_Comm& communicator) {
                      communicator);
 
   MPI_Bcast(parameters.parallel.numProcessors,         3, MPI_INT,      0,
-                     communicator);
+            communicator);
 
   MPI_Bcast(         &(parameters.walls.scalarLeft),   1, MY_MPI_FLOAT, 0,
                      communicator);
@@ -558,17 +575,17 @@ loadParameters(Parameters& parameters, const MPI_Comm& communicator) {
                      communicator);
 
   MPI_Bcast(parameters.walls.vectorLeft,               3, MY_MPI_FLOAT, 0,
-                     communicator);
+            communicator);
   MPI_Bcast(parameters.walls.vectorRight,              3, MY_MPI_FLOAT, 0,
-                     communicator);
+            communicator);
   MPI_Bcast(parameters.walls.vectorBottom,             3, MY_MPI_FLOAT, 0,
-                     communicator);
+            communicator);
   MPI_Bcast(parameters.walls.vectorTop,                3, MY_MPI_FLOAT, 0,
-                     communicator);
+            communicator);
   MPI_Bcast(parameters.walls.vectorFront,              3, MY_MPI_FLOAT, 0,
-                     communicator);
+            communicator);
   MPI_Bcast(parameters.walls.vectorBack,               3, MY_MPI_FLOAT, 0,
-                     communicator);
+            communicator);
 
   // broadcast turbulence parameters
   broadcastString(parameters.blm.modelType, communicator);

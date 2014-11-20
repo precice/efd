@@ -1,9 +1,11 @@
-#ifndef _MESHSIZEFACTORY_H_
-#define _MESHSIZEFACTORY_H_
+#ifndef FsiSimulation_EntryPoint_MeshsizeFactory_hpp
+#define FsiSimulation_EntryPoint_MeshsizeFactory_hpp
 
 #include "Definitions.h"
 #include "Parameters.h"
 
+namespace FsiSimulation {
+namespace EntryPoint {
 /** initialises the meshsize in the Parameters. Must be called after configuring
  * (Configuration and PetscParallelConfiguration).
  *  We therefore make use of the singleton/factory pattern.
@@ -51,7 +53,10 @@ public:
 
 private:
   MeshsizeFactory() {}
+
   ~MeshsizeFactory() {}
 };
+}
+}
 
 #endif // _MESHSIZEFACTORY_H_

@@ -180,9 +180,9 @@ install(DIRECTORY "${PROJECT_DIR}/configuration/FluidScenarios"
   FILES_MATCHING REGEX "(.*\\.xml)$"
   )
 
-install(DIRECTORY "${PROJECT_DIR}/configuration/FluidPetsc/"
+install(DIRECTORY "${PROJECT_DIR}/configuration/FluidPetsc"
   DESTINATION "${INSTALL_BINARY_DIR}"
-  REGEX "(.*\\..*)$" EXCLUDE
+  FILES_MATCHING REGEX "(.*\\.conf)$"
   )
 # ==============================================================================
 # }}} Installation

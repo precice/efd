@@ -18,7 +18,7 @@
 !/configuration/FluidScenarios
 !/configuration/FluidPetsc
 !/configuration/Precice
-!/configuration/FluidPetsc/petsc_commandline_arg
+!/configuration/FluidPetsc/*.conf
 !/configuration/FluidScenarios/*.xml
 !/configuration/Precice/*.xml
 
@@ -33,6 +33,7 @@
 !/documentation/user/BuildGuide.md
 
 !/source
+!/source/EntryPoint/
 !/source/parallelManagers/
 !/source/solvers/
 !/source/stencils/
