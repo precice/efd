@@ -47,18 +47,20 @@ public:
 
   void
   setLimits(int* limitsX, int* limitsY, int* limitsZ);
+
   void
   getLimits(int** limitsX, int** limitsY, int** limitsZ);
 
   void
   setRank(int rank);
+
   int
   getRank() const;
 
   unsigned char setAsBoundary; // if set as boundary in the linear
                                // system. Use bits
-  int displacement[6];                  // Displacements for the boundary
-                                        // treatment
+  int displacement[6]; // Displacements for the boundary
+                       // treatment
 };
 
 class PetscSolver : public LinearSolver {

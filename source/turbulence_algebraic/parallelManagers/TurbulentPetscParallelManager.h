@@ -1,27 +1,32 @@
 #ifndef _TURBULENTPETSCPARALLELMANAGER_H_
 #define _TURBULENTPETSCPARALLELMANAGER_H_
 
-#include "parallelManagers/PetscParallelManager.h"
 #include "parallelManagers/FillReadViscosityBufferStencil.h"
+#include "parallelManagers/PetscParallelManager.h"
 
-
-/** extends the PetscParallelManager by communication of the viscosity values across parallel boundaries.
- *  The whole exchange mechanism works completely the same as for the pressure, but reading/writing viscosity values from
+/** extends the PetscParallelManager by communication of the viscosity values
+ * across parallel boundaries. The whole exchange mechanism works completely the
+ * same as for the pressure, but reading/writing viscosity values from
  *  the new data structure TurbulentFlowField instead.
  *  @author Philipp Neumann
  */
-class TurbulentPetscParallelManager: public PetscParallelManager {
-  public:
-    TurbulentPetscParallelManager (TurbulentFlowField & flowField, const Parameters & parameters);
-    virtual ~TurbulentPetscParallelManager();
+class TurbulentPetscParallelManager : public PetscParallelManager {
+public:
+  TurbulentPetscParallelManager(
+    TurbulentFlowField& flowField,
+    Parameters const&   parameters);
 
-    void communicateViscosity();
+  virtual
+  ~TurbulentPetscParallelManager();
 
-  private:
-    ViscosityBufferFillStencil _fillViscosityStencil;
-    ViscosityBufferReadStencil _readViscosityStencil;
-    ParallelBoundaryIterator<TurbulentFlowField> _fillViscosityIterator;
-    ParallelBoundaryIterator<TurbulentFlowField> _readViscosityIterator;
+  void
+  communicateViscosity();
+
+private:
+  ViscosityBufferFillStencil                   _fillViscosityStencil;
+  ViscosityBufferReadStencil                   _readViscosityStencil;
+  ParallelBoundaryIterator<TurbulentFlowField> _fillViscosityIterator;
+  ParallelBoundaryIterator<TurbulentFlowField> _readViscosityIterator;
 };
 
 #endif // _TURBULENTPETSCPARALLELMANAGER_H_

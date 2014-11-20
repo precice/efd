@@ -8,17 +8,16 @@
  *  @author Philipp Neumann
  *  TODO DMITRII: Implement your things here
  */
-class ComputeLocalViscosityStencil: public FieldStencil<TurbulentFlowField> {
+class ComputeLocalViscosityStencil : public FieldStencil<TurbulentFlowField> {
 protected:
-
-	FLOAT _localVelocity[27 * 3];
-        FLOAT _localMeshsize[27 * 3];
+  FLOAT _localVelocity[27 * 3];
+  FLOAT _localMeshsize[27 * 3];
 
 public:
-	ComputeLocalViscosityStencil(const Parameters &parameters);
-	virtual ~ComputeLocalViscosityStencil();
+  ComputeLocalViscosityStencil(const Parameters& parameters);
 
-
+  virtual
+  ~ComputeLocalViscosityStencil();
 };
 
 #endif // _COMPUTELOCALVISCOSITYSTENCIL_H_

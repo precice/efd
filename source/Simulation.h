@@ -142,7 +142,7 @@ public:
   }
 
   /** plots the flow field. TODO CARLOS: INCLUDE THIS IN SOLVER ALGORITHM (PLOT
-   *PER X TIME STEPS OR TIME INTERVAL, RESPECTIVELY) */
+   * PER X TIME STEPS OR TIME INTERVAL, RESPECTIVELY) */
   virtual void
   plotVTK(int timeStep) {
     VTKStencil               vtkStencil(_parameters);
@@ -170,8 +170,8 @@ protected:
     _maxUBoundaryIterator.iterate();
 
     if (_parameters.geometry.dim == 3) {
-      factor                 += 1.0 / (_parameters.meshsize->getDzMin() *
-                                       _parameters.meshsize->getDzMin());
+      factor += 1.0 / (_parameters.meshsize->getDzMin() *
+                       _parameters.meshsize->getDzMin());
       _parameters.timestep.dt = 1.0 / _maxUStencil.getMaxValues()[2];
     } else {
       _parameters.timestep.dt = 1.0 / _maxUStencil.getMaxValues()[0];
