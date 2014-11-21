@@ -12,6 +12,7 @@ class ApplicationPrivateImplementation;
 class Application {
 private:
   typedef ApplicationPrivateImplementation Implementation;
+
 public:
   Application(int& argc, char** argv);
 
@@ -22,6 +23,9 @@ public:
 
   Application&
   operator=(Application const& other) = delete;
+
+  int
+  parseArguments();
 
   void
   initialize();
@@ -34,31 +38,10 @@ public:
 
 private:
   void
-  initializeOnMaster();
+  parseSimulationConfiguration();
 
   void
-  initializeOnSlave();
-
-  void
-  initializeOnMasterAndSlave();
-
-  void
-  runOnMaster();
-
-  void
-  runOnSlave();
-
-  void
-  runOnMasterAndSlave();
-
-  void
-  releaseOnMaster();
-
-  void
-  releaseOnSlave();
-
-  void
-  releaseOnMasterAndSlave();
+  createOutputDirectory();
 
   Uni_Firewall_IMPLEMENTATION_LINK(ApplicationPrivateImplementation)
 };

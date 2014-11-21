@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
     <flow Re="500" />
-    <simulation finalTime="10" >
+    <simulation finalTime="0.2" >
         <type>dns</type>
         <scenario>cavity</scenario>
     </simulation>
     <timestep dt="1" tau="0.5" />
     <solver gamma="0.5" />
-    <geometry dim="3"
-      lengthX="1.0" lengthY="1.0" lengthZ="1.0" sizeX="20" sizeY="10" sizeZ="20"
-    >
+    <geometry
+      dim="3"
+      lengthX="1.0"
+      lengthY="1.0"
+      lengthZ="1.0"
+      sizeX="20"
+      sizeY="10"
+      sizeZ="20"
+      >
       <mesh>uniform</mesh>
     </geometry>
     <environment gx="0" gy="0" gz="0" />

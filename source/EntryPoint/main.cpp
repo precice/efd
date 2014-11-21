@@ -17,6 +17,15 @@ main(int argc, char* argv[]) {
 
   Application application(argc, argv);
 
+  auto result = application.parseArguments();
+  if (result == 1) {
+    return 0;
+  }
+
+  if (result != 0) {
+    return result;
+  }
+
   application.initialize();
 
   application.run();

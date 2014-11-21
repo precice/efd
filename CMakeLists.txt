@@ -45,7 +45,12 @@ set(MPI_CXX_COMPILER ${PETSC_COMPILER})
 find_package(MPI REQUIRED)
 find_package(Precice REQUIRED)
 find_package(Uni REQUIRED)
-find_package(Boost 1.53 COMPONENTS filesystem locale system REQUIRED)
+find_package(Boost 1.53
+  COMPONENTS
+  program_options
+  filesystem
+  locale
+  system REQUIRED)
 set(Boost_USE_STATIC_LIBS    ON)
 set(Boost_USE_MULTITHREADED  ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -175,7 +180,7 @@ install(
   RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
   )
 
-install(DIRECTORY "${PROJECT_DIR}/configuration/FluidScenarios"
+install(DIRECTORY "${PROJECT_DIR}/configuration/FluidSimulation"
   DESTINATION "${INSTALL_BINARY_DIR}"
   FILES_MATCHING REGEX "(.*\\.xml)$"
   )

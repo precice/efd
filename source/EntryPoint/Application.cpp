@@ -9,6 +9,8 @@
 #include "TurbulentSimulation.h"
 #include "parallelManagers/PetscParallelConfiguration.h"
 
+#include "Private/convertUtfPathToAnsi.hpp"
+
 #include <Uni/ExecutionControl/exception>
 #include <Uni/Firewall/Interface>
 #include <Uni/Logging/logging>
@@ -17,6 +19,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/locale.hpp>
+#include <boost/program_options.hpp>
 
 #include <mpi.h>
 #include <petscsys.h>
@@ -84,6 +87,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
                           argc(argc_),
                           argv(argv_),
                           masterRank(0) {
+    namespace fs          = boost::filesystem;
     using LocaleGenerator = boost::locale::generator;
     globalLocale          = LocaleGenerator().generate("");
     // Create and install global locale
@@ -95,17 +99,20 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     ansiLocaleGenerator.use_ansi_encoding(true);
     ansiLocale = ansiLocaleGenerator.generate("");
 
-    applicationPath = _getExecPath();
+    applicationPath = boost::filesystem::canonical(_getExecPath());
 
+    outputDirectoryPath    = fs::current_path();
     petscConfigurationPath = applicationPath.parent_path();
     petscConfigurationPath.append("FluidPetsc/Basic.conf");
+    preciceConfigurationPath = applicationPath.parent_path();
+    preciceConfigurationPath.append("Precice/SketchOfGeometryModeInFluid.xml");
+    simulationConfigurationPath = applicationPath.parent_path();
+    simulationConfigurationPath.append("FluidSimulation/Cavity.xml");
 
     logInfo("Utf-8 locale: {1}",
             std::use_facet<boost::locale::info>(globalLocale).name());
     logInfo("Ansi locale: {1}",
             std::use_facet<boost::locale::info>(ansiLocale).name());
-    logInfo("Application path:\n{1}",         applicationPath.string());
-    logInfo("PETSc configuration path:\n{1}", petscConfigurationPath.string());
   }
 
   Uni_Firewall_INTERFACE_LINK(Application)
@@ -115,7 +122,11 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   std::locale globalLocale;
   std::locale ansiLocale;
   Path        applicationPath;
-  Path        petscConfigurationPath;
+
+  Path outputDirectoryPath;
+  Path preciceConfigurationPath;
+  Path simulationConfigurationPath;
+  Path petscConfigurationPath;
 
   int masterRank;
   int rank;
@@ -135,71 +146,100 @@ Application(int&   argc,
             char** argv)
   : _im(new Implementation(this,
                            argc,
-                           argv)) {
-  auto toEncoding = std::use_facet<boost::locale::info>(
-    _im->ansiLocale).encoding();
-  auto fromEncoding = std::use_facet<boost::locale::info>(
-    _im->globalLocale).encoding();
-  auto petscConfigurationPath =
-    boost::locale::conv::between(_im->petscConfigurationPath.string(),
-                                 toEncoding, fromEncoding);
-  PetscInitialize(&argc, &argv,
-                  petscConfigurationPath.c_str(),
-                  PETSC_NULL);
-  MPI_Comm_size(PETSC_COMM_WORLD, &_im->processCount);
-  MPI_Comm_rank(PETSC_COMM_WORLD, &_im->rank);
-}
+                           argv)) {}
 
 Application::
 ~Application() {}
 
+int
+Application::
+parseArguments() {
+  namespace po = boost::program_options;
+
+  // Declare the supported options.
+  po::options_description optionDescription("Allowed options");
+  optionDescription.add_options()
+    ("help,h", "Produce help message")
+    ("output-directory,o",
+    po::value<std::string>(),
+    "Set output directory path")
+    ("precice,p",
+    po::value<std::string>(),
+    "Set PreCICE configuration path")
+    ("simulation,s",
+    po::value<std::string>(),
+    "Set fluid simulation configuration path")
+    ("petsc,e",
+    po::value<std::string>(),
+    "Set PETSc configuration path")
+  ;
+
+  po::variables_map options;
+  po::store(po::parse_command_line(_im->argc, _im->argv, optionDescription),
+            options);
+  po::notify(options);
+
+  if (options.count("help")) {
+    std::cout << optionDescription << "\n";
+
+    return 1;
+  }
+
+  if (options.count("output-directory")) {
+    _im->outputDirectoryPath = options["output-directory"].as<std::string>();
+    boost::filesystem::create_directories(_im->outputDirectoryPath);
+    _im->outputDirectoryPath = boost::filesystem::canonical(
+      options["output-directory"].as<std::string>());
+  }
+
+  if (options.count("petsc")) {
+    _im->petscConfigurationPath = boost::filesystem::canonical(
+      options["petsc"].as<std::string>());
+  }
+
+  if (options.count("precice")) {
+    _im->preciceConfigurationPath = boost::filesystem::canonical(
+      options["precice"].as<std::string>());
+  }
+
+  if (options.count("simulation")) {
+    _im->simulationConfigurationPath = boost::filesystem::canonical(
+      options["simulation"].as<std::string>());
+  }
+
+  return 0;
+}
+
 void
 Application::
 initialize() {
-  if (_im->isMaster()) {
-    initializeOnMaster();
-  } else {
-    initializeOnSlave();
-  }
-}
+  logInfo("Application path:\n{1}",
+          _im->applicationPath.string());
+  logInfo("Output directory path:\n{1}",
+          _im->outputDirectoryPath.string());
+  logInfo("PETSc configuration path:\n{1}",
+          _im->petscConfigurationPath.string());
+  logInfo("PreCICE configuration path:\n{1}",
+          _im->preciceConfigurationPath.string());
+  logInfo("Simulation configuration path:\n{1}",
+          _im->simulationConfigurationPath.string());
 
-void
-Application::
-run() {
-  if (_im->isMaster()) {
-    runOnMaster();
-  } else {
-    runOnSlave();
-  }
-}
+  auto petscConfigurationPath =
+    Private::convertUtfPathToAnsi(
+      boost::filesystem::make_relative(
+        _im->petscConfigurationPath).string(),
+      _im->globalLocale,
+      _im->ansiLocale);
 
-void
-Application::
-release() {
-  if (_im->isMaster()) {
-    releaseOnMaster();
-  } else {
-    releaseOnSlave();
-  }
-}
+  PetscInitialize(&_im->argc, &_im->argv,
+                  petscConfigurationPath.c_str(),
+                  PETSC_NULL);
+  MPI_Comm_size(PETSC_COMM_WORLD, &_im->processCount);
+  MPI_Comm_rank(PETSC_COMM_WORLD, &_im->rank);
 
-void
-Application::
-initializeOnMaster() {
-  initializeOnMasterAndSlave();
-}
+  parseSimulationConfiguration();
+  createOutputDirectory();
 
-void
-Application::
-initializeOnSlave() {
-  initializeOnMasterAndSlave();
-}
-
-void
-Application::
-initializeOnMasterAndSlave() {
-  Configuration configuration(_im->argv[1]);
-  configuration.loadParameters(_im->parameters);
   PetscParallelConfiguration parallelConfiguration(_im->parameters);
   MeshsizeFactory::getInstance().initMeshsize(_im->parameters);
 
@@ -259,19 +299,7 @@ initializeOnMasterAndSlave() {
 
 void
 Application::
-runOnMaster() {
-  runOnMasterAndSlave();
-}
-
-void
-Application::
-runOnSlave() {
-  runOnMasterAndSlave();
-}
-
-void
-Application::
-runOnMasterAndSlave() {
+run() {
   FLOAT time       = 0.0;
   FLOAT timeVtk    = _im->parameters.vtk.interval;
   FLOAT timeStdOut = _im->parameters.stdOut.interval;
@@ -307,18 +335,37 @@ runOnMasterAndSlave() {
 
 void
 Application::
-releaseOnMaster() {
-  releaseOnMasterAndSlave();
-}
-
-void
-Application::
-releaseOnSlave() {
-  releaseOnMasterAndSlave();
-}
-
-void
-Application::
-releaseOnMasterAndSlave() {
+release() {
   PetscFinalize();
+}
+
+void
+Application::
+parseSimulationConfiguration() {
+  auto simulationConfigurationPath =
+    Private::convertUtfPathToAnsi(
+      boost::filesystem::make_relative(
+        _im->simulationConfigurationPath).string(),
+      _im->globalLocale,
+      _im->ansiLocale);
+
+  Configuration configuration(simulationConfigurationPath);
+  configuration.loadParameters(_im->parameters);
+}
+
+void
+Application::
+createOutputDirectory() {
+  Implementation::Path outputDirectoryPath(_im->parameters.vtk.prefix);
+
+  if (outputDirectoryPath.is_relative()) {
+    outputDirectoryPath = (_im->outputDirectoryPath / outputDirectoryPath);
+  }
+
+  auto outputFileName = outputDirectoryPath.filename();
+  outputDirectoryPath = outputDirectoryPath.parent_path();
+  boost::filesystem::create_directories(outputDirectoryPath);
+  outputDirectoryPath =
+    boost::filesystem::make_relative(outputDirectoryPath) / outputFileName;
+  _im->parameters.vtk.prefix = outputDirectoryPath.string();
 }

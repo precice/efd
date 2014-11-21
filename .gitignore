@@ -15,11 +15,11 @@
 !/cmake/modules/*.cmake
 
 !/configuration
-!/configuration/FluidScenarios
+!/configuration/FluidSimulation
 !/configuration/FluidPetsc
 !/configuration/Precice
 !/configuration/FluidPetsc/*.conf
-!/configuration/FluidScenarios/*.xml
+!/configuration/FluidSimulation/*.xml
 !/configuration/Precice/*.xml
 
 !/documentation
@@ -34,6 +34,7 @@
 
 !/source
 !/source/EntryPoint/
+!/source/EntryPoint/Private
 !/source/parallelManagers/
 !/source/solvers/
 !/source/stencils/

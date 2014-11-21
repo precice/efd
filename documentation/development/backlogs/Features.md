@@ -1,12 +1,5 @@
 # To Do
 **Priority:**
-High  
-**Definition:**
-Employ Boost.Program_options.
-Implement output directory, PreCICE and PETSc configurations paths options.  
-**Date:** 20.11.14
-
-**Priority:**
 Medium  
 **Definition:**
 Employ XDMF/HDF5 for output.  
@@ -22,6 +15,13 @@ Implement PreCICE geometry in the fluid solver.
 Sketch PreCICE geometry mode configuration file
 
 # To Verify
+**Priority:**
+High  
+**Definition:**
+Employ Boost.Program_options.
+Implement output directory, PreCICE and PETSc configurations paths options.  
+**Date:** 20.11.14 / 21.11.14
+
 **Priority:**
 High  
 **Definition:**
