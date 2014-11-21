@@ -13,7 +13,7 @@
     2. PETSc: version 3.3, with enabled MPI support.
     3. [Uni][UniRepository]: branch 'big-update'
     4. Eigen: version 3.2 >=
-    5. Boost: version 1.50 >=, with filesystem, locale, system components
+    5. Boost: version 1.53 >=, with filesystem, locale, system components
 
 ## Building instructions
 
