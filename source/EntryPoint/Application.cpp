@@ -12,9 +12,11 @@
 #include <Uni/ExecutionControl/exception>
 #include <Uni/Firewall/Interface>
 #include <Uni/Logging/logging>
+#include <Uni/Logging/logging>
 #include <Uni/Platform/operatingsystem>
 
 #include <boost/filesystem.hpp>
+#include <boost/locale.hpp>
 
 #include <mpi.h>
 #include <petscsys.h>
@@ -73,6 +75,8 @@ _getExecPath() {
 class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   typedef std::unique_ptr<Simulation> UniqueSimulation;
   typedef std::unique_ptr<FlowField>  UniqueFlowField;
+  typedef boost::filesystem::path     Path;
+
   ApplicationPrivateImplementation(
     Application* in,
     int&         argc_,
@@ -80,18 +84,38 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
                           argc(argc_),
                           argv(argv_),
                           masterRank(0) {
-    applicationLocation = _getExecPath();
+    using LocaleGenerator = boost::locale::generator;
+    globalLocale          = LocaleGenerator().generate("");
+    // Create and install global locale
+    std::locale::global(globalLocale);
+    // Make boost.filesystem use it
+    Path::imbue(std::locale());
 
-    petscConfiguration = applicationLocation.parent_path();
-    petscConfiguration.append("FluidPetsc/Basic.conf");
+    LocaleGenerator ansiLocaleGenerator;
+    ansiLocaleGenerator.use_ansi_encoding(true);
+    ansiLocale = ansiLocaleGenerator.generate("");
+
+    applicationPath = _getExecPath();
+
+    petscConfigurationPath = applicationPath.parent_path();
+    petscConfigurationPath.append("FluidPetsc/Basic.conf");
+
+    logInfo("Utf-8 locale: {1}",
+            std::use_facet<boost::locale::info>(globalLocale).name());
+    logInfo("Ansi locale: {1}",
+            std::use_facet<boost::locale::info>(ansiLocale).name());
+    logInfo("Application path:\n{1}",         applicationPath.string());
+    logInfo("PETSc configuration path:\n{1}", petscConfigurationPath.string());
   }
 
   Uni_Firewall_INTERFACE_LINK(Application)
 
   int    argc;
-  char**                  argv;
-  boost::filesystem::path applicationLocation;
-  boost::filesystem::path petscConfiguration;
+  char**      argv;
+  std::locale globalLocale;
+  std::locale ansiLocale;
+  Path        applicationPath;
+  Path        petscConfigurationPath;
 
   int masterRank;
   int rank;
@@ -112,8 +136,15 @@ Application(int&   argc,
   : _im(new Implementation(this,
                            argc,
                            argv)) {
+  auto toEncoding = std::use_facet<boost::locale::info>(
+    _im->ansiLocale).encoding();
+  auto fromEncoding = std::use_facet<boost::locale::info>(
+    _im->globalLocale).encoding();
+  auto petscConfigurationPath =
+    boost::locale::conv::between(_im->petscConfigurationPath.string(),
+                                 toEncoding, fromEncoding);
   PetscInitialize(&argc, &argv,
-                  _im->petscConfiguration.string().c_str(),
+                  petscConfigurationPath.c_str(),
                   PETSC_NULL);
   MPI_Comm_size(PETSC_COMM_WORLD, &_im->processCount);
   MPI_Comm_rank(PETSC_COMM_WORLD, &_im->rank);
