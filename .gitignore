@@ -1,9 +1,9 @@
 *
 
-!CMakeLists.txt
-!Readme.md
-!.gitignore
-!.uncrustify
+!/CMakeLists.txt
+!/Readme.md
+!/.gitignore
+!/.uncrustify
 
 !/3rdParty
 !/3rdParty/TinyXml2
