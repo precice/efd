@@ -144,10 +144,12 @@ These wrappers are tiny and implicitly run routine commands.
 To explore what is inside it is offered to look in the code which is supposed
 to be self-explanatory, the usage examples are presented below.
 
+The wrappers could be taken from 'slava-develop' branch.
+
 ### Steps
 
 1.  Execute CMake configuration with `configure` command.
-    - By default, generate Ninaja scripts.
+    - By default, generate Ninja scripts.
     - By default, use '.build' directory in the `configure` script directory as a
       build directory.
     - By default, configure '.install' directory in the `configure` script
