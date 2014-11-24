@@ -1,16 +1,6 @@
 <?xml version = "1.0"?>
 
-<precice-configuration
-  xmlns:data = "precice.data"
-  xmlns:geometry = "precice.geometry"
-  xmlns:spacetree = "precice.spacetree"
-  xmlns:communication = "precice.communication"
-  xmlns:mapping = "precice.mapping"
-  xmlns:export = "precice.export"
-  xmlns:action = "precice.action"
-  xmlns:server = "precice.server"
-  xmlns:coupling-scheme = "precice.coupling-scheme"
-  xmlns:post-processing = "precice.post-processing">
+<precice-configuration>
 
   <log-filter
     component = ""
@@ -69,8 +59,8 @@
          ATTR of-mesh: Name of mesh to build the geometry from. -->
     <geometry:builtin-cuboid of-mesh = "MeshName">
       <discretization-width value = "0.1"/>
-      <length value = "1.0, 1.0, 1.0"/>
-      <offset value = "0, 0, 0"/>
+      <length value = "0, 0"/>
+      <offset value = "0, 0"/>
     </geometry:builtin-cuboid>
 
     <!-- TAG geometry:builtin-sphere Circle in 2d, sphere in 3d.

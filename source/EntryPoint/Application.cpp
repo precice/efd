@@ -1,5 +1,7 @@
 #include "Application.hpp"
 
+#include "Private/convertUtfPathToAnsi.hpp"
+
 #include "Configuration.hpp"
 #include "FlowField.h"
 #include "MeshsizeFactory.hpp"
@@ -9,12 +11,11 @@
 #include "TurbulentSimulation.h"
 #include "parallelManagers/PetscParallelConfiguration.h"
 
-#include "Private/convertUtfPathToAnsi.hpp"
+#include <precice/SolverInterface.hpp>
 
 #include <Uni/ExecutionControl/exception>
 #include <Uni/Firewall/Interface>
-#include <Uni/Logging/logging>
-#include <Uni/Logging/logging>
+#include <Uni/Logging/macros>
 #include <Uni/Platform/operatingsystem>
 
 #include <boost/filesystem.hpp>
@@ -240,6 +241,8 @@ initialize() {
   parseSimulationConfiguration();
   createOutputDirectory();
 
+  initializePrecice();
+
   PetscParallelConfiguration parallelConfiguration(_im->parameters);
   MeshsizeFactory::getInstance().initMeshsize(_im->parameters);
 
@@ -368,4 +371,25 @@ createOutputDirectory() {
   outputDirectoryPath =
     boost::filesystem::make_relative(outputDirectoryPath) / outputFileName;
   _im->parameters.vtk.prefix = outputDirectoryPath.string();
+}
+
+void
+Application::
+initializePrecice() {
+  using namespace precice;
+
+  SolverInterface interface("Fluid",
+      _im->rank,
+      _im->processCount);
+
+
+  auto preciceConfigurationPath =
+    Private::convertUtfPathToAnsi(
+      boost::filesystem::make_relative(
+        _im->preciceConfigurationPath).string(),
+      _im->globalLocale,
+      _im->ansiLocale);
+
+  interface.configure(preciceConfigurationPath);
+
 }

@@ -47,14 +47,17 @@ find_package(Precice REQUIRED)
 find_package(Uni REQUIRED)
 find_package(Boost 1.53
   COMPONENTS
+  thread
   program_options
   filesystem
   locale
-  system REQUIRED)
+  system
+  REQUIRED)
 set(Boost_USE_STATIC_LIBS    ON)
 set(Boost_USE_MULTITHREADED  ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Eigen REQUIRED)
+find_package(PythonLibs 2.7 REQUIRED)
 # ==============================================================================
 # }}} Packages
 
@@ -138,12 +141,14 @@ target_include_directories(Simulation SYSTEM PRIVATE
   ${PETSC_INCLUDES}
   ${Eigen_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${PYTHON_INCLUDE_DIRS}
   )
 target_link_libraries(Simulation PRIVATE
   Uni
   ${Precice_LIBRARIES}
   ${PETSC_LIBRARIES}
   ${Boost_LIBRARIES}
+  ${PYTHON_LIBRARIES}
   )
 # ==============================================================================
 # }}} Targets
@@ -180,14 +185,20 @@ install(
   RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
   )
 
-install(DIRECTORY "${PROJECT_DIR}/configuration/FluidSimulation"
+install(DIRECTORY "${PROJECT_DIR}/configuration/FluidPetsc"
+  DESTINATION "${INSTALL_BINARY_DIR}"
+  FILES_MATCHING REGEX "(.*\\.conf)$"
+  )
+
+install(DIRECTORY "${PROJECT_DIR}/configuration/Precice"
   DESTINATION "${INSTALL_BINARY_DIR}"
   FILES_MATCHING REGEX "(.*\\.xml)$"
   )
 
-install(DIRECTORY "${PROJECT_DIR}/configuration/FluidPetsc"
+
+install(DIRECTORY "${PROJECT_DIR}/configuration/FluidSimulation"
   DESTINATION "${INSTALL_BINARY_DIR}"
-  FILES_MATCHING REGEX "(.*\\.conf)$"
+  FILES_MATCHING REGEX "(.*\\.xml)$"
   )
 # ==============================================================================
 # }}} Installation

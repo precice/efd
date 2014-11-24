@@ -13,7 +13,9 @@
     2. PETSc: version 3.3, with enabled MPI support.
     3. [Uni][UniRepository]: branch 'big-update'
     4. Eigen: version 3.2 >=
-    5. Boost: version 1.53 >=, with filesystem, locale, system components
+    5. Boost: version 1.53 >=, with thread, filesystem, locale, system
+       components
+    6. Python libraries: version 2.7
 
 ## Building instructions
 
@@ -52,6 +54,9 @@ go to the CMake manual (`find_path` for includes; `find_library` for libraries).
 
 > **NOTE:**
 > MPI implementation must be the same that was used to compile PETSc.
+
+> **NOTE:**
+> Python libraries must be the same that was used to compile PreCICE.
 
 #### Configuration of the dependency lookup
 
@@ -113,6 +118,11 @@ The lookup of the following dependencies could be configured:
       not specified by these hint variables. Default is 'OFF'.
     + `Boost_ADDITIONAL_VERSIONS` --- list of Boost versions not known to this
       module (Boost install locations may contain the version).
+
+*   **Python libraries**
+
+    + `PYTHON_LIBRARY` --- path to the python library.
+    + `PYTHON_INCLUDE_DIR` --- path to where Python.h is found.
 
 # Optional Instructions
 

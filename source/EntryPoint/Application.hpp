@@ -43,6 +43,9 @@ private:
   void
   createOutputDirectory();
 
+  void
+  initializePrecice();
+
   Uni_Firewall_IMPLEMENTATION_LINK(ApplicationPrivateImplementation)
 };
 }
