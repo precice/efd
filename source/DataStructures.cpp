@@ -91,6 +91,16 @@ show(const std::string title) {
   }
 }
 
+
+  /** Constructor for the 3D flow field
+   *
+   * Constructor for the flow field. Allocates all the fields and sets
+   * the sizes. Currently, this contructor is only used for testing purposes.
+   *
+   * @param Nx Size of the fuild domain (non-ghost cells), in the X direction
+   * @param Ny Size of the fuild domain (non-ghost cells), in the Y direction
+   * @param Nz Size of the fuild domain (non-ghost cells), in the Z direction
+   */
 void
 VectorField::
 initialize() {

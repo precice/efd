@@ -10,10 +10,11 @@
 template <class FlowField>
 class FieldStencil {
 protected:
-  const Parameters& _parameters; // ! Reference to the parameters
+  Parameters const& _parameters; // ! Reference to the parameters
 
 public:
   FieldStencil(const Parameters& parameters) : _parameters(parameters) {}
+
   virtual
   ~FieldStencil() {}
 

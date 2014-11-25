@@ -36,7 +36,7 @@
 !/source/EntryPoint/
 !/source/EntryPoint/Private
 !/source/parallelManagers/
-!/source/solvers/
+!/source/Solvers/
 !/source/stencils/
 !/source/turbulence_algebraic/
 !/source/turbulence_algebraic/parallelManagers

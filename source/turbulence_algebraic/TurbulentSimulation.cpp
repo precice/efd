@@ -1,5 +1,7 @@
-#include "TurbulentSimulation.h"
+#include "TurbulentSimulation.hpp"
 //
+//
+using FsiSimulation::TurbulentSimulation;
 
 // initialise the Simulation-object as usual AND initialise the reference to the
 // turbulent flow field data
@@ -19,7 +21,8 @@ TurbulentSimulation(Parameters&         parameters,
     _turbulentParallelManager(flowField, parameters)
 {}
 
-TurbulentSimulation::~TurbulentSimulation() {
+TurbulentSimulation::
+~TurbulentSimulation() {
   // delete local viscosity stencil
   if (_computeLocalViscosityStencil != NULL) {
     delete _computeLocalViscosityStencil;

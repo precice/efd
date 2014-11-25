@@ -1,7 +1,7 @@
-#ifndef _TURBULENTSIMULATION_H_
-#define _TURBULENTSIMULATION_H_
+#ifndef FsiSimulation_TurbulentSimulation_hpp
+#define FsiSimulation_TurbulentSimulation_hpp
 
-#include "../Simulation.h"
+#include "Simulation.hpp"
 #include "TurbulenceViscosityFactory.h"
 #include "TurbulentFlowField.h"
 #include "parallelManagers/TurbulentPetscParallelManager.h"
@@ -16,6 +16,7 @@
  *
  *  @author Philipp Neumann
  */
+namespace FsiSimulation {
 class TurbulentSimulation : public Simulation {
 private:
   TurbulenceViscosityFactory _stencilFactory;
@@ -124,5 +125,6 @@ protected:
     _parameters.timestep.dt *= _parameters.timestep.tau;
   }
 };
+}
 
 #endif // _TURBULENTSIMULATION_H_

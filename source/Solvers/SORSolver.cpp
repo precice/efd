@@ -1,7 +1,9 @@
-#include "SORSolver.h"
+#include "SORSolver.hpp"
 #include <float.h> // To get the max double
 #include <math.h>
 //
+
+using FsiSimulation::Solvers::SORSolver;
 
 SORSolver::
 SORSolver(FlowField& flowField, const Parameters& parameters)

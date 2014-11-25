@@ -6,9 +6,9 @@
 #include "FlowField.h"
 #include "MeshsizeFactory.hpp"
 #include "Parameters.h"
-#include "Simulation.h"
+#include "Simulation.hpp"
 #include "TurbulentFlowField.h"
-#include "TurbulentSimulation.h"
+#include "TurbulentSimulation.hpp"
 #include "parallelManagers/PetscParallelConfiguration.h"
 
 #include <precice/SolverInterface.hpp>
@@ -391,5 +391,7 @@ initializePrecice() {
       _im->ansiLocale);
 
   interface.configure(preciceConfigurationPath);
+
+  // auto meshId = interface.getMeshID("MeshName");
 
 }

@@ -1,5 +1,5 @@
-#ifndef _SIMULATION_H_
-#define _SIMULATION_H_
+#ifndef FsiSimulation_Simulation_hpp
+#define FsiSimulation_Simulation_hpp
 
 #include "Definitions.h"
 #include "FlowField.h"
@@ -20,10 +20,10 @@
 #include <float.h>
 #include <petscksp.h>
 
-#include "LinearSolver.h"
-#include "solvers/PetscSolver.h"
-#include "solvers/SORSolver.h"
+#include "Solvers/PetscSolver.hpp"
+#include "Solvers/SORSolver.hpp"
 
+namespace FsiSimulation {
 class Simulation {
 protected:
   Parameters& _parameters;
@@ -50,7 +50,7 @@ protected:
 
   PetscParallelManager _parallelManager;
 
-  PetscSolver _solver;
+  Solvers::PetscSolver _solver;
 
 public:
   Simulation(Parameters& parameters, FlowField& flowField)
@@ -203,5 +203,6 @@ protected:
     _parameters.timestep.dt *= _parameters.timestep.tau;
   }
 };
+}
 
 #endif // _SIMULATION_H_

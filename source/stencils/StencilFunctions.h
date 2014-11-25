@@ -1,8 +1,8 @@
 #ifndef _DERIVATIVES_H_
 #define _DERIVATIVES_H_
 
-#include "../FlowField.h"
 #include "../Definitions.h"
+#include "../FlowField.h"
 #include "../Parameters.h"
 #include <math.h>
 
@@ -12,7 +12,7 @@ loadLocalVelocity2D(FlowField& flowField, FLOAT* const localVelocity, int i, int
                     j) {
   for (int row = -1; row <= 1; row++) {
     for (int column = -1; column <= 1; column++) {
-      const FLOAT* const point = flowField.getVelocity().getVector(i + column,
+      FLOAT const* const point = flowField.getVelocity().getVector(i + column,
                                                                    j + row);
       // x-component
       localVelocity[39 + 9 * row + 3 * column] = point[0];
@@ -46,7 +46,8 @@ loadLocalVelocity3D(FlowField& flowField, FLOAT* const localVelocity, int i, int
 // load local meshsize for 2D -> same as loadLocalVelocity2D, but invoking call
 // to meshsize-ptr
 inline void
-loadLocalMeshsize2D(const Parameters& parameters, FLOAT* const localMeshsize,
+loadLocalMeshsize2D(const Parameters& parameters,
+                    FLOAT* const localMeshsize,
                     int i, int j) {
   for (int row = -1; row <= 1; row++) {
     for (int column = -1; column <= 1; column++) {
@@ -337,11 +338,11 @@ duvdx(const FLOAT* const lv, const Parameters& parameters, const FLOAT* const
    *                      ( ( lv [mapd(-1,0,0,0)] + lv [mapd(-1,1,0,0)] ) *
    *                        ( lv [mapd(-1,0,0,1)] + lv [mapd(0,0,0,1)] ) ) )
    + parameters.solver.gamma *( ( fabs ( lv [mapd(0,0,0,0)] + lv [mapd(0,1,0,0)]
-   ++++) *
+   ++++++) *
    +                             ( lv [mapd(0,0,0,1)] - lv [mapd(1,0,0,1)] ) ) -
    +                      ( fabs ( lv [mapd(-1,0,0,0)] + lv [mapd(-1,1,0,0)] ) *
    +                             ( lv [mapd(-1,0,0,1)] - lv [mapd(0,0,0,1)] ) )
-   ++++)
+   ++++++)
    +                      ) / lm[mapd(0,0,0,0)];
    */
   // distance of corner points in x-direction from center v-value

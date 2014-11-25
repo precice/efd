@@ -1,9 +1,9 @@
-#ifndef _PETSC_SOLVER_H_
-#define _PETSC_SOLVER_H_
+#ifndef FsiSimulation_Solvers_PetscSolver_hpp
+#define FsiSimulation_Solvers_PetscSolver_hpp
 
 #include "../DataStructures.h"
 #include "../FlowField.h"
-#include "../LinearSolver.h"
+#include "LinearSolver.hpp"
 #include "../Parameters.h"
 #include <petscdm.h>
 #include <petscdmda.h>
@@ -16,16 +16,20 @@ const unsigned char TOP_WALL_BIT    = 1 << 3;
 const unsigned char FRONT_WALL_BIT  = 1 << 4;
 const unsigned char BACK_WALL_BIT   = 1 << 5;
 
+namespace FsiSimulation {
+namespace Solvers {
 /** A class to encapsulate information the Petsc builder functions
  *  Petsc used so called context objects to give information to its routines.
  *  We need them to pass the flow field and the parameters in a single argument.
  */
 class PetscUserCtx {
 private:
-  Parameters& _parameters; // ! Reference to parameters
-  FlowField&  _flowField;        // ! Reference to the flow field
+  Parameters& _parameters;
+  FlowField&  _flowField;
 
-  int* _limitsX, * _limitsY, * _limitsZ;
+  int* _limitsX;
+  int* _limitsY;
+  int* _limitsZ;
 
   int _rank;
 
@@ -46,10 +50,14 @@ public:
   getFlowField();
 
   void
-  setLimits(int* limitsX, int* limitsY, int* limitsZ);
+  setLimits(int* limitsX,
+            int* limitsY,
+            int* limitsZ);
 
   void
-  getLimits(int** limitsX, int** limitsY, int** limitsZ);
+  getLimits(int** limitsX,
+            int** limitsY,
+            int** limitsZ);
 
   void
   setRank(int rank);
@@ -92,5 +100,7 @@ public:
   const DM&
   getGrid() const;
 };
+}
+}
 
 #endif

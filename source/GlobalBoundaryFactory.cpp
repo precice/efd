@@ -1,6 +1,6 @@
 #include "GlobalBoundaryFactory.h"
 //
-//
+
 GlobalBoundaryFactory::
 GlobalBoundaryFactory(Parameters& parameters)
   : _parameters(parameters) {

@@ -1,9 +1,11 @@
-#ifndef _LINEARSOLVER_H_
-#define _LINEARSOLVER_H_
+#ifndef FsiSimulation_Solvers_LenearSolver_hpp
+#define FsiSimulation_Solvers_LenearSolver_hpp
 
 #include "FlowField.h"
 #include "Parameters.h"
 
+namespace FsiSimulation {
+namespace Solvers {
 // Abstract class for linear solvers for the pressure
 class LinearSolver {
 protected:
@@ -22,5 +24,7 @@ public:
   virtual void
   solve() = 0;
 };
+}
+}
 
 #endif

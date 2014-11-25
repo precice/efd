@@ -28,16 +28,6 @@ private:
   ScalarField _RHS; // ! Right hand side for the Poisson equation
 
 public:
-  /** Constructor for the 2D flow field
-   *
-   * Constructor for the flow field. Allocates all the fields and sets
-   * the sizes. Currently, this contructor is only used for testing purposes.
-   *
-   * @param Nx Size of the fuild domain (non-ghost cells), in the X direction
-   * @param Ny Size of the fuild domain (non-ghost cells), in the Y direction
-   */
-  FlowField(int Nx, int Ny, int Nz);
-
   /** Constructor for the 3D flow field
    *
    * Constructor for the flow field. Allocates all the fields and sets
@@ -46,6 +36,16 @@ public:
    * @param Nx Size of the fuild domain (non-ghost cells), in the X direction
    * @param Ny Size of the fuild domain (non-ghost cells), in the Y direction
    * @param Nz Size of the fuild domain (non-ghost cells), in the Z direction
+   */
+  FlowField(int Nx, int Ny, int Nz);
+
+  /** Constructor for the 2D flow field
+   *
+   * Constructor for the flow field. Allocates all the fields and sets
+   * the sizes. Currently, this contructor is only used for testing purposes.
+   *
+   * @param Nx Size of the fuild domain (non-ghost cells), in the X direction
+   * @param Ny Size of the fuild domain (non-ghost cells), in the Y direction
    */
   FlowField(int Nx, int Ny);
 
@@ -82,8 +82,10 @@ public:
 
   int
   getCellsX() const;
+
   int
   getCellsY() const;
+
   int
   getCellsZ() const;
 
@@ -118,10 +120,17 @@ public:
   getRHS();
 
   void
-  getPressureAndVelocity(FLOAT& pressure, FLOAT* const velocity, int i, int j);
+  getPressureAndVelocity(FLOAT&       pressure,
+                         FLOAT* const velocity,
+                         int          i,
+                         int          j);
+
   void
-  getPressureAndVelocity(FLOAT& pressure, FLOAT* const velocity, int i, int j,
-                         int k);
+  getPressureAndVelocity(FLOAT&       pressure,
+                         FLOAT* const velocity,
+                         int          i,
+                         int          j,
+                         int          k);
 };
 
 #endif

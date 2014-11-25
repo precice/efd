@@ -9,10 +9,11 @@ Employ XDMF/HDF5 for output.
 **Priority:**
 Major  
 **Definition:**
-Implement PreCICE geometry in the fluid solver.  
+Employ PreCICE geometry interface to the fluid solver.  
 **Date:** 17.11.14 / 18.11.14  
 **Notes:**  
-Sketch PreCICE geometry mode configuration file
+Sketch PreCICE geometry mode configuration file.  
+Add simple working XML configuration, load it by PreCICE.
 
 # To Verify
 **Priority:**

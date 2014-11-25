@@ -83,8 +83,7 @@ apply(FlowField& flowField, int i, int j, int k) {
                               _parameters.meshsize->getDx(i + 1, j, k));
       flowField.getVelocity().getVector(i, j, k)[0] =
         flowField.getFGH().getVector(i, j, k)[0] - dt / dx *
-        (flowField.getPressure().
-                                                    getScalar(i + 1, j, k) -
+        (flowField.getPressure().getScalar(i + 1, j, k) -
          flowField.getPressure().getScalar(i, j, k));
     } else {
       flowField.getVelocity().getVector(i, j, k)[0] = 0.0;
@@ -95,8 +94,7 @@ apply(FlowField& flowField, int i, int j, int k) {
                               _parameters.meshsize->getDy(i, j + 1, k));
       flowField.getVelocity().getVector(i, j, k)[1] =
         flowField.getFGH().getVector(i, j, k)[1] - dt / dy *
-        (flowField.getPressure().
-                                                    getScalar(i, j + 1, k) -
+        (flowField.getPressure().getScalar(i, j + 1, k) -
          flowField.getPressure().getScalar(i, j, k));
     } else {
       flowField.getVelocity().getVector(i, j, k)[1] = 0.0;
@@ -106,10 +104,9 @@ apply(FlowField& flowField, int i, int j, int k) {
       const FLOAT dz = 0.5 * (_parameters.meshsize->getDz(i, j, k) +
                               _parameters.meshsize->getDz(i, j, k + 1));
       flowField.getVelocity().getVector(i, j, k)[2] =
-        flowField.getFGH().getVector(i, j, k)[2] - dt / dz *
-        (flowField.getPressure().
-                                                    getScalar(i, j, k + 1) -
-         flowField.getPressure().getScalar(i, j, k));
+        flowField.getFGH().getVector(i, j, k)[2] -
+        dt / dz * (flowField.getPressure().getScalar(i, j, k + 1) -
+                   flowField.getPressure().getScalar(i, j, k));
     } else {
       flowField.getVelocity().getVector(i, j, k)[2] = 0.0;
     }

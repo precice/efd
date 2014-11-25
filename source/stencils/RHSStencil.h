@@ -13,7 +13,7 @@ public:
    *
    * @param parameters Parameters of the flow
    */
-  RHSStencil(const Parameters& parameters);
+  RHSStencil(Parameters const& parameters);
 
   /** Apply the stencil in 2D
    * @param flowField Flow field to work on

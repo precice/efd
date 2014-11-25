@@ -4,8 +4,8 @@
 //
 
 FGHStencil::
-FGHStencil(const Parameters& parameters) : FieldStencil<FlowField>(
-                                             parameters) {}
+FGHStencil(Parameters const& parameters)
+  : FieldStencil<FlowField>(parameters) {}
 
 void
 FGHStencil::
@@ -21,9 +21,13 @@ apply(FlowField& flowField,  int i, int j) {
   // elements around the
   // given index
 
-  values[0] = computeF2D(_localVelocity, _localMeshsize, _parameters,
+  values[0] = computeF2D(_localVelocity,
+                         _localMeshsize,
+                         _parameters,
                          _parameters.timestep.dt);
-  values[1] = computeG2D(_localVelocity, _localMeshsize, _parameters,
+  values[1] = computeG2D(_localVelocity,
+                         _localMeshsize,
+                         _parameters,
                          _parameters.timestep.dt);
 }
 
@@ -32,7 +36,7 @@ FGHStencil::
 apply(FlowField& flowField, int i, int j, int k) {
   // The same as in 2D, with slight modifications
 
-  const int obstacle = flowField.getFlags().getValue(i, j, k);
+  int const obstacle = flowField.getFlags().getValue(i, j, k);
 
   FLOAT* const values = flowField.getFGH().getVector(i, j, k);
 
@@ -41,17 +45,23 @@ apply(FlowField& flowField, int i, int j, int k) {
     loadLocalMeshsize3D(_parameters, _localMeshsize, i, j, k);
 
     if ((obstacle & OBSTACLE_RIGHT) == 0) { // If the right cell is fluid
-      values[0] = computeF3D(_localVelocity, _localMeshsize, _parameters,
+      values[0] = computeF3D(_localVelocity,
+                             _localMeshsize,
+                             _parameters,
                              _parameters.timestep.dt);
     }
 
     if ((obstacle & OBSTACLE_TOP) == 0) {
-      values[1] = computeG3D(_localVelocity, _localMeshsize, _parameters,
+      values[1] = computeG3D(_localVelocity,
+                             _localMeshsize,
+                             _parameters,
                              _parameters.timestep.dt);
     }
 
     if ((obstacle & OBSTACLE_BACK) == 0) {
-      values[2] = computeH3D(_localVelocity, _localMeshsize, _parameters,
+      values[2] = computeH3D(_localVelocity,
+                             _localMeshsize,
+                             _parameters,
                              _parameters.timestep.dt);
     }
   }

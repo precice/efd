@@ -15,12 +15,12 @@ private:
   FLOAT _localMeshsize[27 * 3];
 
 public:
-  FGHStencil(const Parameters& parameters);
+  FGHStencil(Parameters const& parameters);
 
   /** Apply the stencil in 2D
    *
    * Performs the operation of the stencil in a single position given by the
-   *indexes.
+   * indexes.
    * @param flowField State of the flow
    * @param i Index in the x direction
    * @param j Index in the y direction

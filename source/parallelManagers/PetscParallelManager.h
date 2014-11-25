@@ -8,7 +8,7 @@
 #include "BufferStencils.h"
 #include "FlowField.h"
 #include "Parameters.h"
-#include "solvers/PetscSolver.h"
+#include "Solvers/PetscSolver.hpp"
 
 /** Class dedicated to the transfer of boundary information between subdomains
  */
