@@ -144,7 +144,7 @@ These wrappers are tiny and implicitly run routine commands.
 To explore what is inside it is offered to look in the code which is supposed
 to be self-explanatory, the usage examples are presented below.
 
-The wrappers could be taken from 'slava-develop' branch.
+The wrappers could be taken from the 'slava-develop' branch.
 
 ### Steps
 
