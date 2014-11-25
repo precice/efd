@@ -26,13 +26,13 @@ enum BoundaryType {
   NEUMANN
 };
 
-const int OBSTACLE_SELF   =   1 << 0;
-const int OBSTACLE_LEFT   =   1 << 1;
-const int OBSTACLE_RIGHT  =  1 << 2;
+const int OBSTACLE_SELF   = 1 << 0;
+const int OBSTACLE_LEFT   = 1 << 1;
+const int OBSTACLE_RIGHT  = 1 << 2;
 const int OBSTACLE_BOTTOM = 1 << 3;
-const int OBSTACLE_TOP    =    1 << 4;
-const int OBSTACLE_FRONT  =  1 << 5;
-const int OBSTACLE_BACK   =   1 << 6;
+const int OBSTACLE_TOP    = 1 << 4;
+const int OBSTACLE_FRONT  = 1 << 5;
+const int OBSTACLE_BACK   = 1 << 6;
 
 // An assertion sending back a message
 #  ifdef DEBUG
