@@ -16,9 +16,13 @@
     geometry-mode = "1"
     restart-mode = "0">
 
+    <!--
     <data:scalar name = "Pressure"/>
+     -->
 
+    <!--
     <data:vector name = "Velocity"/>
+     -->
 
     <!-- TAG mesh
          Surface mesh consisting of vertices and (optional) of edges and
@@ -32,8 +36,10 @@
       name = "MeshName"
       flip-normals = "0">
 
+      <!--
       <use-data name = "Pressure"/>
       <use-data name = "Velocity"/>
+       -->
 
       <!-- TAG sub-id Every mesh has a global ID (determined by preCICE). It is
            possible to set additional sub-ids. This sub-ids are used by certain
@@ -57,22 +63,22 @@
     <!-- TAG geometry:builtin-cuboid Rectangle in 2d, hexahedron in 3d.
          (can occur 0..* times)
          ATTR of-mesh: Name of mesh to build the geometry from. -->
+    <!--
     <geometry:builtin-cuboid of-mesh = "MeshName">
-      <discretization-width value = "0.1"/>
-      <length value = "0, 0"/>
+      <discretization-width value = "0.01"/>
+      <length value = "0.2; 1.8375"/>
       <offset value = "0, 0"/>
     </geometry:builtin-cuboid>
+     -->
 
     <!-- TAG geometry:builtin-sphere Circle in 2d, sphere in 3d.
          (can occur 0..* times)
          ATTR of-mesh: Name of mesh to build the geometry from. -->
-    <!--
     <geometry:builtin-sphere of-mesh = "MeshName">
-      <discretization-width value = "{float}"/>
-      <radius value = "{float}"/>
-      <offset value = "{vector}"/>
+      <discretization-width value = "0.01"/>
+      <radius value = "0.01"/>
+      <offset value = "0.2; 1.8375"/>
     </geometry:builtin-sphere>
-      -->
 
     <!-- TAG geometry:builtin-bubble Bubble-like geometry.
          (can occur 0..* times)
@@ -188,7 +194,7 @@
         from = ""
         name = "MeshName"
         provide = "0"
-        offset = "0, 0, 0"/>
+        offset = "0; 0; 0"/>
 
       <!-- TAG server:sockets When a solver runs in parallel, it has to use
            preCICE in form of a separatly running server. This is enabled by
