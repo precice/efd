@@ -173,8 +173,9 @@ d2udy2(const FLOAT* const lv, const FLOAT* const lm) {
   const FLOAT dy1   = 0.5 * (dy_0 + dy_P1);
   const FLOAT dySum = dy0 + dy1;
 
-  return 2.0 * (lv[mapd(0, 1, 0, 0)] / (dy1 * dySum) - lv[mapd(0, 0, 0, 0)] /
-                (dy1 * dy0) + lv[mapd(0, -1, 0, 0)] / (dy0 * dySum));
+  return 2.0 * (lv[mapd(0, 1, 0, 0)] / (dy1 * dySum) -
+                lv[mapd(0, 0, 0, 0)] / (dy1 * dy0) +
+                lv[mapd(0, -1, 0, 0)] / (dy0 * dySum));
 
   /*if (fabs(tmp1-tmp2) > 1.0e-12){handleError(1, "d2udy2");}
    *
@@ -193,8 +194,9 @@ d2udz2(const FLOAT* const lv, const FLOAT* const lm) {
   const FLOAT dz1   = 0.5 * (dz_0 + dz_P1);
   const FLOAT dzSum = dz0 + dz1;
 
-  return 2.0 * (lv[mapd(0, 0, 1, 0)] / (dz1 * dzSum) - lv[mapd(0, 0, 0, 0)] /
-                (dz1 * dz0) + lv[mapd(0, 0, -1, 0)] / (dz0 * dzSum));
+  return 2.0 * (lv[mapd(0, 0, 1, 0)] / (dz1 * dzSum) -
+                lv[mapd(0, 0, 0, 0)] / (dz1 * dz0) +
+                lv[mapd(0, 0, -1, 0)] / (dz0 * dzSum));
   /*if (fabs(tmp1-tmp2) > 1.0e-12){handleError(1, "d2udz2");}
    *
    *  return tmp2;*/
@@ -338,11 +340,11 @@ duvdx(const FLOAT* const lv, const Parameters& parameters, const FLOAT* const
    *                      ( ( lv [mapd(-1,0,0,0)] + lv [mapd(-1,1,0,0)] ) *
    *                        ( lv [mapd(-1,0,0,1)] + lv [mapd(0,0,0,1)] ) ) )
    + parameters.solver.gamma *( ( fabs ( lv [mapd(0,0,0,0)] + lv [mapd(0,1,0,0)]
-   ++++++) *
+   ++++++++++) *
    +                             ( lv [mapd(0,0,0,1)] - lv [mapd(1,0,0,1)] ) ) -
    +                      ( fabs ( lv [mapd(-1,0,0,0)] + lv [mapd(-1,1,0,0)] ) *
    +                             ( lv [mapd(-1,0,0,1)] - lv [mapd(0,0,0,1)] ) )
-   ++++++)
+   ++++++++++)
    +                      ) / lm[mapd(0,0,0,0)];
    */
   // distance of corner points in x-direction from center v-value
@@ -896,12 +898,12 @@ inline FLOAT
 computeF3D(const FLOAT* const localVelocity, const FLOAT* const localMeshsize,
            const Parameters& parameters, FLOAT dt) {
   return localVelocity[mapd(0, 0, 0, 0)]
-         +  dt * (1 / parameters.flow.Re * (d2udx2(localVelocity, localMeshsize)
-                                            + d2udy2(localVelocity,
-                                                     localMeshsize) + d2udz2(
-                                              localVelocity, localMeshsize))
-                  - du2dx(localVelocity, parameters, localMeshsize) - duvdy(
-                    localVelocity, parameters, localMeshsize)
+         +  dt * (1 / parameters.flow.Re *
+                  (d2udx2(localVelocity, localMeshsize) +
+                   d2udy2(localVelocity, localMeshsize) +
+                   d2udz2(localVelocity, localMeshsize)) -
+                  du2dx(localVelocity, parameters, localMeshsize) -
+                  duvdy(localVelocity, parameters, localMeshsize)
                   - duwdz(localVelocity, parameters, localMeshsize) +
                   parameters.environment.gx);
 }

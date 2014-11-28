@@ -2,6 +2,9 @@
 #define _MESHSIZE_H_
 
 #include "Definitions.h"
+
+#include <Eigen/Core>
+
 #include <cmath>
 
 // forward declaration of Parameters

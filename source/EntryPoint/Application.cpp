@@ -5,8 +5,10 @@
 #include "Configuration.hpp"
 #include "FlowField.h"
 #include "MeshsizeFactory.hpp"
+#include "MySimulation.hpp"
 #include "Parameters.h"
 #include "Simulation.hpp"
+#include "SimulationFactory.hpp"
 #include "TurbulentFlowField.h"
 #include "TurbulentSimulation.hpp"
 #include "parallelManagers/PetscParallelConfiguration.h"
@@ -77,9 +79,10 @@ _getExecPath() {
 }
 
 class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
-  typedef std::unique_ptr<Simulation> UniqueSimulation;
-  typedef std::unique_ptr<FlowField>  UniqueFlowField;
-  typedef boost::filesystem::path     Path;
+  typedef std::unique_ptr<Simulation>   UniqueSimulation;
+  typedef std::unique_ptr<MySimulation> UniqueMySimulation;
+  typedef std::unique_ptr<FlowField>    UniqueFlowField;
+  typedef boost::filesystem::path       Path;
 
   ApplicationPrivateImplementation(
     Application* in,
@@ -135,8 +138,9 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
 
   Parameters parameters;
 
-  UniqueSimulation simulation;
-  UniqueFlowField  flowField;
+  UniqueSimulation   simulation;
+  UniqueMySimulation mySimulation;
+  UniqueFlowField    flowField;
 
   bool
   isMaster() { return rank == masterRank; }
@@ -268,6 +272,11 @@ initialize() {
     std::endl;
   // #endif
 
+  _im->mySimulation =
+    Implementation::UniqueMySimulation(
+      SimulationFactory::createUniformGridFloat2D());
+  _im->mySimulation->initialize(_im->parameters);
+
   // initialise simulation
   if (_im->parameters.simulation.type == "turbulence") {
     if (_im->isMaster()) {
@@ -379,9 +388,8 @@ initializePrecice() {
   using namespace precice;
 
   SolverInterface interface("Fluid",
-      _im->rank,
-      _im->processCount);
-
+                            _im->rank,
+                            _im->processCount);
 
   auto preciceConfigurationPath =
     Private::convertUtfPathToAnsi(
@@ -393,5 +401,4 @@ initializePrecice() {
   interface.configure(preciceConfigurationPath);
 
   // auto meshId = interface.getMeshID("MeshName");
-
 }
