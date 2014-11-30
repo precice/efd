@@ -38,6 +38,7 @@
 !/source/parallelManagers/
 !/source/Solvers/
 !/source/stencils/
+!/source/StructuredMemory/
 !/source/turbulence_algebraic/
 !/source/turbulence_algebraic/parallelManagers
 !/source/turbulence_algebraic/stencils

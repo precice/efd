@@ -339,13 +339,13 @@ computeMatrix3D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure, void* ctx) {
                                             // center
 
           // Definition of positions. Order must correspond to values
-          column[0].i = i + 1; column[0].j = j;   column[0].k = k;
-          column[1].i = i - 1; column[1].j = j;   column[1].k = k;
-          column[2].i = i;   column[2].j = j + 1; column[2].k = k;
-          column[3].i = i;   column[3].j = j - 1; column[3].k = k;
-          column[4].i = i;   column[4].j = j;   column[4].k = k + 1;
-          column[5].i = i;   column[5].j = j;   column[5].k = k - 1;
-          column[6].i = i;   column[6].j = j;   column[6].k = k;
+          column[0].i = i + 1; column[0].j = j;     column[0].k = k;
+          column[1].i = i - 1; column[1].j = j;     column[1].k = k;
+          column[2].i = i;     column[2].j = j + 1; column[2].k = k;
+          column[3].i = i;     column[3].j = j - 1; column[3].k = k;
+          column[4].i = i;     column[4].j = j;     column[4].k = k + 1;
+          column[5].i = i;     column[5].j = j;     column[5].k = k - 1;
+          column[6].i = i;     column[6].j = j;     column[6].k = k;
 
           MatSetValuesStencil(A, 1, &row, 7, column, stencilValues,
                               INSERT_VALUES);
@@ -418,10 +418,12 @@ computeMatrix3D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure, void* ctx) {
   if (context->setAsBoundary & LEFT_WALL_BIT) {
     for (j = limitsY[0]; j < limitsY[1]; j++) {
       for (k = limitsZ[0]; k < limitsZ[1]; k++) {
-        column[0].i = 0;                        column[0].j = j; column[0].k =
-          k;
-        column[1].i = context->displacement[0]; column[1].j = j; column[1].k =
-          k;
+        column[0].i = 0; 
+        column[0].j = j;
+        column[0].k = k;
+        column[1].i = context->displacement[0];
+        column[1].j = j;
+        column[1].k = k;
         row.i = 0; row.j = j; row.k = k;
 
         if (parameters.walls.typeLeft == DIRICHLET) {

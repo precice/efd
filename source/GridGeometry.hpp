@@ -7,7 +7,7 @@ namespace FsiSimulation {
 template <typename Scalar, int D>
 class UniformGridGeometry {
 public:
-  typedef Eigen::Matrix<Scalar, D, 1> VectorDi;
+  typedef Eigen::Matrix<int, D, 1> VectorDi;
   typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
 
 public:
@@ -20,35 +20,45 @@ public:
   UniformGridGeometry&
   operator=(UniformGridGeometry const& other) = delete;
 
-  VectorDs
-  cellSize(VectorDi const& i) const {
+  void
+  initialize(VectorDs const& size,
+             VectorDi const& cellSize,
+             VectorDi const& corner) {
+    _size      = size;
+    _cellWidth = _size.cwiseQuotient(cellSize.template cast<Scalar>());
+    _corner    = corner;
+  }
+
+  VectorDs const&
+  size() const {
+    return _size;
+  }
+
+  VectorDs const&
+  cellWidth(VectorDi const& i) const {
     ((void)i);
 
-    return _cellSize;
+    return _cellWidth;
   }
 
-  void
-  cellSize(VectorDs const& cellSize) {
-    _cellSize = cellSize;
-  }
-
-  void
-  corner(VectorDi const& corner) {
-    _corner = corner;
+  VectorDi const&
+  corner() const {
+    return _corner;
   }
 
   VectorDs
   cellPosition(VectorDi const& i) const {
-    return _cellSize * (_corner + i);
+    return _cellWidth.cwiseProduct(_corner + i);
   }
 
-  VectorDs
+  VectorDs const&
   cellMinSize() const {
-    return _cellSize;
+    return _cellWidth;
   }
 
 private:
-  VectorDs _cellSize;
+  VectorDs _size;
+  VectorDs _cellWidth;
   VectorDi _corner;
 };
 }

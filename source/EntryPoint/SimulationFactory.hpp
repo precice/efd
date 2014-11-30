@@ -1,12 +1,10 @@
 #ifndef FsiSimulation_EntryPoint_SimulationFactory
 #define FsiSimulation_EntryPoint_SimulationFactory
 
-#include "Cell.hpp"
-#include "CellHeap.hpp"
-#include "GridGeometry.hpp"
-#include "MySimulation.hpp"
+#include "Parameters.h"
 
 namespace FsiSimulation {
+class MySimulation;
 namespace EntryPoint {
 class SimulationFactory {
 public:
@@ -14,35 +12,17 @@ public:
 
 public:
   static Simulation*
-  createUniformGridFloat2D() {
-    return createUniformGridFromTemplate<float, 2>();
-  }
+  createUniformGridFloat2D(Parameters const& parameters) ;
 
   static Simulation*
-  createUniformGridDouble2D() {
-    return createUniformGridFromTemplate<double, 2>();
-  }
+  createUniformGridDouble2D(Parameters const& parameters) ;
 
   static Simulation*
-  createUniformGridFloat3D() {
-    return createUniformGridFromTemplate<float, 3>();
-  }
+  createUniformGridFloat3D(Parameters const& parameters) ;
 
   static Simulation*
-  createUniformGridDouble3D() {
-    return createUniformGridFromTemplate<double, 3>();
-  }
+  createUniformGridDouble3D(Parameters const& parameters) ;
 
-private:
-  template <typename Scalar, int D>
-  static
-  Simulation*
-  createUniformGridFromTemplate() {
-    return new MyTemplateSimulation<UniformGridGeometry<Scalar, D>,
-                                    CellHeap<Cell<Scalar, D>, D>,
-                                    Scalar,
-                                    D>();
-  }
 };
 }
 }

@@ -160,3 +160,4 @@ void MovingWallFGHStencil::applyFrontWall ( FlowField & flowField, int i, int j,
 void MovingWallFGHStencil::applyBackWall ( FlowField & flowField, int i, int j, int k ){
     flowField.getFGH().getVector(i, j, k-1)[2] = _parameters.walls.vectorBack[2];
 }
+

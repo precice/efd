@@ -9,9 +9,6 @@
 #include <limits>
 
 namespace FsiSimulation {
-template <typename Scalar, int D>
-using ScalarVector =  Eigen::Matrix<Scalar, D, 1>;
-
 template <typename Scalar>
 inline void
 mpiAllReduceMin(Scalar& from, Scalar& to) {}
@@ -30,38 +27,50 @@ mpiAllReduceMin<double
   MPI_Allreduce(&from, &to, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD);
 }
 
+template <typename Scalar>
+inline void
+mpiSendRecv(int const& from, int& to) {}
+
+template <>
+inline void
+mpiSendRecv<float
+            >(int const& from, int& to) {}
+
 template <typename Scalar, int D>
-inline Scalar
-setTimeStep(Scalar const& re,
-            Scalar const& tau,
-            ScalarVector<Scalar, D> const& minCellSize,
-            ScalarVector<Scalar, D> const& maxVelocity) {
-  Scalar localMin, globalMin;
-  Scalar factor = 0.0;
+struct TimeStepProcessing {
+  typedef  Eigen::Matrix<Scalar, D, 1> VectorDs;
+  static inline Scalar
+  compute(Scalar const&   re,
+          Scalar const&   tau,
+          VectorDs const& minCellWidth,
+          VectorDs const& maxVelocity) {
+    Scalar localMin, globalMin;
+    Scalar factor = 0.0;
 
-  auto square = minCellSize.dot(minCellSize);
+    auto square = minCellWidth.dot(minCellWidth);
 
-  for (auto const& value : square) {
-    factor += 1.0 / value;
+    for (auto const& value : square) {
+      factor += 1.0 / value;
+    }
+
+    auto inverseMaxVelocity(maxVelocity);
+
+    for (auto& value : inverseMaxVelocity) {
+      value = 1.0 / value;
+    }
+
+    localMin = std::min(re / (2.0 * factor),
+                        inverseMaxVelocity.minCoeff());
+
+    globalMin = std::numeric_limits<Scalar>::max();
+    mpiAllReduceMin(localMin, globalMin);
+
+    factor  = globalMin;
+    factor *= tau;
+
+    return factor;
   }
-
-  auto inverseMaxVelocity(maxVelocity);
-
-  for (auto& value : inverseMaxVelocity) {
-    value = 1.0 / value;
-  }
-
-  localMin = std::min(re / (2.0 * factor),
-                      inverseMaxVelocity.minCoeff());
-
-  globalMin = std::numeric_limits<Scalar>::max();
-  mpiAllReduceMin(localMin, globalMin);
-
-  factor  = globalMin;
-  factor *= tau;
-
-  return factor;
-}
+};
 
 template <typename Scalar>
 inline Scalar
@@ -192,26 +201,25 @@ du2dx(Scalar const& currentU,
 
 template <typename Scalar>
 inline Scalar
-computeFGH2D(
-  Scalar const& currentU,
-  Scalar const& currentV,
-  Scalar const& leftU,
-  Scalar const& rightU,
-  Scalar const& rightV,
-  Scalar const& bottomU,
-  Scalar const& bottomV,
-  Scalar const& topU,
-  Scalar const& rightBottomV,
-  Scalar const& currentX,
-  Scalar const& currentY,
-  Scalar const& leftX,
-  Scalar const& rightX,
-  Scalar const& bottomY,
-  Scalar const& topY,
-  Scalar const& re,
-  Scalar const& gamma,
-  Scalar const& gx,
-  Scalar const& dt) {
+computeFGH2D(Scalar const& currentU,
+             Scalar const& currentV,
+             Scalar const& leftU,
+             Scalar const& rightU,
+             Scalar const& rightV,
+             Scalar const& bottomU,
+             Scalar const& bottomV,
+             Scalar const& topU,
+             Scalar const& rightBottomV,
+             Scalar const& currentX,
+             Scalar const& currentY,
+             Scalar const& leftX,
+             Scalar const& rightX,
+             Scalar const& bottomY,
+             Scalar const& topY,
+             Scalar const& re,
+             Scalar const& gamma,
+             Scalar const& gx,
+             Scalar const& dt) {
   return currentU
          +  dt * (1.0 / re *
                   (d2udx2(currentU,
@@ -250,35 +258,34 @@ computeFGH2D(
 
 template <typename Scalar>
 inline Scalar
-computeFGH3D(
-  Scalar const& currentU,
-  Scalar const& currentV,
-  Scalar const& currentW,
-  Scalar const& leftU,
-  Scalar const& rightU,
-  Scalar const& rightV,
-  Scalar const& rightW,
-  Scalar const& bottomU,
-  Scalar const& bottomV,
-  Scalar const& topU,
-  Scalar const& backU,
-  Scalar const& backW,
-  Scalar const& frontU,
-  Scalar const& rightBottomV,
-  Scalar const& rightBackW,
-  Scalar const& currentX,
-  Scalar const& currentY,
-  Scalar const& currentZ,
-  Scalar const& leftX,
-  Scalar const& rightX,
-  Scalar const& bottomY,
-  Scalar const& topY,
-  Scalar const& backZ,
-  Scalar const& frontZ,
-  Scalar const& re,
-  Scalar const& gamma,
-  Scalar const& gx,
-  Scalar const& dt) {
+computeFGH3D(Scalar const& currentU,
+             Scalar const& currentV,
+             Scalar const& currentW,
+             Scalar const& leftU,
+             Scalar const& rightU,
+             Scalar const& rightV,
+             Scalar const& rightW,
+             Scalar const& bottomU,
+             Scalar const& bottomV,
+             Scalar const& topU,
+             Scalar const& backU,
+             Scalar const& backW,
+             Scalar const& frontU,
+             Scalar const& rightBottomV,
+             Scalar const& rightBackW,
+             Scalar const& currentX,
+             Scalar const& currentY,
+             Scalar const& currentZ,
+             Scalar const& leftX,
+             Scalar const& rightX,
+             Scalar const& bottomY,
+             Scalar const& topY,
+             Scalar const& backZ,
+             Scalar const& frontZ,
+             Scalar const& re,
+             Scalar const& gamma,
+             Scalar const& gx,
+             Scalar const& dt) {
   return currentU
          +  dt * (1.0 / re *
                   (d2udx2(currentU,
@@ -349,6 +356,7 @@ template <typename TCellAccessor,
           typename TSimulationParameters,
           typename Scalar>
 class FghProcessing<TCellAccessor, TSimulationParameters, Scalar, 3> {
+public:
   static inline void
   compute(TCellAccessor const&         accessor,
           TSimulationParameters const& simulationParameters,
@@ -362,111 +370,105 @@ class FghProcessing<TCellAccessor, TSimulationParameters, Scalar, 3> {
     auto front       = accessor.currentCell();
     auto rightBottom = accessor.rightBottomCell();
     auto rightBack   = accessor.rightBackCell();
-    auto topLeft     = accessor.topLeftCell();
+    auto leftTop     = accessor.leftTopCell();
     auto topBack     = accessor.topBackCell();
     auto leftFront   = accessor.leftFrontCell();
     auto bottomFront = accessor.bottomFrontCell();
 
-    auto currentSize = accessor.currentSize();
-    auto leftSize    = accessor.leftSize();
-    auto rightSize   = accessor.rightSize();
-    auto bottomSize  = accessor.bottomSize();
-    auto topSize     = accessor.topSize();
-    auto backSize    = accessor.backSize();
-    auto frontSize   = accessor.current();
+    auto currentWidth = accessor.currentWidth();
+    auto leftWidth    = accessor.leftWidth();
+    auto rightWidth   = accessor.rightWidth();
+    auto bottomWidth  = accessor.bottomWidth();
+    auto topWidth     = accessor.topWidth();
+    auto backWidth    = accessor.backWidth();
+    auto frontWidth   = accessor.frontWidth();
 
-    current.fgh(0) =
-      computeFGH3D(
-        current->velocity(0),
-        current->velocity(1),
-        current->velocity(2),
-        left->velocity(0),
-        right->velocity(0),
-        right->velocity(1),
-        right->velocity(2),
-        bottom->velocity(0),
-        bottom->velocity(1),
-        top->velocity(0),
-        back->velocity(0),
-        back->velocity(2),
-        front->velocity(0),
-        rightBottom->velocity(1),
-        rightBack->velocity(2),
-        currentSize(0),
-        currentSize(1),
-        currentSize(2),
-        leftSize(0),
-        rightSize(0),
-        bottomSize(1),
-        topSize(1),
-        backSize(2),
-        frontSize(2),
-        simulationParameters.re(),
-        simulationParameters.gamma(),
-        simulationParameters.g(0),
-        dt);
+    current->fgh(0) = computeFGH3D(current->velocity(0),
+                                   current->velocity(1),
+                                   current->velocity(2),
+                                   left->velocity(0),
+                                   right->velocity(0),
+                                   right->velocity(1),
+                                   right->velocity(2),
+                                   bottom->velocity(0),
+                                   bottom->velocity(1),
+                                   top->velocity(0),
+                                   back->velocity(0),
+                                   back->velocity(2),
+                                   front->velocity(0),
+                                   rightBottom->velocity(1),
+                                   rightBack->velocity(2),
+                                   currentWidth(0),
+                                   currentWidth(1),
+                                   currentWidth(2),
+                                   leftWidth(0),
+                                   rightWidth(0),
+                                   bottomWidth(1),
+                                   topWidth(1),
+                                   backWidth(2),
+                                   frontWidth(2),
+                                   simulationParameters.re(),
+                                   simulationParameters.gamma(),
+                                   simulationParameters.g(0),
+                                   dt);
 
-    current.fgh(1) =
-      computeFGH3D(
-        current->velocity(1),
-        current->velocity(0),
-        current->velocity(2),
-        bottom->velocity(1),
-        top->velocity(1),
-        top->velocity(0),
-        top->velocity(2),
-        left->velocity(1),
-        left->velocity(0),
-        right->velocity(1),
-        back->velocity(1),
-        back->velocity(2),
-        front->velocity(1),
-        topLeft->velocity(0),
-        topBack->velocity(2),
-        currentSize(1),
-        currentSize(0),
-        currentSize(2),
-        bottomSize(1),
-        topSize(1),
-        leftSize(0),
-        rightSize(0),
-        backSize(2),
-        frontSize(2),
-        simulationParameters.re(),
-        simulationParameters.gamma(),
-        simulationParameters.g(1),
-        dt);
+    current->fgh(1) = computeFGH3D(current->velocity(1),
+                                   current->velocity(0),
+                                   current->velocity(2),
+                                   bottom->velocity(1),
+                                   top->velocity(1),
+                                   top->velocity(0),
+                                   top->velocity(2),
+                                   left->velocity(1),
+                                   left->velocity(0),
+                                   right->velocity(1),
+                                   back->velocity(1),
+                                   back->velocity(2),
+                                   front->velocity(1),
+                                   leftTop->velocity(0),
+                                   topBack->velocity(2),
+                                   currentWidth(1),
+                                   currentWidth(0),
+                                   currentWidth(2),
+                                   bottomWidth(1),
+                                   topWidth(1),
+                                   leftWidth(0),
+                                   rightWidth(0),
+                                   backWidth(2),
+                                   frontWidth(2),
+                                   simulationParameters.re(),
+                                   simulationParameters.gamma(),
+                                   simulationParameters.g(1),
+                                   dt);
 
-    current.fgh(2) =
-      computeFGH3D(
-        current->velocity(2),
-        current->velocity(1),
-        current->velocity(0),
-        back->velocity(2),
-        front->velocity(2),
-        front->velocity(1),
-        front->velocity(0),
-        bottom->velocity(2),
-        bottom->velocity(1),
-        top->velocity(2),
-        left->velocity(2),
-        left->velocity(0),
-        right->velocity(2),
-        bottomFront->velocity(1),
-        leftFront->velocity(0),
-        currentSize(2),
-        currentSize(1),
-        currentSize(0),
-        backSize(2),
-        frontSize(2),
-        bottomSize(1),
-        topSize(1),
-        leftSize(0),
-        rightSize(0),
-        simulationParameters.re(),
-        simulationParameters.gamma(),
-        simulationParameters.g(2),
-        dt);
+    current->fgh(2) = computeFGH3D(current->velocity(2),
+                                   current->velocity(1),
+                                   current->velocity(0),
+                                   back->velocity(2),
+                                   front->velocity(2),
+                                   front->velocity(1),
+                                   front->velocity(0),
+                                   bottom->velocity(2),
+                                   bottom->velocity(1),
+                                   top->velocity(2),
+                                   left->velocity(2),
+                                   left->velocity(0),
+                                   right->velocity(2),
+                                   bottomFront->velocity(1),
+                                   leftFront->velocity(0),
+                                   currentWidth(2),
+                                   currentWidth(1),
+                                   currentWidth(0),
+                                   backWidth(2),
+                                   frontWidth(2),
+                                   bottomWidth(1),
+                                   topWidth(1),
+                                   leftWidth(0),
+                                   rightWidth(0),
+                                   simulationParameters.re(),
+                                   simulationParameters.gamma(),
+                                   simulationParameters.g(2),
+                                   dt);
   }
 };
 
@@ -474,6 +476,7 @@ template <typename TCellAccessor,
           typename TSimulationParameters,
           typename Scalar>
 class FghProcessing<TCellAccessor, TSimulationParameters, Scalar, 2> {
+public:
   static inline void
   compute(TCellAccessor const&         accessor,
           TSimulationParameters const& simulationParameters,
@@ -484,59 +487,146 @@ class FghProcessing<TCellAccessor, TSimulationParameters, Scalar, 2> {
     auto bottom      = accessor.bottomCell();
     auto top         = accessor.topCell();
     auto rightBottom = accessor.rightBottomCell();
-    auto topLeft     = accessor.topLeftCell();
-    auto leftFront   = accessor.leftFrontCell();
-    auto bottomFront = accessor.bottomFrontCell();
+    auto leftTop     = accessor.leftTopCell();
 
-    auto currentSize = accessor.currentSize();
-    auto leftSize    = accessor.leftSize();
-    auto rightSize   = accessor.rightSize();
-    auto bottomSize  = accessor.bottomSize();
-    auto topSize     = accessor.topSize();
+    auto currentWidth = accessor.currentWidth();
+    auto leftWidth    = accessor.leftWidth();
+    auto rightWidth   = accessor.rightWidth();
+    auto bottomWidth  = accessor.bottomWidth();
+    auto topWidth     = accessor.topWidth();
 
-    current.fgh(0) =
-      computeFGH2D(
-        current->velocity(0),
-        current->velocity(1),
-        left->velocity(0),
-        right->velocity(0),
-        right->velocity(1),
-        bottom->velocity(0),
-        bottom->velocity(1),
-        top->velocity(0),
-        rightBottom->velocity(1),
-        currentSize(0),
-        currentSize(1),
-        leftSize(0),
-        rightSize(0),
-        bottomSize(1),
-        topSize(1),
-        simulationParameters.re(),
-        simulationParameters.gamma(),
-        simulationParameters.g(0),
-        dt);
+    current->fgh(0) = computeFGH2D(current->velocity(0),
+                                   current->velocity(1),
+                                   left->velocity(0),
+                                   right->velocity(0),
+                                   right->velocity(1),
+                                   bottom->velocity(0),
+                                   bottom->velocity(1),
+                                   top->velocity(0),
+                                   rightBottom->velocity(1),
+                                   currentWidth(0),
+                                   currentWidth(1),
+                                   leftWidth(0),
+                                   rightWidth(0),
+                                   bottomWidth(1),
+                                   topWidth(1),
+                                   simulationParameters.re(),
+                                   simulationParameters.gamma(),
+                                   simulationParameters.g(0),
+                                   dt);
 
-    current.fgh(1) =
-      computeFGH2D(
-        current->velocity(1),
-        current->velocity(0),
-        bottom->velocity(1),
-        top->velocity(1),
-        top->velocity(0),
-        left->velocity(1),
-        left->velocity(0),
-        right->velocity(1),
-        topLeft->velocity(0),
-        currentSize(1),
-        currentSize(0),
-        bottomSize(1),
-        topSize(1),
-        leftSize(0),
-        rightSize(0),
-        simulationParameters.re(),
-        simulationParameters.gamma(),
-        simulationParameters.g(1),
-        dt);
+    current->fgh(1) = computeFGH2D(current->velocity(1),
+                                   current->velocity(0),
+                                   bottom->velocity(1),
+                                   top->velocity(1),
+                                   top->velocity(0),
+                                   left->velocity(1),
+                                   left->velocity(0),
+                                   right->velocity(1),
+                                   leftTop->velocity(0),
+                                   currentWidth(1),
+                                   currentWidth(0),
+                                   bottomWidth(1),
+                                   topWidth(1),
+                                   leftWidth(0),
+                                   rightWidth(0),
+                                   simulationParameters.re(),
+                                   simulationParameters.gamma(),
+                                   simulationParameters.g(1),
+                                   dt);
+  }
+};
+
+template <typename TCellAccessor, typename Scalar, int D>
+class RhsProcessing {
+public:
+  static inline Scalar
+  compute(TCellAccessor const& accessor,
+          Scalar const&        dt) {
+    auto temp(accessor.currentCell()->fgh());
+
+    for (int d = 0; d < D; ++d) {
+      temp(d) -= accessor.leftCellInDimension(d)->fgh(d);
+    }
+    temp = temp.cwiseQuotient(accessor.currentWidth());
+
+    Scalar result = temp.sum();
+    result = 1.0 / dt * result;
+
+    return result;
+  }
+};
+
+template <typename TGrid, typename TCellAccessor, typename Scalar, int D>
+class PressurePoissonStencilProcessing {
+public:
+  template <typename TStencil, typename TRow, typename TColumns>
+  static inline void
+  compute(TGrid const&         grid,
+          TCellAccessor const& accessor,
+          TStencil&            stencil,
+          TRow&                row,
+          TColumns&            columns) {
+    typedef Eigen::Matrix<Scalar, 2* D, 1> Vector2Ds;
+
+    Vector2Ds meanWidths;
+
+    for (int d = 0; d < D; ++d) {
+      meanWidths(2 * d) = 0.5 *
+                          (accessor.currentWidth() (d) +
+                           accessor.leftWidthInDimension (d)(d));
+      meanWidths(2 * d + 1) = 0.5 *
+                              (accessor.currentWidth() (d) +
+                               accessor.rightWidthInDimension (d)(d));
+      auto leftIndex(accessor.leftIndexInDimension(d)); // - grid.leftIndent());
+      auto rightIndex(accessor.rightIndexInDimension(d)); // -
+                                                          // grid.leftIndent());
+      columns[2 * d].i     = leftIndex(0);
+      columns[2 * d].j     = leftIndex(1);
+      columns[2 * d + 1].i = rightIndex(0);
+      columns[2 * d + 1].j = rightIndex(1);
+
+      if (D == 3) {
+        columns[2 * d].k     = leftIndex(2);
+        columns[2 * d + 1].k = rightIndex(2);
+      }
+    }
+    auto currentIndex(accessor.currentIndex() - grid.leftIndent());
+    columns[2 * D].i = currentIndex(0);
+    columns[2 * D].j = currentIndex(1);
+
+    if (D == 3) {
+      columns[2 * D].k = currentIndex(2);
+    }
+    row = columns[2 * D];
+
+    stencil[2 * D] = 0;
+
+    for (int d = 0; d < D; ++d) {
+      auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);
+      stencil[2 * d] =
+        2.0 / (meanWidths(2 * d) * meanLeftAndRightWidth);
+      stencil[2 * d + 1] =
+        2.0 / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
+      stencil[2 * D] -= 2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
+    }
+  }
+};
+
+template <typename TCellAccessor, typename Scalar, int D>
+class VelocityProcessing {
+public:
+  static inline void
+  compute(TCellAccessor const& accessor,
+          Scalar const&        dt) {
+    for (int d = 0; d < D; ++d) {
+      accessor.currentCell()->velocity() (d) =
+        accessor.currentCell()->fgh() (d) -
+        dt / (0.5 * (accessor.rightWidthInDimension (d)(d) +
+                     accessor.currentWidth() (d))) *
+        (accessor.rightCellInDimension(d)->pressure() -
+         accessor.currentCell()->pressure());
+    }
   }
 };
 }

@@ -22,18 +22,30 @@ public:
   Scalar&
   re() { return _re; }
 
+  Scalar const&
+  re() const { return _re; }
+
   Scalar&
   gamma() { return _gamma; }
+
+  Scalar const&
+  gamma() const { return _gamma; }
 
   VectorDs&
   g() { return _g; }
 
+  VectorDs const&
+  g() const { return _g; }
+
   Scalar&
   g(int const& i) { return _g(i); }
 
+  Scalar const&
+  g(int const& i) const { return _g(i); }
+
 private:
-  Scalar _re;
-  Scalar _gamma;
+  Scalar   _re;
+  Scalar   _gamma;
   VectorDs _g;
 };
 }

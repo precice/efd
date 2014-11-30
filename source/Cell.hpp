@@ -25,11 +25,11 @@ public:
   VectorDs const&
   velocity() const { return _velocity; }
 
-  VectorDs&
-  velocity(int const& i) { return _velocity->data()[i]; }
+  Scalar&
+  velocity(int const& i) { return _velocity.data()[i]; }
 
-  VectorDs const&
-  velocity(int const& i) const { return _velocity->data()[i]; }
+  Scalar const&
+  velocity(int const& i) const { return _velocity.data()[i]; }
 
   VectorDs&
   fgh() { return _fgh; }
@@ -37,11 +37,11 @@ public:
   VectorDs const&
   fgh() const { return _fgh; }
 
-  VectorDs&
-  fgh(int const& i) { return _fgh->data()[i]; }
+  Scalar&
+  fgh(int const& i) { return _fgh.data()[i]; }
 
-  VectorDs const&
-  fgh(int const& i) const { return _fgh->data()[i]; }
+  Scalar const&
+  fgh(int const& i) const { return _fgh.data()[i]; }
 
   Scalar&
   pressure() { return _pressure; }
