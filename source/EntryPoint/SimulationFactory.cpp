@@ -3,7 +3,6 @@
 #include "Cell.hpp"
 #include "GridGeometry.hpp"
 #include "MyTemplateSimulation.hpp"
-#include "Solvers/GhostPressureStencilHanlers.hpp"
 #include "StructuredMemory/Accessor.hpp"
 #include "StructuredMemory/Memory.hpp"
 
@@ -16,19 +15,40 @@ namespace FsiSimulation {
 namespace EntryPoint {
 namespace Private {
 template <typename Scalar, int D>
-SimulationFactory::Simulation*
-createUniformGridFromTemplate(Parameters const& parameters) {
-  typedef MyTemplateSimulation<
+using
+  SpecializedSimulationT =
+    MyTemplateSimulation<
       UniformGridGeometry<Scalar, D>,
       StructuredMemory::IterableMemory<Cell<Scalar, D>, D>,
       Scalar,
-      D> SpecializedSimulation;
-  typedef typename SpecializedSimulation::SpecializedGrid Grid;
-  typedef typename
-    SpecializedSimulation::SpecializedParallelTopology::VectorDi
+      D>;
+template <typename Scalar, int D>
+using GridT = typename SpecializedSimulationT<Scalar, D>::SpecializedGrid;
+template <typename Scalar, int D>
+using VectorDiT =
+        typename SpecializedSimulationT<Scalar, D>::
+        SpecializedParallelTopology::VectorDi;
+template <typename Scalar, int D>
+using VectorDsT =
+        typename SpecializedSimulationT<Scalar, D>::GridGeometry::
+        VectorDs;
+
+template <typename Scalar, int D>
+typename GridT<Scalar, D>::CellAccessor::Cell::Velocity *
+velocityAccessor(typename GridT<Scalar, D>::CellAccessor const & accessor) {
+  return &accessor.currentCell()->velocity();
+}
+
+template <typename Scalar, int D>
+SimulationFactory::Simulation*
+createUniformGridFromTemplate(Parameters const& parameters) {
+  typedef SpecializedSimulationT<Scalar, D>
+    SpecializedSimulation;
+  typedef typename SpecializedSimulation::SpecializedGrid
+    Grid;
+  typedef typename SpecializedSimulation::SpecializedParallelTopology::VectorDi
     VectorDi;
-  typedef typename
-    SpecializedSimulation::GridGeometry::VectorDs
+  typedef typename SpecializedSimulation::GridGeometry::VectorDs
     VectorDs;
 
   auto simulation = new SpecializedSimulation();
@@ -62,19 +82,49 @@ createUniformGridFromTemplate(Parameters const& parameters) {
     simulation->_parameters.g(2) = parameters.environment.gz;
   }
 
-  for (int d = 0; d < D; ++d) {
-    typedef Solvers::DirichletStack<Grid, Scalar, D> DirichletStack;
+  typedef
+    Solvers::Ghost::PressureStencil::DirichletStack
+    <Grid, Scalar, D> DirichletStack;
+  auto dirichletStack = DirichletStack::create(
+    &simulation->_grid,
+    &simulation->_parallelTopology);
 
+  for (int d = 0; d < D; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
       simulation->_ghostCellsHandler._pressureStencilStack[d][d2] =
-        DirichletStack::get()[d][d2];
+        dirichletStack[d][d2];
+    }
+  }
+
+  typedef
+    Solvers::Ghost::MpiExchange::Stack
+    < typename Grid::CellAccessor::Cell::Velocity,
+    Grid,
+    Scalar,
+    D,
+    velocityAccessor < Scalar, D >>
+    MpiVelocityExchangeStack;
+
+  auto mpiVelocityExchangeStack =
+    MpiVelocityExchangeStack::create(
+      &simulation->_grid,
+      &simulation->_parallelTopology);
+
+  for (int d = 0; d < D; ++d) {
+    for (int d2 = 0; d2 < 2; ++d2) {
+      if (simulation->_parallelTopology.neighbors[d][d2] >= 0) {
+        simulation->_ghostCellsHandler._mpiVelocityExchangeStack[d][d2] =
+          mpiVelocityExchangeStack[d][d2];
+      }
     }
   }
 
   simulation->_gridGeometry.initialize(size,
                                        simulation->_parallelTopology.
                                        globalSize,
-                                       simulation->_parallelTopology.corner);
+                                       simulation->
+                                       _parallelTopology
+                                       .corner);
 
   return simulation;
 }

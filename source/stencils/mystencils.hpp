@@ -3,6 +3,8 @@
 
 #include <Eigen/Core>
 
+#include <Uni/Logging/macros>
+
 #include <mpi.h>
 #include <petsc.h>
 
@@ -591,7 +593,8 @@ public:
         columns[2 * d + 1].k = rightIndex(2);
       }
     }
-    auto currentIndex(accessor.currentIndex() - grid.leftIndent());
+    auto currentIndex(accessor.currentIndex());
+    //currentIndex    -= grid.leftIndent();
     columns[2 * D].i = currentIndex(0);
     columns[2 * D].j = currentIndex(1);
 

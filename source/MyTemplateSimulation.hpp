@@ -40,7 +40,7 @@ public:
     PoissonSolver;
 
   typedef
-    GhostCellsHandler<SpecializedGrid, D>
+    GhostCellsHandler<D>
     SpecializedGhostCellsHandler;
 
 public:
@@ -85,12 +85,12 @@ public:
       Fgh::compute(accessor, _parameters, _dt);
     }
 
-    _poissonSolver.solve();
+    //_poissonSolver.solve();
 
-    for (auto accessor : _grid.innerGrid) {
-      typedef VelocityProcessing<SpecializedCellAccessor, Scalar, D> Velocity;
-      Velocity::compute(accessor, _dt);
-    }
+    //for (auto accessor : _grid.innerGrid) {
+    //  typedef VelocityProcessing<SpecializedCellAccessor, Scalar, D> Velocity;
+    //  Velocity::compute(accessor, _dt);
+    //}
   }
 
   Memory                          _memory;

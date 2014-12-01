@@ -30,11 +30,6 @@ struct Pointers<TCell, 1> {
     return *this;
   }
 
-  TCell*
-  getCell(VectorDi const& index) {
-    return &_pointers[index(0)];
-  }
-
   void
   allocate(VectorDi const& size) {
     release();
@@ -47,6 +42,21 @@ struct Pointers<TCell, 1> {
     if (_pointers) {
       delete[] _pointers;
     }
+  }
+
+  VectorDi const&
+  size() const {
+    return _size;
+  }
+
+  TCell*
+  data() const {
+    return _pointers;
+  }
+
+  TCell*
+  getCell(VectorDi const& index) const {
+    return &_pointers[index(0)];
   }
 
   static inline TCell&
@@ -83,12 +93,6 @@ struct Pointers<TCell, 2> {
 
     return *this;
   }
-
-  TCell*
-  getCell(VectorDi const& index) {
-    return &_pointers[index(1)][index(0)];
-  }
-
   void
   allocate(VectorDi const& size) {
     release();
@@ -110,6 +114,21 @@ struct Pointers<TCell, 2> {
     if (_pointers) {
       delete[] _pointers;
     }
+  }
+
+  VectorDi const&
+  size() const {
+    return _size;
+  }
+
+  TCell*
+  data() const {
+    return _data;
+  }
+
+  TCell*
+  getCell(VectorDi const& index) {
+    return &_pointers[index(1)][index(0)];
   }
 
   static inline TCell&
@@ -148,11 +167,6 @@ struct Pointers<TCell, 3> {
     return *this;
   }
 
-  TCell*
-  getCell(VectorDi const& index) {
-    return &_pointers[index(2)][index(1)][index(0)];
-  }
-
   void
   allocate(VectorDi const& size) {
     release();
@@ -182,6 +196,21 @@ struct Pointers<TCell, 3> {
       }
       delete[] _pointers;
     }
+  }
+
+  VectorDi const&
+  size() const {
+    return _size;
+  }
+
+  TCell*
+  data() const {
+    return _data;
+  }
+
+  TCell*
+  getCell(VectorDi const& index) const {
+    return &_pointers[index(2)][index(1)][index(0)];
   }
 
   static inline TCell&

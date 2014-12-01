@@ -1,10 +1,12 @@
 #ifndef FsiSimulation_ParallelTopology_hpp
 #define FsiSimulation_ParallelTopology_hpp
 
+#include <Uni/Logging/format>
 #include <Uni/Logging/macros>
 
 #include <Eigen/Core>
 
+#include <array>
 #include <cstdlib>
 
 namespace FsiSimulation {
@@ -16,8 +18,8 @@ logParallelTopologyInfo(ParallelTopology<D> const& topology);
 template <int D>
 class ParallelTopology {
 public:
-  typedef Eigen::Matrix<int, D, 1>    VectorDi;
-  typedef Eigen::Matrix<int, 2* D, 1> Neighbors;
+  typedef Eigen::Matrix<int, D, 1>          VectorDi;
+  typedef std::array<std::array<int, 2>, D> Neighbors;
 
 public:
   ParallelTopology() {}
@@ -53,11 +55,11 @@ public:
 
     for (int d = 0; d < D; ++d) {
       auto tempIndex = index;
-      tempIndex(d)        -= 1;
-      neighbors(2 * d)     = getRank(tempIndex);
-      tempIndex            = index;
-      tempIndex(d)        += 1;
-      neighbors(2 * d + 1) = getRank(tempIndex);
+      tempIndex(d)   -= 1;
+      neighbors[d][0] = getRank(tempIndex);
+      tempIndex       = index;
+      tempIndex(d)   += 1;
+      neighbors[d][1] = getRank(tempIndex);
     }
   }
 
@@ -91,6 +93,12 @@ public:
 template <int D>
 void
 logParallelTopologyInfo(ParallelTopology<D> const& topology) {
+  std::string neighbors;
+
+  for (int d = 0; d < D; ++d) {
+    neighbors += Uni::Logging::format("{1} ", topology.neighbors[d][0]);
+    neighbors += Uni::Logging::format("{1} ", topology.neighbors[d][1]);
+  }
   logInfo("Topology rank: {1}\n"
           "Topology processor size: {2}\n"
           "Topology global size: {3}\n"
@@ -104,7 +112,7 @@ logParallelTopologyInfo(ParallelTopology<D> const& topology) {
           topology.localSize.transpose(),
           topology.index.transpose(),
           topology.corner.transpose(),
-          topology.neighbors.transpose());
+          neighbors);
 }
 }
 

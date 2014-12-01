@@ -18,9 +18,13 @@ logGridInitializationInfo(Grid<TCellAccessor, D> const& grid);
 template <typename TCellAccessor, int D>
 class Grid : public Uni::StructuredGrid::Basic::Grid<TCellAccessor, D> {
 public:
-  typedef Uni::StructuredGrid::Basic::Grid<TCellAccessor, D> Base;
-  typedef typename Base::Iterator                            Iterator;
-  typedef  typename Base::VectorDi                           VectorDi;
+  typedef
+    Uni::StructuredGrid::Basic::Grid<TCellAccessor, D>
+    Base;
+
+  typedef typename Base::Iterator   Iterator;
+  typedef  typename Base::VectorDi  VectorDi;
+  typedef typename Base::MultiIndex CellAccessor;
   typedef typename Base::Factory
     CellAccessorFactory;
 

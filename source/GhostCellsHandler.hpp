@@ -1,27 +1,12 @@
 #ifndef FsiSimulation_GhostCellsHandler_hpp
 #define FsiSimulation_GhostCellsHandler_hpp
 
-#include "ParallelTopology.hpp"
-
-#include <petscdm.h>
-#include <petscdmda.h>
-
-#include <array>
-#include <functional>
+#include "Solvers/GhostPressureStencilHanlers.hpp"
+#include "Solvers/GhostMpiExchangeHandlers.hpp"
 
 namespace FsiSimulation {
-template <typename TGrid, int D>
+template <int D>
 class GhostCellsHandler {
-public:
-  typedef ParallelTopology<D> SpecializedParallelTopology;
-  typedef std::function<void (TGrid const*,
-                              SpecializedParallelTopology const*,
-                              Mat&)> PressureStencilHandler;
-  template <typename THandler>
-  using HandlerStack = std::array<std::array<THandler, 2>, D>;
-
-  typedef HandlerStack<PressureStencilHandler> PressureStencilStack;
-
 public:
   GhostCellsHandler() {}
 
@@ -32,7 +17,8 @@ public:
   GhostCellsHandler&
   operator=(GhostCellsHandler const& other) = delete;
 
-  PressureStencilStack _pressureStencilStack;
+  Solvers::Ghost::PressureStencil::FunctorStack<D> _pressureStencilStack;
+  Solvers::Ghost::MpiExchange::FunctorStack<D> _mpiVelocityExchangeStack;
 
 private:
 };

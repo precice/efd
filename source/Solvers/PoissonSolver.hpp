@@ -18,10 +18,9 @@ namespace Solvers {
 template <typename TCellAccessor, typename Scalar, int D>
 class PoissonSolver {
 public:
-  typedef Grid<TCellAccessor, D> SpecializedGrid;
-  typedef ParallelTopology<D>    SpecializedParallelTopology;
-  typedef GhostCellsHandler<SpecializedGrid, D>
-    SpecializedGhostCellsHandler;
+  typedef Grid<TCellAccessor, D>      SpecializedGrid;
+  typedef ParallelTopology<D>         SpecializedParallelTopology;
+  typedef GhostCellsHandler<D>        SpecializedGhostCellsHandler;
   typedef Scalar const*               ScalarPointer;
   typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
   typedef Eigen::Matrix<int, D, 1>    VectorDi;
@@ -98,7 +97,7 @@ private:
     MatStencil  columns[2 * D + 1];
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      // logInfo("{1}", accessor.indexValues().transpose());
+      //logInfo("{1}", accessor.indexValues().transpose());
       typedef
         PressurePoissonStencilProcessing<typename SpecializedGrid::Base,
                                          TCellAccessor,
@@ -110,16 +109,20 @@ private:
                                  stencil,
                                  row,
                                  columns);
+
+      //logInfo("Columns1 {1} {2}", columns[0].i, columns[0].j);
+      //logInfo("Columns2 {1} {2}", columns[1].i, columns[1].j);
+      //logInfo("Columns3 {1} {2}", columns[2].i, columns[2].j);
+      //logInfo("Columns4 {1} {2}", columns[3].i, columns[3].j);
+      //logInfo("Columns5 {1} {2}", columns[4].i, columns[4].j);
+      //logInfo("Row {1} {2}",      row.i,        row.j);
       MatSetValuesStencil(A, 1, &row, 2 * D + 1, columns, stencil,
                           INSERT_VALUES);
     }
 
     for (int d = 0; d < D; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        solver->_ghostCellsHandler->
-        _pressureStencilStack[d][d2](solver->_grid,
-                                     solver->_parallelTopology,
-                                     A);
+        solver->_ghostCellsHandler->_pressureStencilStack[d][d2](A);
       }
     }
 

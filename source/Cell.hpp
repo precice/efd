@@ -8,6 +8,8 @@ template <typename Scalar, int D>
 class Cell {
 public:
   typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
+  typedef VectorDs                    Velocity;
+  typedef Scalar                      Pressure;
 
 public:
   Cell() {}

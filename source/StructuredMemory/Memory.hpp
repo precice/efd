@@ -38,9 +38,40 @@ public:
     _pointers.release();
   }
 
+  VectorDi const&
+  size() const {
+    return _pointers.size();
+  }
+
+  Cell*
+  data() const {
+    return _pointers.data();
+  }
+
+  VectorDi const&
+  indexShift() const {
+    return _indexShift;
+  }
+
+  void
+  indexShift(VectorDi const index) {
+    _indexShift = index;
+  }
+
   Cell*
   getCell(VectorDi const& index) {
     return _pointers.getCell(index);
+  }
+
+  Cell*
+  getCell(VectorDi const& index,
+          VectorDi const& indexShift) {
+    return _pointers.getCell(index + indexShift);
+  }
+
+  Cell*
+  getCellWithShiftIndex(VectorDi const& index) {
+    return _pointers.getCell(index + _indexShift);
   }
 
   Cell*
@@ -48,8 +79,15 @@ public:
     return getCell(index);
   }
 
+  Cell*
+  operator()(VectorDi const& index,
+             VectorDi const& indexShift) {
+    return getCell(index + indexShift);
+  }
+
 private:
   SpecializedPointers _pointers;
+  VectorDi            _indexShift;
 };
 
 template <typename TCell, int D>

@@ -276,6 +276,7 @@ initialize() {
     Implementation::UniqueMySimulation(
       SimulationFactory::createUniformGridFloat2D(_im->parameters));
   _im->mySimulation->initialize();
+  _im->mySimulation->iterate();
 
   // initialise simulation
   if (_im->parameters.simulation.type == "turbulence") {
