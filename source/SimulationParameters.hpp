@@ -31,6 +31,12 @@ public:
   Scalar const&
   gamma() const { return _gamma; }
 
+  Scalar&
+  tau() { return _tau; }
+
+  Scalar const&
+  tau() const { return _tau; }
+
   VectorDs&
   g() { return _g; }
 
@@ -46,6 +52,7 @@ public:
 private:
   Scalar   _re;
   Scalar   _gamma;
+  Scalar   _tau;
   VectorDs _g;
 };
 }

@@ -126,11 +126,14 @@ void
 FlowField::
 getPressureAndVelocity(FLOAT& pressure, FLOAT* const velocity,  int i, int j) {
   FLOAT* v_here = getVelocity().getVector(i, j);
-  FLOAT* v_left = getVelocity().getVector(i - 1, j);
-  FLOAT* v_down = getVelocity().getVector(i, j - 1);
+  //FLOAT* v_left = getVelocity().getVector(i - 1, j);
+  //FLOAT* v_down = getVelocity().getVector(i, j - 1);
 
-  velocity[0] = (v_here[0] + v_left[0]) / 2;
-  velocity[1] = (v_here[1] + v_down[1]) / 2;
+  //velocity[0] = (v_here[0] + v_left[0]) / 2;
+  //velocity[1] = (v_here[1] + v_down[1]) / 2;
+
+  velocity[0] = v_here[0];
+  velocity[1] = v_here[1];
 
   pressure = getPressure().getScalar(i, j);
 }

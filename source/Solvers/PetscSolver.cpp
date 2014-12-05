@@ -1,5 +1,7 @@
 #include "PetscSolver.hpp"
 
+#include <Uni/Logging/macros>
+
 using FsiSimulation::Solvers::PetscSolver;
 using FsiSimulation::Solvers::PetscUserCtx;
 
@@ -84,11 +86,11 @@ computeMatrix2D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure,
 
         // Definition of values: set general formulation for laplace operator
         // here, based on arbitrary meshsizes
-        stencilValues[1] =  2.0 / (dx_L * (dx_L + dx_R)); // left
         stencilValues[0] =  2.0 / (dx_R * (dx_L + dx_R)); // right
+        stencilValues[1] =  2.0 / (dx_L * (dx_L + dx_R)); // left
+        stencilValues[2] = -2.0 / (dx_R * dx_L) - 2.0 / (dx_T * dx_Bo); // center
         stencilValues[3] =  2.0 / (dx_T * (dx_T + dx_Bo)); // top
         stencilValues[4] =  2.0 / (dx_Bo * (dx_T + dx_Bo)); // bottom
-        stencilValues[2] = -2.0 / (dx_R * dx_L) - 2.0 / (dx_T * dx_Bo); // center
 
         // Definition of positions. Order must correspond to values
         column[0].i = i + 1; column[0].j = j;
@@ -96,6 +98,19 @@ computeMatrix2D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure,
         column[2].i = i;   column[2].j = j;
         column[3].i = i;   column[3].j = j + 1;
         column[4].i = i;   column[4].j = j - 1;
+
+      //logInfo("Petsc Columns1 {1} {2}", column[0].i, column[0].j);
+      //logInfo("Petsc Columns2 {1} {2}", column[1].i, column[1].j);
+      //logInfo("Petsc Columns3 {1} {2}", column[2].i, column[2].j);
+      //logInfo("Petsc Columns4 {1} {2}", column[3].i, column[3].j);
+      //logInfo("Petsc Columns5 {1} {2}", column[4].i, column[4].j);
+      //logInfo("Petsc Row      {1} {2}",      row.i,        row.j);
+      //logInfo("Petsc Stencil  {1} {2} {3} {4} {5}",
+      //        stencilValues[0],
+      //        stencilValues[1],
+      //        stencilValues[2],
+      //        stencilValues[3],
+      //        stencilValues[4]);
 
         MatSetValuesStencil(A, 1, &row, 5, column, stencilValues,
                             INSERT_VALUES);

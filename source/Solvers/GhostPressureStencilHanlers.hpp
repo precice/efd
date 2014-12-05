@@ -35,6 +35,10 @@ public:
     : _grid(grid),
       _parallelTopology(parallelTopology) {}
 
+  ~Handler() {
+    logInfo("GhostPressureStencilHanlers destroyed");
+  }
+
   static Functor
   getDirichletHandler(TGrid const*                       grid,
                       SpecializedParallelTopology const* parallelTopology) {
@@ -61,7 +65,7 @@ public:
     MatStencil  columns[2];
 
     for (auto const& accessor : _grid->boundaries[TDimension][TDirection]) {
-       //logDebug("{1}", accessor.currentIndex());
+      // logDebug("{1}", accessor.currentIndex());
       if (TDimension == 0) {
         if (TDirection == 1) {
           columns[0].i = _parallelTopology->globalSize(0) + 1;
@@ -109,10 +113,15 @@ public:
 
       row = columns[0];
 
+      //logInfo("{1} {2}", columns[1].i, columns[1].j);
+      //logInfo("{1} {2}", columns[0].i, columns[0].j);
+      //logInfo("{1} {2}", row.i, row.j);
       TStencil(stencil);
+      //logInfo("{1} {2}", stencil[0], stencil[1]);
       MatSetValuesStencil(A, 1, &row, 2, columns, stencil, INSERT_VALUES);
     }
   }
+
 
   static void
   dirichletPressureStencil(PetscScalar* stencil) {
@@ -137,7 +146,7 @@ public:
 
   static FunctorStack<2>
   create(TGrid const*                       grid,
-      SpecializedParallelTopology const* topology) {
+         SpecializedParallelTopology const* topology) {
     FunctorStack<2> _instance =
     { _Handler<0, 0>::getDirichletHandler(grid, topology),
       _Handler<0, 1>::getDirichletHandler(grid, topology),

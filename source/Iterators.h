@@ -4,6 +4,8 @@
 #include "Parameters.h"
 #include "Stencil.h"
 
+#include <Uni/Logging/macros>
+
 /**
  * Iterator class
  *

@@ -49,12 +49,30 @@ public:
     VectorDi indent(VectorDi::Ones());
 
     for (int i = 0; i < D; ++i) {
-      auto leftIndent(indent);
+      VectorDi leftIndent(VectorDi::Zero());
       leftIndent(i) = 0;
-      auto rightIndent(indent);
+      VectorDi rightIndent(VectorDi::Zero());
+      rightIndent(i) = size(i) - 1;
+      boundaries[i][0].initialize(size,
+                                  leftIndent,
+                                  rightIndent,
+                                  factory);
+      boundaries[i][1].initialize(size,
+                                  rightIndent,
+                                  leftIndent,
+                                  factory);
+      leftIndent     = indent;
+      leftIndent(i)  = 0;
+      rightIndent    = indent;
       rightIndent(i) = size(i) - rightIndent(i);
-      boundaries[i][0].initialize(size, leftIndent, rightIndent, factory);
-      boundaries[i][1].initialize(size, rightIndent, leftIndent, factory);
+      indentedBoundaries[i][0].initialize(size,
+                                          leftIndent,
+                                          rightIndent,
+                                          factory);
+      indentedBoundaries[i][1].initialize(size,
+                                          rightIndent,
+                                          leftIndent,
+                                          factory);
     }
     innerGrid.initialize(size, indent, indent, factory);
   }
@@ -62,6 +80,7 @@ public:
 public:
   Base                               innerGrid;
   std::array<std::array<Base, 2>, D> boundaries;
+  std::array<std::array<Base, 2>, D> indentedBoundaries;
 
   friend void
   logGridInitializationInfo<TCellAccessor, D

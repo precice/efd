@@ -22,6 +22,7 @@
 
 #include "Solvers/PetscSolver.hpp"
 #include "Solvers/SORSolver.hpp"
+#include <Uni/Logging/macros>
 
 namespace FsiSimulation {
 class Simulation {
@@ -146,8 +147,8 @@ public:
   virtual void
   plotVTK(int timeStep) {
     VTKStencil               vtkStencil(_parameters);
-    FieldIterator<FlowField> vtkIterator(_flowField, _parameters, vtkStencil, 1,
-                                         0);
+    FieldIterator<FlowField> vtkIterator(_flowField, _parameters, vtkStencil, 0,
+                                         1);
 
     vtkIterator.iterate();
     vtkStencil.write(_flowField, timeStep);

@@ -12,17 +12,16 @@ public:
 
 public:
   static Simulation*
-  createUniformGridFloat2D(Parameters const& parameters) ;
+  createUniformGridFloat2D(Parameters& parameters);
 
   static Simulation*
-  createUniformGridDouble2D(Parameters const& parameters) ;
+  createUniformGridDouble2D(Parameters& parameters);
 
   static Simulation*
-  createUniformGridFloat3D(Parameters const& parameters) ;
+  createUniformGridFloat3D(Parameters& parameters);
 
   static Simulation*
-  createUniformGridDouble3D(Parameters const& parameters) ;
-
+  createUniformGridDouble3D(Parameters& parameters);
 };
 }
 }

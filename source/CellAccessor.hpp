@@ -40,42 +40,42 @@ public:
     return *this;
   }
 
-  VectorDs const&
+  VectorDs
   currentWidth() const {
     return _gridGeometry->cellWidth(this->indexValues());
   }
 
-  VectorDs const&
+  VectorDs
   currentPosition() const {
     return _gridGeometry->cellPosition(this->indexValues());
   }
 
-  VectorDs const&
+  VectorDs
   relativeWidth(VectorDi const& i) const {
     return _gridGeometry->cellWidth(this->indexValues() + i);
   }
 
-  VectorDs const&
+  VectorDs
   relativePosition(VectorDi const& i) const {
     return _gridGeometry->cellPosition(this->indexValues() + i);
   }
 
-  VectorDs const&
+  VectorDs
   absoluteWidth(VectorDi const& i) const {
     return _gridGeometry->cellWidth(i);
   }
 
-  VectorDs const&
+  VectorDs
   absolutePosition(VectorDi const& i) const {
     return _gridGeometry->cellPosition(i);
   }
 
-  VectorDs const&
+  VectorDs
   leftWidthInDimension(int const& dimension) const {
     return _gridGeometry->cellWidth(this->leftIndexInDimension(dimension));
   }
 
-  VectorDs const&
+  VectorDs
   leftPositionInDimension(int const& dimension) const {
     return _gridGeometry->cellPosition(this->leftIndexInDimensiuon(dimension));
   }

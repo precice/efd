@@ -12,13 +12,13 @@
       lengthX="1.0"
       lengthY="1.0"
       lengthZ="1.0"
-      sizeX="20"
+      sizeX="10"
       sizeY="10"
-      sizeZ="20"
+      sizeZ="10"
       >
       <mesh>uniform</mesh>
     </geometry>
-    <environment gx="0" gy="0" gz="0" />
+    <environment gx="0"gy="0" gz="0" />
     <walls>
         <left>
             <vector x="0" y="0" z="0" />

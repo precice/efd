@@ -11,17 +11,17 @@ GlobalBoundaryFactory(Parameters& parameters)
   // This is less
   // complicated and doesn't seem that costly
 
-  _periodic[0] = new PeriodicBoundaryVelocityStencil(parameters);
-  _periodic[1] = new PeriodicBoundaryFGHStencil(parameters);
+  //_periodic[0] = new PeriodicBoundaryVelocityStencil(parameters);
+  //_periodic[1] = new PeriodicBoundaryFGHStencil(parameters);
 
   _moving[0] = new MovingWallVelocityStencil(parameters);
   _moving[1] = new MovingWallFGHStencil(parameters);
 
-  _outflow[0] = new NeumannVelocityBoundaryStencil(parameters);
-  _outflow[1] = new NeumannFGHBoundaryStencil(parameters);
+  //_outflow[0] = new NeumannVelocityBoundaryStencil(parameters);
+  //_outflow[1] = new NeumannFGHBoundaryStencil(parameters);
 
-  _channelInput[0] = new BFInputVelocityStencil(parameters);
-  _channelInput[1] = new BFInputFGHStencil(parameters);
+  //_channelInput[0] = new BFInputVelocityStencil(parameters);
+  //_channelInput[1] = new BFInputFGHStencil(parameters);
 
   // Then, assign them according to the scenario
   std::string scenario = parameters.simulation.scenario;
@@ -98,17 +98,17 @@ GlobalBoundaryFactory(Parameters& parameters)
 }
 
 GlobalBoundaryFactory::~GlobalBoundaryFactory() {
-  delete _moving[0];
-  delete _moving[1];
+  //delete _moving[0];
+  //delete _moving[1];
 
-  delete _periodic[0];
-  delete _periodic[1];
+  //delete _periodic[0];
+  //delete _periodic[1];
 
-  delete _outflow[0];
-  delete _outflow[1];
+  //delete _outflow[0];
+  //delete _outflow[1];
 
-  delete _channelInput[0];
-  delete _channelInput[1];
+  //delete _channelInput[0];
+  //delete _channelInput[1];
 }
 
 GlobalBoundaryIterator<FlowField> GlobalBoundaryFactory::

@@ -112,11 +112,6 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     preciceConfigurationPath.append("Precice/SketchOfGeometryModeInFluid.xml");
     simulationConfigurationPath = applicationPath.parent_path();
     simulationConfigurationPath.append("FluidSimulation/Cavity.xml");
-
-    logInfo("Utf-8 locale: {1}",
-            std::use_facet<boost::locale::info>(globalLocale).name());
-    logInfo("Ansi locale: {1}",
-            std::use_facet<boost::locale::info>(ansiLocale).name());
   }
 
   Uni_Firewall_INTERFACE_LINK(Application)
@@ -127,10 +122,12 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   std::locale ansiLocale;
   Path        applicationPath;
 
-  Path outputDirectoryPath;
-  Path preciceConfigurationPath;
-  Path simulationConfigurationPath;
-  Path petscConfigurationPath;
+  Path        outputDirectoryPath;
+  Path        vtkOutputDirectoryPath;
+  Path        preciceConfigurationPath;
+  Path        simulationConfigurationPath;
+  Path        petscConfigurationPath;
+  std::string vtkFilePrefix;
 
   int masterRank;
   int rank;
@@ -275,8 +272,8 @@ initialize() {
   _im->mySimulation =
     Implementation::UniqueMySimulation(
       SimulationFactory::createUniformGridFloat2D(_im->parameters));
-  _im->mySimulation->initialize();
-  _im->mySimulation->iterate();
+  _im->mySimulation->initialize(_im->vtkOutputDirectoryPath,
+                                _im->vtkFilePrefix);
 
   // initialise simulation
   if (_im->parameters.simulation.type == "turbulence") {
@@ -313,37 +310,45 @@ initialize() {
 void
 Application::
 run() {
-  FLOAT time       = 0.0;
-  FLOAT timeVtk    = _im->parameters.vtk.interval;
-  FLOAT timeStdOut = _im->parameters.stdOut.interval;
-  int   timeSteps  = 0;
+  while (_im->mySimulation->iterate()) {}
 
-  // plot initial state
-  _im->simulation->plotVTK(timeSteps);
-
-  // time loop
-  while (time < _im->parameters.simulation.finalTime) {
-    _im->simulation->solveTimestep();
-
-    time += _im->parameters.timestep.dt;
-
-    // std-out: terminal info
-    if (_im->isMaster() && (timeStdOut <= time)) {
-      std::cout << "Current time: " << time << "\ttimestep: " <<
-        _im->parameters.timestep.dt << std::endl;
-      timeStdOut += _im->parameters.stdOut.interval;
-    }
-
-    // VTK output
-    if (timeVtk <= time) {
-      _im->simulation->plotVTK(timeSteps);
-      timeVtk += _im->parameters.vtk.interval;
-    }
-    timeSteps++;
-  }
+  // FLOAT time = 0.0;
+  //// FLOAT timeVtk    = _im->parameters.vtk.interval;
+  // FLOAT timeStdOut = _im->parameters.stdOut.interval;
+  // int   timeSteps  = 0;
+  //
+  //// plot initial state
+  // _im->simulation->plotVTK(timeSteps);
+  // timeSteps++;
+  //
+  //// time loop
+  // int asd = 0;
+  //
+  //// while (time < _im->parameters.simulation.finalTime) {
+  // while (asd != 3) {
+  // _im->simulation->solveTimestep();
+  // logInfo("Time Step other {1}", _im->parameters.timestep.dt);
+  //
+  // time += _im->parameters.timestep.dt;
+  //
+  //// std-out: terminal info
+  // if (_im->isMaster() && (timeStdOut <= time)) {
+  // std::cout << "Current time: " << time << "\ttimestep: " <<
+  // _im->parameters.timestep.dt << std::endl;
+  // timeStdOut += _im->parameters.stdOut.interval;
+  // }
+  //
+  //// VTK output
+  //// if (timeVtk <= time) {
+  // _im->simulation->plotVTK(timeSteps);
+  //// timeVtk += _im->parameters.vtk.interval;
+  //// }
+  // timeSteps++;
+  // asd++;
+  // }
 
   // plot final output
-  _im->simulation->plotVTK(timeSteps);
+  // _im->simulation->plotVTK(timeSteps);
 }
 
 void
@@ -378,9 +383,11 @@ createOutputDirectory() {
   auto outputFileName = outputDirectoryPath.filename();
   outputDirectoryPath = outputDirectoryPath.parent_path();
   boost::filesystem::create_directories(outputDirectoryPath);
-  outputDirectoryPath =
+  _im->vtkOutputDirectoryPath = outputDirectoryPath;
+  outputDirectoryPath         =
     boost::filesystem::make_relative(outputDirectoryPath) / outputFileName;
   _im->parameters.vtk.prefix = outputDirectoryPath.string();
+  _im->vtkFilePrefix         = outputFileName.string();
 }
 
 void

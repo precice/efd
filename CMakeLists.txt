@@ -50,6 +50,7 @@ find_package(Boost 1.53
   thread
   program_options
   filesystem
+  iostreams
   locale
   system
   REQUIRED)

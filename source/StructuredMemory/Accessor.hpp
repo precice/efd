@@ -63,6 +63,24 @@ public:
     return (* _memory)(this->indexValues() + i);
   }
 
+  VectorDi
+  relativeIndex(int const& dimension, int const& direction) const {
+    VectorDi result(this->indexValues());
+
+    if (direction == 0) {
+      result(dimension) -= 1;
+    } else {
+      result(dimension) += 1;
+    }
+
+    return result;
+  }
+
+  Cell*
+  relativeCell(int const& dimension, int const& direction) const {
+    return (* _memory)(this->indexValues(dimension, direction));
+  }
+
   Cell*
   absoluteCell(VectorDi const& i) const {
     return (* _memory)(i);
@@ -71,7 +89,7 @@ public:
   VectorDi
   leftIndexInDimension(int const& dimension) const {
     VectorDi result(this->indexValues());
-    result(dimension) -= 1;
+      result(dimension) -= 1;
 
     return result;
   }
@@ -84,7 +102,7 @@ public:
   VectorDi
   rightIndexInDimension(int const& dimension) const {
     VectorDi result(this->indexValues());
-    result(dimension) += 1;
+      result(dimension) += 1;
 
     return result;
   }
@@ -92,6 +110,23 @@ public:
   Cell*
   rightCellInDimension(int const& dimension) const {
     return (* _memory)(rightIndexInDimension(dimension));
+  }
+
+  VectorDi
+  leftRightIndexInDimensions(int const& dimension,
+                             int const& dimension2) const {
+    VectorDi result(this->indexValues());
+      result(dimension)  -= 1;
+      result(dimension2) += 1;
+
+    return result;
+  }
+
+  Cell*
+  leftRightCellInDimensions(int const& dimension,
+                            int const& dimension2) const {
+    return (* _memory)(leftRightIndexInDimensions(dimension,
+                                                  dimension2));
   }
 
 protected:
@@ -122,7 +157,7 @@ public:
   VectorDi
   leftIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) -= 1;
+      result(0) -= 1;
 
     return result;
   }
@@ -135,7 +170,7 @@ public:
   VectorDi
   rightIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) += 1;
+      result(0) += 1;
 
     return result;
   }
@@ -156,7 +191,7 @@ public:
   VectorDi
   bottomIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(1) -= 1;
+      result(1) -= 1;
 
     return result;
   }
@@ -167,7 +202,7 @@ public:
   VectorDi
   topIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(1) += 1;
+      result(1) += 1;
 
     return result;
   }
@@ -180,8 +215,8 @@ public:
   VectorDi
   leftBottomIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) -= 1;
-    result(1) -= 1;
+      result(0) -= 1;
+      result(1) -= 1;
 
     return result;
   }
@@ -194,8 +229,8 @@ public:
   VectorDi
   leftTopIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) -= 1;
-    result(1) += 1;
+      result(0) -= 1;
+      result(1) += 1;
 
     return result;
   }
@@ -206,8 +241,8 @@ public:
   VectorDi
   rightBottomIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) += 1;
-    result(1) -= 1;
+      result(0) += 1;
+      result(1) -= 1;
 
     return result;
   }
@@ -220,8 +255,8 @@ public:
   VectorDi
   rightTopIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) += 1;
-    result(1) += 1;
+      result(0) += 1;
+      result(1) += 1;
 
     return result;
   }
@@ -244,7 +279,7 @@ public:
   VectorDi
   backIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(2) -= 1;
+      result(2) -= 1;
 
     return result;
   }
@@ -257,7 +292,7 @@ public:
   VectorDi
   frontIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(2) -= 1;
+      result(2) -= 1;
 
     return result;
   }
@@ -270,8 +305,8 @@ public:
   VectorDi
   leftBackIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) -= 1;
-    result(2) -= 1;
+      result(0) -= 1;
+      result(2) -= 1;
 
     return result;
   }
@@ -284,8 +319,8 @@ public:
   VectorDi
   leftFrontIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) -= 1;
-    result(2) += 1;
+      result(0) -= 1;
+      result(2) += 1;
 
     return result;
   }
@@ -298,8 +333,8 @@ public:
   VectorDi
   rightBackIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-    result(0) += 1;
-    result(2) -= 1;
+      result(0) += 1;
+      result(2) -= 1;
 
     return result;
   }

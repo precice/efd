@@ -67,6 +67,39 @@ public:
     KSPSetDM(_context, _da);
     KSPSetComputeOperators(_context, computeMatrix, this);
     setupCustomOptions(_context, _preconditioner);
+    DMDALocalInfo petscInfo;
+    DMDAGetLocalInfo(_da, &petscInfo);
+    logInfo("dim {1} dof {2} sw {3} \n"
+            "global number of grid points in each direction {4} {5} {6} \n"
+            "starting point of this processor, excluding ghosts {7} {8} {9} \n"
+            "number of grid points on this processor, excluding ghosts {10} {11} {12} \n"
+            "starting point of this processor including ghosts {13} {14} {15} \n"
+            "number of grid points on this processor including ghosts {16} {17} {18} \n",
+            petscInfo.dim, petscInfo.dof, petscInfo.sw,
+            petscInfo.mx, petscInfo.my, petscInfo.mz,
+            petscInfo.xs, petscInfo.ys, petscInfo.zs,
+            petscInfo.xm, petscInfo.ym, petscInfo.zm,
+            petscInfo.gxs, petscInfo.gys, petscInfo.gzs,
+            petscInfo.gxm, petscInfo.gym, petscInfo.gzm);
+
+    int _firstX;
+    int _firstY;
+    int _firstZ;
+    int _lengthX;
+    int _lengthY;
+    int _lengthZ;
+    DMDAGetCorners(_da,
+                   &_firstX,
+                   &_firstY,
+                   &_firstZ,
+                   &_lengthX,
+                   &_lengthY,
+                   &_lengthZ);
+
+    logInfo("Corner beginning {1} {2} {3}\n"
+            "Corener end      {4} {5} {6}\n",
+            _firstX, _firstY, _firstZ,
+            _firstX + _lengthX, _firstY + _lengthY, _firstZ + _lengthZ);
   }
 
   void
@@ -84,6 +117,15 @@ public:
         Pointers::dereference(array, accessor.indexValues());
     }
 
+    for (int d = 0; d < D; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        for (auto const& accessor : _grid->indentedBoundaries[d][d2]) {
+          accessor.currentCell()->pressure() =
+            Pointers::dereference(array, accessor.indexValues());
+        }
+      }
+    }
+
     DMDAVecRestoreArray(_da, _x, &array);
   }
 
@@ -97,7 +139,7 @@ private:
     MatStencil  columns[2 * D + 1];
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      //logInfo("{1}", accessor.indexValues().transpose());
+      // logInfo("{1}", accessor.indexValues().transpose());
       typedef
         PressurePoissonStencilProcessing<typename SpecializedGrid::Base,
                                          TCellAccessor,
@@ -110,12 +152,18 @@ private:
                                  row,
                                  columns);
 
-      //logInfo("Columns1 {1} {2}", columns[0].i, columns[0].j);
-      //logInfo("Columns2 {1} {2}", columns[1].i, columns[1].j);
-      //logInfo("Columns3 {1} {2}", columns[2].i, columns[2].j);
-      //logInfo("Columns4 {1} {2}", columns[3].i, columns[3].j);
-      //logInfo("Columns5 {1} {2}", columns[4].i, columns[4].j);
-      //logInfo("Row {1} {2}",      row.i,        row.j);
+      // logInfo("Columns1 {1} {2}", columns[0].i, columns[0].j);
+      // logInfo("Columns2 {1} {2}", columns[1].i, columns[1].j);
+      // logInfo("Columns3 {1} {2}", columns[2].i, columns[2].j);
+      // logInfo("Columns4 {1} {2}", columns[3].i, columns[3].j);
+      // logInfo("Columns5 {1} {2}", columns[4].i, columns[4].j);
+      // logInfo("Row {1} {2}",      row.i,        row.j);
+      // logInfo("Stencil {1} {2} {3} {4} {5}",
+      // stencil[0],
+      // stencil[1],
+      // stencil[2],
+      // stencil[3],
+      // stencil[4]);
       MatSetValuesStencil(A, 1, &row, 2 * D + 1, columns, stencil,
                           INSERT_VALUES);
     }
@@ -147,15 +195,22 @@ private:
     KSPGetDM(ksp, &da);
     DMDAVecGetArray(da, b, &array);
 
+    for (int d = 0; d < D; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        for (auto const& accessor : solver->_grid->boundaries[d][d2]) {
+          // logInfo("{1}", accessor.indexValues().transpose());
+          Pointers::dereference(array, accessor.indexValues()) = 0.0;
+        }
+      }
+    }
+
     for (auto const& accessor : solver->_grid->innerGrid) {
       typedef RhsProcessing<TCellAccessor, Scalar, D> Rhs;
 
-      Pointers::dereference(array, accessor.indexValues()) =
-        Rhs::compute(accessor, *solver->_dt);
-    }
-
-    for (int d = 0; d < D; ++d) {
-      //
+      // logInfo("{1}", accessor.indexValues().transpose());
+      auto value = Rhs::compute(accessor, *solver->_dt);
+      Pointers::dereference(array, accessor.indexValues()) = value;
+      // logInfo("{1}", value);
     }
 
     DMDAVecRestoreArray(da, b, &array);

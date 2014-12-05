@@ -9,6 +9,7 @@ apply(FlowField& flowField, int i, int j) {
   const FLOAT  dt       = _parameters.timestep.dt;
   const int    obstacle = flowField.getFlags().getValue(i, j);
   VectorField& velocity = flowField.getVelocity();
+  (void)(dt);
 
   if ((obstacle & OBSTACLE_SELF) == 0) { // If this is a fluid cell
     if ((obstacle & OBSTACLE_RIGHT) == 0) { // Check whether the neighbor is
@@ -22,12 +23,11 @@ apply(FlowField& flowField, int i, int j) {
       // yield second-order accuracy for uniform meshsizes.
       const FLOAT dx = 0.5 * (_parameters.meshsize->getDx(i, j) +
                               _parameters.meshsize->getDx(i + 1, j));
-      flowField.getVelocity().getVector(i, j)[0] = flowField.getFGH().getVector(
-        i, j)[0] - dt / dx *
-                                                   (flowField.getPressure().
-                                                    getScalar(i + 1, j) -
-                                                    flowField.getPressure().
-                                                    getScalar(i,     j));
+      (void)dx;
+      flowField.getVelocity().getVector(i, j)[0] =
+        flowField.getFGH().getVector(i, j)[0] - dt / dx *
+        (flowField.getPressure().getScalar(i + 1, j) -
+         flowField.getPressure().getScalar(i,     j));
     } else { // Otherwise, set to zero
       flowField.getVelocity().getVector(i, j)[0] = 0;
     } // Note that we only set one direction per cell. The neighbor at the
@@ -37,12 +37,11 @@ apply(FlowField& flowField, int i, int j) {
     if ((obstacle & OBSTACLE_TOP) == 0) {
       const FLOAT dy = 0.5 * (_parameters.meshsize->getDy(i, j) +
                               _parameters.meshsize->getDy(i, j + 1));
-      flowField.getVelocity().getVector(i, j)[1] = flowField.getFGH().getVector(
-        i, j)[1] - dt / dy *
-                                                   (flowField.getPressure().
-                                                    getScalar(i, j + 1) -
-                                                    flowField.getPressure().
-                                                    getScalar(i, j));
+      (void)dy;
+      flowField.getVelocity().getVector(i, j)[1] =
+        flowField.getFGH().getVector(i, j)[1] - dt / dy *
+        (flowField.getPressure().getScalar(i, j + 1) -
+         flowField.getPressure().getScalar(i, j));
     } else {
       flowField.getVelocity().getVector(i, j)[1] = 0;
     }

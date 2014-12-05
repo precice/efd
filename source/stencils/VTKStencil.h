@@ -24,6 +24,8 @@ private:
   std::ofstream _ofile; // ! Output file stream
   bool          _written;       // ! Whether the file has already been written
 
+  std::stringstream rhsStream; // ! Stream for the pressure data
+  std::stringstream fghStream; // ! Stream for the pressure data
   std::stringstream pressureStream; // ! Stream for the pressure data
   std::stringstream velocityStream; // ! Stream for the velocity data
 

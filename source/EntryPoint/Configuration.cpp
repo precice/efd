@@ -52,7 +52,10 @@ readIntOptional(int&                  storage,
                 tinyxml2::XMLElement* node,
                 char const*           tag,
                 int                   defaultValue = 0) {
-  int result = node->QueryIntAttribute(tag, &storage);
+  int value;
+  int result = node->QueryIntAttribute(tag, &value);
+
+  storage = value;
 
   if (result == tinyxml2::XML_NO_ATTRIBUTE) {
     storage = defaultValue;

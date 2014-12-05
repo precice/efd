@@ -15,7 +15,6 @@ namespace FsiSimulation {
 namespace Solvers {
 namespace Ghost {
 namespace MpiExchange {
-typedef std::function<void (MPI_Comm&)> GetFalueFunctor;
 typedef std::function<void (MPI_Comm&)> Functor;
 template <int D>
 using FunctorStack = FunctorStack<Functor, D>;

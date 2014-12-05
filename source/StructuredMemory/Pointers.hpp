@@ -178,7 +178,7 @@ struct Pointers<TCell, 3> {
       _pointers[k] = new TCell*[_size(1)];
 
       for (int j = 0; j < _size(1); ++j) {
-        _pointers[j][k] =
+        _pointers[k][j] =
           &_data[_size(1) * _size(0) * k + _size(0) * j];
       }
     }

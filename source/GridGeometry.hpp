@@ -7,7 +7,7 @@ namespace FsiSimulation {
 template <typename Scalar, int D>
 class UniformGridGeometry {
 public:
-  typedef Eigen::Matrix<int, D, 1> VectorDi;
+  typedef Eigen::Matrix<int, D, 1>    VectorDi;
   typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
 
 public:
@@ -48,11 +48,11 @@ public:
 
   VectorDs
   cellPosition(VectorDi const& i) const {
-    return _cellWidth.cwiseProduct(_corner + i);
+    return _cellWidth.cwiseProduct((_corner + i).template cast<Scalar>());
   }
 
   VectorDs const&
-  cellMinSize() const {
+  minCellWidth() const {
     return _cellWidth;
   }
 

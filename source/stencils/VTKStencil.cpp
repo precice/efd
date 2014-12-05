@@ -29,6 +29,8 @@ writePoints(std::ostream& file) const {
           px, py, pz, px * py * pz);
   grid.append(buffer);
 
+  std::stringstream pointsStream; // ! Stream for the pressure data
+
   if (_parameters.geometry.dim == 3) {
     for (int k = 2; k < 2 + pz; k++) {
       for (int j = 2; j < 2 + py; j++) {
@@ -46,15 +48,19 @@ writePoints(std::ostream& file) const {
   } else {
     for (int j = 2; j < 2 + py; j++) {
       for (int i = 2; i < 2 + px; i++) {
-          sprintf(buffer, "%f %f 0.0\n", _parameters.meshsize->getPosX(i, j),
-                _parameters.meshsize->getPosY(i, j));
-        grid.append(buffer);
+        // sprintf(buffer, "%f %f 0.0\n", _parameters.meshsize->getPosX(i, j),
+        // _parameters.meshsize->getPosY(i, j));
+        // grid.append(buffer);
+        pointsStream << _parameters.meshsize->getPosX(i, j) << " "
+                     << _parameters.meshsize->getPosY(i, j) << " "
+                     << "0" << std::endl;
       }
     }
   }
-  grid.append("\n");
+  // grid.append("\n");
 
   file << grid;
+  file << pointsStream.str() << std::endl;
 }
 
 VTKStencil::
@@ -73,10 +79,19 @@ apply(FlowField& flowField, int i, int j) {
   if ((flowField.getFlags().getValue(i, j) & OBSTACLE_SELF) == 0) {
     flowField.getPressureAndVelocity(pressure, velocity, i, j);
 
+    auto fgh = flowField.getFGH().getVector(i, j);
+    //auto rhs = flowField.getRHS().getScalar(i, j);
+
     pressureStream << pressure << std::endl;
 
     velocityStream << velocity[0] << " "
                    << velocity[1] << " 0" << std::endl;
+
+    fghStream << fgh[0] << " "
+              << fgh[1] << " "
+              << "0" << std::endl;
+
+    //rhsStream << rhs << std::endl;
   } else {
     pressureStream << "0.0" << std::endl;
     velocityStream << "0.0 0.0 0.0" << std::endl;
@@ -134,15 +149,18 @@ write(FlowField& flowField, int timeStep) {
     _ofile << "CELL_DATA " << flowField.getNx() * flowField.getNy() << std::endl
            << "SCALARS pressure float 1" << std::endl
            << "LOOKUP_TABLE default" << std::endl;
-    _ofile << pressureStream.str() << std::endl;
-    pressureStream.str("");
-
+    _ofile << fghStream.str() << std::endl;
+    fghStream.str("");
+    //_ofile << rhsStream.str() << std::endl;
+    rhsStream.str("");
     // Write velocity
     // _ofile << "CELL_DATA " << flowField.getNx() * flowField.getNy() <<
     // std::endl
-    _ofile << "VECTORS velocity float" << std::endl;
+    // _ofile << "VECTORS velocity float" << std::endl;
     _ofile << velocityStream.str() << std::endl;
     velocityStream.str("");
+    _ofile << pressureStream.str() << std::endl;
+    pressureStream.str("");
   }
 
   if (FieldStencil<FlowField>::_parameters.geometry.dim == 3) {
