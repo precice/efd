@@ -1,4 +1,5 @@
 #include "RHSStencil.h"
+#include <Uni/Logging/macros>
 //
 
 RHSStencil::
@@ -10,12 +11,27 @@ RHSStencil::
 apply(FlowField& flowField, int i, int j) {
   flowField.getRHS().getScalar(i, j) =
     1.0 / _parameters.timestep.dt *
-    ((flowField.getFGH().getVector(i, j)[0] -
-      flowField.getFGH().getVector(i - 1, j)[0])
-     / _parameters.meshsize->getDx(i, j)
-     + (flowField.getFGH().getVector(i, j)[1] -
-        flowField.getFGH().getVector(i, j - 1)[1])
-     / _parameters.meshsize->getDy(i, j));
+    (
+      (flowField.getFGH().getVector(i, j)[0] -
+       flowField.getFGH().getVector(i - 1, j)[0])
+      / _parameters.meshsize->getDx(i, j)
+      + (flowField.getFGH().getVector(i, j)[1] -
+         flowField.getFGH().getVector(i, j - 1)[1])
+      / _parameters.meshsize->getDy(i, j)
+    );
+  // std::stringstream out;
+  // out.precision(std::numeric_limits<float>::digits10);
+  // out << i << " "
+  // << j << " "
+  // << _parameters.timestep.dt << " "
+  // << flowField.getFGH().getVector(i, j)[0] << " "
+  // << flowField.getFGH().getVector(i - 1, j)[0] << " "
+  // << _parameters.meshsize->getDx(i, j) << " "
+  // << flowField.getFGH().getVector(i, j)[1] << " "
+  // << flowField.getFGH().getVector(i, j - 1)[1] << " "
+  // << _parameters.meshsize->getDy(i, j) << " "
+  // << flowField.getRHS().getScalar(i, j);
+  // logInfo("{1}", out.str());
 }
 
 void

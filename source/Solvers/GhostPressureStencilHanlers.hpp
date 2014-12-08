@@ -20,6 +20,12 @@ typedef std::function<void (Mat&)> Functor;
 template <int D>
 using FunctorStack = FunctorStack<Functor, D>;
 
+template <int D>
+Functor
+getEmptyFunctor() {
+  return Functor([] (Mat&) {});
+}
+
 template <typename TGrid,
           typename Scalar,
           int D,
@@ -64,8 +70,9 @@ public:
     MatStencil  row;
     MatStencil  columns[2];
 
-    for (auto const& accessor : _grid->boundaries[TDimension][TDirection]) {
-      // logDebug("{1}", accessor.currentIndex());
+    auto corner = _parallelTopology->corner;
+
+    for (auto const& accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
       if (TDimension == 0) {
         if (TDirection == 1) {
           columns[0].i = _parallelTopology->globalSize(0) + 1;
@@ -74,11 +81,11 @@ public:
           columns[0].i = 0;
           columns[1].i = columns[0].i + 1;
         }
-        columns[0].j = accessor.indexValue(1);
+        columns[0].j = accessor.indexValue(1) + corner(1);
         columns[1].j = columns[0].j;
 
         if (D == 3) {
-          columns[0].k = accessor.indexValue(2);
+          columns[0].k = accessor.indexValue(2) + corner(2);
           columns[1].k = columns[0].k;
         }
       } else if (TDimension == 1) {
@@ -89,11 +96,11 @@ public:
           columns[0].j = 0;
           columns[1].j = columns[0].j + 1;
         }
-        columns[0].i = accessor.indexValue(0);
+        columns[0].i = accessor.indexValue(0) + corner(0);
         columns[1].i = columns[0].i;
 
         if (D == 3) {
-          columns[0].k = accessor.indexValue(2);
+          columns[0].k = accessor.indexValue(2) + corner(2);
           columns[1].k = columns[0].k;
         }
       } else if (TDimension == 2) {
@@ -104,24 +111,20 @@ public:
           columns[0].k = 0;
           columns[1].k = columns[0].k + 1;
         }
-        columns[0].i = accessor.indexValue(0);
+        columns[0].i = accessor.indexValue(0) + corner(0);
         columns[1].i = columns[0].i;
 
-        columns[0].j = accessor.indexValue(1);
+        columns[0].j = accessor.indexValue(1) + corner(1);
         columns[1].j = columns[0].j;
       }
 
       row = columns[0];
 
-      //logInfo("{1} {2}", columns[1].i, columns[1].j);
-      //logInfo("{1} {2}", columns[0].i, columns[0].j);
-      //logInfo("{1} {2}", row.i, row.j);
       TStencil(stencil);
-      //logInfo("{1} {2}", stencil[0], stencil[1]);
+
       MatSetValuesStencil(A, 1, &row, 2, columns, stencil, INSERT_VALUES);
     }
   }
-
 
   static void
   dirichletPressureStencil(PetscScalar* stencil) {

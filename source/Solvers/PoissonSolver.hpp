@@ -112,17 +112,18 @@ public:
     typename Pointers::Type array;
     DMDAVecGetArray(_da, _x, &array);
 
+    auto corner = _parallelTopology->corner;
+
     for (auto const& accessor : _grid->innerGrid) {
-      accessor.currentCell()->pressure() =
-        Pointers::dereference(array, accessor.indexValues());
+      auto index = accessor.indexValues();
+      index += corner;
+
+      accessor.currentCell()->pressure() = Pointers::dereference(array, index);
     }
 
     for (int d = 0; d < D; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        for (auto const& accessor : _grid->indentedBoundaries[d][d2]) {
-          accessor.currentCell()->pressure() =
-            Pointers::dereference(array, accessor.indexValues());
-        }
+        _ghostCellsHandler->_pressureInitialization[d][d2](array);
       }
     }
 
@@ -139,31 +140,19 @@ private:
     MatStencil  columns[2 * D + 1];
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      // logInfo("{1}", accessor.indexValues().transpose());
       typedef
-        PressurePoissonStencilProcessing<typename SpecializedGrid::Base,
+        PressurePoissonStencilProcessing<SpecializedParallelTopology,
                                          TCellAccessor,
                                          Scalar,
                                          D>
         StencilProcessing;
-      StencilProcessing::compute(solver->_grid->innerGrid,
+
+      StencilProcessing::compute(solver->_parallelTopology,
                                  accessor,
                                  stencil,
                                  row,
                                  columns);
 
-      // logInfo("Columns1 {1} {2}", columns[0].i, columns[0].j);
-      // logInfo("Columns2 {1} {2}", columns[1].i, columns[1].j);
-      // logInfo("Columns3 {1} {2}", columns[2].i, columns[2].j);
-      // logInfo("Columns4 {1} {2}", columns[3].i, columns[3].j);
-      // logInfo("Columns5 {1} {2}", columns[4].i, columns[4].j);
-      // logInfo("Row {1} {2}",      row.i,        row.j);
-      // logInfo("Stencil {1} {2} {3} {4} {5}",
-      // stencil[0],
-      // stencil[1],
-      // stencil[2],
-      // stencil[3],
-      // stencil[4]);
       MatSetValuesStencil(A, 1, &row, 2 * D + 1, columns, stencil,
                           INSERT_VALUES);
     }
@@ -197,20 +186,20 @@ private:
 
     for (int d = 0; d < D; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        for (auto const& accessor : solver->_grid->boundaries[d][d2]) {
-          // logInfo("{1}", accessor.indexValues().transpose());
-          Pointers::dereference(array, accessor.indexValues()) = 0.0;
-        }
+        solver->_ghostCellsHandler->_rhsInitialization[d][d2](array);
       }
     }
+
+    auto corner = solver->_parallelTopology->corner;
 
     for (auto const& accessor : solver->_grid->innerGrid) {
       typedef RhsProcessing<TCellAccessor, Scalar, D> Rhs;
 
-      // logInfo("{1}", accessor.indexValues().transpose());
+      auto index = accessor.indexValues();
+      index += corner;
+
       auto value = Rhs::compute(accessor, *solver->_dt);
-      Pointers::dereference(array, accessor.indexValues()) = value;
-      // logInfo("{1}", value);
+      Pointers::dereference(array, index) = value;
     }
 
     DMDAVecRestoreArray(da, b, &array);
@@ -225,18 +214,10 @@ private:
   SpecializedGhostCellsHandler const* _ghostCellsHandler;
   ScalarPointer                       _dt;
 
-  Vec _x; // ! Petsc vectors for solution and RHS
-  DM  _da;                        // ! Topology manager
-  KSP _context; // ! Solver context
-  PC  _preconditioner;                        // ! Preconditioner
-
-  // Indices for filling the matrices and right hand side
-  int _limitsX[2], _limitsY[2], _limitsZ[2];
-
-  PetscInt _firstX, _lengthX, _firstY, _lengthY, _firstZ, _lengthZ;
-
-  // Additional variables used to determine where to write back the results
-  int _offsetX, _offsetY, _offsetZ;
+  Vec _x;
+  DM  _da;
+  KSP _context;
+  PC  _preconditioner;
 };
 }
 }

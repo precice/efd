@@ -55,7 +55,7 @@ find_package(Boost 1.53
   system
   REQUIRED)
 set(Boost_USE_STATIC_LIBS    ON)
-set(Boost_USE_MULTITHREADED  ON)
+set(Boost_USE_MULTITHREADED  OFF)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Eigen REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
@@ -90,6 +90,9 @@ if (COMPILER_IS_G++)
 
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
+
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -fno-inline")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 endif ()
 # ------------------------------------------------------------------------------
 if (LINKER_IS_LD)

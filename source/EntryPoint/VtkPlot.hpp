@@ -12,6 +12,8 @@
 #include <boost/iostreams/stream.hpp>
 #include <boost/locale.hpp>
 
+#include <limits>
+
 namespace FsiSimulation {
 namespace EntryPoint {
 template <typename TCellAccessor,
@@ -52,8 +54,8 @@ public:
 
   void
   plot2(int const&    iterationCount,
-        Scalar const& timeStamp,
-        Scalar const& dt) {
+       Scalar const& timeStamp,
+       Scalar const& dt) {
     MappedFileStream mappedFileStream;
     FileStream       fileStream;
 
@@ -87,88 +89,78 @@ public:
                     grid.rightIndent());
 
     fileStream << (Format("DATASET STRUCTURED_GRID\n"
-                          "DIMENSIONS {1} 1\n"
+                          "DIMENSIONS {1} \n"
                           "POINTS {2} float\n") %
                    grid.innerSize().transpose() %
                    grid.innerSize().prod()).str(_locale);
     std::stringstream pointsStream;
 
     for (auto const& accessor : grid) {
-      // fileStream << (Format("{1}\n") %
-      // accessor.currentPosition().transpose())
-      // .str(_locale);
       pointsStream << accessor.currentPosition() (0) << " "
                    << accessor.currentPosition() (1) << " "
-                   << 0 << std::endl;
-      // logInfo("{1} {2}", accessor.indexValues().transpose(),
-      // accessor.currentPosition().transpose());
+                   << accessor.currentPosition() (2)
+                   << std::endl;
     }
     fileStream << pointsStream.str() << std::endl;
 
-    // fileStream << "\nCELL_DATA " << _grid->innerGrid.innerSize().prod()
-    // << std::endl;
+    std::stringstream rhsStream;
+    std::stringstream fghStream;
+    std::stringstream pressureStream;
+    std::stringstream velocityStream;
 
-    // fileStream << "\nVECTORS velocity float" << std::endl;
+    fghStream.precision(std::numeric_limits<float>::digits10);
+    rhsStream.precision(std::numeric_limits<float>::digits10);
+    velocityStream.precision(std::numeric_limits<float>::digits10);
+    pressureStream.precision(std::numeric_limits<float>::digits10);
 
-    // for (auto const& accessor : _grid->innerGrid) {
-    // fileStream << (Format("{1}\n")
-    // % accessor.currentCell()->velocity().transpose())
-    // .str(_locale);
-    // }
-
-    // fileStream << "\nVECTORS fgh float" << std::endl;
-
-    std::stringstream rhsStream; // ! Stream for the pressure data
-    std::stringstream fghStream; // ! Stream for the pressure data
-    std::stringstream pressureStream; // ! Stream for the pressure data
-    std::stringstream velocityStream; // ! Stream for the velocity data
-
-    for (auto const& accessor :* _grid) {
-      // typedef RhsProcessing
-      // <typename SpecializedGrid::CellAccessor, Scalar, D> rhspr;
-      // rhsStream << rhspr::compute(accessor, dt) << std::endl;
-      fghStream << accessor.currentCell()->fgh(0) << " "
-                << accessor.currentCell()->fgh(1) << " "
-                << 0 << std::endl;
-      velocityStream << accessor.currentCell()->velocity(0) << " "
-                     << accessor.currentCell()->velocity(1) << " "
-                     << 0 << std::endl;
-      pressureStream << accessor.currentCell()->pressure() << std::endl;
+    for (auto const& accessor : _grid->innerGrid) {
+      if (accessor.indexValue(0) != 0 &&
+          accessor.indexValue(1) != 0 &&
+          accessor.indexValue(2) != 0 &&
+          accessor.indexValue(0) != (_grid->size() (0) - 1) &&
+          accessor.indexValue(1) != (_grid->size() (1) - 1) &&
+          accessor.indexValue(2) != (_grid->size() (2) - 1)) {
+        typedef RhsProcessing
+          <typename SpecializedGrid::CellAccessor, Scalar, D> rhspr;
+        // rhsStream << "RHS "
+        rhsStream
+          << rhspr::compute(accessor, dt) << std::endl;
+      } else {
+        // rhsStream << "RHS "
+        rhsStream
+          << 0.0 << std::endl;
+      }
+      // fghStream << "FGH "
+      fghStream
+        << accessor.currentCell()->fgh(0) << " "
+        << accessor.currentCell()->fgh(1) << " "
+        << accessor.currentCell()->fgh(2)
+        << std::endl;
+      // velocityStream << "Velocity "
+      velocityStream
+        << accessor.currentCell()->velocity(0) << " "
+        << accessor.currentCell()->velocity(1) << " "
+        << accessor.currentCell()->velocity(2)
+        << std::endl;
+      // pressureStream << "Pressure "
+      pressureStream
+        << accessor.currentCell()->pressure() << std::endl;
     }
 
     fileStream << "CELL_DATA " << _grid->innerGrid.innerSize().prod()
-               << std::endl
-               << "SCALARS pressure float 1" << std::endl
-               << "LOOKUP_TABLE default" << std::endl;
+               << std::endl;
     fileStream << fghStream.str() << std::endl;
-    // fileStream << rhsStream.str() << std::endl;
+    fileStream << rhsStream.str() << std::endl;
     fileStream << velocityStream.str() << std::endl;
     fileStream << pressureStream.str() << std::endl;
-
-    // fileStream << "\nVECTORS velocity float" << std::endl;
-
-    // for (auto const& accessor : _grid->innerGrid) {
-    // fileStream << (Format("{1} {2}\n")
-    // % accessor.indexValues().transpose()
-    // % accessor.currentCell()->velocity().transpose())
-    // .str(_locale);
-    // }
-
-    // fileStream << "\nSCALARS pressure float 1" << std::endl
-    // << "LOOKUP_TABLE default" << std::endl;
-
-    // for (auto const& accessor : _grid->innerGrid) {
-    // fileStream << (Format("{1}\n") %
-    // accessor.currentCell()->pressure()).str(_locale);
-    // }
 
     fileStream.close();
   }
 
   void
   plot(int const&    iterationCount,
-       Scalar const& timeStamp,
-       Scalar const& dt) {
+        Scalar const& timeStamp,
+        Scalar const& dt) {
     MappedFileStream mappedFileStream;
     FileStream       fileStream;
 
@@ -199,16 +191,16 @@ public:
                     grid.rightIndent());
 
     fileStream << (Format("DATASET STRUCTURED_GRID\n"
-                          "DIMENSIONS {1} 1\n"
+                          "DIMENSIONS {1}\n"
                           "POINTS {2} float\n") %
                    grid.innerSize().transpose() %
                    grid.innerSize().prod()).str(_locale);
     std::stringstream pointsStream;
 
     for (auto const& accessor : grid) {
-      pointsStream << accessor.currentPosition()(0) << " "
-                   << accessor.currentPosition()(1) << " "
-                   << "0.0" << std::endl;
+      pointsStream << accessor.currentPosition() (0) << " "
+                   << accessor.currentPosition() (1) << " "
+                   << accessor.currentPosition() (2) << std::endl;
     }
     fileStream << pointsStream.str() << std::endl;
 
@@ -223,7 +215,7 @@ public:
     for (auto const& accessor : _grid->innerGrid) {
       velocityStream << accessor.currentCell()->velocity(0) << " "
                      << accessor.currentCell()->velocity(1) << " "
-                     << "0.0" << std::endl;
+                     << accessor.currentCell()->velocity(2) << std::endl;
     }
     fileStream << velocityStream.str() << std::endl;
 

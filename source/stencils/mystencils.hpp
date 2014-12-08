@@ -37,13 +37,6 @@ computeMaxVelocity(TCellAccessor const&                    accessor,
   maxVelocity =
     accessor.currentCell()->velocity().cwiseAbs().cwiseQuotient(
       accessor.currentWidth()).cwiseMax(maxVelocity);
-
-  // if (accessor.currentCell()->velocity().maxCoeff() > 27.0) {
-  // logInfo("Max {1}\n{2}\n{3}",
-  // accessor.indexValues().transpose(),
-  // accessor.currentCell()->velocity().transpose(),
-  // accessor.currentCell()->velocity().cwiseAbs().transpose());
-  // }
 }
 
 template <typename Scalar, int D>
@@ -118,16 +111,11 @@ duvdy(Scalar const& currentU,
       Scalar const& topY,
       Scalar const& rightX,
       Scalar const& gamma) {
-  // distance of corner points in x-direction from center v-value
   Scalar const yCurrent = 0.5 * currentY;
-  // distance between center and west v-value
-  Scalar const yBottom = 0.5 * (currentY + bottomY);
-  // distance between center and east v-value
-  Scalar const yTop = 0.5 * (currentY + topY);
-  // distance of center u-value from upper edge of cell
+  Scalar const yBottom  = 0.5 * (currentY + bottomY);
+  Scalar const yTop     = 0.5 * (currentY + topY);
   Scalar const xCurrent = 0.5 * currentX;
-  // distance of north and center u-value
-  Scalar const xRight = 0.5 * (currentX + rightX);
+  Scalar const xRight   = 0.5 * (currentX + rightX);
 
   Scalar const secondOrder =
     (((xRight - xCurrent) / xRight * currentV + xCurrent / xRight * rightV) *
@@ -225,18 +213,18 @@ computeFGH2D(Scalar const& currentU,
                           leftX,
                           rightX,
                           gamma)
-                  - duvdy(currentU, // U(i, j, k)
-                          currentV, // V(i, j, k)
-                          bottomU, // U(i, j-1, k)
-                          bottomV, // V(i, j-1, k)
-                          rightBottomV, // V(i+1, j-1, k)
-                          rightV, // V(i+1, j, k)
-                          topU, // U(i, j+1, k)
-                          currentY, // dy(i, j, k)
-                          currentX, // dx(i, j, k)
-                          bottomY, // dy(i, j-1, k)
-                          topY, // dy(i, j+1, k)
-                          rightX, // dx(i+1, j, k)
+                  - duvdy(currentU,
+                          currentV,
+                          bottomU,
+                          bottomV,
+                          rightBottomV,
+                          rightV,
+                          topU,
+                          currentY,
+                          currentX,
+                          bottomY,
+                          topY,
+                          rightX,
                           gamma)
                   + gx);
 }
@@ -297,18 +285,18 @@ computeFGH3D(Scalar const& currentU,
                         leftX,
                         rightX,
                         gamma) -
-                  duvdy(currentU, // U(i, j, k)
-                        currentV, // V(i, j, k)
-                        bottomU, // U(i, j-1, k)
-                        bottomV, // V(i, j-1, k)
-                        rightBottomV, // V(i+1, j-1, k)
-                        rightV, // V(i+1, j, k)
-                        topU, // U(i, j+1, k)
-                        currentY, // dy(i, j, k)
-                        currentX, // dx(i, j, k)
-                        bottomY, // dy(i, j-1, k)
-                        topY, // dy(i, j+1, k)
-                        rightX, // dx(i+1, j, k)
+                  duvdy(currentU,
+                        currentV,
+                        bottomU,
+                        bottomV,
+                        rightBottomV,
+                        rightV,
+                        topU,
+                        currentY,
+                        currentX,
+                        bottomY,
+                        topY,
+                        rightX,
                         gamma) -
                   duvdy(currentU, // duwdz
                         currentW,
@@ -435,31 +423,38 @@ public:
   static inline Scalar
   compute(TCellAccessor const& accessor,
           Scalar const&        dt) {
-    auto temp(accessor.currentCell()->fgh());
+    Scalar result = 0.0;
 
     for (int d = 0; d < D; ++d) {
-      temp(d) -= accessor.leftCellInDimension(d)->fgh(d);
+      result += (accessor.currentCell()->fgh(d)
+                 - accessor.leftCellInDimension(d)->fgh(d))
+                / accessor.currentWidth() (d);
     }
-    temp = temp.cwiseQuotient(accessor.currentWidth());
 
-    Scalar result = temp.sum();
     result = 1.0 / dt * result;
 
     return result;
   }
 };
 
-template <typename TGrid, typename TCellAccessor, typename Scalar, int D>
+template <typename TParallelTopology,
+          typename TCellAccessor,
+          typename Scalar,
+          int D>
 class PressurePoissonStencilProcessing {
 public:
-  template <typename TStencil, typename TRow, typename TColumns>
+  template <typename TStencil,
+            typename TRow,
+            typename TColumns>
   static inline void
-  compute(TGrid const&         grid,
-          TCellAccessor const& accessor,
-          TStencil&            stencil,
-          TRow&                row,
-          TColumns&            columns) {
+  compute(TParallelTopology const* topology,
+          TCellAccessor const&     accessor,
+          TStencil&                stencil,
+          TRow&                    row,
+          TColumns&                columns) {
     typedef Eigen::Matrix<Scalar, 2* D, 1> Vector2Ds;
+
+    auto corner = topology->corner;
 
     Vector2Ds meanWidths;
 
@@ -471,9 +466,11 @@ public:
                               (accessor.currentWidth() (d) +
                                accessor.rightWidthInDimension (d)(d));
 
-      auto leftIndex(accessor.leftIndexInDimension(d)); // - grid.leftIndent());
-      auto rightIndex(accessor.rightIndexInDimension(d)); // -
-                                                          // grid.leftIndent());
+      auto leftIndex = accessor.leftIndexInDimension(d);
+      leftIndex += corner;
+      auto rightIndex = accessor.rightIndexInDimension(d);
+      rightIndex += corner;
+
       columns[2 * d].i     = leftIndex(0);
       columns[2 * d].j     = leftIndex(1);
       columns[2 * d + 1].i = rightIndex(0);
@@ -484,8 +481,8 @@ public:
         columns[2 * d + 1].k = rightIndex(2);
       }
     }
-    auto currentIndex(accessor.currentIndex());
-    // currentIndex    -= grid.leftIndent();
+    auto currentIndex = accessor.currentIndex();
+    currentIndex    += corner;
     columns[2 * D].i = currentIndex(0);
     columns[2 * D].j = currentIndex(1);
 

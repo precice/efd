@@ -1,6 +1,7 @@
 #ifndef FsiSimulation_Ghost_Initialization_Actions_hpp
 #define FsiSimulation_Ghost_Initialization_Actions_hpp
 
+#include "ParallelTopology.hpp"
 #include "Parameters.h"
 #include "stencils/mystencils.hpp"
 
@@ -18,7 +19,7 @@ public:
   typedef typename TGrid::CellAccessor::Cell::Velocity Velocity;
 
   MovingWallVelocityAction(Parameters& parameters,
-                           Velocity&   maxVelocity)
+                           Velocity*   maxVelocity)
     : _parameters(parameters),
       _maxVelocity(maxVelocity) {}
 
@@ -41,13 +42,13 @@ public:
       }
     }
     computeMaxVelocity<typename TGrid::CellAccessor, Scalar, D>
-      (current,  _maxVelocity);
+      (current,  *_maxVelocity);
     computeMaxVelocity<typename TGrid::CellAccessor, Scalar, D>
-      (neighbor, _maxVelocity);
+      (neighbor, *_maxVelocity);
   }
 
   Parameters& _parameters;
-  Velocity&   _maxVelocity;
+  Velocity*   _maxVelocity;
 };
 
 template <typename TGrid,
@@ -57,8 +58,6 @@ template <typename TGrid,
           int TDirection>
 class MovingWallFghAction {
 public:
-  typedef typename TGrid::CellAccessor::Cell::Velocity Velocity;
-
   MovingWallFghAction(Parameters& parameters) : _parameters(parameters) {}
 
   void
@@ -75,6 +74,7 @@ public:
 
   Parameters& _parameters;
 };
+
 }
 }
 }

@@ -24,7 +24,7 @@ public:
 
   typedef typename Base::Iterator   Iterator;
   typedef  typename Base::VectorDi  VectorDi;
-  typedef typename Base::MultiIndex CellAccessor;
+  typedef typename Base::CellAccessor CellAccessor;
   typedef typename Base::Factory
     CellAccessorFactory;
 

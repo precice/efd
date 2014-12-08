@@ -15,7 +15,7 @@ using DMBoundaryTypeVector = Eigen::Matrix<DMBoundaryType, D, 1>;
 template <int D>
 using VectorDi = Eigen::Matrix<int, D, 1>;
 
-typedef std::unique_ptr<PetscInt const> UniqueConstPetscIntArray;
+typedef std::unique_ptr<PetscInt const[]> UniqueConstPetscIntArray;
 template <int D>
 using VectorDConstPetscIntPointer =
         Eigen::Matrix<UniqueConstPetscIntArray, D, 1>;

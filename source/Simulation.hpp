@@ -147,8 +147,8 @@ public:
   virtual void
   plotVTK(int timeStep) {
     VTKStencil               vtkStencil(_parameters);
-    FieldIterator<FlowField> vtkIterator(_flowField, _parameters, vtkStencil, 0,
-                                         1);
+    FieldIterator<FlowField> vtkIterator(_flowField, _parameters, vtkStencil, 1,
+                                         0);
 
     vtkIterator.iterate();
     vtkStencil.write(_flowField, timeStep);

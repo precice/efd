@@ -67,6 +67,9 @@ _getExecPath() {
   if (size == -1) {
     throwException("Failed to locate application");
   }
+
+  buffer[size] = '\0';
+
   namespace fs = boost::filesystem;
   fs::path result(buffer);
 
@@ -103,14 +106,19 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     ansiLocaleGenerator.use_ansi_encoding(true);
     ansiLocale = ansiLocaleGenerator.generate("");
 
-    applicationPath = boost::filesystem::canonical(_getExecPath());
+    boost::locale::generator localeGenerator;
+    auto locale(localeGenerator("en_US.UTF-8"));
+    boost::locale::format form("sdfsdf {1} {2}");
+    form % 214;
+    std::cout << (form % "sdff").str(locale) << std::endl;
+    applicationPath = Path(_getExecPath()).parent_path();
 
     outputDirectoryPath    = fs::current_path();
-    petscConfigurationPath = applicationPath.parent_path();
+    petscConfigurationPath = applicationPath;
     petscConfigurationPath.append("FluidPetsc/Basic.conf");
-    preciceConfigurationPath = applicationPath.parent_path();
+    preciceConfigurationPath = applicationPath;
     preciceConfigurationPath.append("Precice/SketchOfGeometryModeInFluid.xml");
-    simulationConfigurationPath = applicationPath.parent_path();
+    simulationConfigurationPath = applicationPath;
     simulationConfigurationPath.append("FluidSimulation/Cavity.xml");
   }
 
@@ -271,39 +279,39 @@ initialize() {
 
   _im->mySimulation =
     Implementation::UniqueMySimulation(
-      SimulationFactory::createUniformGridFloat2D(_im->parameters));
+      SimulationFactory::createUniformGridDouble3D(_im->parameters));
   _im->mySimulation->initialize(_im->vtkOutputDirectoryPath,
                                 _im->vtkFilePrefix);
 
-  // initialise simulation
-  if (_im->parameters.simulation.type == "turbulence") {
-    if (_im->isMaster()) {
-      std::cout << "Start turbulence simulation in " <<
-        _im->parameters.geometry.dim << "D" << std::endl;
-    }
-    auto turbulentFlowField = new TurbulentFlowField(_im->parameters);
+  //// initialise simulation
+  // if (_im->parameters.simulation.type == "turbulence") {
+  // if (_im->isMaster()) {
+  // std::cout << "Start turbulence simulation in " <<
+  // _im->parameters.geometry.dim << "D" << std::endl;
+  // }
+  // auto turbulentFlowField = new TurbulentFlowField(_im->parameters);
 
-    _im->flowField  = Implementation::UniqueFlowField(turbulentFlowField);
-    _im->simulation =
-      Implementation::UniqueSimulation(
-        new TurbulentSimulation(_im->parameters, *turbulentFlowField));
-  } else if (_im->parameters.simulation.type == "dns") {
-    if (_im->isMaster()) {
-      std::cout << "Start DNS simulation in " << _im->parameters.geometry.dim <<
-        "D" << std::endl;
-    }
-    auto flowField = new FlowField(_im->parameters);
+  // _im->flowField  = Implementation::UniqueFlowField(turbulentFlowField);
+  // _im->simulation =
+  // Implementation::UniqueSimulation(
+  // new TurbulentSimulation(_im->parameters, *turbulentFlowField));
+  // } else if (_im->parameters.simulation.type == "dns") {
+  // if (_im->isMaster()) {
+  // std::cout << "Start DNS simulation in " << _im->parameters.geometry.dim <<
+  // "D" << std::endl;
+  // }
+  // auto flowField = new FlowField(_im->parameters);
 
-    _im->flowField  = Implementation::UniqueFlowField(flowField);
-    _im->simulation =
-      Implementation::UniqueSimulation(
-        new Simulation(_im->parameters, *flowField));
-  } else {
-    handleError(1,
-                "Unknown simulation type! Currently supported: dns, turbulence");
-  }
+  // _im->flowField  = Implementation::UniqueFlowField(flowField);
+  // _im->simulation =
+  // Implementation::UniqueSimulation(
+  // new Simulation(_im->parameters, *flowField));
+  // } else {
+  // handleError(1,
+  // "Unknown simulation type! Currently supported: dns, turbulence");
+  // }
 
-  _im->simulation->initializeFlowField();
+  // _im->simulation->initializeFlowField();
   // flowField->getFlags().show();
 }
 
@@ -312,40 +320,42 @@ Application::
 run() {
   while (_im->mySimulation->iterate()) {}
 
-  // FLOAT time = 0.0;
-  //// FLOAT timeVtk    = _im->parameters.vtk.interval;
-  // FLOAT timeStdOut = _im->parameters.stdOut.interval;
-  // int   timeSteps  = 0;
-  //
-  //// plot initial state
-  // _im->simulation->plotVTK(timeSteps);
-  // timeSteps++;
-  //
-  //// time loop
-  // int asd = 0;
-  //
-  //// while (time < _im->parameters.simulation.finalTime) {
-  // while (asd != 3) {
-  // _im->simulation->solveTimestep();
-  // logInfo("Time Step other {1}", _im->parameters.timestep.dt);
-  //
-  // time += _im->parameters.timestep.dt;
-  //
-  //// std-out: terminal info
-  // if (_im->isMaster() && (timeStdOut <= time)) {
-  // std::cout << "Current time: " << time << "\ttimestep: " <<
-  // _im->parameters.timestep.dt << std::endl;
-  // timeStdOut += _im->parameters.stdOut.interval;
-  // }
-  //
-  //// VTK output
-  //// if (timeVtk <= time) {
-  // _im->simulation->plotVTK(timeSteps);
-  //// timeVtk += _im->parameters.vtk.interval;
-  //// }
-  // timeSteps++;
-  // asd++;
-  // }
+  return;
+
+  FLOAT time = 0.0;
+  // FLOAT timeVtk    = _im->parameters.vtk.interval;
+  FLOAT timeStdOut = _im->parameters.stdOut.interval;
+  int   timeSteps  = 0;
+
+  // plot initial state
+  _im->simulation->plotVTK(timeSteps);
+  timeSteps++;
+
+  // time loop
+  int asd = 0;
+
+  // while (time < _im->parameters.simulation.finalTime) {
+  while (asd != 5) {
+    _im->simulation->solveTimestep();
+    logInfo("Time Step other {1}", _im->parameters.timestep.dt);
+
+    time += _im->parameters.timestep.dt;
+
+    // std-out: terminal info
+    if (_im->isMaster() && (timeStdOut <= time)) {
+      std::cout << "Current time: " << time << "\ttimestep: " <<
+        _im->parameters.timestep.dt << std::endl;
+      timeStdOut += _im->parameters.stdOut.interval;
+    }
+
+    // VTK output
+    // if (timeVtk <= time) {
+    _im->simulation->plotVTK(timeSteps);
+    // timeVtk += _im->parameters.vtk.interval;
+    // }
+    timeSteps++;
+    asd++;
+  }
 
   // plot final output
   // _im->simulation->plotVTK(timeSteps);

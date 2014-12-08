@@ -4,6 +4,9 @@
 #include "../Definitions.h"
 #include "../FlowField.h"
 #include "../Parameters.h"
+
+#include <Uni/Logging/macros>
+
 #include <math.h>
 
 // Load the local velocity cube with relevant velocities of the 2D plane
@@ -341,11 +344,11 @@ duvdx(const FLOAT* const lv, const Parameters& parameters, const FLOAT* const
    *                      ( ( lv [mapd(-1,0,0,0)] + lv [mapd(-1,1,0,0)] ) *
    *                        ( lv [mapd(-1,0,0,1)] + lv [mapd(0,0,0,1)] ) ) )
    + parameters.solver.gamma *( ( fabs ( lv [mapd(0,0,0,0)] + lv [mapd(0,1,0,0)]
-   ++++++++++++++++++++) *
+   +++++++++++++++++++++++++++++++) *
    +                             ( lv [mapd(0,0,0,1)] - lv [mapd(1,0,0,1)] ) ) -
    +                      ( fabs ( lv [mapd(-1,0,0,0)] + lv [mapd(-1,1,0,0)] ) *
    +                             ( lv [mapd(-1,0,0,1)] - lv [mapd(0,0,0,1)] ) )
-   ++++++++++++++++++++)
+   +++++++++++++++++++++++++++++++)
    +                      ) / lm[mapd(0,0,0,0)];
    */
   // distance of corner points in x-direction from center v-value
@@ -878,21 +881,29 @@ computeF2D(const FLOAT* const localVelocity, const FLOAT* const localMeshsize,
          + dt * (1 / parameters.flow.Re *
                  (d2udx2(localVelocity, localMeshsize)
                   + d2udy2(localVelocity, localMeshsize))
-                 // - du2dx(localVelocity, parameters, localMeshsize)
-                 // - duvdy(localVelocity, parameters, localMeshsize) +
-                 - parameters.environment.gx);
+                 - du2dx(localVelocity, parameters, localMeshsize)
+                 - duvdy(localVelocity, parameters, localMeshsize)
+                 + parameters.environment.gx);
 }
 
 inline FLOAT
 computeG2D(const FLOAT* const localVelocity, const FLOAT* const localMeshsize,
            const Parameters& parameters, FLOAT dt) {
-  return localVelocity[mapd(0, 0, 0, 1)]
-         // + dt * (1 / parameters.flow.Re *
-         + (d2vdx2(localVelocity, localMeshsize)
-            + d2vdy2(localVelocity, localMeshsize));
-  // - duvdx(localVelocity, parameters, localMeshsize)
-  // - dv2dy(localVelocity, parameters, localMeshsize) +
-  // - parameters.environment.gy);
+  FLOAT result = localVelocity[mapd(0, 0, 0, 1)]
+                 + dt * (1 / parameters.flow.Re *
+                         (d2vdx2(localVelocity, localMeshsize)
+                          + d2vdy2(localVelocity, localMeshsize))
+                         - duvdx(localVelocity, parameters, localMeshsize)
+                         - dv2dy(localVelocity, parameters, localMeshsize)
+                         + parameters.environment.gy);
+  //logInfo("{1} {2} {3} {4} {5}",
+  //        result,
+  //        d2vdx2(localVelocity, localMeshsize),
+  //        d2vdy2(localVelocity, localMeshsize),
+  //        duvdx(localVelocity, parameters, localMeshsize),
+  //        dv2dy(localVelocity, parameters, localMeshsize));
+
+  return result;
 }
 
 inline FLOAT

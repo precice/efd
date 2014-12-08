@@ -1,5 +1,7 @@
 #include "VTKStencil.h"
 
+#include <limits>
+
 // TODO Correct performance issues for big matrices still required
 
 void
@@ -66,7 +68,12 @@ writePoints(std::ostream& file) const {
 VTKStencil::
 VTKStencil(const Parameters& parameters)
   : FieldStencil<FlowField>(parameters), _prefix(parameters.vtk.prefix),
-    _written(false) {}
+    _written(false) {
+  fghStream.precision(std::numeric_limits<float>::digits10);
+  rhsStream.precision(std::numeric_limits<float>::digits10);
+  velocityStream.precision(std::numeric_limits<float>::digits10);
+  pressureStream.precision(std::numeric_limits<float>::digits10);
+}
 
 void
 VTKStencil::
@@ -80,18 +87,19 @@ apply(FlowField& flowField, int i, int j) {
     flowField.getPressureAndVelocity(pressure, velocity, i, j);
 
     auto fgh = flowField.getFGH().getVector(i, j);
-    //auto rhs = flowField.getRHS().getScalar(i, j);
+    auto rhs = flowField.getRHS().getScalar(i, j);
 
     pressureStream << pressure << std::endl;
 
     velocityStream << velocity[0] << " "
                    << velocity[1] << " 0" << std::endl;
 
-    fghStream << fgh[0] << " "
-              << fgh[1] << " "
-              << "0" << std::endl;
+    fghStream
+      << fgh[0] << " "
+      << fgh[1] << " "
+      << "0" << std::endl;
 
-    //rhsStream << rhs << std::endl;
+    rhsStream << rhs << std::endl;
   } else {
     pressureStream << "0.0" << std::endl;
     velocityStream << "0.0 0.0 0.0" << std::endl;
@@ -145,20 +153,18 @@ write(FlowField& flowField, int timeStep) {
   openFile(flowField, timeStep);
 
   if (FieldStencil<FlowField>::_parameters.geometry.dim == 2) {
-    // Write pressure
-    _ofile << "CELL_DATA " << flowField.getNx() * flowField.getNy() << std::endl
-           << "SCALARS pressure float 1" << std::endl
-           << "LOOKUP_TABLE default" << std::endl;
+    _ofile << "CELL_DATA " << flowField.getNx() * flowField.getNy() <<
+      std::endl;
     _ofile << fghStream.str() << std::endl;
     fghStream.str("");
-    //_ofile << rhsStream.str() << std::endl;
+    _ofile << rhsStream.str() << std::endl;
     rhsStream.str("");
-    // Write velocity
-    // _ofile << "CELL_DATA " << flowField.getNx() * flowField.getNy() <<
-    // std::endl
     // _ofile << "VECTORS velocity float" << std::endl;
     _ofile << velocityStream.str() << std::endl;
     velocityStream.str("");
+
+    // _ofile << "SCALARS pressure float 1" << std::endl
+    // << "LOOKUP_TABLE default" << std::endl;
     _ofile << pressureStream.str() << std::endl;
     pressureStream.str("");
   }

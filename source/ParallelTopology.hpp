@@ -44,7 +44,7 @@ public:
     int  tempDivSize = 1;
 
     for (int i = 0; i < (D - 1); ++i) {
-      tempDivSize *= globalSize(i);
+      tempDivSize = processorSize(i);
       auto tempDiv = std::div(tempDivRank, tempDivSize);
       index(i)    = tempDiv.rem;
       corner(i)   = index(i) * localSize(i);
@@ -69,12 +69,11 @@ public:
     int  tempSize = 1;
 
     for (int i = 0; i < D; ++i) {
+      if (index_(i) < 0 || index_(i) >= processorSize(i)) {
+        return -1;
+      }
       result   += index_(i) * tempSize;
-      tempSize *= globalSize(i);
-    }
-
-    if (result < 0 || result >= processorSize.prod()) {
-      result = -1;
+      tempSize *= processorSize(i);
     }
 
     return result;

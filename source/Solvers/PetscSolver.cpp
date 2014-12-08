@@ -99,18 +99,18 @@ computeMatrix2D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure,
         column[3].i = i;   column[3].j = j + 1;
         column[4].i = i;   column[4].j = j - 1;
 
-      //logInfo("Petsc Columns1 {1} {2}", column[0].i, column[0].j);
-      //logInfo("Petsc Columns2 {1} {2}", column[1].i, column[1].j);
-      //logInfo("Petsc Columns3 {1} {2}", column[2].i, column[2].j);
-      //logInfo("Petsc Columns4 {1} {2}", column[3].i, column[3].j);
-      //logInfo("Petsc Columns5 {1} {2}", column[4].i, column[4].j);
-      //logInfo("Petsc Row      {1} {2}",      row.i,        row.j);
-      //logInfo("Petsc Stencil  {1} {2} {3} {4} {5}",
-      //        stencilValues[0],
-      //        stencilValues[1],
-      //        stencilValues[2],
-      //        stencilValues[3],
-      //        stencilValues[4]);
+        // logInfo("Petsc Columns1 {1} {2}", column[0].i, column[0].j);
+        // logInfo("Petsc Columns2 {1} {2}", column[1].i, column[1].j);
+        // logInfo("Petsc Columns3 {1} {2}", column[2].i, column[2].j);
+        // logInfo("Petsc Columns4 {1} {2}", column[3].i, column[3].j);
+        // logInfo("Petsc Columns5 {1} {2}", column[4].i, column[4].j);
+        // logInfo("Petsc Row      {1} {2}",      row.i,        row.j);
+        // logInfo("Petsc Stencil  {1} {2} {3} {4} {5}",
+        // stencilValues[0],
+        // stencilValues[1],
+        // stencilValues[2],
+        // stencilValues[3],
+        // stencilValues[4]);
 
         MatSetValuesStencil(A, 1, &row, 5, column, stencilValues,
                             INSERT_VALUES);
@@ -193,6 +193,12 @@ computeMatrix2D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure,
         stencilValues[0] = 0.5;
         stencilValues[1] = 0.5;
       }
+      // logInfo("Petsc Columns1 {1} {2}", column[0].i, column[0].j);
+      // logInfo("Petsc Columns2 {1} {2}", column[1].i, column[1].j);
+      // logInfo("Petsc Row      {1} {2}",      row.i,        row.j);
+      // logInfo("Petsc Stencil  {1} {2}",
+      // stencilValues[0],
+      // stencilValues[1]);
         MatSetValuesStencil(A, 1, &row, 2, column, stencilValues,
                           INSERT_VALUES);
     }
@@ -212,6 +218,13 @@ computeMatrix2D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure,
         stencilValues[0] = 0.5;
         stencilValues[1] = 0.5;
       }
+      // logInfo("Petsc Columns1 {1} {2}", column[0].i, column[0].j);
+      // logInfo("Petsc Columns2 {1} {2}", column[1].i, column[1].j);
+      // logInfo("Petsc Row      {1} {2}",      row.i,        row.j);
+      // logInfo("Petsc Stencil  {1} {2}",
+      // stencilValues[0],
+      // stencilValues[1]);
+
         MatSetValuesStencil(A, 1, &row, 2, column, stencilValues,
                           INSERT_VALUES);
     }
@@ -231,6 +244,12 @@ computeMatrix2D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure,
         stencilValues[0] = 0.5;
         stencilValues[1] = 0.5;
       }
+      // logInfo("Petsc Columns1 {1} {2}", column[0].i, column[0].j);
+      // logInfo("Petsc Columns2 {1} {2}", column[1].i, column[1].j);
+      // logInfo("Petsc Row      {1} {2}",      row.i,        row.j);
+      // logInfo("Petsc Stencil  {1} {2}",
+      // stencilValues[0],
+      // stencilValues[1]);
         MatSetValuesStencil(A, 1, &row, 2, column, stencilValues,
                           INSERT_VALUES);
     }
@@ -250,6 +269,12 @@ computeMatrix2D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure,
         stencilValues[0] = 0.5;
         stencilValues[1] = 0.5;
       }
+      // logInfo("Petsc Columns1 {1} {2}", column[0].i, column[0].j);
+      // logInfo("Petsc Columns2 {1} {2}", column[1].i, column[1].j);
+      // logInfo("Petsc Row      {1} {2}",      row.i,        row.j);
+      // logInfo("Petsc Stencil  {1} {2}",
+      // stencilValues[0],
+      // stencilValues[1]);
         MatSetValuesStencil(A, 1, &row, 2, column, stencilValues,
                           INSERT_VALUES);
     }
@@ -433,13 +458,13 @@ computeMatrix3D(KSP ksp, Mat A, Mat pc, MatStructure* matStructure, void* ctx) {
   if (context->setAsBoundary & LEFT_WALL_BIT) {
     for (j = limitsY[0]; j < limitsY[1]; j++) {
       for (k = limitsZ[0]; k < limitsZ[1]; k++) {
-        column[0].i = 0; 
+        column[0].i = 0;
         column[0].j = j;
         column[0].k = k;
         column[1].i = context->displacement[0];
         column[1].j = j;
         column[1].k = k;
-        row.i = 0; row.j = j; row.k = k;
+        row.i       = 0; row.j = j; row.k = k;
 
         if (parameters.walls.typeLeft == DIRICHLET) {
           stencilValues[0] = 1;
@@ -613,6 +638,7 @@ computeRHS2D(KSP ksp, Vec b, void* ctx) {
     } else {
       for (j = limitsY[0]; j < limitsY[1]; j++) {
         array[j][0] = 0;
+        // logInfo("{1} {2} {3}", 0, j, array[j][0]);
       }
     }
   }
@@ -621,6 +647,7 @@ computeRHS2D(KSP ksp, Vec b, void* ctx) {
   if (context->setAsBoundary & RIGHT_WALL_BIT) {
     for (j = limitsY[0]; j < limitsY[1]; j++) {
       array[j][Nx - 1] = 0;
+        // logInfo("{1} {2} {3}", Nx - 1, j, array[j][Nx - 1]);
     }
   }
 
@@ -628,6 +655,7 @@ computeRHS2D(KSP ksp, Vec b, void* ctx) {
   if (context->setAsBoundary & BOTTOM_WALL_BIT) {
     for (i = limitsX[0]; i < limitsX[1]; i++) {
       array[0][i] = 0;
+        // logInfo("{1} {2} {3}", i, 0, array[0][i]);
     }
   }
 
@@ -635,6 +663,7 @@ computeRHS2D(KSP ksp, Vec b, void* ctx) {
   if (context->setAsBoundary & TOP_WALL_BIT) {
     for (i = limitsX[0]; i < limitsX[1]; i++) {
       array[Ny - 1][i] = 0;
+        // logInfo("{1} {2} {3}", i, Ny - 1, array[Ny - 1][i]);
     }
   }
 
@@ -647,6 +676,7 @@ computeRHS2D(KSP ksp, Vec b, void* ctx) {
       if ((obstacle & OBSTACLE_SELF) == 0) { // If this is a fluid
                                              // cell
         array[j][i] = RHS.getScalar(i - limitsX[0] + 2, j - limitsY[0] + 2);
+        // logInfo("{1} {2} {3}", i, j, array[j][i]);
       } else {
         array[j][i] = 0.0;
       }

@@ -35,6 +35,7 @@ public:
 
   typedef Grid<SpecializedCellAccessor, D>              SpecializedGrid;
   typedef typename SpecializedGrid::VectorDi            VectorDi;
+  typedef typename GridGeometry::VectorDs               VectorDs;
   typedef typename SpecializedGrid::CellAccessorFactory CellAccessorFactory;
 
   typedef SimulationParameters<Scalar, D> SpecializedSimulationParameters;
@@ -62,9 +63,12 @@ public:
   operator=(MyTemplateSimulation const& other) = delete;
 
   void
-  initialize(Path const&        outputDirectory,
-             std::string const& fileNamePrefix) {
-    VectorDi localSize(_parallelTopology.localSize + 2 * VectorDi::Ones());
+  setParameters(VectorDi const& localSize,
+                VectorDs const& width) {
+    _gridGeometry.initialize(
+      width,
+      _parallelTopology.globalSize,
+      _parallelTopology.corner);
 
     _memory.allocate(localSize);
 
@@ -75,13 +79,17 @@ public:
 
     _grid.initialize(localSize, cellAccessorFactory);
 
+    logGridInitializationInfo(_grid);
+    logParallelTopologyInfo(_parallelTopology);
+  }
+
+  void
+  initialize(Path const&        outputDirectory,
+             std::string const& fileNamePrefix) {
     _poissonSolver.initialize(&_grid,
                               &_parallelTopology,
                               &_ghostCellsHandler,
                               &_dt);
-
-    logGridInitializationInfo(_grid);
-    logParallelTopologyInfo(_parallelTopology);
 
     for (auto accessor : _grid) {
       accessor.currentCell()->velocity() = Velocity::Zero();
@@ -89,11 +97,17 @@ public:
       accessor.currentCell()->pressure() = 0.0;
     }
 
-    //for (int d = 0; d < D; ++d) {
-    //  for (int d2 = 0; d2 < 2; ++d2) {
-    //    _ghostCellsHandler._velocityInitialization[d][d2]();
-    //  }
-    //}
+    for (int d = 0; d < D; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        _ghostCellsHandler._velocityInitialization[d][d2]();
+      }
+    }
+
+    for (int d = 0; d < D; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        _ghostCellsHandler._mpiVelocityExchangeStack[d][d2](PETSC_COMM_WORLD);
+      }
+    }
 
     _maxVelocity    = Velocity::Zero();
     _dt             = 1;
@@ -122,14 +136,6 @@ public:
                                                  _maxVelocity);
     logInfo("Iteration Number {1}", _iterationCount);
     logInfo("Time step size {1}",   _dt);
-    // logInfo("Maximumal Velocity {1}", _maxVelocity.transpose());
-    // logInfo("re {1}",                 _parameters.re());
-    // logInfo("gamma {1}",              _parameters.gamma());
-    // logInfo("tau {1}",                _parameters.tau());
-    // logInfo("g {1}",                  _parameters.g().transpose());
-    // logInfo("min cell width {1}",
-    // _gridGeometry.minCellWidth().transpose());
-    //
     _maxVelocity = Velocity::Zero();
 
     for (auto accessor : _grid.innerGrid) {
@@ -146,7 +152,19 @@ public:
       }
     }
 
+    for (int d = 0; d < D; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        _ghostCellsHandler._mpiFghExchangeStack[d][d2](PETSC_COMM_WORLD);
+      }
+    }
+
     _poissonSolver.solve();
+
+    for (int d = 0; d < D; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        _ghostCellsHandler._mpiPressureExchangeStack[d][d2](PETSC_COMM_WORLD);
+      }
+    }
 
     for (auto accessor : _grid.innerGrid) {
       typedef VelocityProcessing<SpecializedCellAccessor, Scalar, D> Velocity;
@@ -158,6 +176,12 @@ public:
     for (int d = 0; d < D; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         _ghostCellsHandler._velocityInitialization[d][d2]();
+      }
+    }
+
+    for (int d = 0; d < D; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        _ghostCellsHandler._mpiVelocityExchangeStack[d][d2](PETSC_COMM_WORLD);
       }
     }
 

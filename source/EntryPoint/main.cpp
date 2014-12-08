@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Application.hpp"
 
 int

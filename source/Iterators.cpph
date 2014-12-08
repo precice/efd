@@ -5,7 +5,6 @@ FieldIterator(FlowField& flowField, const Parameters& parameters,
               int lowOffset, int highOffset)
   : Iterator<FlowField>(flowField, parameters), _stencil(stencil), _lowOffset(
       lowOffset), _highOffset(highOffset) {
-    logInfo("Low offset {1}", _lowOffset);
   }
 
 template <class FlowField>
@@ -23,7 +22,6 @@ iterate() {
     // or by the subdomain boundary iterators.
     for (int j = 1 + _lowOffset; j < cellsY - 1 + _highOffset; j++) {
       for (int i = 1 + _lowOffset; i < cellsX - 1 + _highOffset; i++) {
-         //logInfo("Core {1} {2}", i, j);
         _stencil.apply(Iterator<FlowField>::_flowField, i, j);
       }
     }
@@ -98,7 +96,6 @@ iterate() {
     if (Iterator<FlowField>::_parameters.parallel.leftNb < 0) {
       for (int j = _lowOffset; j < Iterator<FlowField>::_flowField.getCellsY() +
            _highOffset; j++) {
-         //logInfo("LeftWall {1} {2}", _lowOffset, j);
         _leftWallStencil.applyLeftWall(Iterator<FlowField>::_flowField,
                                        _lowOffset, j);
       }

@@ -1,4 +1,6 @@
 #include "VelocityStencil.h"
+
+#include <Uni/Logging/macros>
 VelocityStencil::
 VelocityStencil(const Parameters& parameters) : FieldStencil<FlowField>(
                                                   parameters) {}
@@ -42,6 +44,18 @@ apply(FlowField& flowField, int i, int j) {
         flowField.getFGH().getVector(i, j)[1] - dt / dy *
         (flowField.getPressure().getScalar(i, j + 1) -
          flowField.getPressure().getScalar(i, j));
+
+      logInfo("{1} {2} {3} {4} {5} {6} {7} {8} {9}",
+              i, j,
+              flowField.getFGH().getVector(i, j)[1],
+              dt,
+              dy,
+              flowField.getPressure().getScalar(i, j + 1),
+              flowField.getPressure().getScalar(i, j),
+              flowField.getVelocity().getVector(i, j)[1],
+              flowField.getFGH().getVector(i, j)[1] - dt / dy *
+              (flowField.getPressure().getScalar(i, j + 1) -
+               flowField.getPressure().getScalar(i, j)));
     } else {
       flowField.getVelocity().getVector(i, j)[1] = 0;
     }
