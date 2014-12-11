@@ -123,7 +123,9 @@ public:
       width(2)          = parameters.geometry.lengthZ;
     }
 
-    _parallelTopology->initialize(parameters.parallel.rank,
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+    _parallelTopology->initialize(rank,
                                   processorSize,
                                   globalCellSize);
 

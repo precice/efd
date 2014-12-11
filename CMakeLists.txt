@@ -2,12 +2,12 @@
 # ==============================================================================
 cmake_minimum_required(VERSION 2.8.8)
 # ------------------------------------------------------------------------------
-set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+#set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 
-if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
-  message(SEND_ERROR "In-source builds are not allowed.")
-endif ()
+#if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+#  message(SEND_ERROR "In-source builds are not allowed.")
+#endif ()
 # ------------------------------------------------------------------------------
 project("Fsi Simulation" C CXX)
 # ------------------------------------------------------------------------------
@@ -136,8 +136,6 @@ add_executable(Simulation ${CPP_FILES})
 
 target_include_directories(Simulation PRIVATE
   "${PROJECT_DIR}/source"
-  "${PROJECT_DIR}/source/stencils"
-  "${PROJECT_DIR}/source/turbulence_algebraic"
   "${PROJECT_DIR}/3rdParty"
   )
 target_include_directories(Simulation SYSTEM PRIVATE

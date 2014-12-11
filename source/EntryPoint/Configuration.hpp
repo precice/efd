@@ -1,7 +1,6 @@
 #ifndef FsiSimulation_EntryPoint_Configuration_hpp
 #define FsiSimulation_EntryPoint_Configuration_hpp
 
-#include "Definitions.h"
 #include "Parameters.h"
 
 #include <petscksp.h>

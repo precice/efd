@@ -18,38 +18,38 @@ namespace FsiSimulation {
 template <typename TGridGeometry,
           typename TMemory,
           typename Scalar,
-          int D>
+          int TD>
 class MyTemplateSimulation : public MySimulation {
 public:
   typedef MySimulation        Base;
   typedef typename Base::Path Path;
   typedef
-    CellAccessor<TGridGeometry, TMemory, D>
-    SpecializedCellAccessor;
+    CellAccessor<TGridGeometry, TMemory, TD>
+          CCellAccessor;
 
-  typedef typename SpecializedCellAccessor::GridGeometry GridGeometry;
-  typedef typename SpecializedCellAccessor::Memory       Memory;
-  typedef typename SpecializedCellAccessor::Cell         Cell;
+  typedef typename CCellAccessor::GridGeometry GridGeometry;
+  typedef typename CCellAccessor::Memory       Memory;
+  typedef typename CCellAccessor::Cell         Cell;
   typedef typename Cell::Velocity                        Velocity;
   typedef typename Cell::Pressure                        Pressure;
 
-  typedef Grid<SpecializedCellAccessor, D>              SpecializedGrid;
+  typedef Grid<CCellAccessor, TD>              SpecializedGrid;
   typedef typename SpecializedGrid::VectorDi            VectorDi;
   typedef typename GridGeometry::VectorDs               VectorDs;
   typedef typename SpecializedGrid::CellAccessorFactory CellAccessorFactory;
 
-  typedef SimulationParameters<Scalar, D> SpecializedSimulationParameters;
+  typedef SimulationParameters<Scalar, TD> SpecializedSimulationParameters;
 
-  typedef ParallelTopology<D> SpecializedParallelTopology;
+  typedef ParallelTopology<TD> SpecializedParallelTopology;
 
   typedef
-    Solvers::PoissonSolver<SpecializedCellAccessor, Scalar, D>
+    Solvers::PoissonSolver<CCellAccessor, Scalar, TD>
     PoissonSolver;
 
-  typedef GhostCellsHandler<D> SpecializedGhostCellsHandler;
+  typedef GhostCellsHandler<TD> SpecializedGhostCellsHandler;
 
   typedef
-    EntryPoint::VtkPlot<SpecializedCellAccessor, Scalar, D>
+    EntryPoint::VtkPlot<CCellAccessor, Scalar, TD>
     SpecializedVtkPlot;
 
 public:
@@ -74,7 +74,7 @@ public:
 
     CellAccessorFactory cellAccessorFactory(
       [&] (VectorDi const& i) {
-        return SpecializedCellAccessor(i, &_memory, &_gridGeometry);
+        return CCellAccessor(i, &_memory, &_gridGeometry);
       });
 
     _grid.initialize(localSize, cellAccessorFactory);
@@ -97,13 +97,13 @@ public:
       accessor.currentCell()->pressure() = 0.0;
     }
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         _ghostCellsHandler._velocityInitialization[d][d2]();
       }
     }
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         _ghostCellsHandler._mpiVelocityExchangeStack[d][d2](PETSC_COMM_WORLD);
       }
@@ -130,7 +130,7 @@ public:
       return false;
     }
 
-    _dt = TimeStepProcessing<Scalar, D>::compute(_parameters.re(),
+    _dt = TimeStepProcessing<Scalar, TD>::compute(_parameters.re(),
                                                  _parameters.tau(),
                                                  _gridGeometry.minCellWidth(),
                                                  _maxVelocity);
@@ -139,20 +139,20 @@ public:
     _maxVelocity = Velocity::Zero();
 
     for (auto accessor : _grid.innerGrid) {
-      typedef FghProcessing<SpecializedCellAccessor,
+      typedef FghProcessing<CCellAccessor,
                             SpecializedSimulationParameters,
                             Scalar,
-                            D> Fgh;
+              TD> Fgh;
       Fgh::compute(accessor, _parameters, _dt);
     }
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         _ghostCellsHandler._fghInitialization[d][d2]();
       }
     }
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         _ghostCellsHandler._mpiFghExchangeStack[d][d2](PETSC_COMM_WORLD);
       }
@@ -160,26 +160,26 @@ public:
 
     _poissonSolver.solve();
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         _ghostCellsHandler._mpiPressureExchangeStack[d][d2](PETSC_COMM_WORLD);
       }
     }
 
     for (auto accessor : _grid.innerGrid) {
-      typedef VelocityProcessing<SpecializedCellAccessor, Scalar, D> Velocity;
+      typedef VelocityProcessing<CCellAccessor, Scalar, TD> Velocity;
       Velocity::compute(accessor, _dt);
-      computeMaxVelocity<SpecializedCellAccessor, Scalar, D>
+      computeMaxVelocity<CCellAccessor, Scalar, TD>
         (accessor, _maxVelocity);
     }
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         _ghostCellsHandler._velocityInitialization[d][d2]();
       }
     }
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         _ghostCellsHandler._mpiVelocityExchangeStack[d][d2](PETSC_COMM_WORLD);
       }

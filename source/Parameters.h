@@ -1,68 +1,57 @@
 #ifndef _PARAMETERS_H_
 #define _PARAMETERS_H_
 
-#include "Definitions.h"
-#include "Meshsize.h"
-
 #include <Eigen/Core>
 
 #include <array>
 #include <petscsys.h>
 #include <string>
 
-// ! Classes for the parts of the parameters
-// @{
 class TimestepParameters {
 public:
-  FLOAT dt; // ! Timestep
-  FLOAT tau; // ! Security factor
+  double dt;
+  double tau;
 };
 
 class SimulationParameters {
 public:
-  FLOAT       finalTime;  // ! Final time for the simulation
-  std::string type; // ! type of the simulation (DNS vs. turbulence)
-  std::string scenario; // ! If channel or cavity, for example
+  double      finalTime;
+  std::string type;
+  std::string scenario;
 };
 
 class EnvironmentalParameters {
 public:
-  // Gravity components
-  FLOAT gx;
-  FLOAT gy;
-  FLOAT gz;
+  double gx;
+  double gy;
+  double gz;
 };
 
 class FlowParameters {
 public:
-  FLOAT Re; // ! Reynolds number
+  double Re;
 };
 
 class SolverParameters {
 public:
-  FLOAT gamma; // ! Donor cell balance coefficient
-  int   maxIterations;      // ! Maximum number of iterations in the linear
-                            // solver
+  double gamma;
+  int    maxIterations;
 };
 
 class GeometricParameters {
 public:
-  // Dimensions
   int dim;
 
-  // Number of cells
   int sizeX;
   int sizeY;
   int sizeZ;
 
-  // Cell sizing
-  FLOAT lengthX;
-  FLOAT lengthY;
-  FLOAT lengthZ;
+  double lengthX;
+  double lengthY;
+  double lengthZ;
 
-  // meshsize type
   int meshsizeType;
-  // for meshstretching
+
   int stretchX;
   int stretchY;
   int stretchZ;
@@ -70,112 +59,85 @@ public:
 
 class WallParameters {
 public:
-  typedef Eigen::Matrix<FLOAT, 3, 1>             VectorDs;
+  typedef Eigen::Matrix<double, 3, 1>            VectorDs;
   typedef std::array<std::array<VectorDs, 2>, 3> Velocities;
-  typedef std::array<std::array<FLOAT, 2>, 3>    Pressures;
+  typedef std::array<std::array<double, 2>, 3>   Pressures;
 
-  // Scalar value definition. Used to define the pressure, for example
-  FLOAT scalarLeft;
-  FLOAT scalarRight;
-  FLOAT scalarBottom;
-  FLOAT scalarTop;
-  FLOAT scalarFront;
-  FLOAT scalarBack;
+  double scalarLeft;
+  double scalarRight;
+  double scalarBottom;
+  double scalarTop;
+  double scalarFront;
+  double scalarBack;
 
   Pressures pressures;
 
-  // Vector values at the boundaries, to define, for example, the velocities
-  FLOAT vectorLeft[3];
-  FLOAT vectorRight[3];
-  FLOAT vectorBottom[3];
-  FLOAT vectorTop[3];
-  FLOAT vectorFront[3];
-  FLOAT vectorBack[3];
+  double vectorLeft[3];
+  double vectorRight[3];
+  double vectorBottom[3];
+  double vectorTop[3];
+  double vectorFront[3];
+  double vectorBack[3];
 
   Velocities velocities;
-
-  // Define how will the boundary behave
-  BoundaryType typeLeft;
-  BoundaryType typeRight;
-  BoundaryType typeTop;
-  BoundaryType typeBottom;
-  BoundaryType typeFront;
-  BoundaryType typeBack;
 };
 
 class VTKParameters {
 public:
-  FLOAT       interval;     // ! Time interval for file printing
-  std::string prefix; // ! Output filename
+  double      interval;
+  std::string prefix;
 };
 
 class StdOutParameters {
 public:
-  FLOAT interval;
+  double interval;
 };
 
 class ParallelParameters {
 public:
-  int rank; // ! Rank of the current processor
+  int rank;
 
-  int numProcessors[3]; // ! Array with the number of processors in
-                        // each direction
+  int numProcessors[3];
 
-  // @brief Ranks of the neighbors
-  // @{
   int leftNb;
   int rightNb;
   int bottomNb;
   int topNb;
   int frontNb;
   int backNb;
-  // @}
 
-  int indices[3]; // ! 3D indices to locate the array
-  int localSize[3]; // ! Size for the local flow field
-  int firstCorner[3]; // ! Position of the first element. Used for
-                      // plotting
+  int indices[3];
+  int localSize[3];
+  int firstCorner[3];
 
-  PetscInt* sizes[3]; // ! Arrays with the sizes of the blocks in
-                      // each direction.
+  PetscInt* sizes[3];
 };
 
 class BFStepParameters {
 public:
-  FLOAT xRatio;
-  FLOAT yRatio;
+  double xRatio;
+  double yRatio;
 };
 
-// TODO DMITRII DOCUMENTATION (PARAMETERS)
 class BaldwinLomaxModel {
 public:
-  FLOAT Uymax_up;
-  FLOAT Umax_up;
-  FLOAT ymax_up;
-  FLOAT lmixmax_up;
-  FLOAT Umax_down;
-  FLOAT Uymax_down;
-  FLOAT ymax_down;
-  FLOAT lmixmax_down;
-  FLOAT vel_tau;
+  double Uymax_up;
+  double Umax_up;
+  double ymax_up;
+  double lmixmax_up;
+  double Umax_down;
+  double Uymax_down;
+  double ymax_down;
+  double lmixmax_down;
+  double vel_tau;
 
-  // Prandtl
-  FLOAT       kappa;
-  FLOAT       delta99;
+  double      kappa;
+  double      delta99;
   std::string modelType;
 };
 
-// @}
-
-/** A class to store and pass around the parameters
- */
 class Parameters {
 public:
-  Parameters() : meshsize(NULL) {}
-  ~Parameters() {
-    // if (meshsize != NULL) { delete meshsize; meshsize = NULL; }
-  }
-
   SimulationParameters    simulation;
   TimestepParameters      timestep;
   EnvironmentalParameters environment;
@@ -188,7 +150,6 @@ public:
   StdOutParameters        stdOut;
   BFStepParameters        bfStep;
   BaldwinLomaxModel       blm;
-  Meshsize*               meshsize;
 };
 
 #endif

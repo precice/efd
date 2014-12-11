@@ -2,35 +2,37 @@
 
 #include "TinyXml2/tinyxml2.h"
 
+#include <Uni/Logging/macros>
+
 using FsiSimulation::EntryPoint::Configuration;
 
 void
-readFloatMandatory(FLOAT&                storage,
+readFloatMandatory(double&               storage,
                    tinyxml2::XMLElement* node,
                    char const*           tag) {
-  double value; // Use to be able to select precision
+  double value;
 
   if (node->QueryDoubleAttribute(tag, &value) != tinyxml2::XML_NO_ERROR) {
-    handleError(1, "Error while reading mandatory argument");
+    logError("Error while reading mandatory argument");
   } else {
-    storage = (FLOAT)value;
+    storage = (double)value;
   }
 }
 
 void
-readFloatOptional(FLOAT&                storage,
+readFloatOptional(double&               storage,
                   tinyxml2::XMLElement* node,
                   char const*           tag,
-                  FLOAT                 defaultValue = 0) {
-  double value; // Use to be able to select precision
+                  double                defaultValue = 0) {
+  double value;
   int    result = node->QueryDoubleAttribute(tag, &value);
 
   if (result == tinyxml2::XML_NO_ATTRIBUTE) {
     storage = defaultValue;
   } else if (result == tinyxml2::XML_WRONG_ATTRIBUTE_TYPE) {
-    handleError(1, "Error while reading optional argument");
+    logError("Error while reading optional argument");
   } else {
-    storage = (FLOAT)value;
+    storage = (double)value;
   }
 }
 
@@ -41,7 +43,7 @@ readIntMandatory(int&                  storage,
   int value;
 
   if (node->QueryIntAttribute(tag, &value) != tinyxml2::XML_NO_ERROR) {
-    handleError(1, "Error while reading mandatory argument");
+    logError("Error while reading mandatory argument");
   } else {
     storage = value;
   }
@@ -60,7 +62,7 @@ readIntOptional(int&                  storage,
   if (result == tinyxml2::XML_NO_ATTRIBUTE) {
     storage = defaultValue;
   } else if (result == tinyxml2::XML_WRONG_ATTRIBUTE_TYPE) {
-    handleError(1, "Error while reading optional argument");
+    logError("Error while reading optional argument");
   }
 }
 
@@ -71,7 +73,7 @@ readBoolMandatory(bool&                 storage,
   bool value;
 
   if (node->QueryBoolAttribute(tag, &value) != tinyxml2::XML_NO_ERROR) {
-    handleError(1, "Error while reading mandatory argument");
+    logError("Error while reading mandatory argument");
   } else {
     storage = value;
   }
@@ -87,7 +89,7 @@ readBoolOptional(bool&                 storage,
   if (result == tinyxml2::XML_NO_ATTRIBUTE) {
     storage = defaultValue;
   } else if (result == tinyxml2::XML_WRONG_ATTRIBUTE_TYPE) {
-    handleError(1, "Error while reading optional argument");
+    logError("Error while reading optional argument");
   }
 }
 
@@ -105,15 +107,15 @@ readStringMandatory(std::string&          storage,
     storage = node->GetText();
 
     if (!storage.compare("")) {
-      handleError(1, "Missing mandatory string!");
+      logError("Missing mandatory string!");
     }
   }
 }
 
 void
 readWall(tinyxml2::XMLElement* wall,
-         FLOAT*                vector,
-         FLOAT&                scalar) {
+         double*               vector,
+         double&               scalar) {
   tinyxml2::XMLElement* quantity = wall->FirstChildElement("vector");
 
   if (quantity != NULL) {
@@ -139,7 +141,7 @@ broadcastString(std::string&    target,
     stringSize = target.size();
   }
   MPI_Bcast(&stringSize, 1, MPI_INT, 0, communicator);
-  char* name = new char[stringSize + 1]; // One more for the null character
+  char* name = new char[stringSize + 1];
 
   if (rank == root) {
     target.copy(name, stringSize, 0);
@@ -181,25 +183,17 @@ loadParameters(Parameters&     parameters,
 
   MPI_Comm_rank(communicator, &rank);
 
-  // we only read on rank 0; afterwards, all configuration parameters are
-  // broadcasted to all processes.
-  // So, if you add new parameters in the configuration, make sure to broadcast
-  // them to the other processes!
   if (rank == 0) {
-    // Parse the configuration file and check validity
     confFile.LoadFile(_filename.c_str());
 
     if (confFile.FirstChildElement() == NULL) {
-      handleError(1, "Error parsing the configuration file");
+      logError("Error parsing the configuration file");
     }
 
-    // --------------------------------------------------
-    // Load geometric parameters
-    // --------------------------------------------------
     node = confFile.FirstChildElement()->FirstChildElement("geometry");
 
     if (node == NULL) {
-      handleError(1, "Error loading geometry properties");
+      logError("Error loading geometry properties");
     }
 
     readIntMandatory(parameters.geometry.sizeX, node, "sizeX");
@@ -208,7 +202,7 @@ loadParameters(Parameters&     parameters,
 
     if (parameters.geometry.sizeX < 2 || parameters.geometry.sizeY < 2 ||
         parameters.geometry.sizeZ < 0) {
-      handleError(1, "Invalid size specified in configuration file");
+      logError("Invalid size specified in configuration file");
     }
 
     parameters.geometry.dim = 0;
@@ -226,24 +220,21 @@ loadParameters(Parameters&     parameters,
     }
 
     if (parameters.geometry.dim == 3 && parameters.geometry.sizeZ == 1) {
-      handleError(1,
-                  "Inconsistent data: 3D geometry specified with Z size zero");
+      logError("Inconsistent data: 3D geometry specified with Z size zero");
     }
-
-    // Determine the sizes of the cells
 
     readFloatMandatory(parameters.geometry.lengthX, node, "lengthX");
     readFloatMandatory(parameters.geometry.lengthY, node, "lengthY");
     readFloatMandatory(parameters.geometry.lengthZ, node, "lengthZ");
-    // read geometry->meshsize parameters
+
     std::string meshsizeType = "";
     subNode = node->FirstChildElement("mesh");
     readStringMandatory(meshsizeType, subNode);
 
     if (meshsizeType == "uniform") {
-      parameters.geometry.meshsizeType = Uniform;
+      parameters.geometry.meshsizeType = 0;
     } else if (meshsizeType == "stretched") {
-      parameters.geometry.meshsizeType = TanhStretching;
+      parameters.geometry.meshsizeType = 1;
       bool buffer = false;
         readBoolMandatory(buffer, node, "stretchX");
       parameters.geometry.stretchX = (int)buffer;
@@ -257,73 +248,51 @@ loadParameters(Parameters&     parameters,
         parameters.geometry.stretchZ = false;
       }
     } else {
-      handleError(1, "Unknown 'mesh'!");
+      logError("Unknown 'mesh'!");
     }
 
-    // Now, the size of the elements should be set
-
     _dim = parameters.geometry.dim;
-
-    // --------------------------------------------------
-    // Timestep parameters
-    // --------------------------------------------------
 
     node = confFile.FirstChildElement()->FirstChildElement("timestep");
 
     if (node == NULL) {
-      handleError(1, "Error loading timestep parameters");
+      logError("Error loading timestep parameters");
     }
 
     readFloatOptional(parameters.timestep.dt,  node, "dt",    1);
     readFloatOptional(parameters.timestep.tau, node, "tau", 0.5);
 
-    // --------------------------------------------------
-    // Flow parameters
-    // --------------------------------------------------
-
     node = confFile.FirstChildElement()->FirstChildElement("flow");
 
     if (node == NULL) {
-      handleError(1, "Error loading flow parameters");
+      logError("Error loading flow parameters");
     }
 
     readFloatMandatory(parameters.flow.Re, node, "Re");
 
-    // --------------------------------------------------
-    // Solver parameters
-    // --------------------------------------------------
-
     node = confFile.FirstChildElement()->FirstChildElement("solver");
 
     if (node == NULL) {
-      handleError(1, "Error loading solver parameters");
+      logError("Error loading solver parameters");
     }
 
     readFloatMandatory(parameters.solver.gamma, node, "gamma");
     readIntOptional(parameters.solver.maxIterations, node, "maxIterations");
 
-    // --------------------------------------------------
-    // Environmental parameters
-    // --------------------------------------------------
-
     node = confFile.FirstChildElement()->FirstChildElement("environment");
 
     if (node == NULL) {
-      handleError(1, "Error loading environmental  parameters");
+      logError("Error loading environmental  parameters");
     }
 
     readFloatOptional(parameters.environment.gx, node, "gx");
     readFloatOptional(parameters.environment.gy, node, "gy");
     readFloatOptional(parameters.environment.gz, node, "gz");
 
-    // --------------------------------------------------
-    // Simulation parameters
-    // --------------------------------------------------
-
     node = confFile.FirstChildElement()->FirstChildElement("simulation");
 
     if (node == NULL) {
-      handleError(1, "Error loading simulation parameters");
+      logError("Error loading simulation parameters");
     }
 
     readFloatMandatory(parameters.simulation.finalTime, node, "finalTime");
@@ -333,7 +302,7 @@ loadParameters(Parameters&     parameters,
     if (subNode != NULL) {
       readStringMandatory(parameters.simulation.type, subNode);
     } else {
-      handleError(1, "Missing type in simulation parameters");
+      logError("Missing type in simulation parameters");
     }
 
     subNode = node->FirstChildElement("scenario");
@@ -341,43 +310,30 @@ loadParameters(Parameters&     parameters,
     if (subNode != NULL) {
       readStringMandatory(parameters.simulation.scenario, subNode);
     } else {
-      handleError(1, "Missing scenario in simulation parameters");
+      logError("Missing scenario in simulation parameters");
     }
-
-    // --------------------------------------------------
-    // VTK parameters
-    // --------------------------------------------------
 
     node = confFile.FirstChildElement()->FirstChildElement("vtk");
 
     if (node == NULL) {
-      handleError(1, "Error loading VTK parameters");
+      logError("Error loading VTK parameters");
     }
 
     readFloatOptional(parameters.vtk.interval, node, "interval");
     readStringMandatory(parameters.vtk.prefix, node);
 
-    // --------------------------------------------------
-    // StdOut parameters
-    // --------------------------------------------------
-
     node = confFile.FirstChildElement()->FirstChildElement("stdOut");
 
     if (node == NULL) {
-      handleError(1, "Error loading StdOut parameters");
+      logError("Error loading StdOut parameters");
     }
 
-    // If no value given, print every step
     readFloatOptional(parameters.stdOut.interval, node, "interval", 1);
-
-    // --------------------------------------------------
-    // Parallel parameters
-    // --------------------------------------------------
 
     node = confFile.FirstChildElement()->FirstChildElement("parallel");
 
     if (node == NULL) {
-      handleError(1, "Error loading parallel parameters");
+      logError("Error loading parallel parameters");
     }
 
     readIntOptional(parameters.parallel.numProcessors[0], node,
@@ -387,8 +343,6 @@ loadParameters(Parameters&     parameters,
     readIntOptional(parameters.parallel.numProcessors[2], node,
                     "numProcessorsZ", 1);
 
-    // Start neighbors on null in case that no parallel configuration is used
-    // later.
     parameters.parallel.leftNb   = MPI_PROC_NULL;
     parameters.parallel.rightNb  = MPI_PROC_NULL;
     parameters.parallel.bottomNb = MPI_PROC_NULL;
@@ -396,8 +350,6 @@ loadParameters(Parameters&     parameters,
     parameters.parallel.frontNb  = MPI_PROC_NULL;
     parameters.parallel.backNb   = MPI_PROC_NULL;
 
-    // Yet more parameters initialized in case that no parallel configuration is
-    // applied
     parameters.parallel.localSize[0] = parameters.geometry.sizeX;
     parameters.parallel.localSize[1] = parameters.geometry.sizeY;
     parameters.parallel.localSize[2] = parameters.geometry.sizeZ;
@@ -406,19 +358,12 @@ loadParameters(Parameters&     parameters,
     parameters.parallel.firstCorner[1] = 0;
     parameters.parallel.firstCorner[2] = 0;
 
-    // VTK output is named after the rank, so we define it here, again, in case
-    // that it's not
-    // initialized anywhere else.
     parameters.parallel.rank = rank;
-
-    // --------------------------------------------------
-    // Walls
-    // --------------------------------------------------
 
     node = confFile.FirstChildElement()->FirstChildElement("walls");
 
     if (node == NULL) {
-      handleError(1, "Error loading wall parameters");
+      logError("Error loading wall parameters");
     }
 
     tinyxml2::XMLElement* wall;
@@ -461,9 +406,6 @@ loadParameters(Parameters&     parameters,
       readWall(wall, parameters.walls.vectorBack, parameters.walls.scalarBack);
     }
 
-    // Set the scalar values to zero;
-    // do not set the left pressure value to zero, if we have a pressure-channel
-    // scenario -> in this case, we need a fixed pressure value there
     if (parameters.simulation.scenario != "pressure-channel") {
       parameters.walls.scalarLeft = 0.0;
     }
@@ -473,9 +415,6 @@ loadParameters(Parameters&     parameters,
     parameters.walls.scalarFront  = 0.0;
     parameters.walls.scalarBack   = 0.0;
 
-    // --------------------------------------------------
-    // Backward facing step
-    // --------------------------------------------------
     parameters.bfStep.xRatio = -1.0;
     parameters.bfStep.yRatio = -1.0;
     node                     = confFile.FirstChildElement()->FirstChildElement(
@@ -486,9 +425,6 @@ loadParameters(Parameters&     parameters,
       readFloatMandatory(parameters.bfStep.yRatio, node, "yRatio");
     }
 
-    // ------------------------------------------------------
-    // Turbulence
-    // ------------------------------------------------------
     node = confFile.FirstChildElement()->FirstChildElement("turbulence_model");
 
     if (node != NULL) {
@@ -498,100 +434,98 @@ loadParameters(Parameters&     parameters,
     }
   }
 
-  // Broadcasting of the values
-  MPI_Bcast(&(parameters.geometry.sizeX),        1, MPI_INT,      0,
+  MPI_Bcast(&(parameters.geometry.sizeX),        1, MPI_INT,    0,
             communicator);
-  MPI_Bcast(&(parameters.geometry.sizeY),        1, MPI_INT,      0,
+  MPI_Bcast(&(parameters.geometry.sizeY),        1, MPI_INT,    0,
             communicator);
-  MPI_Bcast(&(parameters.geometry.sizeZ),        1, MPI_INT,      0,
-            communicator);
-
-  MPI_Bcast(&(parameters.geometry.dim),          1, MPI_INT,      0,
+  MPI_Bcast(&(parameters.geometry.sizeZ),        1, MPI_INT,    0,
             communicator);
 
-  MPI_Bcast(&(parameters.geometry.meshsizeType), 1, MPI_INT,      0,
-            communicator);
-  MPI_Bcast(&(parameters.geometry.stretchX),     1, MPI_INT,      0,
-            communicator);
-  MPI_Bcast(&(parameters.geometry.stretchY),     1, MPI_INT,      0,
-            communicator);
-  MPI_Bcast(&(parameters.geometry.stretchZ),     1, MPI_INT,      0,
-            communicator);
-  MPI_Bcast(&(parameters.geometry.lengthX),      1, MY_MPI_FLOAT, 0,
-            communicator);
-  MPI_Bcast(&(parameters.geometry.lengthY),      1, MY_MPI_FLOAT, 0,
-            communicator);
-  MPI_Bcast(&(parameters.geometry.lengthZ),      1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.geometry.dim),          1, MPI_INT,    0,
             communicator);
 
-  MPI_Bcast(&(parameters.timestep.dt),           1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.geometry.meshsizeType), 1, MPI_INT,    0,
             communicator);
-  MPI_Bcast(&(parameters.timestep.tau),          1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.geometry.stretchX),     1, MPI_INT,    0,
             communicator);
-
-  MPI_Bcast(&(parameters.flow.Re),               1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.geometry.stretchY),     1, MPI_INT,    0,
             communicator);
-
-  MPI_Bcast(&(parameters.solver.gamma),          1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.geometry.stretchZ),     1, MPI_INT,    0,
             communicator);
-  MPI_Bcast(&(parameters.solver.maxIterations),  1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.geometry.lengthX),      1, MPI_DOUBLE, 0,
             communicator);
-
-  MPI_Bcast(&(parameters.environment.gx),        1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.geometry.lengthY),      1, MPI_DOUBLE, 0,
             communicator);
-  MPI_Bcast(&(parameters.environment.gy),        1, MY_MPI_FLOAT, 0,
-            communicator);
-  MPI_Bcast(&(parameters.environment.gz),        1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.geometry.lengthZ),      1, MPI_DOUBLE, 0,
             communicator);
 
-  MPI_Bcast(&(parameters.simulation.finalTime),  1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.timestep.dt),           1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.timestep.tau),          1, MPI_DOUBLE, 0,
             communicator);
 
-  MPI_Bcast(&(parameters.vtk.interval),          1, MY_MPI_FLOAT, 0,
+  MPI_Bcast(&(parameters.flow.Re),               1, MPI_DOUBLE, 0,
             communicator);
-  MPI_Bcast(&(parameters.stdOut.interval),       1, MPI_INT,      0,
+
+  MPI_Bcast(&(parameters.solver.gamma),          1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.solver.maxIterations),  1, MPI_DOUBLE, 0,
+            communicator);
+
+  MPI_Bcast(&(parameters.environment.gx),        1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.environment.gy),        1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.environment.gz),        1, MPI_DOUBLE, 0,
+            communicator);
+
+  MPI_Bcast(&(parameters.simulation.finalTime),  1, MPI_DOUBLE, 0,
+            communicator);
+
+  MPI_Bcast(&(parameters.vtk.interval),          1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.stdOut.interval),       1, MPI_INT,    0,
             communicator);
 
   broadcastString(parameters.vtk.prefix,          communicator);
   broadcastString(parameters.simulation.type,     communicator);
   broadcastString(parameters.simulation.scenario, communicator);
 
-  MPI_Bcast(         &(parameters.bfStep.xRatio),      1, MY_MPI_FLOAT, 0,
-                     communicator);
-  MPI_Bcast(         &(parameters.bfStep.yRatio),      1, MY_MPI_FLOAT, 0,
-                     communicator);
-
-  MPI_Bcast(parameters.parallel.numProcessors,         3, MPI_INT,      0,
+  MPI_Bcast(&(parameters.bfStep.xRatio),       1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.bfStep.yRatio),       1, MPI_DOUBLE, 0,
             communicator);
 
-  MPI_Bcast(         &(parameters.walls.scalarLeft),   1, MY_MPI_FLOAT, 0,
-                     communicator);
-  MPI_Bcast(         &(parameters.walls.scalarRight),  1, MY_MPI_FLOAT, 0,
-                     communicator);
-  MPI_Bcast(         &(parameters.walls.scalarBottom), 1, MY_MPI_FLOAT, 0,
-                     communicator);
-  MPI_Bcast(         &(parameters.walls.scalarTop),    1, MY_MPI_FLOAT, 0,
-                     communicator);
-  MPI_Bcast(         &(parameters.walls.scalarFront),  1, MY_MPI_FLOAT, 0,
-                     communicator);
-  MPI_Bcast(         &(parameters.walls.scalarBack),   1, MY_MPI_FLOAT, 0,
-                     communicator);
-
-  MPI_Bcast(parameters.walls.vectorLeft,               3, MY_MPI_FLOAT, 0,
-            communicator);
-  MPI_Bcast(parameters.walls.vectorRight,              3, MY_MPI_FLOAT, 0,
-            communicator);
-  MPI_Bcast(parameters.walls.vectorBottom,             3, MY_MPI_FLOAT, 0,
-            communicator);
-  MPI_Bcast(parameters.walls.vectorTop,                3, MY_MPI_FLOAT, 0,
-            communicator);
-  MPI_Bcast(parameters.walls.vectorFront,              3, MY_MPI_FLOAT, 0,
-            communicator);
-  MPI_Bcast(parameters.walls.vectorBack,               3, MY_MPI_FLOAT, 0,
+  MPI_Bcast(parameters.parallel.numProcessors, 3, MPI_INT,    0,
             communicator);
 
-  // broadcast turbulence parameters
+  MPI_Bcast(&(parameters.walls.scalarLeft),    1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.walls.scalarRight),   1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.walls.scalarBottom),  1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.walls.scalarTop),     1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.walls.scalarFront),   1, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(&(parameters.walls.scalarBack),    1, MPI_DOUBLE, 0,
+            communicator);
+
+  MPI_Bcast(parameters.walls.vectorLeft,       3, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(parameters.walls.vectorRight,      3, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(parameters.walls.vectorBottom,     3, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(parameters.walls.vectorTop,        3, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(parameters.walls.vectorFront,      3, MPI_DOUBLE, 0,
+            communicator);
+  MPI_Bcast(parameters.walls.vectorBack,       3, MPI_DOUBLE, 0,
+            communicator);
+
   broadcastString(parameters.blm.modelType, communicator);
-  MPI_Bcast(&(parameters.blm.delta99), 1, MY_MPI_FLOAT, 0, communicator);
-  MPI_Bcast(&(parameters.blm.kappa),   1, MY_MPI_FLOAT, 0, communicator);
+  MPI_Bcast(&(parameters.blm.delta99), 1, MPI_DOUBLE, 0, communicator);
+  MPI_Bcast(&(parameters.blm.kappa),   1, MPI_DOUBLE, 0, communicator);
 }
