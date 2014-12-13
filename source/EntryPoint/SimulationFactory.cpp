@@ -1,15 +1,10 @@
 #include "SimulationFactory.hpp"
 
-#include "Cell.hpp"
-#include "GridGeometry.hpp"
-#include "MyTemplateSimulation.hpp"
-#include "Solvers/GhostInitializationActions.hpp"
-#include "StructuredMemory/Accessor.hpp"
-#include "StructuredMemory/Memory.hpp"
+#include "FluidSimulation/Cell.hpp"
+#include "FluidSimulation/GridGeometry.hpp"
+#include "FluidSimulation/FdSimulation.hpp"
 
 #include "MySimulationBuilder.hpp"
-
-#include <Uni/StructuredGrid/Basic/MultiIndex>
 //
 
 using FsiSimulation::EntryPoint::SimulationFactory;
@@ -19,7 +14,7 @@ namespace EntryPoint {
 namespace Private {
 template <typename Scalar, int D>
 SimulationFactory::Simulation*
-createUniformGridFromTemplate(Parameters& parameters) {
+createUniformGridFromTemplate(FluidSimulation::Parameters& parameters) {
   parameters.walls.velocities[0][0](0) = parameters.walls.vectorLeft[0];
   parameters.walls.velocities[0][0](1) = parameters.walls.vectorLeft[1];
   parameters.walls.velocities[0][0](2) = parameters.walls.vectorLeft[2];
@@ -63,24 +58,24 @@ createUniformGridFromTemplate(Parameters& parameters) {
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridFloat2D(Parameters& parameters) {
+createUniformGridFloat2D(FluidSimulation::Parameters& parameters) {
   return Private::createUniformGridFromTemplate<double, 3>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridDouble2D(Parameters& parameters) {
+createUniformGridDouble2D(FluidSimulation::Parameters& parameters) {
   return Private::createUniformGridFromTemplate<double, 3>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridFloat3D(Parameters& parameters) {
+createUniformGridFloat3D(FluidSimulation::Parameters& parameters) {
   return Private::createUniformGridFromTemplate<double, 3>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridDouble3D(Parameters& parameters) {
+createUniformGridDouble3D(FluidSimulation::Parameters& parameters) {
   return Private::createUniformGridFromTemplate<double, 3>(parameters);
 }

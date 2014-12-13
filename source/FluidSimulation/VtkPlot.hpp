@@ -2,28 +2,27 @@
 #define FsiSimulation_EntryPoint_VtkPlot_hpp
 
 #include "Grid.hpp"
-#include "ParallelTopology.hpp"
-
-#include "stencils/mystencils.hpp"
+#include "functions.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/locale.hpp>
+#include "ParallelDistribution.hpp"
 
 #include <limits>
 
 namespace FsiSimulation {
-namespace EntryPoint {
+namespace FluidSimulation {
 template <typename TCellAccessor,
           typename Scalar,
           int D>
 class VtkPlot {
 public:
   typedef Grid<TCellAccessor, D>               SpecializedGrid;
-  typedef ParallelTopology<D>                  SpecializedParallelTopology;
-  typedef typename TCellAccessor::GridGeometry GridGeometry;
+  typedef ParallelDistribution<D>                  SpecializedParallelTopology;
+  typedef typename TCellAccessor::GridGeometryType GridGeometry;
 
   typedef boost::filesystem::path Path;
   typedef
@@ -48,7 +47,7 @@ public:
     _fileNamePrefix   = fileNamePrefix;
     namespace bl      = boost::locale;
     _locale           = bl::generator().generate("en_US.UTF-8");
-    _fileNamePrefix  += (Format(".{1}") % _parallelTopology->rank)
+    _fileNamePrefix  += (Format(".{1}") % _parallelTopology->currentRank)
                         .str(_locale);
   }
 

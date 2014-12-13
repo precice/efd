@@ -173,7 +173,7 @@ setFileName(std::string const& filename) {
 
 void
 Configuration::
-loadParameters(Parameters&     parameters,
+loadParameters(FluidSimulation::Parameters&     parameters,
                MPI_Comm const& communicator) {
   tinyxml2::XMLDocument confFile;
   tinyxml2::XMLElement* node;

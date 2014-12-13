@@ -1,7 +1,7 @@
 #ifndef FsiSimulation_EntryPoint_Configuration_hpp
 #define FsiSimulation_EntryPoint_Configuration_hpp
 
-#include "Parameters.h"
+#include "FluidSimulation/Configuration.hpp"
 
 #include <petscksp.h>
 #include <string>
@@ -22,7 +22,7 @@ public:
   setFileName(std::string const& filename);
 
   void
-  loadParameters(Parameters&     parameters,
+  loadParameters(FluidSimulation::Parameters&     parameters,
                  MPI_Comm const& communicator = PETSC_COMM_WORLD);
 };
 }

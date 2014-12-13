@@ -1,12 +1,12 @@
 #ifndef FsiSimulation_Solvers_PoissonSolver_hpp
 #define FsiSimulation_Solvers_PoissonSolver_hpp
 
-#include "GhostCellsHandler.hpp"
+#include "GhostLayer/Handlers.hpp"
 #include "Grid.hpp"
-#include "ParallelTopology.hpp"
-#include "PetscStructures.hpp"
+#include "ParallelDistribution.hpp"
+#include "Private/petscgenerics.hpp"
 #include "StructuredMemory/Pointers.hpp"
-#include "stencils/mystencils.hpp"
+#include "functions.hpp"
 #include <petscdm.h>
 #include <petscdmda.h>
 #include <petscksp.h>
@@ -14,19 +14,19 @@
 #include <Uni/Logging/macros>
 
 namespace FsiSimulation {
-namespace Solvers {
+namespace FluidSimulation {
 template <typename TCellAccessor, typename Scalar, int D>
-class PoissonSolver {
+class LinearSolver {
 public:
   typedef Grid<TCellAccessor, D>      SpecializedGrid;
-  typedef ParallelTopology<D>         SpecializedParallelTopology;
-  typedef GhostCellsHandler<D>        SpecializedGhostCellsHandler;
+  typedef ParallelDistribution<D>         SpecializedParallelTopology;
+  typedef typename GhostLayer::Handlers<D>        SpecializedGhostCellsHandler;
   typedef Scalar const*               ScalarPointer;
   typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
   typedef Eigen::Matrix<int, D, 1>    VectorDi;
 
 public:
-  PoissonSolver() {}
+  LinearSolver() {}
 
   void
   initialize(SpecializedGrid const*              grid,
@@ -47,7 +47,7 @@ public:
       localSizes(d) = UniqueConstPetscIntArray(array);
 
       for (int j = 0; j < _parallelTopology->processorSize(d); ++j) {
-        array[j] = _parallelTopology->localSize(d);
+        array[j] = _parallelTopology->localCellSize(d);
       }
       ++array[0];
       ++array[_parallelTopology->processorSize(d) - 1];
@@ -56,7 +56,7 @@ public:
     DMCreate<D>(PETSC_COMM_WORLD,
                 createDMBoundaries<D>(),
                 DMDA_STENCIL_STAR,
-                _parallelTopology->globalSize + 2 * VectorDi::Ones(),
+                _parallelTopology->globalCellSize + 2 * VectorDi::Ones(),
                 _parallelTopology->processorSize,
                 1,
                 2,
@@ -133,7 +133,7 @@ public:
 private:
   static PetscErrorCode
   computeMatrix(KSP ksp, Mat A, Mat pc, void* ctx) {
-    auto solver = static_cast<PoissonSolver*>(ctx);
+    auto solver = static_cast<LinearSolver*>(ctx);
 
     PetscScalar stencil[2 * D + 1];
     MatStencil  row;
@@ -176,7 +176,7 @@ private:
 
   static PetscErrorCode
   computeRHS(KSP ksp, Vec b, void* ctx) {
-    auto solver = static_cast<PoissonSolver*>(ctx);
+    auto solver = static_cast<LinearSolver*>(ctx);
     typedef StructuredMemory::Pointers<PetscScalar, D> Pointers;
     typename Pointers::Type array;
 

@@ -1,13 +1,13 @@
 #ifndef FsiSimulation_Ghost_Initialization_Actions_hpp
 #define FsiSimulation_Ghost_Initialization_Actions_hpp
 
-#include "ParallelTopology.hpp"
-#include "Parameters.h"
-#include "stencils/mystencils.hpp"
+#include "FluidSimulation/ParallelDistribution.hpp"
+#include "FluidSimulation/Configuration.hpp"
+#include "FluidSimulation/functions.hpp"
 
 namespace FsiSimulation {
-namespace Solvers {
-namespace Ghost {
+namespace FluidSimulation {
+namespace GhostLayer {
 namespace Initialization {
 template <typename TGrid,
           typename Scalar,
@@ -16,7 +16,7 @@ template <typename TGrid,
           int TDirection>
 class MovingWallVelocityAction {
 public:
-  typedef typename TGrid::CellAccessor::Cell::Velocity Velocity;
+  typedef typename TGrid::CellAccessor::CellType::Velocity Velocity;
 
   MovingWallVelocityAction(Parameters& parameters,
                            Velocity*   maxVelocity)

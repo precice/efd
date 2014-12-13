@@ -81,11 +81,11 @@ endif ()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if (COMPILER_IS_G++)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmessage-length=0")
+ # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
@@ -129,7 +129,9 @@ endif ()
 # ==============================================================================
 file(GLOB_RECURSE CPP_FILES
   "${PROJECT_DIR}/source/*.cpp"
+  "${PROJECT_DIR}/source/*.hpp"
   "${PROJECT_DIR}/3rdParty/TinyXml2/*.cpp"
+  "${PROJECT_DIR}/3rdParty/TinyXml2/*.h"
   )
 
 add_executable(Simulation ${CPP_FILES})

@@ -3,8 +3,8 @@
 #include "Private/convertUtfPathToAnsi.hpp"
 
 #include "Configuration.hpp"
-#include "MySimulation.hpp"
-#include "Parameters.h"
+#include "FluidSimulation/Simulation.hpp"
+#include "Configuration.hpp"
 #include "SimulationFactory.hpp"
 
 #include <precice/SolverInterface.hpp>
@@ -76,7 +76,7 @@ _getExecPath() {
 }
 
 class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
-  typedef std::unique_ptr<MySimulation> UniqueMySimulation;
+  typedef std::unique_ptr<FluidSimulation::Simulation> UniqueMySimulation;
   typedef boost::filesystem::path       Path;
 
   ApplicationPrivateImplementation(
@@ -126,7 +126,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   int rank;
   int processCount;
 
-  Parameters parameters;
+  FluidSimulation::Parameters parameters;
 
   UniqueMySimulation mySimulation;
 

@@ -1,8 +1,9 @@
 #ifndef FsiSimulation_Ghost_Velocity_Handler_hpp
 #define FsiSimulation_Ghost_Velocity_Handler_hpp
 
-#include "GhostHandlersUtilities.hpp"
-#include "ParallelTopology.hpp"
+#include "Private/utilities.hpp"
+
+#include "FluidSimulation/ParallelDistribution.hpp"
 
 #include <Uni/Logging/macros>
 
@@ -10,8 +11,8 @@
 #include <memory>
 
 namespace FsiSimulation {
-namespace Solvers {
-namespace Ghost {
+namespace FluidSimulation {
+namespace GhostLayer {
 namespace Initialization {
 typedef std::function<void ()> Functor;
 template <int D>
@@ -30,7 +31,7 @@ template <typename TGrid,
           int TDirection>
 class Handler {
 public:
-  typedef ParallelTopology<D> SpecializedParallelTopology;
+  typedef ParallelDistribution<D> SpecializedParallelTopology;
 
   Handler(TGrid const*                       grid,
           SpecializedParallelTopology const* parallelTopology,

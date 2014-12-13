@@ -1,7 +1,8 @@
 #ifndef FsiSimulation_Ghost_PetscExchange_Handler_hpp
 #define FsiSimulation_Ghost_PetscExchange_Handler_hpp
 
-#include "GhostHandlersUtilities.hpp"
+#include "Private/utilities.hpp"
+
 #include "StructuredMemory/Pointers.hpp"
 
 #include <Uni/Logging/macros>
@@ -13,8 +14,8 @@
 #include <memory>
 
 namespace FsiSimulation {
-namespace Solvers {
-namespace Ghost {
+namespace FluidSimulation {
+namespace GhostLayer {
 namespace PetscExchange {
 template <int D>
 using Functor =

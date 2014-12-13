@@ -1,15 +1,17 @@
 #ifndef FsiSimulation_Ghost_PetscExchange_Actions_hpp
 #define FsiSimulation_Ghost_PetscExchange_Actions_hpp
 
-#include "ParallelTopology.hpp"
-#include "Parameters.h"
+#include "FluidSimulation/Configuration.hpp"
+#include "FluidSimulation/ParallelDistribution.hpp"
+
 #include "StructuredMemory/Pointers.hpp"
+
 #include <petscdm.h>
 #include <petscdmda.h>
 
 namespace FsiSimulation {
-namespace Solvers {
-namespace Ghost {
+namespace FluidSimulation {
+namespace GhostLayer {
 namespace PetscExchange {
 template <typename TGrid,
           int D,
@@ -18,7 +20,7 @@ template <typename TGrid,
 class MovingWallRhsAction {
 public:
   typedef StructuredMemory::Pointers<PetscScalar, D> Pointers;
-  typedef ParallelTopology<D>                        SpecializedParallelTopology;
+  typedef ParallelDistribution<D>                        SpecializedParallelTopology;
 
 public:
   MovingWallRhsAction(
@@ -49,7 +51,7 @@ template <typename TGrid,
 class CopyPressureAction {
 public:
   typedef StructuredMemory::Pointers<PetscScalar, D> Pointers;
-  typedef ParallelTopology<D>                        SpecializedParallelTopology;
+  typedef ParallelDistribution<D>                        SpecializedParallelTopology;
 
 public:
   CopyPressureAction(SpecializedParallelTopology const* parallelTopology)

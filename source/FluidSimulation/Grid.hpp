@@ -9,42 +9,46 @@
 #include <array>
 
 namespace FsiSimulation {
-template <typename TCellAccessor, int D>
+namespace FluidSimulation {
+template<typename TCellAccessor, int D>
 class Grid;
-template <typename TCellAccessor, int D>
+
+template<typename TCellAccessor, int D>
 void
 logGridInitializationInfo(Grid<TCellAccessor, D> const& grid);
 
-template <typename TCellAccessor, int D>
+template<typename TCellAccessor, int D>
 class Grid : public Uni::StructuredGrid::Basic::Grid<TCellAccessor, D> {
 public:
   typedef
-    Uni::StructuredGrid::Basic::Grid<TCellAccessor, D>
-    Base;
+  Uni::StructuredGrid::Basic::Grid<TCellAccessor, D>
+  Base;
 
-  typedef typename Base::Iterator   Iterator;
-  typedef  typename Base::VectorDi  VectorDi;
+  typedef typename Base::Iterator Iterator;
+  typedef typename Base::VectorDi VectorDi;
   typedef typename Base::CellAccessor CellAccessor;
   typedef typename Base::Factory
-    CellAccessorFactory;
+  CellAccessorFactory;
 
 public:
-  Grid() {}
+  Grid() {
+  }
 
   Grid(Grid const& other) = delete;
 
-  ~Grid() {}
+  ~Grid() {
+  }
 
   Grid&
   operator=(Grid const& other) = delete;
 
   void
-  initialize(VectorDi const&            size,
-             CellAccessorFactory const& factory) {
+  initialize(VectorDi const& size,
+  CellAccessorFactory const& factory) {
     this->Base::initialize(size,
-                           VectorDi::Zero(),
-                           VectorDi::Zero(),
-                           factory);
+    VectorDi::Zero(),
+    VectorDi::Zero(),
+    factory);
 
     VectorDi indent(VectorDi::Ones());
 
@@ -54,54 +58,54 @@ public:
       VectorDi rightIndent(VectorDi::Zero());
       rightIndent(i) = size(i) - 1;
       boundaries[i][0].initialize(size,
-                                  leftIndent,
-                                  rightIndent,
-                                  factory);
+      leftIndent,
+      rightIndent,
+      factory);
       boundaries[i][1].initialize(size,
-                                  rightIndent,
-                                  leftIndent,
-                                  factory);
-      leftIndent     = indent;
-      leftIndent(i)  = 0;
-      rightIndent    = indent;
+      rightIndent,
+      leftIndent,
+      factory);
+      leftIndent = indent;
+      leftIndent(i) = 0;
+      rightIndent = indent;
       rightIndent(i) = size(i) - rightIndent(i);
       indentedBoundaries[i][0].initialize(size,
-                                          leftIndent,
-                                          rightIndent,
-                                          factory);
+      leftIndent,
+      rightIndent,
+      factory);
       indentedBoundaries[i][1].initialize(size,
-                                          rightIndent,
-                                          leftIndent,
-                                          factory);
+      rightIndent,
+      leftIndent,
+      factory);
     }
     innerGrid.initialize(size, indent, indent, factory);
   }
 
 public:
-  Base                               innerGrid;
+  Base innerGrid;
   std::array<std::array<Base, 2>, D> boundaries;
   std::array<std::array<Base, 2>, D> indentedBoundaries;
 
   friend void
   logGridInitializationInfo<TCellAccessor, D
-                            >(Grid const& grid);
+  >(Grid const& grid);
 };
 
-template <typename TCellAccessor, int D>
+template<typename TCellAccessor, int D>
 void
 logGridInitializationInfo(Grid<TCellAccessor, D> const& grid) {
   INFO << "Grid size: "
-       << grid.size().transpose() << "\n"
-       << "Grid left indent: "
-       << grid.leftIndent().transpose() << "\n"
-       << "Grid right indent: "
-       << grid.rightIndent().transpose() << "\n"
-       << "Inner grid size: "
-       << grid.innerGrid.size().transpose() << "\n"
-       << "Inner grid left indent: "
-       << grid.innerGrid.leftIndent().transpose() << "\n"
-       << "Inner grid right indent: "
-       << grid.innerGrid.rightIndent().transpose() << "\n";
+    << grid.size().transpose() << "\n"
+    << "Grid left indent: "
+    << grid.leftIndent().transpose() << "\n"
+    << "Grid right indent: "
+    << grid.rightIndent().transpose() << "\n"
+    << "Inner grid size: "
+    << grid.innerGrid.size().transpose() << "\n"
+    << "Inner grid left indent: "
+    << grid.innerGrid.leftIndent().transpose() << "\n"
+    << "Inner grid right indent: "
+    << grid.innerGrid.rightIndent().transpose() << "\n";
 
   for (int d = 0; d < D; ++d) {
     INFO
@@ -118,6 +122,7 @@ logGridInitializationInfo(Grid<TCellAccessor, D> const& grid) {
       << 2 * d + 1 << " grid right indent: "
       << grid.boundaries[d][1].rightIndent().transpose() << "\n";
   }
+}
 }
 }
 

@@ -1,8 +1,9 @@
 #ifndef FsiSimulation_Solvers_GhostPressureStencil_Handlers_hpp
 #define FsiSimulation_Solvers_GhostPressureStencil_Handlers_hpp
 
-#include "GhostHandlersUtilities.hpp"
-#include "ParallelTopology.hpp"
+#include "Private/utilities.hpp"
+
+#include "FluidSimulation/ParallelDistribution.hpp"
 
 #include <Uni/Logging/macros>
 
@@ -13,8 +14,8 @@
 #include <memory>
 
 namespace FsiSimulation {
-namespace Solvers {
-namespace Ghost {
+namespace FluidSimulation {
+namespace GhostLayer {
 namespace PressureStencil {
 typedef std::function<void (Mat&)> Functor;
 template <int D>
@@ -33,7 +34,7 @@ template <typename TGrid,
           int TDirection>
 class Handler {
 public:
-  typedef ParallelTopology<D> SpecializedParallelTopology;
+  typedef ParallelDistribution<D> SpecializedParallelTopology;
 
 public:
   Handler(TGrid const*                       grid,
@@ -75,7 +76,7 @@ public:
     for (auto const& accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
       if (TDimension == 0) {
         if (TDirection == 1) {
-          columns[0].i = _parallelTopology->globalSize(0) + 1;
+          columns[0].i = _parallelTopology->globalCellSize(0) + 1;
           columns[1].i = columns[0].i - 1;
         } else {
           columns[0].i = 0;
@@ -90,7 +91,7 @@ public:
         }
       } else if (TDimension == 1) {
         if (TDirection == 1) {
-          columns[0].j = _parallelTopology->globalSize(1) + 1;
+          columns[0].j = _parallelTopology->globalCellSize(1) + 1;
           columns[1].j = columns[0].j - 1;
         } else {
           columns[0].j = 0;
@@ -105,7 +106,7 @@ public:
         }
       } else if (TDimension == 2) {
         if (TDirection == 1) {
-          columns[0].k = _parallelTopology->globalSize(2) + 1;
+          columns[0].k = _parallelTopology->globalCellSize(2) + 1;
           columns[1].k = columns[0].k - 1;
         } else {
           columns[0].k = 0;
@@ -143,7 +144,7 @@ class DirichletStack {};
 template <typename TGrid, typename Scalar>
 class DirichletStack<TGrid, Scalar, 2> {
 public:
-  typedef ParallelTopology<2> SpecializedParallelTopology;
+  typedef ParallelDistribution<2> SpecializedParallelTopology;
   template <int TDimension, int TDirection>
   using _Handler = Handler<TGrid, Scalar, 2, TDimension, TDirection>;
 
@@ -163,7 +164,7 @@ public:
 template <typename TGrid, typename Scalar>
 class DirichletStack<TGrid, Scalar, 3> {
 public:
-  typedef ParallelTopology<3> SpecializedParallelTopology;
+  typedef ParallelDistribution<3> SpecializedParallelTopology;
   template <int TDimension, int TDirection>
   using _Handler = Handler<TGrid, Scalar, 3, TDimension, TDirection>;
 

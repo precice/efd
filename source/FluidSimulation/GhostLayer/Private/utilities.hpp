@@ -4,8 +4,8 @@
 #include <array>
 
 namespace FsiSimulation {
-namespace Solvers {
-namespace Ghost {
+namespace FluidSimulation {
+namespace GhostLayer {
 template <typename TFunctor, int D>
 using FunctorStack = std::array<std::array<TFunctor, 2>, D>;
 }

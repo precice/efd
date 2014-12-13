@@ -4,29 +4,32 @@
 #include <Eigen/Core>
 
 namespace FsiSimulation {
-template <typename Scalar, int D>
+namespace FluidSimulation {
+template<typename Scalar, int D>
 class UniformGridGeometry {
 public:
-  typedef Eigen::Matrix<int, D, 1>    VectorDi;
+  typedef Eigen::Matrix<int, D, 1> VectorDi;
   typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
 
 public:
-  UniformGridGeometry() {}
+  UniformGridGeometry() {
+  }
 
   UniformGridGeometry(UniformGridGeometry const& other) = delete;
 
-  ~UniformGridGeometry() {}
+  ~UniformGridGeometry() {
+  }
 
   UniformGridGeometry&
   operator=(UniformGridGeometry const& other) = delete;
 
   void
   initialize(VectorDs const& size,
-             VectorDi const& cellSize,
-             VectorDi const& corner) {
-    _size      = size;
+  VectorDi const& cellSize,
+  VectorDi const& corner) {
+    _size = size;
     _cellWidth = _size.cwiseQuotient(cellSize.template cast<Scalar>());
-    _corner    = corner;
+    _corner = corner;
   }
 
   VectorDs const&
@@ -36,7 +39,7 @@ public:
 
   VectorDs const&
   cellWidth(VectorDi const& i) const {
-    ((void)i);
+    ((void) i);
 
     return _cellWidth;
   }
@@ -61,5 +64,6 @@ private:
   VectorDs _cellWidth;
   VectorDi _corner;
 };
+}
 }
 #endif

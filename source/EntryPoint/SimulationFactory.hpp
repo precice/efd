@@ -1,27 +1,29 @@
 #ifndef FsiSimulation_EntryPoint_SimulationFactory
 #define FsiSimulation_EntryPoint_SimulationFactory
 
-#include "Parameters.h"
+#include "FluidSimulation/Configuration.hpp"
 
 namespace FsiSimulation {
-class MySimulation;
+namespace FluidSimulation {
+class Simulation;
+}
 namespace EntryPoint {
 class SimulationFactory {
 public:
-  typedef FsiSimulation::MySimulation Simulation;
+  typedef FluidSimulation::Simulation Simulation;
 
 public:
   static Simulation*
-  createUniformGridFloat2D(Parameters& parameters);
+  createUniformGridFloat2D(FluidSimulation::Parameters& parameters);
 
   static Simulation*
-  createUniformGridDouble2D(Parameters& parameters);
+  createUniformGridDouble2D(FluidSimulation::Parameters& parameters);
 
   static Simulation*
-  createUniformGridFloat3D(Parameters& parameters);
+  createUniformGridFloat3D(FluidSimulation::Parameters& parameters);
 
   static Simulation*
-  createUniformGridDouble3D(Parameters& parameters);
+  createUniformGridDouble3D(FluidSimulation::Parameters& parameters);
 };
 }
 }

@@ -7,13 +7,16 @@
 #include <petscsys.h>
 #include <string>
 
+namespace FsiSimulation {
+namespace FluidSimulation{
+
 class TimestepParameters {
 public:
   double dt;
   double tau;
 };
 
-class SimulationParameters {
+class SmParameters {
 public:
   double      finalTime;
   std::string type;
@@ -138,7 +141,7 @@ public:
 
 class Parameters {
 public:
-  SimulationParameters    simulation;
+  SmParameters    simulation;
   TimestepParameters      timestep;
   EnvironmentalParameters environment;
   FlowParameters          flow;
@@ -151,5 +154,7 @@ public:
   BFStepParameters        bfStep;
   BaldwinLomaxModel       blm;
 };
+}
+}
 
 #endif

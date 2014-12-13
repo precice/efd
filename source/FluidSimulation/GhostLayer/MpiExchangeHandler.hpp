@@ -1,10 +1,12 @@
 #ifndef FsiSimulation_Solvers_GhostMpiExchangeHandlers_hpp
 #define FsiSimulation_Solvers_GhostMpiExchangeHandlers_hpp
 
-#include "GhostHandlersUtilities.hpp"
-#include "ParallelTopology.hpp"
+#include "Private/utilities.hpp"
+
+#include "FluidSimulation/ParallelDistribution.hpp"
+#include "FluidSimulation/Private/mpigenerics.hpp"
+
 #include "StructuredMemory/Memory.hpp"
-#include "mpigenerics.hpp"
 
 #include <Uni/Logging/macros>
 
@@ -12,8 +14,8 @@
 #include <memory>
 
 namespace FsiSimulation {
-namespace Solvers {
-namespace Ghost {
+namespace FluidSimulation {
+namespace GhostLayer {
 namespace MpiExchange {
 typedef std::function<void (MPI_Comm&)> Functor;
 template <int D>
@@ -37,7 +39,7 @@ template <typename TCell,
           int TDirection>
 class Handler {
 public:
-  typedef ParallelTopology<D>                    SpecializedParallelTopology;
+  typedef ParallelDistribution<D>                    SpecializedParallelTopology;
   typedef StructuredMemory::Memory<TCell, D - 1> Memory;
   typedef typename Memory::VectorDi              InternalVectorDi;
   typedef typename TGrid::VectorDi               VectorDi;

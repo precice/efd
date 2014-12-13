@@ -1,11 +1,13 @@
 #ifndef FsiSimulation_EntryPoint_MySimulationBuilder_hpp
 #define FsiSimulation_EntryPoint_MySimulationBuilder_hpp
 
-#include "Cell.hpp"
-#include "GridGeometry.hpp"
-#include "MyTemplateSimulation.hpp"
-#include "Solvers/GhostInitializationActions.hpp"
-#include "Solvers/GhostPetscExchangeActions.hpp"
+#include "FluidSimulation/Configuration.hpp"
+#include "FluidSimulation/Cell.hpp"
+#include "FluidSimulation/GridGeometry.hpp"
+#include "FluidSimulation/FdSimulation.hpp"
+#include "FluidSimulation/GhostLayer/InitializationActions.hpp"
+#include "FluidSimulation/GhostLayer/PetscExchangeActions.hpp"
+
 #include "StructuredMemory/Accessor.hpp"
 #include "StructuredMemory/Memory.hpp"
 
@@ -16,91 +18,91 @@ namespace EntryPoint {
 template <typename Scalar, int D>
 class MySimulationBuilder {
 public:
-  typedef MyTemplateSimulation<
-      UniformGridGeometry<Scalar, D>,
-      StructuredMemory::IterableMemory<Cell<Scalar, D>, D>,
+  typedef FluidSimulation::FdSimulation<
+      FluidSimulation::UniformGridGeometry<Scalar, D>,
+      StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar, D>, D>,
       Scalar,
       D> Simulation;
-  typedef typename Simulation::SpecializedGrid              GridS;
-  typedef typename Simulation::GridGeometry                 GridGeometryS;
+  typedef typename Simulation::GridType GridS;
+  typedef typename Simulation::GridGeometryType GridGeometryS;
   typedef typename Simulation::SpecializedParallelTopology  ParallelTopologyS;
   typedef typename Simulation::SpecializedGhostCellsHandler GhostCellsHandlerS;
-  typedef typename Simulation::Memory                       MemoryS;
+  typedef typename Simulation::MemoryType MemoryS;
   typedef typename Simulation::CellAccessorFactory
     CellAccessorFactoryS;
   typedef typename GridS::CellAccessor CellAccessorS;
-  typedef typename CellAccessorS::Cell CellS;
+  typedef typename CellAccessorS::CellType CellS;
   typedef typename CellS::Velocity     VelocityS;
   typedef typename CellS::Pressure     PressureS;
 
   template <int TDimension, int TDirection>
   struct GhostHandlers {
     typedef
-      Solvers::Ghost::MpiExchange::Handler
+      FluidSimulation::GhostLayer::MpiExchange::Handler
       <Scalar, typename GridS::Base,
        MySimulationBuilder::template fghAccessor<TDimension>,
        Scalar, D, TDimension, TDirection>
       FghMpiExchange;
     typedef
-      Solvers::Ghost::MpiExchange::Handler
+      FluidSimulation::GhostLayer::MpiExchange::Handler
       <PressureS, typename GridS::Base,
        MySimulationBuilder::pressureAccessor, Scalar, D,
        TDimension, TDirection>
       PressureMpiExchange;
     typedef
-      Solvers::Ghost::MpiExchange::Handler
+      FluidSimulation::GhostLayer::MpiExchange::Handler
       <VelocityS, typename GridS::Base,
        MySimulationBuilder::velocityAccessor, Scalar, D,
        TDimension, TDirection>
       VelocityMpiExchange;
     typedef
-      Solvers::Ghost::Initialization::MovingWallFghAction
+      FluidSimulation::GhostLayer::Initialization::MovingWallFghAction
       <typename GridS::Base, Scalar, D, TDimension, TDirection>
       MovingWallFghInitializationAction;
     typedef
-      Solvers::Ghost::Initialization::Handler
+      FluidSimulation::GhostLayer::Initialization::Handler
       <typename GridS::Base, MovingWallFghInitializationAction, D,
        TDimension, TDirection>
       MovingWallFghInitialization;
     typedef
-      Solvers::Ghost::PetscExchange::MovingWallRhsAction
+      FluidSimulation::GhostLayer::PetscExchange::MovingWallRhsAction
       <GridS, D, TDimension, TDirection>
       MovingWallRhsAction;
     typedef
-      Solvers::Ghost::PetscExchange::Handler
+      FluidSimulation::GhostLayer::PetscExchange::Handler
       <GridS, MovingWallRhsAction, D,
        TDimension, TDirection>
       MovingWallRhsHandler;
     typedef
-      Solvers::Ghost::PetscExchange::CopyPressureAction
+      FluidSimulation::GhostLayer::PetscExchange::CopyPressureAction
       <GridS, D, TDimension, TDirection>
       CopyPressureAction;
     typedef
-      Solvers::Ghost::PetscExchange::Handler
+      FluidSimulation::GhostLayer::PetscExchange::Handler
       <GridS, CopyPressureAction, D,
        TDimension, TDirection>
       CopyPressureHandler;
     typedef
-      Solvers::Ghost::Initialization::MovingWallVelocityAction
+      FluidSimulation::GhostLayer::Initialization::MovingWallVelocityAction
       <typename GridS::Base, Scalar, D, TDimension, TDirection>
       MovingWallVelocityInitializationAction;
     typedef
-      Solvers::Ghost::Initialization::Handler
+      FluidSimulation::GhostLayer::Initialization::Handler
       <typename GridS::Base, MovingWallVelocityInitializationAction, D,
        TDimension, TDirection>
       MovingWallVelocityInitialization;
     typedef
-      Solvers::Ghost::PressureStencil::Handler
+      FluidSimulation::GhostLayer::PressureStencil::Handler
       <GridS, Scalar, D, TDimension, TDirection>
       PressureStencil;
   };
 
 public:
-  MySimulationBuilder(Parameters& parameters)
+  MySimulationBuilder(FluidSimulation::Parameters& parameters)
     : _parameters(parameters) {
     _simulation       = new Simulation();
     _grid             = &_simulation->_grid;
-    _parallelTopology = &_simulation->_parallelTopology;
+    _parallelTopology = &_simulation->_parallelDistribution;
     _handlers         = &_simulation->_ghostCellsHandler;
     _maxVelocity      = &_simulation->_maxVelocity;
 
@@ -141,7 +143,7 @@ public:
       _simulation->_parameters.g(2) = parameters.environment.gz;
     }
 
-    VectorDi localSize(_parallelTopology->localSize + 2 * VectorDi::Ones());
+    VectorDi localSize(_parallelTopology->localCellSize + 2 * VectorDi::Ones());
 
     _simulation->setParameters(localSize, width);
   }
@@ -654,7 +656,7 @@ private:
     return &accessor.currentCell()->pressure();
   }
 
-  Parameters&         _parameters;
+  FluidSimulation::Parameters&         _parameters;
   Simulation*         _simulation;
   GridS*              _grid;
   ParallelTopologyS*  _parallelTopology;

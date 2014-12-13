@@ -9,7 +9,7 @@
 #include <petscksp.h>
 
 namespace FsiSimulation {
-namespace Solvers {
+namespace FluidSimulation {
 template <int D>
 using DMBoundaryTypeVector = Eigen::Matrix<DMBoundaryType, D, 1>;
 template <int D>
@@ -154,46 +154,46 @@ DMCreate<3
 }
 
 template <int D>
-class PetscStructures {
+class petscgenerics {
 public:
-  PetscStructures() {}
+  petscgenerics() {}
 
-  PetscStructures(PetscStructures const& other) {}
+  petscgenerics(petscgenerics const& other) {}
 
-  ~PetscStructures() {}
+  ~petscgenerics() {}
 
-  PetscStructures&
-  operator=(PetscStructures const& other) {
+  petscgenerics&
+  operator=(petscgenerics const& other) {
     return *this;
   }
 };
 
 template <>
-class PetscStructures<2> {
+class petscgenerics<2> {
 public:
-  PetscStructures() {}
+  petscgenerics() {}
 
-  PetscStructures(PetscStructures const& other) {}
+  petscgenerics(petscgenerics const& other) {}
 
-  ~PetscStructures() {}
+  ~petscgenerics() {}
 
-  PetscStructures&
-  operator=(PetscStructures const& other) {
+  petscgenerics&
+  operator=(petscgenerics const& other) {
     return *this;
   }
 };
 
 template <>
-class PetscStructures<3> {
+class petscgenerics<3> {
 public:
-  PetscStructures() {}
+  petscgenerics() {}
 
-  PetscStructures(PetscStructures const& other) {}
+  petscgenerics(petscgenerics const& other) {}
 
-  ~PetscStructures() {}
+  ~petscgenerics() {}
 
-  PetscStructures&
-  operator=(PetscStructures const& other) {
+  petscgenerics&
+  operator=(petscgenerics const& other) {
     return *this;
   }
 };
