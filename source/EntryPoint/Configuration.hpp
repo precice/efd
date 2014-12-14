@@ -22,8 +22,9 @@ public:
   setFileName(std::string const& filename);
 
   void
-  loadParameters(FluidSimulation::Parameters&     parameters,
-                 MPI_Comm const& communicator = PETSC_COMM_WORLD);
+  loadParameters(FluidSimulation::Configuration& parameters,
+                 MPI_Comm const&                 communicator =
+                   PETSC_COMM_WORLD);
 };
 }
 }

@@ -101,7 +101,10 @@ readStringMandatory(std::string&          storage,
   if (myText == NULL) {
     std::string const nodename = node->Name();
     std::cerr << "ERROR in file " << __FILE__ << ", line " << __LINE__ << ": ";
-    std::cerr << "No string specified for this node: " << nodename << std::endl;
+    std::cerr
+      << "No string specified for this node: "
+      << nodename
+      << std::endl;
     exit(2);
   } else {
     storage = node->GetText();
@@ -152,7 +155,8 @@ broadcastString(std::string&    target,
   if (rank != root) {
     target = name;
   }
-  delete[] name; name = NULL;
+  delete[] name;
+  name = NULL;
 }
 
 Configuration::
@@ -173,8 +177,8 @@ setFileName(std::string const& filename) {
 
 void
 Configuration::
-loadParameters(FluidSimulation::Parameters&     parameters,
-               MPI_Comm const& communicator) {
+loadParameters(FluidSimulation::Configuration& parameters,
+               MPI_Comm const&                 communicator) {
   tinyxml2::XMLDocument confFile;
   tinyxml2::XMLElement* node;
   tinyxml2::XMLElement* subNode;

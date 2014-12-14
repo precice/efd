@@ -1,25 +1,24 @@
-#ifndef FsiSimulation_Cell_hpp
-#define FsiSimulation_Cell_hpp
+#ifndef FsiSimulation_FluidSimulation_Cell_hpp
+#define FsiSimulation_FluidSimulation_Cell_hpp
 
 #include <Eigen/Core>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template<typename Scalar, int D>
+template <typename TScalar, int TD>
 class Cell {
 public:
-  typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
-  typedef VectorDs Velocity;
-  typedef Scalar Pressure;
+  typedef TScalar                      Scalar;
+  typedef Eigen::Matrix<Scalar, TD, 1> VectorDs;
+  typedef VectorDs                     Velocity;
+  typedef Scalar                       Pressure;
 
 public:
-  Cell() {
-  }
+  Cell() {}
 
   Cell(Cell const& other) = delete;
 
-  ~Cell() {
-  }
+  ~Cell() {}
 
   Cell&
   operator=(Cell const& other) = delete;
@@ -77,7 +76,7 @@ public:
 private:
   VectorDs _velocity;
   VectorDs _fgh;
-  Scalar _pressure;
+  Scalar   _pressure;
 };
 }
 }

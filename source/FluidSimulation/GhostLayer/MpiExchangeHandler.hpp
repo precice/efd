@@ -1,5 +1,5 @@
-#ifndef FsiSimulation_Solvers_GhostMpiExchangeHandlers_hpp
-#define FsiSimulation_Solvers_GhostMpiExchangeHandlers_hpp
+#ifndef FsiSimulation_FluidSimulation_GhostLayer_MpiExchange_Handler_hpp
+#define FsiSimulation_FluidSimulation_GhostLayer_MpiExchange_Handler_hpp
 
 #include "Private/utilities.hpp"
 
@@ -18,10 +18,10 @@ namespace FluidSimulation {
 namespace GhostLayer {
 namespace MpiExchange {
 typedef std::function<void (MPI_Comm&)> Functor;
-template <int D>
-using FunctorStack = FunctorStack<Functor, D>;
+template <int TD>
+using FunctorStack = FunctorStack<Functor, TD>;
 
-template <int D>
+template <int TD>
 Functor
 getEmptyFunctor() {
   return Functor([] (MPI_Comm&) {});
@@ -33,16 +33,16 @@ using GetValueFunction = TCell * (*)(typename TGrid::CellAccessor const &);
 template <typename TCell,
           typename TGrid,
           GetValueFunction<TCell, TGrid> TgetValue,
-          typename Scalar,
-          int D,
+          typename TScalar,
+          int TD,
           int TDimension,
           int TDirection>
 class Handler {
 public:
-  typedef ParallelDistribution<D>                    SpecializedParallelTopology;
-  typedef StructuredMemory::Memory<TCell, D - 1> Memory;
-  typedef typename Memory::VectorDi              InternalVectorDi;
-  typedef typename TGrid::VectorDi               VectorDi;
+  typedef ParallelDistribution<TD>                SpecializedParallelTopology;
+  typedef StructuredMemory::Memory<TCell, TD - 1> Memory;
+  typedef typename Memory::VectorDi               InternalVectorDi;
+  typedef typename TGrid::VectorDi                VectorDi;
 
   Handler(TGrid const*                       grid,
           SpecializedParallelTopology const* parallelTopology,
@@ -58,7 +58,7 @@ public:
     VectorDi         boundaryGridRightIndent(VectorDi::Zero());
     int              i = 0;
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       if (d != TDimension) {
         size(i) = grid->size(d) - leftIndent(d) - rightIndent(d);
 
@@ -150,7 +150,7 @@ public:
       InternalVectorDi index;
       int              i = 0;
 
-      for (int d = 0; d < D; ++d) {
+      for (int d = 0; d < TD; ++d) {
         if (d != TDimension) {
           index(i) = accessor.indexValue(d) - _boundaryGrid.leftIndent(d);
           ++i;
@@ -160,8 +160,8 @@ public:
     }
     MPI_Isend(
       _memory.data(),
-      _memory.size().prod() * sizeof (TCell) / sizeof (Scalar),
-      getMpiScalarType<Scalar>(),
+      _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
+      getMpiScalarType<TScalar>(),
       _parallelTopology->neighbors[TDimension][TDirection],
       0,
       mpiCommunicator,
@@ -172,8 +172,8 @@ public:
   receive(MPI_Comm& mpiCommunicator) {
     MPI_Recv(
       _memory.data(),
-      _memory.size().prod() * sizeof (TCell) / sizeof (Scalar),
-      getMpiScalarType<Scalar>(),
+      _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
+      getMpiScalarType<TScalar>(),
       _parallelTopology->neighbors[TDimension][TDirection],
       0,
       mpiCommunicator,
@@ -183,7 +183,7 @@ public:
       InternalVectorDi index;
       int              i = 0;
 
-      for (int d = 0; d < D; ++d) {
+      for (int d = 0; d < TD; ++d) {
         if (d != TDimension) {
           index(i) = accessor.indexValue(d) - _ghostGrid.leftIndent(d);
           ++i;
@@ -199,7 +199,7 @@ public:
       InternalVectorDi index;
       int              i = 0;
 
-      for (int d = 0; d < D; ++d) {
+      for (int d = 0; d < TD; ++d) {
         if (d != TDimension) {
           index(i) = accessor.indexValue(d) - _boundaryGrid.leftIndent(d);
           ++i;
@@ -209,8 +209,8 @@ public:
     }
     MPI_Sendrecv_replace(
       _memory.data(),
-      _memory.size().prod() * sizeof (TCell) / sizeof (Scalar),
-      getMpiScalarType<Scalar>(),
+      _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
+      getMpiScalarType<TScalar>(),
       _parallelTopology->neighbors[TDimension][TDirection],
       0,
       _parallelTopology->neighbors[TDimension][TDirection],
@@ -222,7 +222,7 @@ public:
       InternalVectorDi index;
       int              i = 0;
 
-      for (int d = 0; d < D; ++d) {
+      for (int d = 0; d < TD; ++d) {
         if (d != TDimension) {
           index(i) = accessor.indexValue(d) - _ghostGrid.leftIndent(d);
           ++i;
@@ -234,7 +234,7 @@ public:
 
 public:
   template <typename TType>
-  using TwoDArray = std::array<std::array<TType, 2>, D>;
+  using TwoDArray = std::array<std::array<TType, 2>, TD>;
 
 private:
   TGrid                              _ghostGrid;

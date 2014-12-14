@@ -1,35 +1,33 @@
-#ifndef FsiSimulation_GridGeomtry
-#define FsiSimulation_GridGeomtry
+#ifndef FsiSimulation_FluidSimulation_GridGeomtry_hpp
+#define FsiSimulation_FluidSimulation_GridGeomtry_hpp
 
 #include <Eigen/Core>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template<typename Scalar, int D>
+template <typename TScalar, int TD>
 class UniformGridGeometry {
 public:
-  typedef Eigen::Matrix<int, D, 1> VectorDi;
-  typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
+  typedef Eigen::Matrix<int, TD, 1>     VectorDi;
+  typedef Eigen::Matrix<TScalar, TD, 1> VectorDs;
 
 public:
-  UniformGridGeometry() {
-  }
+  UniformGridGeometry() {}
 
   UniformGridGeometry(UniformGridGeometry const& other) = delete;
 
-  ~UniformGridGeometry() {
-  }
+  ~UniformGridGeometry() {}
 
   UniformGridGeometry&
   operator=(UniformGridGeometry const& other) = delete;
 
   void
   initialize(VectorDs const& size,
-  VectorDi const& cellSize,
-  VectorDi const& corner) {
-    _size = size;
-    _cellWidth = _size.cwiseQuotient(cellSize.template cast<Scalar>());
-    _corner = corner;
+             VectorDi const& cellSize,
+             VectorDi const& corner) {
+    _size      = size;
+    _cellWidth = _size.cwiseQuotient(cellSize.template cast<TScalar>());
+    _corner    = corner;
   }
 
   VectorDs const&
@@ -39,7 +37,7 @@ public:
 
   VectorDs const&
   cellWidth(VectorDi const& i) const {
-    ((void) i);
+    ((void)i);
 
     return _cellWidth;
   }
@@ -51,7 +49,7 @@ public:
 
   VectorDs
   cellPosition(VectorDi const& i) const {
-    return _cellWidth.cwiseProduct((_corner + i).template cast<Scalar>());
+    return _cellWidth.cwiseProduct((_corner + i).template cast<TScalar>());
   }
 
   VectorDs const&

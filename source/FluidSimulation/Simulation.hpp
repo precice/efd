@@ -1,5 +1,5 @@
-#ifndef FsiSimulation_MySimulation_hpp
-#define FsiSimulation_MySimulation_hpp
+#ifndef FsiSimulation_FluidSimulation_Simulation_hpp
+#define FsiSimulation_FluidSimulation_Simulation_hpp
 
 #include <boost/filesystem.hpp>
 
@@ -11,12 +11,11 @@ public:
 
 public:
   virtual
-  ~Simulation() {
-  }
+  ~Simulation() {}
 
   virtual void
-  initialize(Path const& outputDirectory,
-  std::string const& fileNamePrefix) = 0;
+  initialize(Path const&        outputDirectory,
+             std::string const& fileNamePrefix) = 0;
 
   virtual bool
   iterate() = 0;

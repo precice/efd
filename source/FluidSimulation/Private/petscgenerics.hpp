@@ -1,5 +1,5 @@
-#ifndef FsiSimulation_Solvers_PetscStructures_hpp
-#define FsiSimulation_Solvers_PetscStructures_hpp
+#ifndef FsiSimulation_FluidSimulation_Private_petscgenerics_hpp
+#define FsiSimulation_FluidSimulation_Private_petscgenerics_hpp
 
 #include <Eigen/Core>
 
@@ -10,22 +10,22 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <int D>
-using DMBoundaryTypeVector = Eigen::Matrix<DMBoundaryType, D, 1>;
-template <int D>
-using VectorDi = Eigen::Matrix<int, D, 1>;
+template <int TD>
+using DMBoundaryTypeVector = Eigen::Matrix<DMBoundaryType, TD, 1>;
+template <int TD>
+using VectorDi = Eigen::Matrix<int, TD, 1>;
 
 typedef std::unique_ptr<PetscInt const[]> UniqueConstPetscIntArray;
-template <int D>
+template <int TD>
 using VectorDConstPetscIntPointer =
-        Eigen::Matrix<UniqueConstPetscIntArray, D, 1>;
+        Eigen::Matrix<UniqueConstPetscIntArray, TD, 1>;
 
-template <int D>
-DMBoundaryTypeVector<D>
+template <int TD>
+DMBoundaryTypeVector<TD>
 createDMBoundaries() {
-  DMBoundaryTypeVector<D> result;
+  DMBoundaryTypeVector<TD> result;
 
-  for (int i = 0; i < D; ++i) {
+  for (int i = 0; i < TD; ++i) {
     result(i) = DM_BOUNDARY_NONE;
   }
 
@@ -83,17 +83,17 @@ setupCustomOptions(KSP& context,
   }
 }
 
-template <int D>
+template <int TD>
 void
-DMCreate(MPI_Comm const&                       comm,
-         DMBoundaryTypeVector<D> const&        boundaryTypes,
-         DMDAStencilType  const&               stencilType,
-         VectorDi<D> const&                    globalSize,
-         VectorDi<D> const&                    processorSize,
-         int const&                            dof,
-         int const&                            stencilWidth,
-         VectorDConstPetscIntPointer<D> const& localSizes,
-         DM*                                   da) {}
+DMCreate(MPI_Comm const&                        comm,
+         DMBoundaryTypeVector<TD> const&        boundaryTypes,
+         DMDAStencilType const&                 stencilType,
+         VectorDi<TD> const&                    globalSize,
+         VectorDi<TD> const&                    processorSize,
+         int const&                             dof,
+         int const&                             stencilWidth,
+         VectorDConstPetscIntPointer<TD> const& localSizes,
+         DM*                                    da) {}
 
 template <>
 void
@@ -153,7 +153,7 @@ DMCreate<3
                da);
 }
 
-template <int D>
+template <int TD>
 class petscgenerics {
 public:
   petscgenerics() {}

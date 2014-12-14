@@ -3,17 +3,22 @@
 
 namespace FsiSimulation {
 namespace StructuredMemory {
-template <typename TDerived, int D>
+template <typename TDerived, int TD>
 class CommonAccessor1D;
-template <typename TDerived, int D>
+
+template <typename TDerived, int TD>
 class CommonAccessor2D;
-template <typename TDerived, int D>
+
+template <typename TDerived, int TD>
 class CommonAccessor3D;
-template <typename TMultiIndex, typename TMemory, int D>
+
+template <typename TMultiIndex, typename TMemory, int TD>
 class CommonAccessor : public TMultiIndex {
-  friend class CommonAccessor1D<CommonAccessor<TMultiIndex, TMemory, D>, D>;
-  friend class CommonAccessor2D<CommonAccessor<TMultiIndex, TMemory, D>, D>;
-  friend class CommonAccessor3D<CommonAccessor<TMultiIndex, TMemory, D>, D>;
+  friend class CommonAccessor1D<CommonAccessor<TMultiIndex, TMemory, TD>, TD>;
+
+  friend class CommonAccessor2D<CommonAccessor<TMultiIndex, TMemory, TD>, TD>;
+
+  friend class CommonAccessor3D<CommonAccessor<TMultiIndex, TMemory, TD>, TD>;
 
 public:
   typedef TMultiIndex             Base;
@@ -145,7 +150,7 @@ cast(T const* pointer) {
   return *reinterpret_cast<TDerived const*>(pointer);
 }
 
-template <typename TDerived, int D>
+template <typename TDerived, int TD>
 class CommonAccessor1D {
 public:
   typedef TDerived                   Derived;
@@ -176,10 +181,12 @@ public:
   }
 
   Cell*
-  rightCell() const { return (*cast<Derived>(this)._memory)(rightIndex()); }
+  rightCell() const {
+    return (*cast<Derived>(this)._memory)(rightIndex());
+  }
 };
 
-template <typename TDerived, int D>
+template <typename TDerived, int TD>
 class CommonAccessor2D {
 public:
   typedef TDerived                   Derived;
@@ -197,7 +204,9 @@ public:
   }
 
   Cell*
-  bottomCell() const { return (*cast<Derived>(this)._memory)(bottomIndex()); }
+  bottomCell() const {
+    return (*cast<Derived>(this)._memory)(bottomIndex());
+  }
 
   VectorDi
   topIndex() const {
@@ -236,7 +245,9 @@ public:
   }
 
   Cell*
-  leftTopCell() const { return (*cast<Derived>(this)._memory)(leftTopIndex()); }
+  leftTopCell() const {
+    return (*cast<Derived>(this)._memory)(leftTopIndex());
+  }
 
   VectorDi
   rightBottomIndex() const {
@@ -267,7 +278,7 @@ public:
   }
 };
 
-template <typename TDerived, int D>
+template <typename TDerived, int TD>
 class CommonAccessor3D {
 public:
   typedef TDerived                   Derived;
@@ -398,7 +409,9 @@ public:
   }
 
   Cell*
-  topBackCell() const { return (*cast<Derived>(this)._memory)(topBackIndex()); }
+  topBackCell() const {
+    return (*cast<Derived>(this)._memory)(topBackIndex());
+  }
 
   VectorDi
   topFrontIndex() const {
@@ -415,11 +428,11 @@ public:
   }
 };
 
-template <typename TMultiIndex, typename TMemory, int D>
+template <typename TMultiIndex, typename TMemory, int TD>
 class Accessor
-  : public CommonAccessor<TMultiIndex, TMemory, D> {
+  : public CommonAccessor<TMultiIndex, TMemory, TD> {
 public:
-  typedef  CommonAccessor<TMultiIndex, TMemory, D> Base;
+  typedef CommonAccessor<TMultiIndex, TMemory, TD> Base;
   typedef typename Base::VectorDi                  VectorDi;
   typedef typename Base::Memory                    Memory;
   typedef typename Base::Cell                      Cell;
@@ -430,7 +443,10 @@ public:
 
   Accessor(Accessor const& other) : Base(other) {}
 
-  ~Accessor() { this->Base::~Base(); }
+  ~Accessor() {
+    this->
+    Base::~Base();
+  }
 
   Accessor&
   operator=(Accessor const& other) {
@@ -456,7 +472,10 @@ public:
 
   Accessor(Accessor const& other) : Base(other) {}
 
-  ~Accessor() { this->Base::~Base(); }
+  ~Accessor() {
+    this->
+    Base::~Base();
+  }
 
   Accessor&
   operator=(Accessor const& other) {
@@ -483,7 +502,10 @@ public:
 
   Accessor(Accessor const& other) : Base(other) {}
 
-  ~Accessor() { this->Base::~Base(); }
+  ~Accessor() {
+    this->
+    Base::~Base();
+  }
 
   Accessor&
   operator=(Accessor const& other) {
@@ -511,7 +533,10 @@ public:
 
   Accessor(Accessor const& other) : Base(other) {}
 
-  ~Accessor() { this->Base::~Base(); }
+  ~Accessor() {
+    this->
+    Base::~Base();
+  }
 
   Accessor&
   operator=(Accessor const& other) {

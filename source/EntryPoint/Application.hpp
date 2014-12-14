@@ -1,11 +1,12 @@
-#ifndef FsiSimulation_EntryPoint_Arguments_hpp
-#define FsiSimulation_EntryPoint_Arguments_hpp
+#ifndef FsiSimulation_EntryPoint_Application_hpp
+#define FsiSimulation_EntryPoint_Application_hpp
 
 #include <Uni/Firewall/Implementation>
 
 namespace FsiSimulation {
 namespace EntryPoint {
 class ApplicationPrivateImplementation;
+
 /**
  * Simple facility to drive the application
  */

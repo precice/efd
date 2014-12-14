@@ -1,27 +1,27 @@
-#ifndef FsiSimulation_EntryPoint_VtkPlot_hpp
-#define FsiSimulation_EntryPoint_VtkPlot_hpp
+#ifndef FsiSimulation_FluidSimulation_VtkPlot_hpp
+#define FsiSimulation_FluidSimulation_VtkPlot_hpp
 
 #include "Grid.hpp"
 #include "functions.hpp"
 
+#include "ParallelDistribution.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/locale.hpp>
-#include "ParallelDistribution.hpp"
 
 #include <limits>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TCellAccessor,
-          typename Scalar,
-          int D>
+          typename TScalar,
+          int TD>
 class VtkPlot {
 public:
-  typedef Grid<TCellAccessor, D>               SpecializedGrid;
-  typedef ParallelDistribution<D>                  SpecializedParallelTopology;
+  typedef Grid<TCellAccessor, TD>                  SpecializedGrid;
+  typedef ParallelDistribution<TD>                 SpecializedParallelTopology;
   typedef typename TCellAccessor::GridGeometryType GridGeometry;
 
   typedef boost::filesystem::path Path;
@@ -47,14 +47,14 @@ public:
     _fileNamePrefix   = fileNamePrefix;
     namespace bl      = boost::locale;
     _locale           = bl::generator().generate("en_US.UTF-8");
-    _fileNamePrefix  += (Format(".{1}") % _parallelTopology->currentRank)
+    _fileNamePrefix  += (Format(".{1}") % _parallelTopology->rank)
                         .str(_locale);
   }
 
   void
-  plot2(int const&    iterationCount,
-       Scalar const& timeStamp,
-       Scalar const& dt) {
+  plot2(int const&     iterationCount,
+        TScalar const& timeStamp,
+        TScalar const& dt) {
     MappedFileStream mappedFileStream;
     FileStream       fileStream;
 
@@ -120,7 +120,7 @@ public:
           accessor.indexValue(1) != (_grid->size() (1) - 1) &&
           accessor.indexValue(2) != (_grid->size() (2) - 1)) {
         typedef RhsProcessing
-          <typename SpecializedGrid::CellAccessor, Scalar, D> rhspr;
+          <typename SpecializedGrid::CellAccessor, TScalar, TD> rhspr;
         // rhsStream << "RHS "
         rhsStream
           << rhspr::compute(accessor, dt) << std::endl;
@@ -157,9 +157,9 @@ public:
   }
 
   void
-  plot(int const&    iterationCount,
-        Scalar const& timeStamp,
-        Scalar const& dt) {
+  plot(int const&     iterationCount,
+       TScalar const& timeStamp,
+       TScalar const& dt) {
     MappedFileStream mappedFileStream;
     FileStream       fileStream;
 

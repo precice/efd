@@ -5,7 +5,7 @@
 
 namespace FsiSimulation {
 namespace StructuredMemory {
-template <typename TCell, int D>
+template <typename TCell, int TD>
 struct Pointers {};
 
 template <typename TCell>
@@ -93,6 +93,7 @@ struct Pointers<TCell, 2> {
 
     return *this;
   }
+
   void
   allocate(VectorDi const& size) {
     release();

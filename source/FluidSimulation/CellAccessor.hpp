@@ -1,40 +1,37 @@
-#ifndef FsiSimulation_CellAccessor_hpp
-#define FsiSimulation_CellAccessor_hpp
-
-#include <Uni/StructuredGrid/Basic/MultiIndex>
+#ifndef FsiSimulation_FluidSimulation_CellAccessor_hpp
+#define FsiSimulation_FluidSimulation_CellAccessor_hpp
 
 #include "StructuredMemory/Accessor.hpp"
 
+#include <Uni/StructuredGrid/Basic/MultiIndex>
+
 namespace FsiSimulation {
 namespace FluidSimulation {
-template<typename TGridGeometry, typename TMemory, int D>
+template <typename TGridGeometry, typename TMemory, int TD>
 class CommonCellAccessor
-: public StructuredMemory::CommonAccessor<
-Uni::StructuredGrid::Basic::MultiIndex<D>, TMemory, D> {
+  : public StructuredMemory::CommonAccessor<
+      Uni::StructuredGrid::Basic::MultiIndex<TD>, TMemory, TD> {
 public:
   typedef StructuredMemory::CommonAccessor<
-  Uni::StructuredGrid::Basic::MultiIndex<D>, TMemory, D> BaseType;
-  typedef typename BaseType::VectorDi VectorDiType;
-  typedef TMemory MemoryType;
-  typedef typename MemoryType::Cell CellType;
-  typedef TGridGeometry GridGeometryType;
+      Uni::StructuredGrid::Basic::MultiIndex<TD>, TMemory, TD> BaseType;
+  typedef typename BaseType::VectorDi         VectorDiType;
+  typedef TMemory                             MemoryType;
+  typedef typename MemoryType::Cell           CellType;
+  typedef TGridGeometry                       GridGeometryType;
   typedef typename GridGeometryType::VectorDs VectorDsType;
 
 public:
   CommonCellAccessor(VectorDiType const& i,
-  MemoryType* memory,
-  GridGeometryType* gridGeometry)
-  : BaseType(i, memory),
-    _gridGeometry(gridGeometry) {
-  }
+                     MemoryType*         memory,
+                     GridGeometryType*   gridGeometry)
+    : BaseType(i, memory),
+      _gridGeometry(gridGeometry) {}
 
   CommonCellAccessor(CommonCellAccessor const& other)
-  : BaseType(other),
-    _gridGeometry(other._gridGeometry) {
-  }
+    : BaseType(other),
+      _gridGeometry(other._gridGeometry) {}
 
-  ~CommonCellAccessor() {
-  }
+  ~CommonCellAccessor() {}
 
   CommonCellAccessor&
   operator=(CommonCellAccessor const& other) {
@@ -98,34 +95,33 @@ protected:
   GridGeometryType* _gridGeometry;
 };
 
-template<typename TGridGeometry,
-typename TMemory,
-int D>
+template <typename TGridGeometry,
+          typename TMemory,
+          int TD>
 class CommonCellAccessor1D
-: public CommonCellAccessor<TGridGeometry, TMemory, D>,
-  public StructuredMemory::CommonAccessor1D<
-  typename CommonCellAccessor<TGridGeometry, TMemory, D>::BaseType, D> {
+  : public CommonCellAccessor<TGridGeometry, TMemory, TD>,
+    public StructuredMemory::CommonAccessor1D<
+      typename CommonCellAccessor<TGridGeometry, TMemory, TD>::BaseType, TD> {
 public:
-  typedef CommonCellAccessor<TGridGeometry, TMemory, D> BaseType;
-  typedef typename BaseType::VectorDiType VectorDiType;
-  typedef typename BaseType::MemoryType MemoryType;
-  typedef typename BaseType::CellType CellType;
-  typedef typename BaseType::GridGeometryType GridGeometryType;
-  typedef typename BaseType::VectorDsType VectorDsType;
+  typedef CommonCellAccessor<TGridGeometry, TMemory, TD> BaseType;
+  typedef typename BaseType::VectorDiType                VectorDiType;
+  typedef typename BaseType::MemoryType                  MemoryType;
+  typedef typename BaseType::CellType                    CellType;
+  typedef typename BaseType::GridGeometryType            GridGeometryType;
+  typedef typename BaseType::VectorDsType                VectorDsType;
 
 public:
   CommonCellAccessor1D(VectorDiType const& i,
-  TMemory* memory,
-  GridGeometryType* gridGeometry)
-  : BaseType(i, memory, gridGeometry) {
-  }
+                       TMemory*            memory,
+                       GridGeometryType*   gridGeometry)
+    : BaseType(i, memory, gridGeometry) {}
 
   CommonCellAccessor1D(CommonCellAccessor1D const& other)
-  : BaseType(other) {
-  }
+    : BaseType(other) {}
 
   ~CommonCellAccessor1D() {
-    this->BaseType::~BaseType();
+    this->
+    BaseType::~BaseType();
   }
 
   CommonCellAccessor1D&
@@ -156,34 +152,33 @@ public:
   }
 };
 
-template<typename TGridGeometry,
-typename TMemory,
-int D>
+template <typename TGridGeometry,
+          typename TMemory,
+          int TD>
 class CommonCellAccessor2D
-: public CommonCellAccessor1D<TGridGeometry, TMemory, D>,
-  public StructuredMemory::CommonAccessor2D<
-  typename CommonCellAccessor<TGridGeometry, TMemory, D>::BaseType, D> {
+  : public CommonCellAccessor1D<TGridGeometry, TMemory, TD>,
+    public StructuredMemory::CommonAccessor2D<
+      typename CommonCellAccessor<TGridGeometry, TMemory, TD>::BaseType, TD> {
 public:
-  typedef CommonCellAccessor1D<TGridGeometry, TMemory, D> BaseType;
-  typedef typename BaseType::VectorDiType VectorDiType;
-  typedef typename BaseType::MemoryType MemoryType;
-  typedef typename BaseType::CellType CellType;
-  typedef typename BaseType::GridGeometryType GridGeometryType;
-  typedef typename BaseType::VectorDsType VectorDsType;
+  typedef CommonCellAccessor1D<TGridGeometry, TMemory, TD> BaseType;
+  typedef typename BaseType::VectorDiType                  VectorDiType;
+  typedef typename BaseType::MemoryType                    MemoryType;
+  typedef typename BaseType::CellType                      CellType;
+  typedef typename BaseType::GridGeometryType              GridGeometryType;
+  typedef typename BaseType::VectorDsType                  VectorDsType;
 
 public:
   CommonCellAccessor2D(VectorDiType const& i,
-  TMemory* memory,
-  GridGeometryType* gridGeometry)
-  : BaseType(i, memory, gridGeometry) {
-  }
+                       TMemory*            memory,
+                       GridGeometryType*   gridGeometry)
+    : BaseType(i, memory, gridGeometry) {}
 
   CommonCellAccessor2D(CommonCellAccessor2D const& other)
-  : BaseType(other) {
-  }
+    : BaseType(other) {}
 
   ~CommonCellAccessor2D() {
-    this->BaseType::~BaseType();
+    this->
+    BaseType::~BaseType();
   }
 
   CommonCellAccessor2D&
@@ -254,33 +249,32 @@ public:
   }
 };
 
-template<typename TGridGeometry,
-typename TMemory,
-int D>
+template <typename TGridGeometry,
+          typename TMemory,
+          int TD>
 class CommonCellAccessor3D
-: public CommonCellAccessor2D<TGridGeometry, TMemory, D>,
-  public StructuredMemory::CommonAccessor3D<
-  typename CommonCellAccessor<TGridGeometry, TMemory, D>::BaseType, D> {
+  : public CommonCellAccessor2D<TGridGeometry, TMemory, TD>,
+    public StructuredMemory::CommonAccessor3D<
+      typename CommonCellAccessor<TGridGeometry, TMemory, TD>::BaseType, TD> {
 public:
-  typedef CommonCellAccessor2D<TGridGeometry, TMemory, D> BaseType;
-  typedef typename BaseType::VectorDiType VectorDiType;
-  typedef typename BaseType::MemoryType MemoryType;
-  typedef typename BaseType::CellType CellType;
-  typedef typename BaseType::GridGeometryType GridGeometryType;
-  typedef typename BaseType::VectorDsType VectorDsType;
+  typedef CommonCellAccessor2D<TGridGeometry, TMemory, TD> BaseType;
+  typedef typename BaseType::VectorDiType                  VectorDiType;
+  typedef typename BaseType::MemoryType                    MemoryType;
+  typedef typename BaseType::CellType                      CellType;
+  typedef typename BaseType::GridGeometryType              GridGeometryType;
+  typedef typename BaseType::VectorDsType                  VectorDsType;
 
 public:
   CommonCellAccessor3D(VectorDiType const& i,
-  TMemory* memory,
-  GridGeometryType* gridGeometry)
-  : BaseType(i, memory, gridGeometry) {
-  }
+                       TMemory*            memory,
+                       GridGeometryType*   gridGeometry)
+    : BaseType(i, memory, gridGeometry) {}
 
-  CommonCellAccessor3D(CommonCellAccessor3D const& other) : BaseType(other) {
-  }
+  CommonCellAccessor3D(CommonCellAccessor3D const& other) : BaseType(other) {}
 
   ~CommonCellAccessor3D() {
-    this->BaseType::~BaseType();
+    this->
+    BaseType::~BaseType();
   }
 
   CommonCellAccessor3D&
@@ -391,31 +385,30 @@ public:
   }
 };
 
-template<typename TGridGeometry,
-typename TMemory,
-int D>
+template <typename TGridGeometry,
+          typename TMemory,
+          int TD>
 class CellAccessor
-: public CommonCellAccessor<TGridGeometry, TMemory, D> {
+  : public CommonCellAccessor<TGridGeometry, TMemory, TD> {
 public:
-  typedef CommonCellAccessor<TGridGeometry, TMemory, D> BaseType;
-  typedef typename BaseType::VectorDiType VectorDiType;
-  typedef typename BaseType::MemoryType MemoryType;
-  typedef typename BaseType::CellType CellType;
-  typedef typename BaseType::GridGeometryType GridGeometryType;
+  typedef CommonCellAccessor<TGridGeometry, TMemory, TD> BaseType;
+  typedef typename BaseType::VectorDiType                VectorDiType;
+  typedef typename BaseType::MemoryType                  MemoryType;
+  typedef typename BaseType::CellType                    CellType;
+  typedef typename BaseType::GridGeometryType            GridGeometryType;
 
 public:
   CellAccessor(VectorDiType const& i,
-  TMemory* memory,
-  GridGeometryType* gridGeometry)
-  : BaseType(i, memory, gridGeometry) {
-  }
+               TMemory*            memory,
+               GridGeometryType*   gridGeometry)
+    : BaseType(i, memory, gridGeometry) {}
 
   CellAccessor(CellAccessor const& other)
-  : BaseType(other) {
-  }
+    : BaseType(other) {}
 
   ~CellAccessor() {
-    this->BaseType::~BaseType();
+    this->
+    BaseType::~BaseType();
   }
 
   CellAccessor&
@@ -426,30 +419,29 @@ public:
   }
 };
 
-template<typename TGridGeometry,
-typename TMemory>
+template <typename TGridGeometry,
+          typename TMemory>
 class CellAccessor<TGridGeometry, TMemory, 1>
-: public CommonCellAccessor1D<TGridGeometry, TMemory, 1> {
+  : public CommonCellAccessor1D<TGridGeometry, TMemory, 1> {
 public:
   typedef CommonCellAccessor1D<TGridGeometry, TMemory, 1> BaseType;
-  typedef typename BaseType::VectorDiType VectorDiType;
-  typedef typename BaseType::MemoryType MemoryType;
-  typedef typename BaseType::CellType CellType;
-  typedef typename BaseType::GridGeometryType GridGeometryType;
+  typedef typename BaseType::VectorDiType                 VectorDiType;
+  typedef typename BaseType::MemoryType                   MemoryType;
+  typedef typename BaseType::CellType                     CellType;
+  typedef typename BaseType::GridGeometryType             GridGeometryType;
 
 public:
   CellAccessor(VectorDiType const& i,
-  TMemory* memory,
-  GridGeometryType* gridGeometry) : BaseType(i,
-  memory,
-  gridGeometry) {
-  }
+               TMemory*            memory,
+               GridGeometryType*   gridGeometry) : BaseType(i,
+                                                            memory,
+                                                            gridGeometry) {}
 
-  CellAccessor(CellAccessor const& other) : BaseType(other) {
-  }
+  CellAccessor(CellAccessor const& other) : BaseType(other) {}
 
   ~CellAccessor() {
-    this->BaseType::~BaseType();
+    this->
+    BaseType::~BaseType();
   }
 
   CellAccessor&
@@ -460,29 +452,28 @@ public:
   }
 };
 
-template<typename TGridGeometry, typename TMemory>
+template <typename TGridGeometry, typename TMemory>
 class CellAccessor<TGridGeometry, TMemory, 2>
-: public CommonCellAccessor2D<TGridGeometry, TMemory, 2> {
+  : public CommonCellAccessor2D<TGridGeometry, TMemory, 2> {
 public:
   typedef CommonCellAccessor2D<TGridGeometry, TMemory, 2> BaseType;
-  typedef typename BaseType::VectorDiType VectorDiType;
-  typedef typename BaseType::MemoryType MemoryType;
-  typedef typename BaseType::CellType CellType;
-  typedef typename BaseType::GridGeometryType GridGeometryType;
+  typedef typename BaseType::VectorDiType                 VectorDiType;
+  typedef typename BaseType::MemoryType                   MemoryType;
+  typedef typename BaseType::CellType                     CellType;
+  typedef typename BaseType::GridGeometryType             GridGeometryType;
 
 public:
   CellAccessor(VectorDiType const& i,
-  TMemory* memory,
-  GridGeometryType* gridGeometry) : BaseType(i,
-  memory,
-  gridGeometry) {
-  }
+               TMemory*            memory,
+               GridGeometryType*   gridGeometry) : BaseType(i,
+                                                            memory,
+                                                            gridGeometry) {}
 
-  CellAccessor(CellAccessor const& other) : BaseType(other) {
-  }
+  CellAccessor(CellAccessor const& other) : BaseType(other) {}
 
   ~CellAccessor() {
-    this->BaseType::~BaseType();
+    this->
+    BaseType::~BaseType();
   }
 
   CellAccessor&
@@ -493,29 +484,28 @@ public:
   }
 };
 
-template<typename TGridGeometry,
-typename TMemory>
+template <typename TGridGeometry,
+          typename TMemory>
 class CellAccessor<TGridGeometry, TMemory, 3>
-: public CommonCellAccessor3D<TGridGeometry, TMemory, 3> {
+  : public CommonCellAccessor3D<TGridGeometry, TMemory, 3> {
 public:
   typedef CommonCellAccessor3D<TGridGeometry, TMemory, 3> BaseType;
-  typedef typename BaseType::VectorDiType VectorDiType;
-  typedef typename BaseType::MemoryType MemoryType;
-  typedef typename BaseType::CellType CellType;
-  typedef typename BaseType::GridGeometryType GridGeometryType;
+  typedef typename BaseType::VectorDiType                 VectorDiType;
+  typedef typename BaseType::MemoryType                   MemoryType;
+  typedef typename BaseType::CellType                     CellType;
+  typedef typename BaseType::GridGeometryType             GridGeometryType;
 
 public:
   CellAccessor(VectorDiType const& i,
-  TMemory* memory,
-  GridGeometryType* gridGeometry)
-  : BaseType(i, memory, gridGeometry) {
-  }
+               TMemory*            memory,
+               GridGeometryType*   gridGeometry)
+    : BaseType(i, memory, gridGeometry) {}
 
-  CellAccessor(CellAccessor const& other) : BaseType(other) {
-  }
+  CellAccessor(CellAccessor const& other) : BaseType(other) {}
 
   ~CellAccessor() {
-    this->BaseType::~BaseType();
+    this->
+    BaseType::~BaseType();
   }
 
   CellAccessor&

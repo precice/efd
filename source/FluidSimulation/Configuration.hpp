@@ -1,5 +1,5 @@
-#ifndef _PARAMETERS_H_
-#define _PARAMETERS_H_
+#ifndef FsiSimulation_FluidSimulation_Configuration_hpp
+#define FsiSimulation_FluidSimulation_Configuration_hpp
 
 #include <Eigen/Core>
 
@@ -8,8 +8,7 @@
 #include <string>
 
 namespace FsiSimulation {
-namespace FluidSimulation{
-
+namespace FluidSimulation {
 class TimestepParameters {
 public:
   double dt;
@@ -139,9 +138,9 @@ public:
   std::string modelType;
 };
 
-class Parameters {
+class Configuration {
 public:
-  SmParameters    simulation;
+  SmParameters            simulation;
   TimestepParameters      timestep;
   EnvironmentalParameters environment;
   FlowParameters          flow;

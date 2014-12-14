@@ -1,12 +1,12 @@
-#ifndef FsiSimulation_EntryPoint_MySimulationBuilder_hpp
-#define FsiSimulation_EntryPoint_MySimulationBuilder_hpp
+#ifndef FsiSimulation_EntryPoint_SimulationBuilder_hpp
+#define FsiSimulation_EntryPoint_SimulationBuilder_hpp
 
-#include "FluidSimulation/Configuration.hpp"
 #include "FluidSimulation/Cell.hpp"
-#include "FluidSimulation/GridGeometry.hpp"
+#include "FluidSimulation/Configuration.hpp"
 #include "FluidSimulation/FdSimulation.hpp"
 #include "FluidSimulation/GhostLayer/InitializationActions.hpp"
 #include "FluidSimulation/GhostLayer/PetscExchangeActions.hpp"
+#include "FluidSimulation/GridGeometry.hpp"
 
 #include "StructuredMemory/Accessor.hpp"
 #include "StructuredMemory/Memory.hpp"
@@ -15,96 +15,96 @@
 
 namespace FsiSimulation {
 namespace EntryPoint {
-template <typename Scalar, int D>
-class MySimulationBuilder {
+template <typename Scalar, int TD>
+class SimulationBuilder {
 public:
   typedef FluidSimulation::FdSimulation<
-      FluidSimulation::UniformGridGeometry<Scalar, D>,
-      StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar, D>, D>,
+      FluidSimulation::UniformGridGeometry<Scalar, TD>,
+      StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar, TD>, TD>,
       Scalar,
-      D> Simulation;
-  typedef typename Simulation::GridType GridS;
-  typedef typename Simulation::GridGeometryType GridGeometryS;
-  typedef typename Simulation::SpecializedParallelTopology  ParallelTopologyS;
-  typedef typename Simulation::SpecializedGhostCellsHandler GhostCellsHandlerS;
-  typedef typename Simulation::MemoryType MemoryS;
+      TD> Simulation;
+  typedef typename Simulation::GridType                 GridS;
+  typedef typename Simulation::GridGeometryType         GridGeometryS;
+  typedef typename Simulation::ParallelDistributionType ParallelTopologyS;
+  typedef typename Simulation::GhostHandlersType        GhostCellsHandlerS;
+  typedef typename Simulation::MemoryType               MemoryS;
   typedef typename Simulation::CellAccessorFactory
     CellAccessorFactoryS;
-  typedef typename GridS::CellAccessor CellAccessorS;
+  typedef typename GridS::CellAccessor     CellAccessorS;
   typedef typename CellAccessorS::CellType CellS;
-  typedef typename CellS::Velocity     VelocityS;
-  typedef typename CellS::Pressure     PressureS;
+  typedef typename CellS::Velocity         VelocityS;
+  typedef typename CellS::Pressure         PressureS;
 
   template <int TDimension, int TDirection>
   struct GhostHandlers {
     typedef
       FluidSimulation::GhostLayer::MpiExchange::Handler
       <Scalar, typename GridS::Base,
-       MySimulationBuilder::template fghAccessor<TDimension>,
-       Scalar, D, TDimension, TDirection>
+       SimulationBuilder::template fghAccessor<TDimension>,
+       Scalar, TD, TDimension, TDirection>
       FghMpiExchange;
     typedef
       FluidSimulation::GhostLayer::MpiExchange::Handler
       <PressureS, typename GridS::Base,
-       MySimulationBuilder::pressureAccessor, Scalar, D,
+       SimulationBuilder::pressureAccessor, Scalar, TD,
        TDimension, TDirection>
       PressureMpiExchange;
     typedef
       FluidSimulation::GhostLayer::MpiExchange::Handler
       <VelocityS, typename GridS::Base,
-       MySimulationBuilder::velocityAccessor, Scalar, D,
+       SimulationBuilder::velocityAccessor, Scalar, TD,
        TDimension, TDirection>
       VelocityMpiExchange;
     typedef
       FluidSimulation::GhostLayer::Initialization::MovingWallFghAction
-      <typename GridS::Base, Scalar, D, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
       MovingWallFghInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, MovingWallFghInitializationAction, D,
+      <typename GridS::Base, MovingWallFghInitializationAction, TD,
        TDimension, TDirection>
       MovingWallFghInitialization;
     typedef
       FluidSimulation::GhostLayer::PetscExchange::MovingWallRhsAction
-      <GridS, D, TDimension, TDirection>
+      <GridS, TD, TDimension, TDirection>
       MovingWallRhsAction;
     typedef
       FluidSimulation::GhostLayer::PetscExchange::Handler
-      <GridS, MovingWallRhsAction, D,
+      <GridS, MovingWallRhsAction, TD,
        TDimension, TDirection>
       MovingWallRhsHandler;
     typedef
       FluidSimulation::GhostLayer::PetscExchange::CopyPressureAction
-      <GridS, D, TDimension, TDirection>
+      <GridS, TD, TDimension, TDirection>
       CopyPressureAction;
     typedef
       FluidSimulation::GhostLayer::PetscExchange::Handler
-      <GridS, CopyPressureAction, D,
+      <GridS, CopyPressureAction, TD,
        TDimension, TDirection>
       CopyPressureHandler;
     typedef
       FluidSimulation::GhostLayer::Initialization::MovingWallVelocityAction
-      <typename GridS::Base, Scalar, D, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
       MovingWallVelocityInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, MovingWallVelocityInitializationAction, D,
+      <typename GridS::Base, MovingWallVelocityInitializationAction, TD,
        TDimension, TDirection>
       MovingWallVelocityInitialization;
     typedef
       FluidSimulation::GhostLayer::PressureStencil::Handler
-      <GridS, Scalar, D, TDimension, TDirection>
+      <GridS, Scalar, TD, TDimension, TDirection>
       PressureStencil;
   };
 
 public:
-  MySimulationBuilder(FluidSimulation::Parameters& parameters)
+  SimulationBuilder(FluidSimulation::Configuration& parameters)
     : _parameters(parameters) {
-    _simulation       = new Simulation();
-    _grid             = &_simulation->_grid;
-    _parallelTopology = &_simulation->_parallelDistribution;
-    _handlers         = &_simulation->_ghostCellsHandler;
-    _maxVelocity      = &_simulation->_maxVelocity;
+    _simulation           = new Simulation();
+    _grid                 = &_simulation->_grid;
+    _parallelDistribution = &_simulation->_parallelDistribution;
+    _handlers             = &_simulation->_ghostHandler;
+    _maxVelocity          = &_simulation->_maxVelocity;
 
     typedef typename ParallelTopologyS::VectorDi VectorDi;
     typedef typename GridGeometryS::VectorDs     VectorDs;
@@ -119,7 +119,7 @@ public:
     globalCellSize(1) = parameters.geometry.sizeY;
     width(1)          = parameters.geometry.lengthY;
 
-    if (D == 3) {
+    if (TD == 3) {
       processorSize(2)  = parameters.parallel.numProcessors[2];
       globalCellSize(2) = parameters.geometry.sizeZ;
       width(2)          = parameters.geometry.lengthZ;
@@ -127,9 +127,9 @@ public:
 
     int rank;
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-    _parallelTopology->initialize(rank,
-                                  processorSize,
-                                  globalCellSize);
+    _parallelDistribution->initialize(rank,
+                                      processorSize,
+                                      globalCellSize);
 
     _simulation->_parameters.re()    = parameters.flow.Re;
     _simulation->_parameters.gamma() = parameters.solver.gamma;
@@ -139,11 +139,12 @@ public:
     _simulation->_iterationLimit     = 200;
     _simulation->_timeLimit          = std::numeric_limits<Scalar>::max();
 
-    if (D == 3) {
+    if (TD == 3) {
       _simulation->_parameters.g(2) = parameters.environment.gz;
     }
 
-    VectorDi localSize(_parallelTopology->localCellSize + 2 * VectorDi::Ones());
+    VectorDi localSize(_parallelDistribution->localCellSize + 2 *
+                       VectorDi::Ones());
 
     _simulation->setParameters(localSize, width);
   }
@@ -155,7 +156,7 @@ public:
 
   void
   setLeftWallMoving() {
-    if (_parallelTopology->neighbors[0][0] < 0) {
+    if (_parallelDistribution->neighbors[0][0] < 0) {
       _setLeftWallMoving();
     } else {
       _setLeftMpiExchange();
@@ -164,7 +165,7 @@ public:
 
   void
   setRightWallMoving() {
-    if (_parallelTopology->neighbors[0][1] < 0) {
+    if (_parallelDistribution->neighbors[0][1] < 0) {
       _setRightWallMoving();
     } else {
       _setRightMpiExchange();
@@ -173,7 +174,7 @@ public:
 
   void
   setBottomWallMoving() {
-    if (_parallelTopology->neighbors[1][0] < 0) {
+    if (_parallelDistribution->neighbors[1][0] < 0) {
       _setBottomWallMoving();
     } else {
       _setBottomMpiExchange();
@@ -182,7 +183,7 @@ public:
 
   void
   setTopWallMoving() {
-    if (_parallelTopology->neighbors[1][1] < 0) {
+    if (_parallelDistribution->neighbors[1][1] < 0) {
       _setTopWallMoving();
     } else {
       _setTopMpiExchange();
@@ -191,7 +192,7 @@ public:
 
   void
   setBackWallMoving() {
-    if (_parallelTopology->neighbors[2][0] < 0) {
+    if (_parallelDistribution->neighbors[2][0] < 0) {
       _setBackWallMoving();
     } else {
       _setBackMpiExchange();
@@ -200,7 +201,7 @@ public:
 
   void
   setFrontWallMoving() {
-    if (_parallelTopology->neighbors[2][1] < 0) {
+    if (_parallelDistribution->neighbors[2][1] < 0) {
       _setFrontWallMoving();
     } else {
       _setFrontMpiExchange();
@@ -226,22 +227,22 @@ private:
     typedef typename LeftHandlers::PressureStencil
       PressureStencil;
 
-    _handlers->_fghInitialization[0][0] =
+    _handlers->fghInitialization[0][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][0],
-        _parallelTopology,
+        _parallelDistribution,
         new FghAction(_parameters));
-    _handlers->_rhsInitialization[0][0] =
+    _handlers->rhsInitialization[0][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelTopology));
-    _handlers->_velocityInitialization[0][0] =
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
-        _parallelTopology,
+        _parallelDistribution,
         new VelocityAction(_parameters, _maxVelocity));
-    _handlers->_pressureStencilStack[0][0] =
-      PressureStencil::getDirichletHandler(_grid, _parallelTopology);
+    _handlers->pressureStencilStack[0][0] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -254,24 +255,24 @@ private:
     auto leftIndent  = _grid->innerGrid.leftIndent();
     auto rightIndent = _grid->innerGrid.rightIndent();
 
-    _handlers->_mpiFghExchangeStack[0][0] =
+    _handlers->mpiFghExchangeStack[0][0] =
       FghHandler::getReceiveHandler(_grid,
-                                    _parallelTopology,
+                                    _parallelDistribution,
                                     leftIndent,
                                     rightIndent);
 
-    _handlers->_mpiPressureExchangeStack[0][0] =
+    _handlers->mpiPressureExchangeStack[0][0] =
       PressureHandler::getSendHandler(_grid,
-                                      _parallelTopology,
+                                      _parallelDistribution,
                                       leftIndent,
                                       rightIndent);
 
     rightIndent(1) = 0;
     rightIndent(2) = 0;
 
-    _handlers->_mpiVelocityExchangeStack[0][0] =
+    _handlers->mpiVelocityExchangeStack[0][0] =
       VelocityHandler::getExchangeHandler(_grid,
-                                          _parallelTopology,
+                                          _parallelDistribution,
                                           leftIndent,
                                           rightIndent);
   }
@@ -298,26 +299,26 @@ private:
     typedef typename RightHandlers::PressureStencil
       PressureStencil;
 
-    _handlers->_fghInitialization[0][1] =
+    _handlers->fghInitialization[0][1] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][1],
-        _parallelTopology,
+        _parallelDistribution,
         new FghAction(_parameters));
-    _handlers->_rhsInitialization[0][1] =
+    _handlers->rhsInitialization[0][1] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelTopology));
-    _handlers->_pressureInitialization[0][1] =
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->pressureInitialization[0][1] =
       CopyPressureHandler::getHandler(
         _grid,
-        new CopyPressureAction(_parallelTopology));
-    _handlers->_velocityInitialization[0][1] =
+        new CopyPressureAction(_parallelDistribution));
+    _handlers->velocityInitialization[0][1] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][1],
-        _parallelTopology,
+        _parallelDistribution,
         new VelocityAction(_parameters, _maxVelocity));
-    _handlers->_pressureStencilStack[0][1] =
-      PressureStencil::getDirichletHandler(_grid, _parallelTopology);
+    _handlers->pressureStencilStack[0][1] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -330,24 +331,24 @@ private:
     auto leftIndent  = _grid->innerGrid.leftIndent();
     auto rightIndent = _grid->innerGrid.rightIndent();
 
-    _handlers->_mpiFghExchangeStack[0][1] =
+    _handlers->mpiFghExchangeStack[0][1] =
       FghHandler::getSendHandler(_grid,
-                                 _parallelTopology,
+                                 _parallelDistribution,
                                  leftIndent,
                                  rightIndent);
 
-    _handlers->_mpiPressureExchangeStack[0][1] =
+    _handlers->mpiPressureExchangeStack[0][1] =
       PressureHandler::getReceiveHandler(_grid,
-                                         _parallelTopology,
+                                         _parallelDistribution,
                                          leftIndent,
                                          rightIndent);
 
     leftIndent(1) = 0;
     leftIndent(2) = 0;
 
-    _handlers->_mpiVelocityExchangeStack[0][1] =
+    _handlers->mpiVelocityExchangeStack[0][1] =
       VelocityHandler::getExchangeHandler(_grid,
-                                          _parallelTopology,
+                                          _parallelDistribution,
                                           leftIndent,
                                           rightIndent);
   }
@@ -370,22 +371,22 @@ private:
     typedef typename BottomHandlers::PressureStencil
       PressureStencil;
 
-    _handlers->_fghInitialization[1][0] =
+    _handlers->fghInitialization[1][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[1][0],
-        _parallelTopology,
+        _parallelDistribution,
         new FghAction(_parameters));
-    _handlers->_rhsInitialization[1][0] =
+    _handlers->rhsInitialization[1][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelTopology));
-    _handlers->_velocityInitialization[1][0] =
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->velocityInitialization[1][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[1][0],
-        _parallelTopology,
+        _parallelDistribution,
         new VelocityAction(_parameters, _maxVelocity));
-    _handlers->_pressureStencilStack[1][0] =
-      PressureStencil::getDirichletHandler(_grid, _parallelTopology);
+    _handlers->pressureStencilStack[1][0] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -398,24 +399,24 @@ private:
     auto leftIndent  = _grid->innerGrid.leftIndent();
     auto rightIndent = _grid->innerGrid.rightIndent();
 
-    _handlers->_mpiFghExchangeStack[1][0] =
+    _handlers->mpiFghExchangeStack[1][0] =
       FghHandler::getReceiveHandler(_grid,
-                                    _parallelTopology,
+                                    _parallelDistribution,
                                     leftIndent,
                                     rightIndent);
 
-    _handlers->_mpiPressureExchangeStack[1][0] =
+    _handlers->mpiPressureExchangeStack[1][0] =
       PressureHandler::getSendHandler(_grid,
-                                      _parallelTopology,
+                                      _parallelDistribution,
                                       leftIndent,
                                       rightIndent);
 
     rightIndent(0) = 0;
     rightIndent(2) = 0;
 
-    _handlers->_mpiVelocityExchangeStack[1][0] =
+    _handlers->mpiVelocityExchangeStack[1][0] =
       VelocityHandler::getExchangeHandler(_grid,
-                                          _parallelTopology,
+                                          _parallelDistribution,
                                           leftIndent,
                                           rightIndent);
   }
@@ -442,26 +443,26 @@ private:
     typedef typename TopHandlers::PressureStencil
       PressureStencil;
 
-    _handlers->_fghInitialization[1][1] =
+    _handlers->fghInitialization[1][1] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[1][1],
-        _parallelTopology,
+        _parallelDistribution,
         new FghAction(_parameters));
-    _handlers->_rhsInitialization[1][1] =
+    _handlers->rhsInitialization[1][1] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelTopology));
-    _handlers->_pressureInitialization[1][1] =
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->pressureInitialization[1][1] =
       CopyPressureHandler::getHandler(
         _grid,
-        new CopyPressureAction(_parallelTopology));
-    _handlers->_velocityInitialization[1][1] =
+        new CopyPressureAction(_parallelDistribution));
+    _handlers->velocityInitialization[1][1] =
       VelocityHandler::getHandler(
         &_grid->boundaries[1][1],
-        _parallelTopology,
+        _parallelDistribution,
         new VelocityAction(_parameters, _maxVelocity));
-    _handlers->_pressureStencilStack[1][1] =
-      PressureStencil::getDirichletHandler(_grid, _parallelTopology);
+    _handlers->pressureStencilStack[1][1] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -474,24 +475,24 @@ private:
     auto leftIndent  = _grid->innerGrid.leftIndent();
     auto rightIndent = _grid->innerGrid.rightIndent();
 
-    _handlers->_mpiFghExchangeStack[1][1] =
+    _handlers->mpiFghExchangeStack[1][1] =
       FghHandler::getSendHandler(_grid,
-                                 _parallelTopology,
+                                 _parallelDistribution,
                                  leftIndent,
                                  rightIndent);
 
-    _handlers->_mpiPressureExchangeStack[1][1] =
+    _handlers->mpiPressureExchangeStack[1][1] =
       PressureHandler::getReceiveHandler(_grid,
-                                         _parallelTopology,
+                                         _parallelDistribution,
                                          leftIndent,
                                          rightIndent);
 
     leftIndent(0) = 0;
     leftIndent(2) = 0;
 
-    _handlers->_mpiVelocityExchangeStack[1][1] =
+    _handlers->mpiVelocityExchangeStack[1][1] =
       VelocityHandler::getExchangeHandler(_grid,
-                                          _parallelTopology,
+                                          _parallelDistribution,
                                           leftIndent,
                                           rightIndent);
   }
@@ -514,22 +515,22 @@ private:
     typedef typename BackHandlers::PressureStencil
       PressureStencil;
 
-    _handlers->_fghInitialization[2][0] =
+    _handlers->fghInitialization[2][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[2][0],
-        _parallelTopology,
+        _parallelDistribution,
         new FghAction(_parameters));
-    _handlers->_rhsInitialization[2][0] =
+    _handlers->rhsInitialization[2][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelTopology));
-    _handlers->_velocityInitialization[2][0] =
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->velocityInitialization[2][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[2][0],
-        _parallelTopology,
+        _parallelDistribution,
         new VelocityAction(_parameters, _maxVelocity));
-    _handlers->_pressureStencilStack[2][0] =
-      PressureStencil::getDirichletHandler(_grid, _parallelTopology);
+    _handlers->pressureStencilStack[2][0] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -542,24 +543,24 @@ private:
     auto leftIndent  = _grid->innerGrid.leftIndent();
     auto rightIndent = _grid->innerGrid.rightIndent();
 
-    _handlers->_mpiFghExchangeStack[2][0] =
+    _handlers->mpiFghExchangeStack[2][0] =
       FghHandler::getReceiveHandler(_grid,
-                                    _parallelTopology,
+                                    _parallelDistribution,
                                     leftIndent,
                                     rightIndent);
 
-    _handlers->_mpiPressureExchangeStack[2][0] =
+    _handlers->mpiPressureExchangeStack[2][0] =
       PressureHandler::getSendHandler(_grid,
-                                      _parallelTopology,
+                                      _parallelDistribution,
                                       leftIndent,
                                       rightIndent);
 
     rightIndent(0) = 0;
     rightIndent(1) = 0;
 
-    _handlers->_mpiVelocityExchangeStack[2][0] =
+    _handlers->mpiVelocityExchangeStack[2][0] =
       VelocityHandler::getExchangeHandler(_grid,
-                                          _parallelTopology,
+                                          _parallelDistribution,
                                           leftIndent,
                                           rightIndent);
   }
@@ -586,26 +587,26 @@ private:
     typedef typename FrontHandlers::PressureStencil
       PressureStencil;
 
-    _handlers->_fghInitialization[2][1] =
+    _handlers->fghInitialization[2][1] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[2][1],
-        _parallelTopology,
+        _parallelDistribution,
         new FghAction(_parameters));
-    _handlers->_rhsInitialization[2][1] =
+    _handlers->rhsInitialization[2][1] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelTopology));
-    _handlers->_pressureInitialization[2][1] =
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->pressureInitialization[2][1] =
       CopyPressureHandler::getHandler(
         _grid,
-        new CopyPressureAction(_parallelTopology));
-    _handlers->_velocityInitialization[2][1] =
+        new CopyPressureAction(_parallelDistribution));
+    _handlers->velocityInitialization[2][1] =
       VelocityHandler::getHandler(
         &_grid->boundaries[2][1],
-        _parallelTopology,
+        _parallelDistribution,
         new VelocityAction(_parameters, _maxVelocity));
-    _handlers->_pressureStencilStack[2][1] =
-      PressureStencil::getDirichletHandler(_grid, _parallelTopology);
+    _handlers->pressureStencilStack[2][1] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -618,24 +619,24 @@ private:
     auto leftIndent  = _grid->innerGrid.leftIndent();
     auto rightIndent = _grid->innerGrid.rightIndent();
 
-    _handlers->_mpiFghExchangeStack[2][1] =
+    _handlers->mpiFghExchangeStack[2][1] =
       FghHandler::getSendHandler(_grid,
-                                 _parallelTopology,
+                                 _parallelDistribution,
                                  leftIndent,
                                  rightIndent);
 
-    _handlers->_mpiPressureExchangeStack[2][1] =
+    _handlers->mpiPressureExchangeStack[2][1] =
       PressureHandler::getReceiveHandler(_grid,
-                                         _parallelTopology,
+                                         _parallelDistribution,
                                          leftIndent,
                                          rightIndent);
 
     leftIndent(0) = 0;
     leftIndent(1) = 0;
 
-    _handlers->_mpiVelocityExchangeStack[2][1] =
+    _handlers->mpiVelocityExchangeStack[2][1] =
       VelocityHandler::getExchangeHandler(_grid,
-                                          _parallelTopology,
+                                          _parallelDistribution,
                                           leftIndent,
                                           rightIndent);
   }
@@ -656,12 +657,12 @@ private:
     return &accessor.currentCell()->pressure();
   }
 
-  FluidSimulation::Parameters&         _parameters;
-  Simulation*         _simulation;
-  GridS*              _grid;
-  ParallelTopologyS*  _parallelTopology;
-  GhostCellsHandlerS* _handlers;
-  VelocityS*          _maxVelocity;
+  FluidSimulation::Configuration& _parameters;
+  Simulation*                     _simulation;
+  GridS*                          _grid;
+  ParallelTopologyS*              _parallelDistribution;
+  GhostCellsHandlerS*             _handlers;
+  VelocityS*                      _maxVelocity;
 };
 }
 }

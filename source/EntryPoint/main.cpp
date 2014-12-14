@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "Application.hpp"
 
 int
@@ -9,6 +7,7 @@ main(int argc, char* argv[]) {
   Application application(argc, argv);
 
   auto result = application.parseArguments();
+
   if (result == 1) {
     return 0;
   }

@@ -1,5 +1,5 @@
-#ifndef FsiSimulation_Solvers_PoissonSolver_hpp
-#define FsiSimulation_Solvers_PoissonSolver_hpp
+#ifndef FsiSimulation_FluidSimulation_Solvers_LinearSolver_hpp
+#define FsiSimulation_FluidSimulation_Solvers_LinearSolver_hpp
 
 #include "GhostLayer/Handlers.hpp"
 #include "Grid.hpp"
@@ -15,24 +15,23 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TCellAccessor, typename Scalar, int D>
+template <typename TCellAccessor, typename TScalar, int TD>
 class LinearSolver {
 public:
-  typedef Grid<TCellAccessor, D>      SpecializedGrid;
-  typedef ParallelDistribution<D>         SpecializedParallelTopology;
-  typedef typename GhostLayer::Handlers<D>        SpecializedGhostCellsHandler;
-  typedef Scalar const*               ScalarPointer;
-  typedef Eigen::Matrix<Scalar, D, 1> VectorDs;
-  typedef Eigen::Matrix<int, D, 1>    VectorDi;
+  typedef Grid<TCellAccessor, TD>           GridType;
+  typedef ParallelDistribution<TD>          ParallelDistributionType;
+  typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
+  typedef Eigen::Matrix<TScalar, TD, 1>     VectorDsType;
+  typedef Eigen::Matrix<int, TD, 1>         VectorDiType;
 
 public:
   LinearSolver() {}
 
   void
-  initialize(SpecializedGrid const*              grid,
-             SpecializedParallelTopology const*  parallelTopology,
-             SpecializedGhostCellsHandler const* ghostCellsHandler,
-             Scalar const*                       dt) {
+  initialize(GridType const*                 grid,
+             ParallelDistributionType const* parallelTopology,
+             GhostHandlersType const*        ghostCellsHandler,
+             TScalar const*                  dt) {
     _grid              = grid;
     _parallelTopology  = parallelTopology;
     _ghostCellsHandler = ghostCellsHandler;
@@ -40,9 +39,9 @@ public:
     KSPCreate(PETSC_COMM_WORLD, &_context);
     PCCreate(PETSC_COMM_WORLD, &_preconditioner);
 
-    VectorDConstPetscIntPointer<D> localSizes;
+    VectorDConstPetscIntPointer<TD> localSizes;
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       auto array = new PetscInt[_parallelTopology->processorSize(d)];
       localSizes(d) = UniqueConstPetscIntArray(array);
 
@@ -53,15 +52,15 @@ public:
       ++array[_parallelTopology->processorSize(d) - 1];
     }
 
-    DMCreate<D>(PETSC_COMM_WORLD,
-                createDMBoundaries<D>(),
-                DMDA_STENCIL_STAR,
-                _parallelTopology->globalCellSize + 2 * VectorDi::Ones(),
-                _parallelTopology->processorSize,
-                1,
-                2,
-                localSizes,
-                &_da);
+    DMCreate<TD>(PETSC_COMM_WORLD,
+                 createDMBoundaries<TD>(),
+                 DMDA_STENCIL_STAR,
+                 _parallelTopology->globalCellSize + 2 * VectorDiType::Ones(),
+                 _parallelTopology->processorSize,
+                 1,
+                 2,
+                 localSizes,
+                 &_da);
 
     DMCreateGlobalVector(_da, &_x);
     KSPSetDM(_context, _da);
@@ -104,7 +103,7 @@ public:
 
   void
   solve() {
-    typedef StructuredMemory::Pointers<PetscScalar, D> Pointers;
+    typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
 
     KSPSetComputeRHS(_context, computeRHS, this);
     KSPSolve(_context, PETSC_NULL, _x);
@@ -121,9 +120,9 @@ public:
       accessor.currentCell()->pressure() = Pointers::dereference(array, index);
     }
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostCellsHandler->_pressureInitialization[d][d2](array);
+        _ghostCellsHandler->pressureInitialization[d][d2](array);
       }
     }
 
@@ -135,16 +134,16 @@ private:
   computeMatrix(KSP ksp, Mat A, Mat pc, void* ctx) {
     auto solver = static_cast<LinearSolver*>(ctx);
 
-    PetscScalar stencil[2 * D + 1];
+    PetscScalar stencil[2 * TD + 1];
     MatStencil  row;
-    MatStencil  columns[2 * D + 1];
+    MatStencil  columns[2 * TD + 1];
 
     for (auto const& accessor : solver->_grid->innerGrid) {
       typedef
-        PressurePoissonStencilProcessing<SpecializedParallelTopology,
+        PressurePoissonStencilProcessing<ParallelDistributionType,
                                          TCellAccessor,
-                                         Scalar,
-                                         D>
+                                         TScalar,
+                                         TD>
         StencilProcessing;
 
       StencilProcessing::compute(solver->_parallelTopology,
@@ -153,13 +152,13 @@ private:
                                  row,
                                  columns);
 
-      MatSetValuesStencil(A, 1, &row, 2 * D + 1, columns, stencil,
+      MatSetValuesStencil(A, 1, &row, 2 * TD + 1, columns, stencil,
                           INSERT_VALUES);
     }
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        solver->_ghostCellsHandler->_pressureStencilStack[d][d2](A);
+        solver->_ghostCellsHandler->pressureStencilStack[d][d2](A);
       }
     }
 
@@ -177,23 +176,23 @@ private:
   static PetscErrorCode
   computeRHS(KSP ksp, Vec b, void* ctx) {
     auto solver = static_cast<LinearSolver*>(ctx);
-    typedef StructuredMemory::Pointers<PetscScalar, D> Pointers;
+    typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
     typename Pointers::Type array;
 
     DM da;
     KSPGetDM(ksp, &da);
     DMDAVecGetArray(da, b, &array);
 
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        solver->_ghostCellsHandler->_rhsInitialization[d][d2](array);
+        solver->_ghostCellsHandler->rhsInitialization[d][d2](array);
       }
     }
 
     auto corner = solver->_parallelTopology->corner;
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      typedef RhsProcessing<TCellAccessor, Scalar, D> Rhs;
+      typedef RhsProcessing<TCellAccessor, TScalar, TD> Rhs;
 
       auto index = accessor.indexValues();
       index += corner;
@@ -209,10 +208,10 @@ private:
     return 0;
   }
 
-  SpecializedGrid const*              _grid;
-  SpecializedParallelTopology const*  _parallelTopology;
-  SpecializedGhostCellsHandler const* _ghostCellsHandler;
-  ScalarPointer                       _dt;
+  GridType const*                 _grid;
+  ParallelDistributionType const* _parallelTopology;
+  GhostHandlersType const*        _ghostCellsHandler;
+  TScalar const*                  _dt;
 
   Vec _x;
   DM  _da;

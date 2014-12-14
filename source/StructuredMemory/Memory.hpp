@@ -11,12 +11,12 @@
 
 namespace FsiSimulation {
 namespace StructuredMemory {
-template <typename TCell, int D>
+template <typename TCell, int TD>
 class Memory {
 public:
-  typedef TCell                    Cell;
-  typedef Eigen::Matrix<int, D, 1> VectorDi;
-  typedef Pointers<Cell, D>        SpecializedPointers;
+  typedef TCell                     Cell;
+  typedef Eigen::Matrix<int, TD, 1> VectorDi;
+  typedef Pointers<Cell, TD>        SpecializedPointers;
 
 public:
   Memory() {}
@@ -90,20 +90,20 @@ private:
   VectorDi            _indexShift;
 };
 
-template <typename TCell, int D>
-class IterableMemory : public Memory<TCell, D> {
+template <typename TCell, int TD>
+class IterableMemory : public Memory<TCell, TD> {
 public:
-  typedef Memory<TCell, D>                   Base;
+  typedef Memory<TCell, TD>                  Base;
   typedef typename Base::Cell                Cell;
   typedef typename Base::VectorDi            VectorDi;
   typedef typename Base::SpecializedPointers SpecializedPointers;
 
   typedef
-    Accessor<Uni::StructuredGrid::Basic::MultiIndex<D>, Base, D>
+    Accessor<Uni::StructuredGrid::Basic::MultiIndex<TD>, Base, TD>
     SpecializedAccessor;
 
   typedef
-    Uni::StructuredGrid::Basic::Grid<SpecializedAccessor, D>
+    Uni::StructuredGrid::Basic::Grid<SpecializedAccessor, TD>
     Grid;
   typedef typename Grid::Iterator Iterator;
   typedef typename Grid::Factory  AccessorFactory;

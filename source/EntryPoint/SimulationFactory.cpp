@@ -1,10 +1,10 @@
 #include "SimulationFactory.hpp"
 
 #include "FluidSimulation/Cell.hpp"
-#include "FluidSimulation/GridGeometry.hpp"
 #include "FluidSimulation/FdSimulation.hpp"
+#include "FluidSimulation/GridGeometry.hpp"
 
-#include "MySimulationBuilder.hpp"
+#include "SimulationBuilder.hpp"
 //
 
 using FsiSimulation::EntryPoint::SimulationFactory;
@@ -12,9 +12,9 @@ using FsiSimulation::EntryPoint::SimulationFactory;
 namespace FsiSimulation {
 namespace EntryPoint {
 namespace Private {
-template <typename Scalar, int D>
+template <typename TScalar, int TD>
 SimulationFactory::Simulation*
-createUniformGridFromTemplate(FluidSimulation::Parameters& parameters) {
+createUniformGridFromTemplate(FluidSimulation::Configuration& parameters) {
   parameters.walls.velocities[0][0](0) = parameters.walls.vectorLeft[0];
   parameters.walls.velocities[0][0](1) = parameters.walls.vectorLeft[1];
   parameters.walls.velocities[0][0](2) = parameters.walls.vectorLeft[2];
@@ -39,7 +39,7 @@ createUniformGridFromTemplate(FluidSimulation::Parameters& parameters) {
   parameters.walls.velocities[2][1](1) = parameters.walls.vectorFront[1];
   parameters.walls.velocities[2][1](2) = parameters.walls.vectorFront[2];
 
-  MySimulationBuilder<Scalar, D> builder(parameters);
+  SimulationBuilder<TScalar, TD> builder(parameters);
 
   builder.setLeftWallMoving();
   builder.setRightWallMoving();
@@ -58,24 +58,24 @@ createUniformGridFromTemplate(FluidSimulation::Parameters& parameters) {
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridFloat2D(FluidSimulation::Parameters& parameters) {
+createUniformGridFloat2D(FluidSimulation::Configuration& parameters) {
   return Private::createUniformGridFromTemplate<double, 3>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridDouble2D(FluidSimulation::Parameters& parameters) {
+createUniformGridDouble2D(FluidSimulation::Configuration& parameters) {
   return Private::createUniformGridFromTemplate<double, 3>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridFloat3D(FluidSimulation::Parameters& parameters) {
+createUniformGridFloat3D(FluidSimulation::Configuration& parameters) {
   return Private::createUniformGridFromTemplate<double, 3>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridDouble3D(FluidSimulation::Parameters& parameters) {
+createUniformGridDouble3D(FluidSimulation::Configuration& parameters) {
   return Private::createUniformGridFromTemplate<double, 3>(parameters);
 }

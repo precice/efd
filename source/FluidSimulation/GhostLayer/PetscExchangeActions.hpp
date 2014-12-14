@@ -1,5 +1,5 @@
-#ifndef FsiSimulation_Ghost_PetscExchange_Actions_hpp
-#define FsiSimulation_Ghost_PetscExchange_Actions_hpp
+#ifndef FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Actions_hpp
+#define FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Actions_hpp
 
 #include "FluidSimulation/Configuration.hpp"
 #include "FluidSimulation/ParallelDistribution.hpp"
@@ -14,17 +14,18 @@ namespace FluidSimulation {
 namespace GhostLayer {
 namespace PetscExchange {
 template <typename TGrid,
-          int D,
+          int TD,
           int TDimension,
           int TDirection>
 class MovingWallRhsAction {
 public:
-  typedef StructuredMemory::Pointers<PetscScalar, D> Pointers;
-  typedef ParallelDistribution<D>                        SpecializedParallelTopology;
+  typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
+  typedef ParallelDistribution<TD>
+    SpecializedParallelTopology;
 
 public:
   MovingWallRhsAction(
-    Parameters&                        parameters,
+    Configuration&                     parameters,
     SpecializedParallelTopology const* parallelTopology)
     : _parameters(parameters),
       _parallelTopology(parallelTopology) {}
@@ -40,18 +41,19 @@ public:
     Pointers::dereference(array, index) = 0.0;
   }
 
-  Parameters&                        _parameters;
+  Configuration&                     _parameters;
   SpecializedParallelTopology const* _parallelTopology;
 };
 
 template <typename TGrid,
-          int D,
+          int TD,
           int TDimension,
           int TDirection>
 class CopyPressureAction {
 public:
-  typedef StructuredMemory::Pointers<PetscScalar, D> Pointers;
-  typedef ParallelDistribution<D>                        SpecializedParallelTopology;
+  typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
+  typedef ParallelDistribution<TD>
+    SpecializedParallelTopology;
 
 public:
   CopyPressureAction(SpecializedParallelTopology const* parallelTopology)

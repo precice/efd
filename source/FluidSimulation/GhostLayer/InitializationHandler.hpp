@@ -1,5 +1,5 @@
-#ifndef FsiSimulation_Ghost_Velocity_Handler_hpp
-#define FsiSimulation_Ghost_Velocity_Handler_hpp
+#ifndef FsiSimulation_FluidSimulation_GhostLayer_Initialization_Handler_hpp
+#define FsiSimulation_FluidSimulation_GhostLayer_Initialization_Handler_hpp
 
 #include "Private/utilities.hpp"
 
@@ -15,10 +15,10 @@ namespace FluidSimulation {
 namespace GhostLayer {
 namespace Initialization {
 typedef std::function<void ()> Functor;
-template <int D>
-using FunctorStack = FunctorStack<Functor, D>;
+template <int TD>
+using FunctorStack = FunctorStack<Functor, TD>;
 
-template <int D>
+template <int TD>
 inline Functor
 getEmptyFunctor() {
   return Functor([] () {});
@@ -26,12 +26,12 @@ getEmptyFunctor() {
 
 template <typename TGrid,
           typename TAction,
-          int D,
+          int TD,
           int TDimension,
           int TDirection>
 class Handler {
 public:
-  typedef ParallelDistribution<D> SpecializedParallelTopology;
+  typedef ParallelDistribution<TD> SpecializedParallelTopology;
 
   Handler(TGrid const*                       grid,
           SpecializedParallelTopology const* parallelTopology,
@@ -54,7 +54,7 @@ public:
 
   void
   initialize() {
-    for (auto const& accessor : *_grid) {
+    for (auto const& accessor :* _grid) {
       auto newAccessor = accessor;
       newAccessor.initialize(accessor.relativeIndex(TDimension, !TDirection));
       _action->setValue(accessor, newAccessor);

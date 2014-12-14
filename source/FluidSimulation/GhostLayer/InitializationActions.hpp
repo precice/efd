@@ -1,8 +1,8 @@
-#ifndef FsiSimulation_Ghost_Initialization_Actions_hpp
-#define FsiSimulation_Ghost_Initialization_Actions_hpp
+#ifndef FsiSimulation_FluidSimulation_GhostLayer_Initialization_Actions_hpp
+#define FsiSimulation_FluidSimulation_GhostLayer_Initialization_Actions_hpp
 
-#include "FluidSimulation/ParallelDistribution.hpp"
 #include "FluidSimulation/Configuration.hpp"
+#include "FluidSimulation/ParallelDistribution.hpp"
 #include "FluidSimulation/functions.hpp"
 
 namespace FsiSimulation {
@@ -10,23 +10,23 @@ namespace FluidSimulation {
 namespace GhostLayer {
 namespace Initialization {
 template <typename TGrid,
-          typename Scalar,
-          int D,
+          typename TScalar,
+          int TD,
           int TDimension,
           int TDirection>
 class MovingWallVelocityAction {
 public:
   typedef typename TGrid::CellAccessor::CellType::Velocity Velocity;
 
-  MovingWallVelocityAction(Parameters& parameters,
-                           Velocity*   maxVelocity)
+  MovingWallVelocityAction(Configuration& parameters,
+                           Velocity*      maxVelocity)
     : _parameters(parameters),
       _maxVelocity(maxVelocity) {}
 
   void
   setValue(typename TGrid::CellAccessor const& current,
            typename TGrid::CellAccessor const& neighbor) {
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < TD; ++d) {
       if (d == TDimension) {
         if (TDirection == 0) {
           current.currentCell()->velocity(d) =
@@ -41,24 +41,24 @@ public:
           - neighbor.currentCell()->velocity(d);
       }
     }
-    computeMaxVelocity<typename TGrid::CellAccessor, Scalar, D>
+    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
       (current,  *_maxVelocity);
-    computeMaxVelocity<typename TGrid::CellAccessor, Scalar, D>
+    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
       (neighbor, *_maxVelocity);
   }
 
-  Parameters& _parameters;
-  Velocity*   _maxVelocity;
+  Configuration& _parameters;
+  Velocity*      _maxVelocity;
 };
 
 template <typename TGrid,
-          typename Scalar,
-          int D,
+          typename TScalar,
+          int TD,
           int TDimension,
           int TDirection>
 class MovingWallFghAction {
 public:
-  MovingWallFghAction(Parameters& parameters) : _parameters(parameters) {}
+  MovingWallFghAction(Configuration& parameters) : _parameters(parameters) {}
 
   void
   setValue(typename TGrid::CellAccessor const& current,
@@ -72,9 +72,8 @@ public:
     }
   }
 
-  Parameters& _parameters;
+  Configuration& _parameters;
 };
-
 }
 }
 }

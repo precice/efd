@@ -4,30 +4,20 @@
 
 #include "Configuration.hpp"
 #include "FluidSimulation/Simulation.hpp"
-#include "Configuration.hpp"
 #include "SimulationFactory.hpp"
 
 #include <precice/SolverInterface.hpp>
 
 #include <Uni/ExecutionControl/exception>
 #include <Uni/Firewall/Interface>
-#include <Uni/Logging/macros>
 #include <Uni/Platform/operatingsystem>
 
-#include <boost/filesystem.hpp>
-#include <boost/locale.hpp>
 #include <boost/program_options.hpp>
-
-#include <mpi.h>
-#include <petscsys.h>
-
-#include <iostream>
-#include <memory>
 
 #if defined (Uni_Platform_OS_WINDOWS)
 #  include <windows.h>
 #elif defined (Uni_Platform_OS_UNIX)
-#  include <unistd.h>
+
 #else
 #  error "Unknown platform"
 #endif
@@ -53,6 +43,7 @@ _getExecPath() {
   return result;
 }
 #elif defined (Uni_Platform_OS_UNIX)
+
 boost::filesystem::path
 _getExecPath() {
   char buffer[PATH_MAX];
@@ -69,6 +60,7 @@ _getExecPath() {
 
   return result;
 }
+
 #else
 #  error "Unknown platform"
 #endif
@@ -77,7 +69,7 @@ _getExecPath() {
 
 class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   typedef std::unique_ptr<FluidSimulation::Simulation> UniqueMySimulation;
-  typedef boost::filesystem::path       Path;
+  typedef boost::filesystem::path                      Path;
 
   ApplicationPrivateImplementation(
     Application* in,
@@ -109,7 +101,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
 
   Uni_Firewall_INTERFACE_LINK(Application)
 
-  int    argc;
+  int argc;
   char**      argv;
   std::locale globalLocale;
   std::locale ansiLocale;
@@ -126,12 +118,14 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   int rank;
   int processCount;
 
-  FluidSimulation::Parameters parameters;
+  FluidSimulation::Configuration parameters;
 
   UniqueMySimulation mySimulation;
 
   bool
-  isMaster() { return rank == masterRank; }
+  isMaster() {
+    return rank == masterRank;
+  }
 };
 
 Application::
@@ -164,8 +158,7 @@ parseArguments() {
     "Set fluid simulation configuration path")
     ("petsc,e",
     po::value<std::string>(),
-    "Set PETSc configuration path")
-  ;
+    "Set PETSc configuration path");
 
   po::variables_map options;
   po::store(po::parse_command_line(_im->argc, _im->argv, optionDescription),

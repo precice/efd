@@ -1,5 +1,5 @@
-#ifndef FsiSimulation_Ghost_PetscExchange_Handler_hpp
-#define FsiSimulation_Ghost_PetscExchange_Handler_hpp
+#ifndef FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Handler_hpp
+#define FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Handler_hpp
 
 #include "Private/utilities.hpp"
 
@@ -17,29 +17,31 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
 namespace PetscExchange {
-template <int D>
+template <int TD>
 using Functor =
         std::function
-        <void(typename StructuredMemory::Pointers<PetscScalar, D>::Type array)>;
-template <int D>
-using FunctorStack = FunctorStack<Functor<D>, D>;
+        <void(typename StructuredMemory::Pointers<PetscScalar, TD>::Type
+              array)>;
+template <int TD>
+using FunctorStack = FunctorStack<Functor<TD>, TD>;
 
-template <int D>
-inline Functor<D>
+template <int TD>
+inline Functor<TD>
 getEmptyFunctor() {
-  return Functor<D>([] (
-                      typename StructuredMemory::Pointers<PetscScalar, D>::Type
-                      array) {});
+  return Functor<TD>([] (
+                       typename StructuredMemory::Pointers<PetscScalar,
+                                                           TD>::Type
+                       array) {});
 }
 
 template <typename TGrid,
           typename TAction,
-          int D,
+          int TD,
           int TDimension,
           int TDirection>
 class Handler {
 private:
-  typedef StructuredMemory::Pointers<PetscScalar, D> Pointers;
+  typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
 
 public:
   Handler(TGrid const* grid,
@@ -48,7 +50,7 @@ public:
 
   ~Handler() {}
 
-  static Functor<D>
+  static Functor<TD>
   getHandler(TGrid const* grid,
              TAction*     action) {
     using std::placeholders::_1;
@@ -56,7 +58,7 @@ public:
     auto pointer = std::shared_ptr<Handler>
                      (new Handler(grid, action));
 
-    return Functor<D>(std::bind(&Handler::initialize, pointer, _1));
+    return Functor<TD>(std::bind(&Handler::initialize, pointer, _1));
   }
 
   void
