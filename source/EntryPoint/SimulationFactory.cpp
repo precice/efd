@@ -41,12 +41,15 @@ createUniformGridFromTemplate(FluidSimulation::Configuration& parameters) {
 
   SimulationBuilder<TScalar, TD> builder(parameters);
 
-  builder.setLeftWallMoving();
-  builder.setRightWallMoving();
-  builder.setBottomWallMoving();
-  builder.setTopWallMoving();
-  builder.setBackWallMoving();
-  builder.setFrontWallMoving();
+  builder.setLeftAsInput();
+  builder.setRightAsOutput();
+  builder.setBottomAsMoving();
+  builder.setTopAsMoving();
+
+  if (TD == 3) {
+    builder.setBackAsMoving();
+    builder.setFrontAsMoving();
+  }
 
   auto simulation = builder.simulation();
 
@@ -59,23 +62,23 @@ createUniformGridFromTemplate(FluidSimulation::Configuration& parameters) {
 SimulationFactory::Simulation*
 SimulationFactory::
 createUniformGridFloat2D(FluidSimulation::Configuration& parameters) {
-  return Private::createUniformGridFromTemplate<double, 3>(parameters);
+  return Private::createUniformGridFromTemplate<double, 2>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
 createUniformGridDouble2D(FluidSimulation::Configuration& parameters) {
-  return Private::createUniformGridFromTemplate<double, 3>(parameters);
+  return Private::createUniformGridFromTemplate<double, 2>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
 createUniformGridFloat3D(FluidSimulation::Configuration& parameters) {
-  return Private::createUniformGridFromTemplate<double, 3>(parameters);
+  return Private::createUniformGridFromTemplate<double, 2>(parameters);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
 createUniformGridDouble3D(FluidSimulation::Configuration& parameters) {
-  return Private::createUniformGridFromTemplate<double, 3>(parameters);
+  return Private::createUniformGridFromTemplate<double, 2>(parameters);
 }

@@ -83,7 +83,7 @@ public:
 
   Cell*
   relativeCell(int const& dimension, int const& direction) const {
-    return (* _memory)(this->indexValues(dimension, direction));
+    return (* _memory)(relativeIndex(dimension, direction));
   }
 
   Cell*

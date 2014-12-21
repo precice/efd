@@ -15,10 +15,14 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TCellAccessor, typename TScalar, int TD>
+template <typename TMemory,
+          typename TGridGeometry,
+          typename TScalar,
+          int TD>
 class LinearSolver {
 public:
-  typedef Grid<TCellAccessor, TD>           GridType;
+  typedef Grid<TMemory, TGridGeometry, TD>  GridType;
+  typedef typename GridType::CellAccessorType CellAccessorType;
   typedef ParallelDistribution<TD>          ParallelDistributionType;
   typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
   typedef Eigen::Matrix<TScalar, TD, 1>     VectorDsType;
@@ -141,7 +145,7 @@ private:
     for (auto const& accessor : solver->_grid->innerGrid) {
       typedef
         PressurePoissonStencilProcessing<ParallelDistributionType,
-                                         TCellAccessor,
+                                         CellAccessorType,
                                          TScalar,
                                          TD>
         StencilProcessing;
@@ -192,7 +196,7 @@ private:
     auto corner = solver->_parallelTopology->corner;
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      typedef RhsProcessing<TCellAccessor, TScalar, TD> Rhs;
+      typedef RhsProcessing<CellAccessorType, TScalar, TD> Rhs;
 
       auto index = accessor.indexValues();
       index += corner;

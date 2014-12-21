@@ -123,7 +123,7 @@ duvdy(TScalar const& currentU,
     (((xRight - xCurrent) / xRight * currentV + xCurrent / xRight * rightV) *
      ((yTop - yCurrent) / yTop * currentU + yCurrent / yTop * topU) -
      ((xRight - xCurrent) / xRight * bottomV + xCurrent / xRight *
-    rightBottomV) *
+      rightBottomV) *
      ((yBottom - yCurrent) / yBottom * currentU + yCurrent / yBottom * bottomU)
     ) / (2.0 * yCurrent);
 
@@ -511,15 +511,14 @@ class VelocityProcessing {
 public:
   static inline void
   compute(TCellAccessor const& accessor,
+          int const&           dimension,
           TScalar const&       dt) {
-    for (int d = 0; d < TD; ++d) {
-      accessor.currentCell()->velocity() (d) =
-        accessor.currentCell()->fgh() (d) -
-        dt / (0.5 * (accessor.rightWidthInDimension (d)(d) +
-                     accessor.currentWidth() (d)))
-        * (accessor.rightCellInDimension(d)->pressure() -
-           accessor.currentCell()->pressure());
-    }
+    accessor.currentCell()->velocity() (dimension) =
+      accessor.currentCell()->fgh() (dimension) -
+      dt / (0.5 * (accessor.rightWidthInDimension (dimension)(dimension) +
+                   accessor.currentWidth() (dimension)))
+      * (accessor.rightCellInDimension(dimension)->pressure() -
+         accessor.currentCell()->pressure());
   }
 };
 }

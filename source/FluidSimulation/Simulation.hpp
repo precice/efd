@@ -1,6 +1,8 @@
 #ifndef FsiSimulation_FluidSimulation_Simulation_hpp
 #define FsiSimulation_FluidSimulation_Simulation_hpp
 
+#include <precice/SolverInterface.hpp>
+
 #include <boost/filesystem.hpp>
 
 namespace FsiSimulation {
@@ -14,8 +16,9 @@ public:
   ~Simulation() {}
 
   virtual void
-  initialize(Path const&        outputDirectory,
-             std::string const& fileNamePrefix) = 0;
+  initialize(precice::SolverInterface* preciceInteface,
+             Path const&               outputDirectory,
+             std::string const&        fileNamePrefix) = 0;
 
   virtual bool
   iterate() = 0;

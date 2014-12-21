@@ -46,22 +46,14 @@ public:
     logInfo("GhostPressureStencilHanlers destroyed");
   }
 
-  static Functor
-  getDirichletHandler(TGrid const*                       grid,
-                      SpecializedParallelTopology const* parallelTopology) {
-    using std::placeholders::_1;
-
-    auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology));
-
-    return Functor(std::bind(&Handler::dirichlet,
-                             pointer,
-                             _1));
-  }
-
   void
   dirichlet(Mat& A) {
     genericHandler<Handler::dirichletPressureStencil>(A);
+  }
+
+  void
+  neumann(Mat& A) {
+    genericHandler<Handler::neumannPressureStencil>(A);
   }
 
   template <void(* TStencil) (PetscScalar*)>
@@ -128,10 +120,38 @@ public:
     }
   }
 
+  static Functor
+  getDirichletHandler(TGrid const*                       grid,
+                      SpecializedParallelTopology const* parallelTopology) {
+    using std::placeholders::_1;
+
+    auto pointer = std::shared_ptr<Handler>
+                     (new Handler(grid, parallelTopology));
+
+    return Functor(std::bind(&Handler::dirichlet, pointer, _1));
+  }
+
+  static Functor
+  getNeumannHandler(TGrid const*                       grid,
+                    SpecializedParallelTopology const* parallelTopology) {
+    using std::placeholders::_1;
+
+    auto pointer = std::shared_ptr<Handler>
+                     (new Handler(grid, parallelTopology));
+
+    return Functor(std::bind(&Handler::neumann, pointer, _1));
+  }
+
   static void
   dirichletPressureStencil(PetscScalar* stencil) {
     stencil[0] = 1;
     stencil[1] = -1;
+  }
+
+  static void
+  neumannPressureStencil(PetscScalar* stencil) {
+    stencil[0] = 0.5;
+    stencil[1] = 0.5;
   }
 
 private:

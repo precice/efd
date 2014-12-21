@@ -30,7 +30,7 @@ public:
   typedef typename Simulation::MemoryType               MemoryS;
   typedef typename Simulation::CellAccessorFactory
     CellAccessorFactoryS;
-  typedef typename GridS::CellAccessor     CellAccessorS;
+  typedef typename GridS::CellAccessorType CellAccessorS;
   typedef typename CellAccessorS::CellType CellS;
   typedef typename CellS::Velocity         VelocityS;
   typedef typename CellS::Pressure         PressureS;
@@ -65,6 +65,28 @@ public:
        TDimension, TDirection>
       MovingWallFghInitialization;
     typedef
+      FluidSimulation::GhostLayer::Initialization::InputFghAction
+      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      InputFghInitializationAction;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::Handler
+      <typename GridS::Base, InputFghInitializationAction, TD,
+       TDimension, TDirection>
+      InputFghInitialization;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::OutputFghAction
+      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      OutputFghInitializationAction;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::Handler
+      <typename GridS::Base, OutputFghInitializationAction, TD,
+       TDimension, TDirection>
+      OutputFghInitialization;
+    typedef
+      FluidSimulation::GhostLayer::PressureStencil::Handler
+      <GridS, Scalar, TD, TDimension, TDirection>
+      PressureStencil;
+    typedef
       FluidSimulation::GhostLayer::PetscExchange::MovingWallRhsAction
       <GridS, TD, TDimension, TDirection>
       MovingWallRhsAction;
@@ -92,9 +114,23 @@ public:
        TDimension, TDirection>
       MovingWallVelocityInitialization;
     typedef
-      FluidSimulation::GhostLayer::PressureStencil::Handler
-      <GridS, Scalar, TD, TDimension, TDirection>
-      PressureStencil;
+      FluidSimulation::GhostLayer::Initialization::InputVelocityAction
+      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      InputVelocityInitializationAction;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::Handler
+      <typename GridS::Base, InputVelocityInitializationAction, TD,
+       TDimension, TDirection>
+      InputVelocityInitialization;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::OutputVelocityAction
+      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      OutputVelocityInitializationAction;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::Handler
+      <typename GridS::Base, OutputVelocityInitializationAction, TD,
+       TDimension, TDirection>
+      OutputVelocityInitialization;
   };
 
 public:
@@ -155,62 +191,98 @@ public:
   }
 
   void
-  setLeftWallMoving() {
+  setLeftAsMoving() {
     if (_parallelDistribution->neighbors[0][0] < 0) {
-      _setLeftWallMoving();
+      _setLeftAsMoving();
     } else {
-      _setLeftMpiExchange();
+      _setLeftAsMpiExchange();
     }
   }
 
   void
-  setRightWallMoving() {
+  setLeftAsInput() {
+    if (_parallelDistribution->neighbors[0][0] < 0) {
+      _setLeftAsInput();
+    } else {
+      _setLeftAsMpiExchange();
+    }
+  }
+
+  void
+  setLeftAsOutput() {
+    if (_parallelDistribution->neighbors[0][0] < 0) {
+      _setLeftAsOutput();
+    } else {
+      _setLeftAsMpiExchange();
+    }
+  }
+
+  void
+  setRightAsMoving() {
     if (_parallelDistribution->neighbors[0][1] < 0) {
-      _setRightWallMoving();
+      _setRightAsMoving();
     } else {
-      _setRightMpiExchange();
+      _setRightAsMpiExchange();
     }
   }
 
   void
-  setBottomWallMoving() {
+  setRightAsInput() {
+    if (_parallelDistribution->neighbors[0][1] < 0) {
+      _setRightAsInput();
+    } else {
+      _setRightAsMpiExchange();
+    }
+  }
+
+  void
+  setRightAsOutput() {
+    if (_parallelDistribution->neighbors[0][1] < 0) {
+      _setRightAsOutput();
+    } else {
+      _setRightAsMpiExchange();
+    }
+  }
+
+  void
+  setBottomAsMoving() {
     if (_parallelDistribution->neighbors[1][0] < 0) {
-      _setBottomWallMoving();
+      _setBottomAsMoving();
     } else {
-      _setBottomMpiExchange();
+      _setBottomAsMpiExchange();
     }
   }
 
   void
-  setTopWallMoving() {
+  setTopAsMoving() {
     if (_parallelDistribution->neighbors[1][1] < 0) {
-      _setTopWallMoving();
+      _setTopAsMoving();
     } else {
-      _setTopMpiExchange();
+      _setTopAsMpiExchange();
     }
   }
 
   void
-  setBackWallMoving() {
+  setBackAsMoving() {
     if (_parallelDistribution->neighbors[2][0] < 0) {
-      _setBackWallMoving();
+      _setBackAsMoving();
     } else {
-      _setBackMpiExchange();
+      _setBackAsMpiExchange();
     }
   }
 
   void
-  setFrontWallMoving() {
+  setFrontAsMoving() {
     if (_parallelDistribution->neighbors[2][1] < 0) {
-      _setFrontWallMoving();
+      _setFrontAsMoving();
     } else {
-      _setFrontMpiExchange();
+      setFrontAsMpiExchange();
     }
   }
 
 private:
   void
-  _setLeftWallMoving() {
+  _setLeftAsMoving() {
     typedef GhostHandlers<0, 0> LeftHandlers;
     typedef typename LeftHandlers::MovingWallFghInitializationAction
       FghAction;
@@ -246,7 +318,79 @@ private:
   }
 
   void
-  _setLeftMpiExchange() {
+  _setLeftAsInput() {
+    typedef GhostHandlers<0, 0> LeftHandlers;
+    typedef typename LeftHandlers::InputFghInitializationAction
+      FghAction;
+    typedef typename LeftHandlers::InputFghInitialization
+      FghHandler;
+    typedef typename LeftHandlers::MovingWallRhsAction
+      RhsAction;
+    typedef typename LeftHandlers::MovingWallRhsHandler
+      RhsHandler;
+    typedef typename LeftHandlers::InputVelocityInitializationAction
+      VelocityAction;
+    typedef typename LeftHandlers::InputVelocityInitialization
+      VelocityHandler;
+    typedef typename LeftHandlers::PressureStencil
+      PressureStencil;
+
+    _handlers->fghInitialization[0][0] =
+      FghHandler::getHandler(
+        &_grid->indentedBoundaries[0][0],
+        _parallelDistribution,
+        new FghAction(_parameters));
+    _handlers->rhsInitialization[0][0] =
+      RhsHandler::getHandler(
+        _grid,
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->velocityInitialization[0][0] =
+      VelocityHandler::getHandler(
+        &_grid->boundaries[0][0],
+        _parallelDistribution,
+        new VelocityAction(_parameters, _maxVelocity));
+    _handlers->pressureStencilStack[0][0] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
+  }
+
+  void
+  _setLeftAsOutput() {
+    typedef GhostHandlers<0, 0> LeftHandlers;
+    typedef typename LeftHandlers::OutputFghInitializationAction
+      FghAction;
+    typedef typename LeftHandlers::OutputFghInitialization
+      FghHandler;
+    typedef typename LeftHandlers::MovingWallRhsAction
+      RhsAction;
+    typedef typename LeftHandlers::MovingWallRhsHandler
+      RhsHandler;
+    typedef typename LeftHandlers::OutputVelocityInitializationAction
+      VelocityAction;
+    typedef typename LeftHandlers::OutputVelocityInitialization
+      VelocityHandler;
+    typedef typename LeftHandlers::PressureStencil
+      PressureStencil;
+
+    _handlers->fghInitialization[0][0] =
+      FghHandler::getHandler(
+        &_grid->indentedBoundaries[0][0],
+        _parallelDistribution,
+        new FghAction());
+    _handlers->rhsInitialization[0][0] =
+      RhsHandler::getHandler(
+        _grid,
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->velocityInitialization[0][0] =
+      VelocityHandler::getHandler(
+        &_grid->boundaries[0][0],
+        _parallelDistribution,
+        new VelocityAction(_maxVelocity));
+    _handlers->pressureStencilStack[0][0] =
+      PressureStencil::getNeumannHandler(_grid, _parallelDistribution);
+  }
+
+  void
+  _setLeftAsMpiExchange() {
     typedef GhostHandlers<0, 0>                        LeftHandlers;
     typedef typename LeftHandlers::FghMpiExchange      FghHandler;
     typedef typename LeftHandlers::PressureMpiExchange PressureHandler;
@@ -278,7 +422,7 @@ private:
   }
 
   void
-  _setRightWallMoving() {
+  _setRightAsMoving() {
     typedef GhostHandlers<0, 1> RightHandlers;
     typedef typename RightHandlers::MovingWallFghInitializationAction
       FghAction;
@@ -320,9 +464,96 @@ private:
     _handlers->pressureStencilStack[0][1] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
+  void
+  _setRightAsInput() {
+    typedef GhostHandlers<0, 1> RightHandlers;
+    typedef typename RightHandlers::InputFghInitializationAction
+      FghAction;
+    typedef typename RightHandlers::InputFghInitialization
+      FghHandler;
+    typedef typename RightHandlers::MovingWallRhsAction
+      RhsAction;
+    typedef typename RightHandlers::MovingWallRhsHandler
+      RhsHandler;
+    typedef typename RightHandlers::CopyPressureAction
+      CopyPressureAction;
+    typedef typename RightHandlers::CopyPressureHandler
+      CopyPressureHandler;
+    typedef typename RightHandlers::InputVelocityInitializationAction
+      VelocityAction;
+    typedef typename RightHandlers::InputVelocityInitialization
+      VelocityHandler;
+    typedef typename RightHandlers::PressureStencil
+      PressureStencil;
+
+    _handlers->fghInitialization[0][1] =
+      FghHandler::getHandler(
+        &_grid->indentedBoundaries[0][1],
+        _parallelDistribution,
+        new FghAction(_parameters));
+    _handlers->rhsInitialization[0][1] =
+      RhsHandler::getHandler(
+        _grid,
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->pressureInitialization[0][1] =
+      CopyPressureHandler::getHandler(
+        _grid,
+        new CopyPressureAction(_parallelDistribution));
+    _handlers->velocityInitialization[0][1] =
+      VelocityHandler::getHandler(
+        &_grid->boundaries[0][1],
+        _parallelDistribution,
+        new VelocityAction(_parameters, _maxVelocity));
+    _handlers->pressureStencilStack[0][1] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
+  }
 
   void
-  _setRightMpiExchange() {
+  _setRightAsOutput() {
+    typedef GhostHandlers<0, 1> RightHandlers;
+    typedef typename RightHandlers::OutputFghInitializationAction
+      FghAction;
+    typedef typename RightHandlers::OutputFghInitialization
+      FghHandler;
+    typedef typename RightHandlers::MovingWallRhsAction
+      RhsAction;
+    typedef typename RightHandlers::MovingWallRhsHandler
+      RhsHandler;
+    typedef typename RightHandlers::CopyPressureAction
+      CopyPressureAction;
+    typedef typename RightHandlers::CopyPressureHandler
+      CopyPressureHandler;
+    typedef typename RightHandlers::OutputVelocityInitializationAction
+      VelocityAction;
+    typedef typename RightHandlers::OutputVelocityInitialization
+      VelocityHandler;
+    typedef typename RightHandlers::PressureStencil
+      PressureStencil;
+
+    _handlers->fghInitialization[0][1] =
+      FghHandler::getHandler(
+        &_grid->indentedBoundaries[0][1],
+        _parallelDistribution,
+        new FghAction());
+    _handlers->rhsInitialization[0][1] =
+      RhsHandler::getHandler(
+        _grid,
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->pressureInitialization[0][1] =
+      CopyPressureHandler::getHandler(
+        _grid,
+        new CopyPressureAction(_parallelDistribution));
+    _handlers->velocityInitialization[0][1] =
+      VelocityHandler::getHandler(
+        &_grid->boundaries[0][1],
+        _parallelDistribution,
+        new VelocityAction(_maxVelocity));
+    _handlers->pressureStencilStack[0][1] =
+      PressureStencil::getNeumannHandler(_grid, _parallelDistribution);
+  }
+
+  void
+  _setRightAsMpiExchange() {
     typedef GhostHandlers<0, 1>                         RightHandlers;
     typedef typename RightHandlers::FghMpiExchange      FghHandler;
     typedef typename RightHandlers::PressureMpiExchange PressureHandler;
@@ -354,7 +585,7 @@ private:
   }
 
   void
-  _setBottomWallMoving() {
+  _setBottomAsMoving() {
     typedef GhostHandlers<1, 0> BottomHandlers;
     typedef typename BottomHandlers::MovingWallFghInitializationAction
       FghAction;
@@ -390,7 +621,7 @@ private:
   }
 
   void
-  _setBottomMpiExchange() {
+  _setBottomAsMpiExchange() {
     typedef GhostHandlers<1, 0>                          BottomHandlers;
     typedef typename BottomHandlers::FghMpiExchange      FghHandler;
     typedef typename BottomHandlers::PressureMpiExchange PressureHandler;
@@ -422,7 +653,7 @@ private:
   }
 
   void
-  _setTopWallMoving() {
+  _setTopAsMoving() {
     typedef GhostHandlers<1, 1> TopHandlers;
     typedef typename TopHandlers::MovingWallFghInitializationAction
       FghAction;
@@ -466,7 +697,7 @@ private:
   }
 
   void
-  _setTopMpiExchange() {
+  _setTopAsMpiExchange() {
     typedef GhostHandlers<1, 1>                       TopHandlers;
     typedef typename TopHandlers::FghMpiExchange      FghHandler;
     typedef typename TopHandlers::PressureMpiExchange PressureHandler;
@@ -498,7 +729,7 @@ private:
   }
 
   void
-  _setBackWallMoving() {
+  _setBackAsMoving() {
     typedef GhostHandlers<2, 0> BackHandlers;
     typedef typename BackHandlers::MovingWallFghInitializationAction
       FghAction;
@@ -534,7 +765,7 @@ private:
   }
 
   void
-  _setBackMpiExchange() {
+  _setBackAsMpiExchange() {
     typedef GhostHandlers<2, 0>                        BackHandlers;
     typedef typename BackHandlers::FghMpiExchange      FghHandler;
     typedef typename BackHandlers::PressureMpiExchange PressureHandler;
@@ -566,7 +797,7 @@ private:
   }
 
   void
-  _setFrontWallMoving() {
+  _setFrontAsMoving() {
     typedef GhostHandlers<2, 1> FrontHandlers;
     typedef typename FrontHandlers::MovingWallFghInitializationAction
       FghAction;
@@ -610,7 +841,7 @@ private:
   }
 
   void
-  _setFrontMpiExchange() {
+  setFrontAsMpiExchange() {
     typedef GhostHandlers<2, 1>                         FrontHandlers;
     typedef typename FrontHandlers::FghMpiExchange      FghHandler;
     typedef typename FrontHandlers::PressureMpiExchange PressureHandler;

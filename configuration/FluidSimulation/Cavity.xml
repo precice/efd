@@ -41,5 +41,5 @@
     </walls>
     <vtk interval="0.01">cavity_result</vtk>
     <stdOut interval="0.01" />
-    <parallel numProcessorsX="1" numProcessorsY="3" numProcessorsZ="2" />
+    <parallel numProcessorsX="1" numProcessorsY="1" numProcessorsZ="1" />
 </configuration>

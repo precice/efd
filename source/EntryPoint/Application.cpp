@@ -68,6 +68,8 @@ _getExecPath() {
 }
 
 class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
+  typedef precice::SolverInterface                     PreciceInterface;
+  typedef std::unique_ptr<PreciceInterface>            UniquePreciceInterface;
   typedef std::unique_ptr<FluidSimulation::Simulation> UniqueMySimulation;
   typedef boost::filesystem::path                      Path;
 
@@ -120,7 +122,8 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
 
   FluidSimulation::Configuration parameters;
 
-  UniqueMySimulation mySimulation;
+  UniquePreciceInterface preciceInterface;
+  UniqueMySimulation     mySimulation;
 
   bool
   isMaster() {
@@ -228,10 +231,20 @@ initialize() {
 
   initializePrecice();
 
-  _im->mySimulation =
-    Implementation::UniqueMySimulation(
-      SimulationFactory::createUniformGridDouble3D(_im->parameters));
-  _im->mySimulation->initialize(_im->vtkOutputDirectoryPath,
+  if (_im->parameters.geometry.dim == 3) {
+    _im->mySimulation =
+      Implementation::UniqueMySimulation(
+        SimulationFactory::createUniformGridDouble3D(_im->parameters));
+  } else if (_im->parameters.geometry.dim == 2) {
+    _im->mySimulation =
+      Implementation::UniqueMySimulation(
+        SimulationFactory::createUniformGridDouble2D(_im->parameters));
+  } else {
+    throwException("Dimension {1} is not supported",
+                   _im->parameters.geometry.dim);
+  }
+  _im->mySimulation->initialize(_im->preciceInterface.get(),
+                                _im->vtkOutputDirectoryPath,
                                 _im->vtkFilePrefix);
 }
 
@@ -285,9 +298,11 @@ Application::
 initializePrecice() {
   using namespace precice;
 
-  SolverInterface interface("Fluid",
-                            _im->rank,
-                            _im->processCount);
+  _im->preciceInterface = Implementation::UniquePreciceInterface(
+    new Implementation::PreciceInterface("Fluid",
+                                         _im->rank,
+                                         _im->processCount)
+    );
 
   auto preciceConfigurationPath =
     Private::convertUtfPathToAnsi(
@@ -296,7 +311,8 @@ initializePrecice() {
       _im->globalLocale,
       _im->ansiLocale);
 
-  interface.configure(preciceConfigurationPath);
+  _im->preciceInterface->configure(preciceConfigurationPath);
+  _im->preciceInterface->initialize();
 
   // auto meshId = interface.getMeshID("MeshName");
 }

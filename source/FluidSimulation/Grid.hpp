@@ -2,33 +2,40 @@
 #define FsiSimulation_FluidSimulation_Grid_hpp
 
 #include <Uni/StructuredGrid/Basic/Grid>
-#include <Uni/StructuredGrid/GridIterator>
-
 #include <Uni/Logging/macros>
 
 #include <array>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TCellAccessor, int TD>
+template <typename TMemory,
+          typename TGridGeometry,
+          int TD>
+class CellAccessor;
+
+template <typename TMemory, typename TGridGeometry, int TD>
 class Grid;
 
-template <typename TCellAccessor, int TD>
+template <typename TMemory, typename TGridGeometry, int TD>
 void
-logGridInitializationInfo(Grid<TCellAccessor, TD> const& grid);
+logGridInitializationInfo(Grid<TMemory, TGridGeometry, TD> const& grid);
 
-template <typename TCellAccessor, int TD>
-class Grid : public Uni::StructuredGrid::Basic::Grid<TCellAccessor, TD> {
+template <typename TMemory, typename TGridGeometry, int TD>
+class Grid
+  : public Uni::StructuredGrid::Basic::Grid<
+      CellAccessor<TMemory, TGridGeometry, TD>,
+      TD> {
 public:
   typedef
-    Uni::StructuredGrid::Basic::Grid<TCellAccessor, TD>
+    Uni::StructuredGrid::Basic::Grid<
+      CellAccessor<TMemory, TGridGeometry, TD>,
+      TD>
     Base;
 
+  typedef typename Base::Factory      Factory;
   typedef typename Base::Iterator     Iterator;
+  typedef typename Base::CellAccessor CellAccessorType;
   typedef typename Base::VectorDi     VectorDi;
-  typedef typename Base::CellAccessor CellAccessor;
-  typedef typename Base::Factory
-    Factory;
 
 public:
   Grid() {}
@@ -85,13 +92,13 @@ public:
   std::array<std::array<Base, 2>, TD> indentedBoundaries;
 
   friend void
-  logGridInitializationInfo<TCellAccessor, TD
+  logGridInitializationInfo<TMemory, TGridGeometry, TD
                             >(Grid const& grid);
 };
 
-template <typename TCellAccessor, int TD>
+template <typename TMemory, typename TGridGeometry, int TD>
 void
-logGridInitializationInfo(Grid<TCellAccessor, TD> const& grid) {
+logGridInitializationInfo(Grid<TMemory, TGridGeometry, TD> const& grid) {
   INFO << "Grid size: "
        << grid.size().transpose() << "\n"
        << "Grid left indent: "
@@ -123,5 +130,7 @@ logGridInitializationInfo(Grid<TCellAccessor, TD> const& grid) {
 }
 }
 }
+
+#include "CellAccessor.hpp"
 
 #endif

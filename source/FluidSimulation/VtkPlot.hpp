@@ -15,14 +15,17 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TCellAccessor,
+template <typename TMemory,
+          typename TGridGeometry,
           typename TScalar,
           int TD>
 class VtkPlot {
 public:
-  typedef Grid<TCellAccessor, TD>                  SpecializedGrid;
-  typedef ParallelDistribution<TD>                 SpecializedParallelTopology;
-  typedef typename TCellAccessor::GridGeometryType GridGeometry;
+  typedef Grid<TMemory, TGridGeometry, TD>    GridType;
+  typedef typename GridType::CellAccessorType CellAccessorType;
+  typedef ParallelDistribution<TD>
+    ParallelDistributionType;
+  typedef typename CellAccessorType::GridGeometryType GridGeometry;
 
   typedef boost::filesystem::path Path;
   typedef
@@ -35,20 +38,20 @@ public:
   VtkPlot() {}
 
   void
-  initialize(SpecializedGrid const*             grid,
-             SpecializedParallelTopology const* parallelTopology,
-             GridGeometry const*                gridGeometry,
-             Path const&                        outputDirectory,
-             std::string const&                 fileNamePrefix) {
-    _grid             = grid;
-    _parallelTopology = parallelTopology;
-    _gridGeometry     = gridGeometry;
-    _outputDirectory  = outputDirectory;
-    _fileNamePrefix   = fileNamePrefix;
-    namespace bl      = boost::locale;
-    _locale           = bl::generator().generate("en_US.UTF-8");
-    _fileNamePrefix  += (Format(".{1}") % _parallelTopology->rank)
-                        .str(_locale);
+  initialize(GridType const*                 grid,
+             ParallelDistributionType const* parallelTopology,
+             GridGeometry const*             gridGeometry,
+             Path const&                     outputDirectory,
+             std::string const&              fileNamePrefix) {
+    _grid                 = grid;
+    _parallelDistribution = parallelTopology;
+    _gridGeometry         = gridGeometry;
+    _outputDirectory      = outputDirectory;
+    _fileNamePrefix       = fileNamePrefix;
+    namespace bl          = boost::locale;
+    _locale               = bl::generator().generate("en_US.UTF-8");
+    _fileNamePrefix      += (Format(".{1}") % _parallelDistribution->rank)
+                            .str(_locale);
   }
 
   void
@@ -80,12 +83,12 @@ public:
                << "I need something to put here" << std::endl
                << "ASCII" << std::endl << std::endl;
 
-    typedef typename SpecializedGrid::Base TempGrid;
+    typedef typename GridType::Base TempGrid;
 
     TempGrid grid = _grid->innerGrid;
 
-    grid.setIndents(grid.leftIndent() - TempGrid::VectorDi::Ones(),
-                    grid.rightIndent());
+    grid.setIndents(grid.leftIndent(),
+                    grid.rightIndent() - TempGrid::VectorDi::Ones());
 
     fileStream << (Format("DATASET STRUCTURED_GRID\n"
                           "DIMENSIONS {1} \n"
@@ -96,9 +99,12 @@ public:
 
     for (auto const& accessor : grid) {
       pointsStream << accessor.currentPosition() (0) << " "
-                   << accessor.currentPosition() (1) << " "
-                   << accessor.currentPosition() (2)
-                   << std::endl;
+                   << accessor.currentPosition() (1);
+
+      if (TD == 3) {
+        pointsStream << " " << accessor.currentPosition() (2);
+      }
+      pointsStream << std::endl;
     }
     fileStream << pointsStream.str() << std::endl;
 
@@ -113,14 +119,12 @@ public:
     pressureStream.precision(std::numeric_limits<float>::digits10);
 
     for (auto const& accessor : _grid->innerGrid) {
-      if (accessor.indexValue(0) != 0 &&
-          accessor.indexValue(1) != 0 &&
-          accessor.indexValue(2) != 0 &&
-          accessor.indexValue(0) != (_grid->size() (0) - 1) &&
-          accessor.indexValue(1) != (_grid->size() (1) - 1) &&
-          accessor.indexValue(2) != (_grid->size() (2) - 1)) {
+      if (accessor.indexValues()
+          != CellAccessorType::VectorDiType::Zero() &&
+          (accessor.indexValues().array()
+           <= (_grid->innerGrid.innerLimit().array())).all()) {
         typedef RhsProcessing
-          <typename SpecializedGrid::CellAccessor, TScalar, TD> rhspr;
+          <typename GridType::CellAccessorType, TScalar, TD> rhspr;
         // rhsStream << "RHS "
         rhsStream
           << rhspr::compute(accessor, dt) << std::endl;
@@ -132,15 +136,18 @@ public:
       // fghStream << "FGH "
       fghStream
         << accessor.currentCell()->fgh(0) << " "
-        << accessor.currentCell()->fgh(1) << " "
-        << accessor.currentCell()->fgh(2)
-        << std::endl;
+        << accessor.currentCell()->fgh(1);
       // velocityStream << "Velocity "
       velocityStream
         << accessor.currentCell()->velocity(0) << " "
-        << accessor.currentCell()->velocity(1) << " "
-        << accessor.currentCell()->velocity(2)
-        << std::endl;
+        << accessor.currentCell()->velocity(1);
+
+      if (TD == 3) {
+        fghStream << " " << accessor.currentCell()->fgh(2);
+        velocityStream << " " << accessor.currentCell()->velocity(2);
+      }
+      fghStream << std::endl;
+      velocityStream << std::endl;
       // pressureStream << "Pressure "
       pressureStream
         << accessor.currentCell()->pressure() << std::endl;
@@ -182,24 +189,31 @@ public:
                << "I need something to put here" << std::endl
                << "ASCII" << std::endl << std::endl;
 
-    typedef typename SpecializedGrid::Base TempGrid;
+    typedef typename GridType::Base TempGrid;
 
     TempGrid grid = _grid->innerGrid;
 
-    grid.setIndents(grid.leftIndent() - TempGrid::VectorDi::Ones(),
-                    grid.rightIndent());
+    grid.setIndents(grid.leftIndent(),
+                    grid.rightIndent() - TempGrid::VectorDi::Ones());
 
     fileStream << (Format("DATASET STRUCTURED_GRID\n"
-                          "DIMENSIONS {1}\n"
-                          "POINTS {2} float\n") %
-                   grid.innerSize().transpose() %
-                   grid.innerSize().prod()).str(_locale);
+                          "DIMENSIONS {1}{2}\n"
+                          "POINTS {3} float\n")
+                   % grid.innerSize().transpose()
+                   % (TD == 2 ? " 1" : "")
+                   % grid.innerSize().prod()).str(_locale);
     std::stringstream pointsStream;
 
     for (auto const& accessor : grid) {
       pointsStream << accessor.currentPosition() (0) << " "
-                   << accessor.currentPosition() (1) << " "
-                   << accessor.currentPosition() (2) << std::endl;
+                   << accessor.currentPosition() (1);
+
+      if (TD == 3) {
+        pointsStream << " " << accessor.currentPosition() (2);
+      } else if (TD == 2) {
+        pointsStream << " " << 0.0;
+      }
+      pointsStream << std::endl;
     }
     fileStream << pointsStream.str() << std::endl;
 
@@ -213,8 +227,14 @@ public:
 
     for (auto const& accessor : _grid->innerGrid) {
       velocityStream << accessor.currentCell()->velocity(0) << " "
-                     << accessor.currentCell()->velocity(1) << " "
-                     << accessor.currentCell()->velocity(2) << std::endl;
+                     << accessor.currentCell()->velocity(1);
+
+      if (TD == 3) {
+        velocityStream << " " << accessor.currentCell()->velocity(2);
+      } else if (TD == 2) {
+        velocityStream << " " << 0.0;
+      }
+      velocityStream << std::endl;
     }
     fileStream << velocityStream.str() << std::endl;
 
@@ -230,12 +250,12 @@ public:
   }
 
 private:
-  SpecializedGrid const*             _grid;
-  SpecializedParallelTopology const* _parallelTopology;
-  GridGeometry const*                _gridGeometry;
-  Path                               _outputDirectory;
-  std::locale                        _locale;
-  std::string                        _fileNamePrefix;
+  GridType const*                 _grid;
+  ParallelDistributionType const* _parallelDistribution;
+  GridGeometry const*             _gridGeometry;
+  Path                            _outputDirectory;
+  std::locale                     _locale;
+  std::string                     _fileNamePrefix;
 };
 }
 }
