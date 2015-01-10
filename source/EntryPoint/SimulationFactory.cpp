@@ -41,7 +41,7 @@ createUniformGridFromTemplate(FluidSimulation::Configuration& parameters) {
 
   SimulationBuilder<TScalar, TD> builder(parameters);
 
-  builder.setLeftAsInput();
+  builder.setLeftAsParabolicInput();
   builder.setRightAsOutput();
   builder.setBottomAsMoving();
   builder.setTopAsMoving();

@@ -55,6 +55,11 @@ public:
     return *this;
   }
 
+  GridGeometryType const*
+  gridGeometry() const {
+    return _gridGeometry;
+  }
+
   VectorDsType
   currentWidth() const {
     return _gridGeometry->cellWidth(this->indexValues()
@@ -65,6 +70,17 @@ public:
   currentPosition() const {
     return _gridGeometry->cellPosition(this->indexValues()
                                        - this->_grid->leftIndent());
+  }
+
+  VectorDsType
+  currentVelocityPosition(int const& dimension) const {
+    VectorDsType result
+      = _gridGeometry->cellPosition(this->indexValues()
+                                    - this->_grid->leftIndent())
+        + 0.5 * _gridGeometry->cellWidth(this->indexValues());
+    result(dimension) +=
+      0.5 * _gridGeometry->cellWidth(
+        this->indexValues()) (dimension);
   }
 
   VectorDsType

@@ -74,6 +74,15 @@ public:
        TDimension, TDirection>
       InputFghInitialization;
     typedef
+      FluidSimulation::GhostLayer::Initialization::ParabolicInputFghAction
+      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      ParabolicInputFghInitializationAction;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::Handler
+      <typename GridS::Base, ParabolicInputFghInitializationAction, TD,
+       TDimension, TDirection>
+      ParabolicInputFghInitialization;
+    typedef
       FluidSimulation::GhostLayer::Initialization::OutputFghAction
       <typename GridS::Base, Scalar, TD, TDimension, TDirection>
       OutputFghInitializationAction;
@@ -122,6 +131,15 @@ public:
       <typename GridS::Base, InputVelocityInitializationAction, TD,
        TDimension, TDirection>
       InputVelocityInitialization;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::ParabolicInputVelocityAction
+      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      ParabolicInputVelocityInitializationAction;
+    typedef
+      FluidSimulation::GhostLayer::Initialization::Handler
+      <typename GridS::Base, ParabolicInputVelocityInitializationAction, TD,
+       TDimension, TDirection>
+      ParabolicInputVelocityInitialization;
     typedef
       FluidSimulation::GhostLayer::Initialization::OutputVelocityAction
       <typename GridS::Base, Scalar, TD, TDimension, TDirection>
@@ -172,7 +190,7 @@ public:
     _simulation->_parameters.tau()   = parameters.timestep.tau;
     _simulation->_parameters.g(0)    = parameters.environment.gx;
     _simulation->_parameters.g(1)    = parameters.environment.gy;
-    _simulation->_iterationLimit     = 200;
+    _simulation->_iterationLimit     = 600;
     _simulation->_timeLimit          = std::numeric_limits<Scalar>::max();
 
     if (TD == 3) {
@@ -203,6 +221,15 @@ public:
   setLeftAsInput() {
     if (_parallelDistribution->neighbors[0][0] < 0) {
       _setLeftAsInput();
+    } else {
+      _setLeftAsMpiExchange();
+    }
+  }
+
+  void
+  setLeftAsParabolicInput() {
+    if (_parallelDistribution->neighbors[0][0] < 0) {
+      _setLeftAsParabolicInput();
     } else {
       _setLeftAsMpiExchange();
     }
@@ -331,6 +358,42 @@ private:
     typedef typename LeftHandlers::InputVelocityInitializationAction
       VelocityAction;
     typedef typename LeftHandlers::InputVelocityInitialization
+      VelocityHandler;
+    typedef typename LeftHandlers::PressureStencil
+      PressureStencil;
+
+    _handlers->fghInitialization[0][0] =
+      FghHandler::getHandler(
+        &_grid->indentedBoundaries[0][0],
+        _parallelDistribution,
+        new FghAction(_parameters));
+    _handlers->rhsInitialization[0][0] =
+      RhsHandler::getHandler(
+        _grid,
+        new RhsAction(_parameters, _parallelDistribution));
+    _handlers->velocityInitialization[0][0] =
+      VelocityHandler::getHandler(
+        &_grid->boundaries[0][0],
+        _parallelDistribution,
+        new VelocityAction(_parameters, _maxVelocity));
+    _handlers->pressureStencilStack[0][0] =
+      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
+  }
+
+  void
+  _setLeftAsParabolicInput() {
+    typedef GhostHandlers<0, 0> LeftHandlers;
+    typedef typename LeftHandlers::ParabolicInputFghInitializationAction
+      FghAction;
+    typedef typename LeftHandlers::ParabolicInputFghInitialization
+      FghHandler;
+    typedef typename LeftHandlers::MovingWallRhsAction
+      RhsAction;
+    typedef typename LeftHandlers::MovingWallRhsHandler
+      RhsHandler;
+    typedef typename LeftHandlers::ParabolicInputVelocityInitializationAction
+      VelocityAction;
+    typedef typename LeftHandlers::ParabolicInputVelocityInitialization
       VelocityHandler;
     typedef typename LeftHandlers::PressureStencil
       PressureStencil;

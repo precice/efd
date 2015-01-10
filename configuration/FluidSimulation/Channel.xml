@@ -10,11 +10,11 @@
     <solver gamma = "0.5"/>
     <geometry
       dim = "2"
-      lengthX = "5.0"
-      lengthY = "1.0"
+      lengthX = "2.2"
+      lengthY = "0.41"
       lengthZ = "1.0"
-      sizeX = "20"
-      sizeY = "10"
+      sizeX = "200"
+      sizeY = "50"
       sizeZ = "10"
       stretchX = "false"
       stretchY = "true"
@@ -26,7 +26,7 @@
     <environment gx = "0" gy = "0" gz = "0"/>
     <walls>
         <left>
-            <vector x = "1.0" y = "0.0" z = "0"/>
+            <vector x = "6.5" y = "0.0" z = "0"/>
         </left>
         <right>
             <vector x = "0" y = "0" z = "0"/>

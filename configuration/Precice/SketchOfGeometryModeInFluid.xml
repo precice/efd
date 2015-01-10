@@ -75,9 +75,9 @@
          (can occur 0..* times)
          ATTR of-mesh: Name of mesh to build the geometry from. -->
     <geometry:builtin-sphere of-mesh = "MeshName">
-      <discretization-width value = "0.001"/>
-      <radius value = "0.1"/>
-      <offset value = "1.8375; 0.4375"/>
+      <discretization-width value = "0.0001"/>
+      <radius value = "0.05"/>
+      <offset value = "0.2; 0.19"/>
     </geometry:builtin-sphere>
 
     <!-- TAG geometry:builtin-bubble Bubble-like geometry.

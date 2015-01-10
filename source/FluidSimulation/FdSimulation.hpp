@@ -136,9 +136,9 @@ public:
                                                    _parameters.tau(),
                                                    _gridGeometry.minCellWidth(),
                                                    _maxVelocity);
+    _maxVelocity = VelocityType::Zero();
     logInfo("Iteration Number {1}", _iterationCount);
     logInfo("Time step size {1}",   _dt);
-    _maxVelocity = VelocityType::Zero();
 
     for (auto accessor : _grid.innerGrid) {
       for (int d = 0; d < TD; ++d) {
@@ -149,6 +149,9 @@ public:
               _dt,
               d)) {
           //
+        } else {
+          computeMaxVelocity<CellAccessorType, TScalar, TD>
+            (accessor, _maxVelocity);
         }
       }
     }
