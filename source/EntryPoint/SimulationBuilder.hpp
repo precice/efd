@@ -190,7 +190,7 @@ public:
     _simulation->_parameters.tau()   = configuration->tau;
     _simulation->_parameters.g(0)    = configuration->environment(0);
     _simulation->_parameters.g(1)    = configuration->environment(1);
-    _simulation->_iterationLimit     = 600;
+    _simulation->_iterationLimit     = configuration->iterationLimit;
     _simulation->_timeLimit          = configuration->timeLimit;
 
     if (TD == 3) {

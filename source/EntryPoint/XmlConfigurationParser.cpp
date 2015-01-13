@@ -161,6 +161,7 @@ parseScenarioParameters(xmlNodePtr     node,
                         Configuration* configuration) {
   static xmlChar* const re                  = (xmlChar* const)"Re";
   static xmlChar* const timeLimit           = (xmlChar* const)"timeLimit";
+  static xmlChar* const iterationLimit      = (xmlChar* const)"iterationLimit";
   static xmlChar* const plotInterval        = (xmlChar* const)"plotInterval";
   static xmlChar* const tau                 = (xmlChar* const)"tau";
   static xmlChar* const gamma               = (xmlChar* const)"gamma";
@@ -179,6 +180,8 @@ parseScenarioParameters(xmlNodePtr     node,
       configuration->re = parseNumber<Scalar>(attr->children->content);
     } else if (xmlStrEqual(attr->name, timeLimit)) {
       configuration->timeLimit = parseNumber<Scalar>(attr->children->content);
+    } else if (xmlStrEqual(attr->name, iterationLimit)) {
+      configuration->iterationLimit = parseNumber<int>(attr->children->content);
     } else if (xmlStrEqual(attr->name, plotInterval)) {
       configuration->plotInterval = parseNumber<Scalar>(
         attr->children->content);

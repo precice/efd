@@ -1,10 +1,13 @@
 #ifndef FsiSimulation_FluidSimulation_ParallelDistribution_hpp
 #define FsiSimulation_FluidSimulation_ParallelDistribution_hpp
 
+#include <Uni/ExecutionControl/exception>
 #include <Uni/Logging/format>
 #include <Uni/Logging/macros>
 
 #include <Eigen/Core>
+
+#include <petscsys.h>
 
 #include <array>
 #include <cstdlib>
@@ -38,6 +41,17 @@ public:
   initialize(int const&      rank_,
              VectorDi const& processorSize_,
              VectorDi const& globalSize_) {
+    int processCount;
+    MPI_Comm_size(PETSC_COMM_WORLD, &processCount);
+
+    if (processCount != processorSize_.prod()) {
+      throwException("Wrong number of nodes: executed with {1} processors, "
+                     "configured with {2} ({3}) processors",
+                     processCount,
+                     processorSize_.prod(),
+                     processorSize_.transpose());
+    }
+
     rank           = rank_;
     processorSize  = processorSize_;
     localCellSize  = globalSize_.cwiseQuotient(processorSize);

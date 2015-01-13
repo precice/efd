@@ -76,7 +76,7 @@ public:
 
     _grid.initialize(localSize, cellAccessorFactory);
 
-    logGridInitializationInfo(_grid);
+    //logGridInitializationInfo(_grid);
     logParallelTopologyInfo(_parallelDistribution);
   }
 

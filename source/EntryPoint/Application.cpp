@@ -101,7 +101,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     preciceConfigurationPath = applicationPath;
     preciceConfigurationPath.append("Precice/SketchOfGeometryModeInFluid.xml");
     simulationConfigurationPath = applicationPath;
-    simulationConfigurationPath.append("FluidSimulation/Cavity.xml");
+    simulationConfigurationPath.append("FluidSimulation/Channel.xml");
   }
 
   Uni_Firewall_INTERFACE_LINK(Application)
@@ -205,16 +205,16 @@ parseArguments() {
 void
 Application::
 initialize() {
-  logInfo("Application path:\n{1}",
-          _im->applicationPath.string());
-  logInfo("Output directory path:\n{1}",
-          _im->outputDirectoryPath.string());
-  logInfo("PETSc configuration path:\n{1}",
-          _im->petscConfigurationPath.string());
-  logInfo("PreCICE configuration path:\n{1}",
-          _im->preciceConfigurationPath.string());
-  logInfo("Simulation configuration path:\n{1}",
-          _im->simulationConfigurationPath.string());
+  //logInfo("Application path:\n{1}",
+  //        _im->applicationPath.string());
+  //logInfo("Output directory path:\n{1}",
+  //        _im->outputDirectoryPath.string());
+  //logInfo("PETSc configuration path:\n{1}",
+  //        _im->petscConfigurationPath.string());
+  //logInfo("PreCICE configuration path:\n{1}",
+  //        _im->preciceConfigurationPath.string());
+  //logInfo("Simulation configuration path:\n{1}",
+  //        _im->simulationConfigurationPath.string());
 
   auto petscConfigurationPath =
     Private::convertUtfPathToAnsi(

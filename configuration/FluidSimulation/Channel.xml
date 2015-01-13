@@ -2,13 +2,14 @@
 <scenario
   Re = "100"
   timeLimit = "10.0"
+  iterationLimit = "100"
   plotInterval = "0.1"
   tau = "0.5"
   gamma = "0.5"
   dim = "2"
   width = "2.2,0.41"
   size = "200,50"
-  parallelizationSize = "1,1,1"
+  parallelizationSize = "2,2,1"
   environment = "0,0"
   filename = "Channel2D"
   >

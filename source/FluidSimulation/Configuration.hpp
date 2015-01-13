@@ -46,9 +46,9 @@ public:
       return _velocity;
     }
 
-    static int const Input          = 0;
-    static int const ParabolicInput = 1;
-    static int const Output         = 2;
+    static int const Input;
+    static int const ParabolicInput;
+    static int const Output;
 
 private:
     int _type;
@@ -146,6 +146,7 @@ public:
   ScalarType   re;
   ScalarType   timeLimit;
   ScalarType   plotInterval;
+  int          iterationLimit;
   ScalarType   tau;
   ScalarType   gamma;
   int          dim;
