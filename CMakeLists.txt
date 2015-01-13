@@ -40,7 +40,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 # Packages {{{
 # ==============================================================================
-find_package(Petsc COMPONENTS CXX REQUIRED)
+#find_package(Petsc COMPONENTS CXX REQUIRED)
+find_package(Petsc REQUIRED)
 set(MPI_CXX_COMPILER ${PETSC_COMPILER})
 find_package(MPI REQUIRED)
 find_package(Precice REQUIRED)
