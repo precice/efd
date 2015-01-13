@@ -58,6 +58,7 @@ set(Boost_USE_STATIC_LIBS    ON)
 set(Boost_USE_MULTITHREADED  OFF)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Eigen REQUIRED)
+find_package(LibXml2 REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
 # ==============================================================================
 # }}} Packages
@@ -130,21 +131,19 @@ endif ()
 file(GLOB_RECURSE CPP_FILES
   "${PROJECT_DIR}/source/*.cpp"
   "${PROJECT_DIR}/source/*.hpp"
-  "${PROJECT_DIR}/3rdParty/TinyXml2/*.cpp"
-  "${PROJECT_DIR}/3rdParty/TinyXml2/*.h"
   )
 
 add_executable(Simulation ${CPP_FILES})
 
 target_include_directories(Simulation PRIVATE
   "${PROJECT_DIR}/source"
-  "${PROJECT_DIR}/3rdParty"
   )
 target_include_directories(Simulation SYSTEM PRIVATE
   ${Precice_INCLUDE_DIRS}
   ${PETSC_INCLUDES}
   ${Eigen_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${LIBXML2_INCLUDE_DIR}
   ${PYTHON_INCLUDE_DIRS}
   )
 target_link_libraries(Simulation PRIVATE
@@ -152,6 +151,7 @@ target_link_libraries(Simulation PRIVATE
   ${Precice_LIBRARIES}
   ${PETSC_LIBRARIES}
   ${Boost_LIBRARIES}
+  ${LIBXML2_LIBRARIES}
   ${PYTHON_LIBRARIES}
   )
 # ==============================================================================
@@ -159,10 +159,9 @@ target_link_libraries(Simulation PRIVATE
 
 # Targets' definitions {{{
 # ==============================================================================
-if(PETSC_DEFINITIONS)
-  target_compile_definitions(Simulation PRIVATE
-    "${PETSC_DEFINITIONS}")
-endif()
+target_compile_definitions(Simulation PRIVATE
+  ${PETSC_DEFINITIONS}
+  ${LIBXML2_DEFINITIONS})
 # ==============================================================================
 # }}} Targets' definitions
 

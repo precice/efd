@@ -20,7 +20,7 @@ class MovingWallVelocityAction {
 public:
   typedef typename TGrid::CellAccessor::CellType::Velocity Velocity;
 
-  MovingWallVelocityAction(Configuration& parameters,
+  MovingWallVelocityAction(Configuration* parameters,
                            Velocity*      maxVelocity)
     : _parameters(parameters),
       _maxVelocity(maxVelocity) {}
@@ -32,14 +32,14 @@ public:
       if (d == TDimension) {
         if (TDirection == 0) {
           current.currentCell()->velocity(d) =
-            _parameters.walls.velocities[TDimension][TDirection](d);
+            _parameters->walls[TDimension][TDirection]->velocity() (d);
         } else {
           neighbor.currentCell()->velocity(d) =
-            _parameters.walls.velocities[TDimension][TDirection](d);
+            _parameters->walls[TDimension][TDirection]->velocity() (d);
         }
       } else {
         current.currentCell()->velocity(d) =
-          2.0 * _parameters.walls.velocities[TDimension][TDirection](d)
+          2.0 * _parameters->walls[TDimension][TDirection]->velocity() (d)
           - neighbor.currentCell()->velocity(d);
       }
     }
@@ -49,7 +49,7 @@ public:
       (neighbor, *_maxVelocity);
   }
 
-  Configuration& _parameters;
+  Configuration* _parameters;
   Velocity*      _maxVelocity;
 };
 
@@ -62,7 +62,7 @@ class InputVelocityAction {
 public:
   typedef typename TGrid::CellAccessor::CellType::Velocity Velocity;
 
-  InputVelocityAction(Configuration& parameters,
+  InputVelocityAction(Configuration* parameters,
                       Velocity*      maxVelocity)
     : _parameters(parameters),
       _maxVelocity(maxVelocity) {}
@@ -74,14 +74,14 @@ public:
       if (d == TDimension) {
         if (TDirection == 0) {
           current.currentCell()->velocity(d) =
-            _parameters.walls.velocities[TDimension][TDirection](d);
+            _parameters->walls[TDimension][TDirection]->velocity() (d);
         } else {
           neighbor.currentCell()->velocity(d) =
-            _parameters.walls.velocities[TDimension][TDirection](d);
+            _parameters->walls[TDimension][TDirection]->velocity() (d);
         }
       } else {
         current.currentCell()->velocity(d) =
-          2.0 * _parameters.walls.velocities[TDimension][TDirection](d)
+          2.0 * _parameters->walls[TDimension][TDirection]->velocity() (d)
           - neighbor.currentCell()->velocity(d);
       }
     }
@@ -91,7 +91,7 @@ public:
       (neighbor, *_maxVelocity);
   }
 
-  Configuration& _parameters;
+  Configuration* _parameters;
   Velocity*      _maxVelocity;
 };
 
@@ -104,7 +104,7 @@ class ParabolicInputVelocityAction {
 public:
   typedef typename TGrid::CellAccessor::CellType::Velocity Velocity;
 
-  ParabolicInputVelocityAction(Configuration& parameters,
+  ParabolicInputVelocityAction(Configuration* parameters,
                                Velocity*      maxVelocity)
     : _parameters(parameters),
       _maxVelocity(maxVelocity) {}
@@ -118,18 +118,18 @@ public:
           current.currentCell()->velocity(d) =
             computeParabolicInputVelocity(
               current,
-              _parameters.walls.velocities[TDimension][TDirection],
+              _parameters->walls[TDimension][TDirection]->velocity(),
               TDimension);
         } else {
           neighbor.currentCell()->velocity(d) =
             computeParabolicInputVelocity(
               neighbor,
-              _parameters.walls.velocities[TDimension][TDirection],
+              _parameters->walls[TDimension][TDirection]->velocity(),
               TDimension);
         }
       } else {
         current.currentCell()->velocity(d) =
-          2.0 * _parameters.walls.velocities[TDimension][TDirection](d)
+          2.0 * _parameters->walls[TDimension][TDirection]->velocity() (d)
           - neighbor.currentCell()->velocity(d);
       }
     }
@@ -139,7 +139,7 @@ public:
       (neighbor, *_maxVelocity);
   }
 
-  Configuration& _parameters;
+  Configuration* _parameters;
   Velocity*      _maxVelocity;
 };
 
@@ -188,21 +188,21 @@ template <typename TGrid,
           int TDirection>
 class MovingWallFghAction {
 public:
-  MovingWallFghAction(Configuration& parameters) : _parameters(parameters) {}
+  MovingWallFghAction(Configuration* parameters) : _parameters(parameters) {}
 
   void
   setValue(typename TGrid::CellAccessor const& current,
            typename TGrid::CellAccessor const& neighbor) {
     if (TDirection == 0) {
       current.currentCell()->fgh(TDimension) =
-        _parameters.walls.velocities[TDimension][TDirection](TDimension);
+        _parameters->walls[TDimension][TDirection]->velocity() (TDimension);
     } else {
       neighbor.currentCell()->fgh(TDimension) =
-        _parameters.walls.velocities[TDimension][TDirection](TDimension);
+        _parameters->walls[TDimension][TDirection]->velocity() (TDimension);
     }
   }
 
-  Configuration& _parameters;
+  Configuration* _parameters;
 };
 
 template <typename TGrid,
@@ -212,21 +212,21 @@ template <typename TGrid,
           int TDirection>
 class InputFghAction {
 public:
-  InputFghAction(Configuration& parameters) : _parameters(parameters) {}
+  InputFghAction(Configuration* parameters) : _parameters(parameters) {}
 
   void
   setValue(typename TGrid::CellAccessor const& current,
            typename TGrid::CellAccessor const& neighbor) {
     if (TDirection == 0) {
       current.currentCell()->fgh(TDimension) =
-        _parameters.walls.velocities[TDimension][TDirection](TDimension);
+        _parameters->walls[TDimension][TDirection]->velocity() (TDimension);
     } else {
       neighbor.currentCell()->fgh(TDimension) =
-        _parameters.walls.velocities[TDimension][TDirection](TDimension);
+        _parameters->walls[TDimension][TDirection]->velocity() (TDimension);
     }
   }
 
-  Configuration& _parameters;
+  Configuration* _parameters;
 };
 
 template <typename TGrid,
@@ -236,8 +236,8 @@ template <typename TGrid,
           int TDirection>
 class ParabolicInputFghAction {
 public:
-  ParabolicInputFghAction(Configuration& parameters) : _parameters(
-                                                         parameters) {}
+  ParabolicInputFghAction(Configuration* parameters)
+    : _parameters(parameters) {}
 
   void
   setValue(typename TGrid::CellAccessor const& current,
@@ -246,18 +246,18 @@ public:
       current.currentCell()->fgh(TDimension) =
         computeParabolicInputVelocity(
           current,
-          _parameters.walls.velocities[TDimension][TDirection],
+          _parameters->walls[TDimension][TDirection]->velocity(),
           TDimension);
     } else {
       neighbor.currentCell()->fgh(TDimension) =
         computeParabolicInputVelocity(
           neighbor,
-          _parameters.walls.velocities[TDimension][TDirection],
+          _parameters->walls[TDimension][TDirection]->velocity(),
           TDimension);
     }
   }
 
-  Configuration& _parameters;
+  Configuration* _parameters;
 };
 
 template <typename TGrid,

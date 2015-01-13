@@ -2,9 +2,9 @@
 
 #include "Private/convertUtfPathToAnsi.hpp"
 
-#include "Configuration.hpp"
 #include "FluidSimulation/Simulation.hpp"
 #include "SimulationFactory.hpp"
+#include "XmlConfigurationParser.hpp"
 
 #include <precice/SolverInterface.hpp>
 
@@ -21,6 +21,9 @@
 #else
 #  error "Unknown platform"
 #endif
+
+#include "petscsys.h"
+
 //
 
 using FsiSimulation::EntryPoint::Application;
@@ -120,7 +123,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   int rank;
   int processCount;
 
-  FluidSimulation::Configuration parameters;
+  std::unique_ptr<FluidSimulation::Configuration> parameters;
 
   UniquePreciceInterface preciceInterface;
   UniqueMySimulation     mySimulation;
@@ -231,17 +234,17 @@ initialize() {
 
   initializePrecice();
 
-  if (_im->parameters.geometry.dim == 3) {
+  if (_im->parameters->dim == 3) {
     _im->mySimulation =
       Implementation::UniqueMySimulation(
-        SimulationFactory::createUniformGridDouble3D(_im->parameters));
-  } else if (_im->parameters.geometry.dim == 2) {
+        SimulationFactory::createUniformGridDouble3D(_im->parameters.get()));
+  } else if (_im->parameters->dim == 2) {
     _im->mySimulation =
       Implementation::UniqueMySimulation(
-        SimulationFactory::createUniformGridDouble2D(_im->parameters));
+        SimulationFactory::createUniformGridDouble2D(_im->parameters.get()));
   } else {
     throwException("Dimension {1} is not supported",
-                   _im->parameters.geometry.dim);
+                   _im->parameters->dim);
   }
   _im->mySimulation->initialize(_im->preciceInterface.get(),
                                 _im->vtkOutputDirectoryPath,
@@ -263,21 +266,14 @@ release() {
 void
 Application::
 parseSimulationConfiguration() {
-  auto simulationConfigurationPath =
-    Private::convertUtfPathToAnsi(
-      boost::filesystem::make_relative(
-        _im->simulationConfigurationPath).string(),
-      _im->globalLocale,
-      _im->ansiLocale);
-
-  Configuration configuration(simulationConfigurationPath);
-  configuration.loadParameters(_im->parameters);
+  _im->parameters =
+    XmlConfigurationParser::parse(_im->simulationConfigurationPath);
 }
 
 void
 Application::
 createOutputDirectory() {
-  Implementation::Path outputDirectoryPath(_im->parameters.vtk.prefix);
+  Implementation::Path outputDirectoryPath(_im->parameters->filename);
 
   if (outputDirectoryPath.is_relative()) {
     outputDirectoryPath = (_im->outputDirectoryPath / outputDirectoryPath);
@@ -289,8 +285,8 @@ createOutputDirectory() {
   _im->vtkOutputDirectoryPath = outputDirectoryPath;
   outputDirectoryPath         =
     boost::filesystem::make_relative(outputDirectoryPath) / outputFileName;
-  _im->parameters.vtk.prefix = outputDirectoryPath.string();
-  _im->vtkFilePrefix         = outputFileName.string();
+  _im->parameters->filename = outputDirectoryPath.string();
+  _im->vtkFilePrefix       = outputFileName.string();
 }
 
 void

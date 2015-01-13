@@ -25,7 +25,7 @@ public:
 
 public:
   MovingWallRhsAction(
-    Configuration&                     parameters,
+    Configuration*                     parameters,
     SpecializedParallelTopology const* parallelTopology)
     : _parameters(parameters),
       _parallelTopology(parallelTopology) {}
@@ -41,7 +41,7 @@ public:
     Pointers::dereference(array, index) = 0.0;
   }
 
-  Configuration&                     _parameters;
+  Configuration*                     _parameters;
   SpecializedParallelTopology const* _parallelTopology;
 };
 

@@ -152,8 +152,8 @@ public:
   };
 
 public:
-  SimulationBuilder(FluidSimulation::Configuration& parameters)
-    : _parameters(parameters) {
+  SimulationBuilder(FluidSimulation::Configuration* configuration)
+    : _configuration(configuration) {
     _simulation           = new Simulation();
     _grid                 = &_simulation->_grid;
     _parallelDistribution = &_simulation->_parallelDistribution;
@@ -166,17 +166,17 @@ public:
     VectorDi processorSize;
     VectorDi globalCellSize;
     VectorDs width;
-    processorSize(0)  = parameters.parallel.numProcessors[0];
-    globalCellSize(0) = parameters.geometry.sizeX;
-    width(0)          = parameters.geometry.lengthX;
-    processorSize(1)  = parameters.parallel.numProcessors[1];
-    globalCellSize(1) = parameters.geometry.sizeY;
-    width(1)          = parameters.geometry.lengthY;
+    processorSize(0)  = configuration->parallelizationSize(0);
+    globalCellSize(0) = configuration->size(0);
+    width(0)          = (Scalar)configuration->width(0);
+    processorSize(1)  = configuration->parallelizationSize(1);
+    globalCellSize(1) = configuration->size(1);
+    width(1)          = (Scalar)configuration->width(1);
 
     if (TD == 3) {
-      processorSize(2)  = parameters.parallel.numProcessors[2];
-      globalCellSize(2) = parameters.geometry.sizeZ;
-      width(2)          = parameters.geometry.lengthZ;
+      processorSize(2)  = configuration->parallelizationSize(2);
+      globalCellSize(2) = configuration->size(2);
+      width(2)          = (Scalar)configuration->width(2);
     }
 
     int rank;
@@ -185,16 +185,16 @@ public:
                                       processorSize,
                                       globalCellSize);
 
-    _simulation->_parameters.re()    = parameters.flow.Re;
-    _simulation->_parameters.gamma() = parameters.solver.gamma;
-    _simulation->_parameters.tau()   = parameters.timestep.tau;
-    _simulation->_parameters.g(0)    = parameters.environment.gx;
-    _simulation->_parameters.g(1)    = parameters.environment.gy;
+    _simulation->_parameters.re()    = configuration->re;
+    _simulation->_parameters.gamma() = configuration->gamma;
+    _simulation->_parameters.tau()   = configuration->tau;
+    _simulation->_parameters.g(0)    = configuration->environment(0);
+    _simulation->_parameters.g(1)    = configuration->environment(1);
     _simulation->_iterationLimit     = 600;
-    _simulation->_timeLimit          = std::numeric_limits<Scalar>::max();
+    _simulation->_timeLimit          = configuration->timeLimit;
 
     if (TD == 3) {
-      _simulation->_parameters.g(2) = parameters.environment.gz;
+      _simulation->_parameters.g(2) = configuration->environment(2);
     }
 
     VectorDi localSize(_parallelDistribution->localCellSize + 2 *
@@ -330,16 +330,16 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][0],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[0][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[0][0] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -366,16 +366,16 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][0],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[0][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[0][0] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -402,16 +402,16 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][0],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[0][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[0][0] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -442,7 +442,7 @@ private:
     _handlers->rhsInitialization[0][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
@@ -510,11 +510,11 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][1],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[0][1] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->pressureInitialization[0][1] =
       CopyPressureHandler::getHandler(
         _grid,
@@ -523,7 +523,7 @@ private:
       VelocityHandler::getHandler(
         &_grid->boundaries[0][1],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[0][1] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -553,11 +553,11 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][1],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[0][1] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->pressureInitialization[0][1] =
       CopyPressureHandler::getHandler(
         _grid,
@@ -566,7 +566,7 @@ private:
       VelocityHandler::getHandler(
         &_grid->boundaries[0][1],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[0][1] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -601,7 +601,7 @@ private:
     _handlers->rhsInitialization[0][1] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->pressureInitialization[0][1] =
       CopyPressureHandler::getHandler(
         _grid,
@@ -669,16 +669,16 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[1][0],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[1][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->velocityInitialization[1][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[1][0],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[1][0] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -741,11 +741,11 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[1][1],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[1][1] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->pressureInitialization[1][1] =
       CopyPressureHandler::getHandler(
         _grid,
@@ -754,7 +754,7 @@ private:
       VelocityHandler::getHandler(
         &_grid->boundaries[1][1],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[1][1] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -813,16 +813,16 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[2][0],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[2][0] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->velocityInitialization[2][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[2][0],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[2][0] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -885,11 +885,11 @@ private:
       FghHandler::getHandler(
         &_grid->indentedBoundaries[2][1],
         _parallelDistribution,
-        new FghAction(_parameters));
+        new FghAction(_configuration));
     _handlers->rhsInitialization[2][1] =
       RhsHandler::getHandler(
         _grid,
-        new RhsAction(_parameters, _parallelDistribution));
+        new RhsAction(_configuration, _parallelDistribution));
     _handlers->pressureInitialization[2][1] =
       CopyPressureHandler::getHandler(
         _grid,
@@ -898,7 +898,7 @@ private:
       VelocityHandler::getHandler(
         &_grid->boundaries[2][1],
         _parallelDistribution,
-        new VelocityAction(_parameters, _maxVelocity));
+        new VelocityAction(_configuration, _maxVelocity));
     _handlers->pressureStencilStack[2][1] =
       PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
@@ -951,7 +951,7 @@ private:
     return &accessor.currentCell()->pressure();
   }
 
-  FluidSimulation::Configuration& _parameters;
+  FluidSimulation::Configuration* _configuration;
   Simulation*                     _simulation;
   GridS*                          _grid;
   ParallelTopologyS*              _parallelDistribution;
