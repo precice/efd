@@ -1,8 +1,8 @@
 <?xml version = "1.0" encoding = "utf-8"?>
 <scenario
-  Re = "100"
-  timeLimit = "10.0"
-  iterationLimit = "100"
+  Re = "20"
+  timeLimit = "0.0"
+  iterationLimit = "600"
   plotInterval = "0.1"
   tau = "0.5"
   gamma = "0.5"
@@ -14,7 +14,7 @@
   filename = "Channel2D"
   >
   <walls>
-    <left type = "ParabolicInput" velocity = "6.5,0.0" />
+    <left type = "ParabolicInput" velocity = "0.3,0.0" />
     <right type = "Output" />
     <bottom type = "Input" velocity = "0.0,0.0" />
     <top type = "Input" velocity = "0.0,0.0" />

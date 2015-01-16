@@ -10,7 +10,7 @@ class Cell {
 public:
   typedef TScalar                      Scalar;
   typedef Eigen::Matrix<Scalar, TD, 1> VectorDs;
-  typedef Eigen::Matrix<int, TD, 1>    VectorBs;
+  typedef Eigen::Matrix<int, TD, 1>    VectorDi;
   typedef VectorDs                     Velocity;
   typedef Scalar                       Pressure;
 
@@ -94,7 +94,7 @@ public:
     return _pressure;
   }
 
-  VectorBs&
+  VectorDi&
   positions() {
     return _positions;
   }
@@ -104,7 +104,7 @@ public:
     return _positions(dimension);
   }
 
-  VectorBs const&
+  VectorDi const&
   positions() const {
     return _positions;
   }
@@ -119,7 +119,7 @@ private:
   VectorDs _fgh;
   VectorDs _distances;
   Scalar   _pressure;
-  VectorBs _positions;
+  VectorDi _positions;
 };
 }
 }

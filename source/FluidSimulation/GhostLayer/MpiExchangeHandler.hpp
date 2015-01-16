@@ -161,7 +161,7 @@ public:
     MPI_Isend(
       _memory.data(),
       _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
-      getMpiScalarType<TScalar>(),
+      Private::getMpiScalarType<TScalar>(),
       _parallelTopology->neighbors[TDimension][TDirection],
       0,
       mpiCommunicator,
@@ -173,7 +173,7 @@ public:
     MPI_Recv(
       _memory.data(),
       _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
-      getMpiScalarType<TScalar>(),
+      Private::getMpiScalarType<TScalar>(),
       _parallelTopology->neighbors[TDimension][TDirection],
       0,
       mpiCommunicator,
@@ -210,7 +210,7 @@ public:
     MPI_Sendrecv_replace(
       _memory.data(),
       _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
-      getMpiScalarType<TScalar>(),
+      Private::getMpiScalarType<TScalar>(),
       _parallelTopology->neighbors[TDimension][TDirection],
       0,
       _parallelTopology->neighbors[TDimension][TDirection],

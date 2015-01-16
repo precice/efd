@@ -1,11 +1,12 @@
 #ifndef FsiSimulation_FluidSimulation_functions_hpp
 #define FsiSimulation_FluidSimulation_functions_hpp
 
+#include "Private/mpigenerics.hpp"
+
 #include <Eigen/Core>
 
 #include <Uni/Logging/macros>
 
-#include <mpi.h>
 #include <petsc.h>
 
 #include <cmath>
@@ -13,24 +14,6 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TScalar>
-inline void
-mpiAllReduceMin(TScalar& from, TScalar& to) {}
-
-template <>
-inline void
-mpiAllReduceMin<float
-                >(float& from, float& to) {
-  MPI_Allreduce(&from, &to, 1, MPI_FLOAT, MPI_MIN, PETSC_COMM_WORLD);
-}
-
-template <>
-inline void
-mpiAllReduceMin<double
-                >(double& from, double& to) {
-  MPI_Allreduce(&from, &to, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD);
-}
-
 template <typename TCellAccessor, typename TScalar, int TD>
 void
 computeMaxVelocity(TCellAccessor const&                        accessor,
@@ -58,7 +41,11 @@ struct TimeStepProcessing {
                         maxVelocity.cwiseInverse().minCoeff());
 
     globalMin = std::numeric_limits<TScalar>::max();
-    mpiAllReduceMin(localMin, globalMin);
+    Private::mpiAllReduce<TScalar>(&localMin,
+                                   &globalMin,
+                                   1,
+                                   MPI_MIN,
+                                   PETSC_COMM_WORLD);
 
     factor  = globalMin;
     factor *= tau;
@@ -66,6 +53,17 @@ struct TimeStepProcessing {
     return factor;
   }
 };
+
+template <typename TScalar>
+inline TScalar
+dudx(TScalar const& leftU,
+     TScalar const& rightU,
+     TScalar const& leftX,
+     TScalar const& rightX) {
+  TScalar const width = leftX + rightX;
+
+  return (rightU - leftU) / width;
+}
 
 template <typename TScalar>
 inline TScalar

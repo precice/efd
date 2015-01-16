@@ -4,10 +4,12 @@
 #include "Configuration.hpp"
 #include "GhostLayer/Handlers.hpp"
 #include "Grid.hpp"
+#include "ImmersedBoundary/BodyForce/functions.hpp"
 #include "ImmersedBoundary/Fadlun/functions.hpp"
 #include "LinearSolver.hpp"
 #include "ParallelDistribution.hpp"
 #include "Parameters.hpp"
+#include "Private/mpigenerics.hpp"
 #include "Simulation.hpp"
 #include "VtkPlot.hpp"
 #include "functions.hpp"
@@ -76,7 +78,7 @@ public:
 
     _grid.initialize(localSize, cellAccessorFactory);
 
-    //logGridInitializationInfo(_grid);
+    // logGridInitializationInfo(_grid);
     logParallelTopologyInfo(_parallelDistribution);
   }
 
@@ -127,8 +129,11 @@ public:
 
   bool
   iterate() {
-    if (_time >= _timeLimit ||
-        _iterationCount >= _iterationLimit) {
+    if (_timeLimit > 0 && _time >= _timeLimit) {
+      return false;
+    }
+
+    if (_iterationCount > 0 && _iterationCount >= _iterationLimit) {
       return false;
     }
 
@@ -192,7 +197,7 @@ public:
       for (int d = 0; d < TD; ++d) {
         VelocityProcessingType::compute(accessor, d, _dt);
       }
-      computeMaxVelocity<CellAccessorType, TScalar, TD>
+          computeMaxVelocity<CellAccessorType, TScalar, TD>
         (accessor, _maxVelocity);
     }
 
@@ -208,10 +213,28 @@ public:
       }
     }
 
+    VectorDsType force = VectorDsType::Zero();
+
+    for (auto const& accessor : _grid.innerGrid) {
+      ImmersedBoundary::BodyForce::template computeCellForce<CellAccessorType,
+                                                             TD>(
+        accessor,
+        _parameters.re(),
+        force);
+    }
+
+    Private::mpiAllReduce<TScalar>(MPI_IN_PLACE,
+                                   force.data(),
+                                   TD,
+                                   MPI_SUM,
+                                   PETSC_COMM_WORLD);
+
     _time += _dt;
     ++_iterationCount;
 
     _plot.plot(_iterationCount, _time, _dt);
+    force *= 2 / (0.3 * 0.3 * 0.1);
+    logInfo("{1}", force.transpose());
 
     return true;
   }
