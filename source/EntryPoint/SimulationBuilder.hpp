@@ -188,10 +188,14 @@ public:
     _simulation->_parameters.re()    = configuration->re;
     _simulation->_parameters.gamma() = configuration->gamma;
     _simulation->_parameters.tau()   = configuration->tau;
-    _simulation->_parameters.g(0)    = configuration->environment(0);
-    _simulation->_parameters.g(1)    = configuration->environment(1);
-    _simulation->_iterationLimit     = configuration->iterationLimit;
-    _simulation->_timeLimit          = configuration->timeLimit;
+    _simulation->_parameters.alpha() = configuration->alpha;
+    _simulation->_parameters.immersedBoundaryMethod()
+                                  = configuration->immersedBoundaryMethod;
+    _simulation->_parameters.g(0) = configuration->environment(0);
+    _simulation->_parameters.g(1) = configuration->environment(1);
+    _simulation->_iterationLimit  = configuration->iterationLimit;
+    _simulation->_timeLimit       = configuration->timeLimit;
+    _simulation->_plotInterval    = configuration->plotInterval;
 
     if (TD == 3) {
       _simulation->_parameters.g(2) = configuration->environment(2);

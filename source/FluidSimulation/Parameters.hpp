@@ -11,7 +11,8 @@ public:
   typedef Eigen::Matrix<TScalar, TD, 1> VectorDs;
 
 public:
-  Parameters() {}
+  Parameters()
+    : _immersedBoundaryMethod(-1) {}
 
   Parameters(Parameters const& other) = delete;
 
@@ -50,6 +51,26 @@ public:
     return _tau;
   }
 
+  TScalar&
+  alpha() {
+    return _alpha;
+  }
+
+  TScalar const&
+  alpha() const {
+    return _alpha;
+  }
+
+  int&
+  immersedBoundaryMethod() {
+    return _immersedBoundaryMethod;
+  }
+
+  int const&
+  immersedBoundaryMethod() const {
+    return _immersedBoundaryMethod;
+  }
+
   VectorDs&
   g() {
     return _g;
@@ -70,10 +91,14 @@ public:
     return _g(i);
   }
 
+  static int const FeedbackForcingMethod = 0;
+
 private:
   TScalar  _re;
   TScalar  _gamma;
   TScalar  _tau;
+  TScalar  _alpha;
+  int      _immersedBoundaryMethod;
   VectorDs _g;
 };
 }

@@ -123,7 +123,7 @@ parseWall(xmlNodePtr node) {
 static void
 parseWallsChildren(xmlNodePtr     node,
                    Configuration* configuration) {
-  xmlNodePtr currentNode = node;
+  xmlNodePtr currentNode = node->children;
 
   while (currentNode) {
     if (xmlStrEqual(currentNode->name, (xmlChar* const)"left")) {
@@ -144,13 +144,38 @@ parseWallsChildren(xmlNodePtr     node,
 }
 
 static void
+parseImmersedBoundary(xmlNodePtr     node,
+                      Configuration* configuration) {
+  static xmlChar const* const methodAttrName = (xmlChar const*)"method";
+  static xmlChar const* const feedbackForcingMethod
+    = (xmlChar const*)"FeedbackForcing";
+  static xmlChar const* const alphaAttrName = (xmlChar const*)"alpha";
+
+  xmlAttrPtr attr = node->properties;
+
+  while (attr) {
+    if (xmlStrEqual(attr->name, methodAttrName)) {
+      if (xmlStrEqual(attr->children->content, feedbackForcingMethod)) {
+        configuration->immersedBoundaryMethod
+          = Configuration::FeedbackForcingMethod;
+      }
+    } else if (xmlStrEqual(attr->name, alphaAttrName)) {
+      configuration->alpha = parseNumber<double>(attr->children->content);
+    }
+    attr = attr->next;
+  }
+}
+
+static void
 parseScenarioChildren(xmlNodePtr     node,
                       Configuration* configuration) {
   xmlNodePtr currentNode = node;
 
   while (currentNode) {
     if (xmlStrEqual(currentNode->name, (xmlChar* const)"walls")) {
-      parseWallsChildren(currentNode->children, configuration);
+      parseWallsChildren(currentNode, configuration);
+    } else if (xmlStrEqual(currentNode->name, (xmlChar* const)"immersed-boundary")) {
+      parseImmersedBoundary(currentNode, configuration);
     }
     currentNode = currentNode->next;
   }
@@ -200,7 +225,7 @@ parseScenarioParameters(xmlNodePtr     node,
         attr->children->content);
     } else if (xmlStrEqual(attr->name, environment)) {
       configuration->environment = parseVector<Scalar>(attr->children->content);
-    } else if (xmlStrEqual(attr->name, environment)) {
+    } else if (xmlStrEqual(attr->name, filename)) {
       configuration->filename = (const char*)attr->children->content;
     }
     attr = attr->next;

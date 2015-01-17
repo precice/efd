@@ -6,6 +6,7 @@
 #include "Grid.hpp"
 #include "ImmersedBoundary/BodyForce/functions.hpp"
 #include "ImmersedBoundary/Fadlun/functions.hpp"
+#include "ImmersedBoundary/FeedbackForcing/functions.hpp"
 #include "LinearSolver.hpp"
 #include "ParallelDistribution.hpp"
 #include "Parameters.hpp"
@@ -15,6 +16,7 @@
 #include "functions.hpp"
 
 #include <Uni/Logging/macros>
+#include <Uni/Stopwatch>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
@@ -113,18 +115,21 @@ public:
       }
     }
 
-    _maxVelocity    = VelocityType::Zero();
-    _dt             = 1;
-    _time           = 0;
-    _iterationCount = 0;
+    _maxVelocity       = VelocityType::Zero();
+    _dt                = 1.0;
+    _time              = 0.0;
+    _lastPlotTimeStamp = 0.0;
+    _iterationCount    = 0;
 
-    _plot.initialize(&_grid,
-                     &_parallelDistribution,
-                     &_gridGeometry,
-                     outputDirectory,
-                     fileNamePrefix);
+    if (_plotInterval >= 0) {
+      _plot.initialize(&_grid,
+                       &_parallelDistribution,
+                       &_gridGeometry,
+                       outputDirectory,
+                       fileNamePrefix);
 
-    _plot.plot(_iterationCount, _time, _dt);
+      _plot.plot(_iterationCount, _time, _dt);
+    }
   }
 
   bool
@@ -133,7 +138,7 @@ public:
       return false;
     }
 
-    if (_iterationCount > 0 && _iterationCount >= _iterationLimit) {
+    if (_iterationLimit > 0 && _iterationCount >= _iterationLimit) {
       return false;
     }
 
@@ -142,24 +147,27 @@ public:
                                                    _gridGeometry.minCellWidth(),
                                                    _maxVelocity);
     _maxVelocity = VelocityType::Zero();
-    logInfo("Iteration Number {1}", _iterationCount);
-    logInfo("Time step size {1}",   _dt);
 
-    for (auto accessor : _grid.innerGrid) {
-      for (int d = 0; d < TD; ++d) {
-        if (!ImmersedBoundary::Fadlun::treatBoundary
-            <CellAccessorType, TScalar, TD>(
-              accessor,
-              _preciceInteface,
-              _dt,
-              d)) {
-          //
-        } else {
-          computeMaxVelocity<CellAccessorType, TScalar, TD>
-            (accessor, _maxVelocity);
-        }
-      }
+    if (_parallelDistribution.rank == 0) {
+      logInfo("N = {1}; t = {2}", _iterationCount, _time);
     }
+    // logInfo("Time step size {1}",   _dt);
+
+    // for (auto accessor : _grid.innerGrid) {
+    // for (int d = 0; d < TD; ++d) {
+    // if (!ImmersedBoundary::Fadlun::treatBoundary
+    // <CellAccessorType, TScalar, TD>(
+    // accessor,
+    // _preciceInteface,
+    // _dt,
+    // d)) {
+    ////
+    // } else {
+    // computeMaxVelocity<CellAccessorType, TScalar, TD>
+    // (accessor, _maxVelocity);
+    // }
+    // }
+    // }
 
     for (auto accessor : _grid.innerGrid) {
       typedef FghProcessing<CellAccessorType,
@@ -167,6 +175,15 @@ public:
                             TScalar,
                             TD> Fgh;
       Fgh::compute(accessor, _parameters, _dt);
+
+      for (int d = 0; d < TD; ++d) {
+        if (ImmersedBoundary::FeedbackForcing
+            ::template treatBoundary<CellAccessorType, TD>(accessor,
+                                                           _parameters.alpha(),
+                                                           d)) {
+          //
+        }
+      }
     }
 
     for (int d = 0; d < TD; ++d) {
@@ -197,7 +214,7 @@ public:
       for (int d = 0; d < TD; ++d) {
         VelocityProcessingType::compute(accessor, d, _dt);
       }
-          computeMaxVelocity<CellAccessorType, TScalar, TD>
+      computeMaxVelocity<CellAccessorType, TScalar, TD>
         (accessor, _maxVelocity);
     }
 
@@ -216,8 +233,8 @@ public:
     VectorDsType force = VectorDsType::Zero();
 
     for (auto const& accessor : _grid.innerGrid) {
-      ImmersedBoundary::BodyForce::template computeCellForce<CellAccessorType,
-                                                             TD>(
+      ImmersedBoundary::BodyForce::
+      template computeCellForce<CellAccessorType, TD>(
         accessor,
         _parameters.re(),
         force);
@@ -232,9 +249,18 @@ public:
     _time += _dt;
     ++_iterationCount;
 
-    _plot.plot(_iterationCount, _time, _dt);
+    if (_plotInterval >= 0) {
+      if ((_time - _lastPlotTimeStamp) > _plotInterval) {
+        _lastPlotTimeStamp = _time;
+        _plot.plot(_iterationCount, _time, _dt);
+      }
+    }
+
     force *= 2 / (0.3 * 0.3 * 0.1);
-    logInfo("{1}", force.transpose());
+
+    if (_parallelDistribution.rank == 0) {
+      logInfo("{1}", force.transpose());
+    }
 
     return true;
   }
@@ -248,6 +274,8 @@ public:
   TScalar                   _dt;
   TScalar                   _time;
   TScalar                   _timeLimit;
+  TScalar                   _lastPlotTimeStamp;
+  TScalar                   _plotInterval;
   int                       _iterationCount;
   int                       _iterationLimit;
   LinearSolverType          _linearSolver;

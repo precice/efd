@@ -1,9 +1,11 @@
 <?xml version = "1.0" encoding = "utf-8"?>
+<!-- Re = 20 size = "200,50" N = 4239; t = 0.916082 -->
+<!-- 6.37099 -0.0372942 -->
 <scenario
   Re = "20"
-  timeLimit = "0.0"
-  iterationLimit = "600"
-  plotInterval = "0.1"
+  timeLimit = "1.0"
+  iterationLimit = "0"
+  plotInterval = "0.01"
   tau = "0.5"
   gamma = "0.5"
   dim = "2"
@@ -19,4 +21,7 @@
     <bottom type = "Input" velocity = "0.0,0.0" />
     <top type = "Input" velocity = "0.0,0.0" />
   </walls>
+  <immersed-boundary
+    method = "FeedbackForcing"
+    alpha = "-1.0"/>
 </scenario>

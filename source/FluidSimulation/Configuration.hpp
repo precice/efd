@@ -141,7 +141,8 @@ public:
       plotInterval(0),
       tau(0),
       gamma(0),
-      dim(0) {}
+      dim(0),
+      immersedBoundaryMethod(-1) {}
 
   ScalarType   re;
   ScalarType   timeLimit;
@@ -156,6 +157,10 @@ public:
   VectorDsType environment;
   WallsType    walls;
   std::string  filename;
+  int          immersedBoundaryMethod;
+  float        alpha;
+
+  static int const FeedbackForcingMethod;
 };
 }
 }
