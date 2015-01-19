@@ -158,7 +158,7 @@ parseArguments() {
     "Set output directory path")
     ("precice,p",
     po::value<std::string>(),
-    "Set PreCICE configuration path")
+    "Set PreCiCe configuration path")
     ("simulation,s",
     po::value<std::string>(),
     "Set fluid simulation configuration path")
