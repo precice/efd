@@ -38,6 +38,10 @@
 !/source/FluidSimulation
 !/source/FluidSimulation/GhostLayer
 !/source/FluidSimulation/GhostLayer/Private
+!/source/FluidSimulation/ImmersedBoundary
+!/source/FluidSimulation/ImmersedBoundary/BodyForce
+!/source/FluidSimulation/ImmersedBoundary/Fadlun
+!/source/FluidSimulation/ImmersedBoundary/FeedbackForcing
 !/source/FluidSimulation/Private
 !/source/StructuredMemory/
 !/source/**/*.c
