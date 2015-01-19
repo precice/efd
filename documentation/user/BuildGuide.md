@@ -13,9 +13,10 @@
     2. PETSc: version 3.3, with enabled MPI support.
     3. [Uni][UniRepository]: branch 'big-update'
     4. Eigen: version 3.2 >=
-    5. Boost: version 1.53 >=, with filesystem, locale, thread, program_options, system
-       components
+    5. Boost: version 1.53 >=; with locale, filesystem, program_options, system,
+       thread (required for PreCiCe, components
     6. Python libraries: version 2.7
+    7. LibXml2
 
 ## Building instructions
 
@@ -143,8 +144,6 @@ executed many times.
 These wrappers are tiny and implicitly run routine commands.
 To explore what is inside it is offered to look in the code which is supposed
 to be self-explanatory, the usage examples are presented below.
-
-The wrappers could be taken from the 'slava-develop' branch.
 
 ### Steps
 

@@ -7,8 +7,6 @@
 #include "ParallelDistribution.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
-#include <boost/iostreams/stream.hpp>
 #include <boost/locale.hpp>
 
 #include <limits>
@@ -28,9 +26,6 @@ public:
   typedef typename CellAccessorType::GridGeometryType GridGeometry;
 
   typedef boost::filesystem::path Path;
-  typedef
-    boost::iostreams::stream<boost::iostreams::mapped_file_sink>
-    MappedFileStream;
   typedef boost::filesystem::fstream FileStream;
   typedef boost::locale::format      Format;
 
@@ -58,7 +53,6 @@ public:
   plot2(int const&     iterationCount,
         TScalar const& timeStamp,
         TScalar const& dt) {
-    MappedFileStream mappedFileStream;
     FileStream       fileStream;
 
     auto tempFileNamePrefix = _fileNamePrefix;
@@ -76,8 +70,6 @@ public:
       fileStream.open(tempPath, FileStream::out);
     }
     // fileStream.close();
-
-    // mappedFileStream.open(tempPath.string());
 
     fileStream << "# vtk DataFile Version 2.0" << std::endl
                << "I need something to put here" << std::endl
@@ -167,7 +159,6 @@ public:
   plot(int const&     iterationCount,
        TScalar const& timeStamp,
        TScalar const& dt) {
-    MappedFileStream mappedFileStream;
     FileStream       fileStream;
 
     auto tempFileNamePrefix = _fileNamePrefix;

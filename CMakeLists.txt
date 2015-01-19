@@ -46,18 +46,17 @@ set(MPI_CXX_COMPILER ${PETSC_COMPILER})
 find_package(MPI REQUIRED)
 find_package(Precice REQUIRED)
 find_package(Uni REQUIRED)
+set(Boost_USE_STATIC_LIBS    OFF)
+set(Boost_USE_MULTITHREADED  ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.53
   COMPONENTS
-  thread
-  program_options
-  filesystem
-  iostreams
   locale
+  filesystem
+  program_options
   system
+  thread # Required for precice
   REQUIRED)
-set(Boost_USE_STATIC_LIBS    ON)
-set(Boost_USE_MULTITHREADED  OFF)
-set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Eigen REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
