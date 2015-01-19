@@ -1,8 +1,12 @@
 *
 
+!/build
+!/clean
 !/CMakeLists.txt
-!/Readme.md
+!/configure
 !/.gitignore
+!/install
+!/Readme.md
 !/.uncrustify
 
 !/3rdParty
@@ -48,3 +52,5 @@
 
 *.*.*
 *.*.*.*
+
+!/.ycm_extra_conf_template.py

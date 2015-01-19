@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+import inspect
+import os
+import subprocess
+import sys
+
+currentDir = os.path.dirname(os.path.realpath(
+    os.path.abspath(inspect.getfile(inspect.currentframe()))))
+
+projectDir = currentDir
+
+# Add and parse arguments {{{
+# -----------------------------------------------------------------------------
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+
+parser.add_argument('installer', nargs='?', default='ninja')
+# 'c' means 'configuration type'
+parser.add_argument('-c', default='Release')
+
+args, unknown_args = parser.parse_known_args()
+# -----------------------------------------------------------------------------
+# }}}
+
+# Filter arguments {{{
+# -----------------------------------------------------------------------------
+args.c = args.c.strip()
+# -----------------------------------------------------------------------------
+# }}}
+
+# Invoke Installer {{{
+# -----------------------------------------------------------------------------
+variandDir = os.path.join(projectDir, '.build', args.c)
+
+command = "{0} {1} {2}".format(args.installer,
+      " ".join(unknown_args),
+      'install' if args.c == 'Release' else 'install')
+
+subprocess.call(command, cwd=variandDir, shell=True)
+# -----------------------------------------------------------------------------
+# }}}
