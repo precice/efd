@@ -6,9 +6,6 @@
 !/.uncrustify
 
 !/3rdParty
-!/3rdParty/TinyXml2
-!/3rdParty/TinyXml2/tinyxml2.cpp
-!/3rdParty/TinyXml2/tinyxml2.h
 
 !/cmake
 !/cmake/modules
