@@ -49,7 +49,7 @@ find_package(Uni REQUIRED)
 set(Boost_USE_STATIC_LIBS    OFF)
 set(Boost_USE_MULTITHREADED  ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.53
+find_package(Boost 1.57 # Version 1.54 failed
   COMPONENTS
   locale
   filesystem
