@@ -9,7 +9,7 @@
   <log-filter
     component = "precice"
     target = "debug"
-    switch = "on"/>
+    switch = "off"/>
 
   <solver-interface
     dimensions = "2"

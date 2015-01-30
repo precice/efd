@@ -32,7 +32,7 @@ getMpiScalarType<double
 
 template <typename TScalar>
 inline void
-mpiAllReduce(void const*     sendbuf,
+mpiAllReduce(void*     sendbuf,
              void*           recvbuf,
              int const&      count,
              MPI_Op const&   op,
