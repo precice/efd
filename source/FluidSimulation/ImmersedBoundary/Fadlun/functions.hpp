@@ -38,10 +38,10 @@ computeDistances(TCellAccessor const&      accessor,
   for (int d = 0; d < TDimensions; ++d) {
     auto closestMesh = preciceInterface->inquireClosestMesh(
       positions[d].data(),
-      preciceInterface->getMeshIDs());
+      std::set<int>({preciceInterface->getMeshID("Body")}));
     auto position = preciceInterface->inquirePosition(
       positions[d].data(),
-      preciceInterface->getMeshIDs());
+      std::set<int>({preciceInterface->getMeshID("Body")}));
     accessor.currentCell()->positions(d) = position;
     accessor.currentCell()->distances(d) = closestMesh.distance();
   }

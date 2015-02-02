@@ -1,74 +1,23 @@
 #include "Application.hpp"
 
-#include "Private/convertUtfPathToAnsi.hpp"
-
 #include "FluidSimulation/Simulation.hpp"
 #include "SimulationFactory.hpp"
 #include "XmlConfigurationParser.hpp"
 
+#include "Utility/executablepath.hpp"
+#include "Utility/pathoperations.hpp"
+
 #include <precice/SolverInterface.hpp>
 
-#include <Uni/ExecutionControl/exception>
 #include <Uni/Firewall/Interface>
-#include <Uni/Platform/operatingsystem>
 
 #include <boost/program_options.hpp>
-
-#if defined (Uni_Platform_OS_WINDOWS)
-#  include <windows.h>
-#elif defined (Uni_Platform_OS_UNIX)
-
-#else
-#  error "Unknown platform"
-#endif
 
 #include "petscsys.h"
 
 //
 
 using FsiSimulation::EntryPoint::Application;
-
-namespace FsiSimulation {
-namespace EntryPoint {
-#if defined (Uni_Platform_OS_WINDOWS)
-boost::filesystem::path
-_getExecPath() {
-  TCHAR buffer[MAX_PATH];
-  auto  size =  GetModuleFileNameW(NULL, buffer, MAX_PATH);
-
-  if (size == MAX_PATH ||
-      size == 0) {
-    throwException("Failed to locate application");
-  }
-  namespace fs = boost::filesystem;
-  fs::path result(buffer);
-
-  return result;
-}
-#elif defined (Uni_Platform_OS_UNIX)
-
-boost::filesystem::path
-_getExecPath() {
-  char buffer[PATH_MAX];
-  auto size = readlink("/proc/self/exe", buffer, PATH_MAX);
-
-  if (size == -1) {
-    throwException("Failed to locate application");
-  }
-
-  buffer[size] = '\0';
-
-  namespace fs = boost::filesystem;
-  fs::path result(buffer);
-
-  return result;
-}
-
-#else
-#  error "Unknown platform"
-#endif
-}
-}
 
 class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   typedef precice::SolverInterface                     PreciceInterface;
@@ -93,7 +42,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     ansiLocaleGenerator.use_ansi_encoding(true);
     ansiLocale = ansiLocaleGenerator.generate("");
 
-    applicationPath = Path(_getExecPath()).parent_path();
+    applicationPath = Path(Utility::getExecutablePath()).parent_path();
 
     outputDirectoryPath    = fs::current_path();
     petscConfigurationPath = applicationPath;
@@ -205,19 +154,19 @@ parseArguments() {
 void
 Application::
 initialize() {
-  //logInfo("Application path:\n{1}",
-  //        _im->applicationPath.string());
-  //logInfo("Output directory path:\n{1}",
-  //        _im->outputDirectoryPath.string());
-  //logInfo("PETSc configuration path:\n{1}",
-  //        _im->petscConfigurationPath.string());
-  //logInfo("PreCICE configuration path:\n{1}",
-  //        _im->preciceConfigurationPath.string());
-  //logInfo("Simulation configuration path:\n{1}",
-  //        _im->simulationConfigurationPath.string());
+  // logInfo("Application path:\n{1}",
+  // _im->applicationPath.string());
+  // logInfo("Output directory path:\n{1}",
+  // _im->outputDirectoryPath.string());
+  // logInfo("PETSc configuration path:\n{1}",
+  // _im->petscConfigurationPath.string());
+  // logInfo("PreCICE configuration path:\n{1}",
+  // _im->preciceConfigurationPath.string());
+  // logInfo("Simulation configuration path:\n{1}",
+  // _im->simulationConfigurationPath.string());
 
   auto petscConfigurationPath =
-    Private::convertUtfPathToAnsi(
+    Utility::convertUtfPathToAnsi(
       boost::filesystem::make_relative(
         _im->petscConfigurationPath).string(),
       _im->globalLocale,
@@ -286,7 +235,7 @@ createOutputDirectory() {
   outputDirectoryPath         =
     boost::filesystem::make_relative(outputDirectoryPath) / outputFileName;
   _im->parameters->filename = outputDirectoryPath.string();
-  _im->vtkFilePrefix       = outputFileName.string();
+  _im->vtkFilePrefix        = outputFileName.string();
 }
 
 void
@@ -301,14 +250,13 @@ initializePrecice() {
     );
 
   auto preciceConfigurationPath =
-    Private::convertUtfPathToAnsi(
+    Utility::convertUtfPathToAnsi(
       boost::filesystem::make_relative(
         _im->preciceConfigurationPath).string(),
       _im->globalLocale,
       _im->ansiLocale);
 
   _im->preciceInterface->configure(preciceConfigurationPath);
-  _im->preciceInterface->initialize();
 
-  // auto meshId = interface.getMeshID("MeshName");
+
 }

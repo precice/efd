@@ -129,8 +129,14 @@ endif ()
 # Targets {{{
 # ==============================================================================
 file(GLOB_RECURSE CPP_FILES
-  "${PROJECT_DIR}/source/*.cpp"
-  "${PROJECT_DIR}/source/*.hpp"
+  "${PROJECT_DIR}/source/EntryPoint/*.cpp"
+  "${PROJECT_DIR}/source/EntryPoint/*.hpp"
+  "${PROJECT_DIR}/source/FluidSimulation/*.cpp"
+  "${PROJECT_DIR}/source/FluidSimulation/*.hpp"
+  "${PROJECT_DIR}/source/StructureMemory/*.cpp"
+  "${PROJECT_DIR}/source/StructureMemory/*.hpp"
+  "${PROJECT_DIR}/source/Utility/*.cpp"
+  "${PROJECT_DIR}/source/Utility/*.hpp"
   )
 
 add_executable(Simulation ${CPP_FILES})

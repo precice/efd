@@ -18,6 +18,8 @@
 #include <Uni/Logging/macros>
 #include <Uni/Stopwatch>
 
+#include <memory>
+
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TGridGeometry,
@@ -29,6 +31,7 @@ public:
   typedef Simulation              BaseType;
   typedef typename BaseType::Path Path;
 
+  typedef TScalar                                     ScalarType;
   typedef Grid<TMemory, TGridGeometry, TD>            GridType;
   typedef typename GridType::CellAccessorType         CellAccessorType;
   typedef typename CellAccessorType::MemoryType       MemoryType;
@@ -43,9 +46,13 @@ public:
 
   typedef ParallelDistribution<TD> ParallelDistributionType;
 
-  typedef
-    FluidSimulation::LinearSolver<TMemory, TGridGeometry, TScalar, TD>
-    LinearSolverType;
+  typedef FluidSimulation::LinearSolver<
+      TMemory,
+      TGridGeometry,
+      PpeStencilGenerator<TD>,
+      ScalarType,
+      TD>
+    PpeSolverType;
 
   typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
 
@@ -88,20 +95,48 @@ public:
   initialize(precice::SolverInterface* preciceInteface,
              Path const&               outputDirectory,
              std::string const&        fileNamePrefix) {
-    _preciceInteface = preciceInteface;
-    _linearSolver.initialize(&_grid,
-                             &_parallelDistribution,
-                             &_ghostHandler,
-                             &_dt);
+    _preciceInterface = preciceInteface;
+    _ppeSolver.initialize(&_grid,
+                          &_parallelDistribution,
+                          &_ghostHandler,
+                          &_dt);
+
+    auto fluidMeshId = _preciceInterface->getMeshID("FluidMesh");
 
     for (auto const& accessor : _grid) {
       accessor.currentCell()->velocity() = VelocityType::Zero();
       accessor.currentCell()->fgh()      = VelocityType::Zero();
       accessor.currentCell()->pressure() = 0.0;
-      ImmersedBoundary::Fadlun::template computeDistances<CellAccessorType, TD>(
-        accessor,
-        _preciceInteface);
+
+      bool isInnerCell = true;
+
+      for (int d = 0; d < TD; ++d) {
+        if ((accessor.indexValue(d) >= _grid.innerGrid.innerLimit(d))
+            || accessor.indexValue(d) < _grid.innerGrid.leftIndent(d)) {
+          isInnerCell = false;
+          break;
+        }
+      }
+
+      if (isInnerCell) {
+        VectorDsType position = accessor.currentPosition();
+        position += 0.5 * accessor.currentWidth();
+        auto vertexId =
+          _preciceInterface->setMeshVertex(
+            fluidMeshId,
+            position.data());
+        _vertexIds.push_back(vertexId);
+      }
+
+      // ImmersedBoundary::Fadlun::template computeDistances<CellAccessorType,
+      // TD>(
+      // accessor,
+      // _preciceInterface);
     }
+        logInfo("@@@@@@@@@@@@@");
+
+    _preciceInterface->initialize();
+    _preciceInterface->initializeData();
 
     for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
@@ -149,7 +184,7 @@ public:
     _maxVelocity = VelocityType::Zero();
 
     if (_parallelDistribution.rank == 0) {
-      logInfo("N = {1}; t = {2}", _iterationCount, _time);
+        logInfo("N = {1}; t = {2}", _iterationCount, _time);
     }
     // logInfo("Time step size {1}",   _dt);
 
@@ -158,7 +193,7 @@ public:
     // if (!ImmersedBoundary::Fadlun::treatBoundary
     // <CellAccessorType, TScalar, TD>(
     // accessor,
-    // _preciceInteface,
+    // _preciceInterface,
     // _dt,
     // d)) {
     ////
@@ -169,21 +204,129 @@ public:
     // }
     // }
 
-    for (auto accessor : _grid.innerGrid) {
-      typedef FghProcessing<CellAccessorType,
-                            ParametersType,
-                            TScalar,
-                            TD> Fgh;
-      Fgh::compute(accessor, _parameters, _dt);
+    // for (auto const& accessor : _grid.innerGrid) {
+    // _preciceInterface->mapWriteDataFrom(
+    // _preciceInterface->getMeshID("MeshName"));
+    // }
+    //
+    auto fluidMeshId     = _preciceInterface->getMeshID("FluidMesh");
+    auto fluidVertexSize = _preciceInterface->getMeshVertexSize(fluidMeshId);
+    auto bodyMeshId      = _preciceInterface->getMeshID("Body");
+    auto bodyVertexSize  = _preciceInterface->getMeshVertexSize(bodyMeshId);
 
-      for (int d = 0; d < TD; ++d) {
-        if (ImmersedBoundary::FeedbackForcing
-            ::template treatBoundary<CellAccessorType, TD>(accessor,
-                                                           _parameters.alpha(),
-                                                           d)) {
-          //
-        }
+    auto fluidMeshVelocitiesId = _preciceInterface->getDataID(
+      "Velocities",
+      _preciceInterface->getMeshID("FluidMesh"));
+    auto fluidMeshForcesId = _preciceInterface->getDataID(
+      "Forces",
+      _preciceInterface->getMeshID("FluidMesh"));
+    auto bodyMeshVelocitiesId = _preciceInterface->getDataID(
+      "Velocities",
+      _preciceInterface->getMeshID("Body"));
+    auto bodyMeshForcesId = _preciceInterface->getDataID(
+      "Forces",
+      _preciceInterface->getMeshID("Body"));
+
+    // logInfo("FluidMesh1 {1}", fluidMeshId);
+    // logInfo("FluidMesh {1}",  bodyMeshId);
+    // logInfo("Body Size{1}",   bodyVertexSize);
+
+    int index = 0;
+
+    for (auto const& accessor : _grid.innerGrid) {
+      // typedef FghProcessing<TD> Fgh;
+      // Fgh::compute(accessor, _parameters, _dt);
+
+      accessor.currentCell()->fgh() = VelocityType::Zero();
+
+      // bool isBody = false;
+
+      // for (int d = 0; d < TD; ++d) {
+      // if (ImmersedBoundary::FeedbackForcing
+      // ::template treatBoundary<CellAccessorType, TD>(accessor,
+      // _parameters.alpha(),
+      // d)) {
+      // isBody = true;
+      // }
+      // }
+
+      auto convection = ConvectionProcessing<TD>::compute(
+        accessor,
+        _parameters);
+
+      auto previousConvection = accessor.currentCell()->convection();
+
+      if (_iterationCount == 0) {
+        previousConvection = convection;
       }
+
+      auto diffusion = DiffusionProcessing<TD>::compute(accessor);
+
+      diffusion = (1.0 / _parameters.re()) * diffusion;
+      VelocityType temp = VelocityType::Zero();
+
+      // if (isBody) {
+      temp = -accessor.currentCell()->velocity() + _dt * (
+        1.5 * convection - 0.5 * previousConvection
+        - diffusion
+        + computePressureGradient(accessor));
+      // }
+
+      _preciceInterface->writeVectorData(
+        fluidMeshVelocitiesId,
+        _vertexIds[index],
+        temp.data());
+
+      accessor.currentCell()->convection() = convection;
+
+      accessor.currentCell()->fgh()
+        += accessor.currentCell()->velocity()
+           + _dt * (diffusion - convection + _parameters.g());
+      ++index;
+    }
+
+    _preciceInterface->mapWriteDataFrom(fluidMeshId);
+
+    index = 0;
+
+    for (; index < _preciceInterface->getMeshVertexSize(bodyMeshId);
+         ++index) {
+      VelocityType velocity;
+      _preciceInterface->readVectorData(
+        bodyMeshVelocitiesId,
+        index,
+        velocity.data());
+
+      velocity = velocity / _dt;
+
+      //if (velocity != VelocityType::Zero()) {
+      //  logInfo("{1}", velocity.transpose());
+      //}
+
+      _preciceInterface->writeVectorData(
+        bodyMeshForcesId,
+        index,
+        velocity.data());
+    }
+
+    _preciceInterface->mapReadDataTo(fluidMeshId);
+
+    index = 0;
+
+    for (auto const& accessor : _grid.innerGrid) {
+      VelocityType velocity;
+      _preciceInterface->readVectorData(
+        fluidMeshForcesId,
+        _vertexIds[index],
+        velocity.data());
+
+      if (velocity != VelocityType::Zero()) {
+        logInfo("{2} {1}", velocity.transpose(), accessor.indexValues().transpose());
+      }
+
+      accessor.currentCell()->fgh() += _dt * velocity;
+
+      ++index;
     }
 
     for (int d = 0; d < TD; ++d) {
@@ -198,7 +341,7 @@ public:
       }
     }
 
-    _linearSolver.solve();
+    _ppeSolver.solve();
 
     for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
@@ -268,9 +411,10 @@ public:
   MemoryType                _memory;
   GridGeometryType          _gridGeometry;
   GridType                  _grid;
+  std::vector<int>          _vertexIds;
   ParametersType            _parameters;
   ParallelDistributionType  _parallelDistribution;
-  precice::SolverInterface* _preciceInteface;
+  precice::SolverInterface* _preciceInterface;
   TScalar                   _dt;
   TScalar                   _time;
   TScalar                   _timeLimit;
@@ -278,7 +422,7 @@ public:
   TScalar                   _plotInterval;
   int                       _iterationCount;
   int                       _iterationLimit;
-  LinearSolverType          _linearSolver;
+  PpeSolverType             _ppeSolver;
   VelocityType              _maxVelocity;
   GhostHandlersType         _ghostHandler;
   VtkPlotType               _plot;

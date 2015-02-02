@@ -17,6 +17,7 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TMemory,
           typename TGridGeometry,
+          typename TStencilGenerator,
           typename TScalar,
           int TD>
 class LinearSolver {
@@ -143,14 +144,7 @@ private:
     MatStencil  columns[2 * TD + 1];
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      typedef
-        PressurePoissonStencilProcessing<ParallelDistributionType,
-                                         CellAccessorType,
-                                         TScalar,
-                                         TD>
-        StencilProcessing;
-
-      StencilProcessing::compute(solver->_parallelTopology,
+      TStencilGenerator::compute(solver->_parallelTopology,
                                  accessor,
                                  stencil,
                                  row,

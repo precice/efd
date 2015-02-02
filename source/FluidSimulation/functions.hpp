@@ -174,6 +174,169 @@ du2dx(TScalar const& currentU,
 
 template <typename TScalar>
 inline TScalar
+computeDiffusion2D(TScalar const& currentU,
+                   TScalar const& leftU,
+                   TScalar const& rightU,
+                   TScalar const& bottomU,
+                   TScalar const& topU,
+                   TScalar const& currentX,
+                   TScalar const& currentY,
+                   TScalar const& rightX,
+                   TScalar const& bottomY,
+                   TScalar const& topY) {
+  return d2udx2(currentU,
+                leftU,
+                rightU,
+                currentX,
+                rightX)
+         + d2udy2(currentU,
+                  bottomU,
+                  topU,
+                  currentY,
+                  bottomY,
+                  topY);
+}
+
+template <typename TScalar>
+inline TScalar
+computeDiffusion3D(TScalar const& currentU,
+                   TScalar const& leftU,
+                   TScalar const& rightU,
+                   TScalar const& bottomU,
+                   TScalar const& topU,
+                   TScalar const& backU,
+                   TScalar const& frontU,
+                   TScalar const& currentX,
+                   TScalar const& currentY,
+                   TScalar const& currentZ,
+                   TScalar const& rightX,
+                   TScalar const& bottomY,
+                   TScalar const& topY,
+                   TScalar const& backZ,
+                   TScalar const& frontZ) {
+  return d2udx2(currentU,
+                leftU,
+                rightU,
+                currentX,
+                rightX)
+         + d2udy2(currentU,
+                  bottomU,
+                  topU,
+                  currentY,
+                  bottomY,
+                  topY)
+         + d2udy2(currentU, // d2udz2
+                  backU,
+                  frontU,
+                  currentZ,
+                  backZ,
+                  frontZ);
+}
+
+template <typename TScalar>
+inline TScalar
+computeConvection2D(TScalar const& currentU,
+                    TScalar const& currentV,
+                    TScalar const& leftU,
+                    TScalar const& rightU,
+                    TScalar const& rightV,
+                    TScalar const& bottomU,
+                    TScalar const& bottomV,
+                    TScalar const& topU,
+                    TScalar const& rightBottomV,
+                    TScalar const& currentX,
+                    TScalar const& currentY,
+                    TScalar const& leftX,
+                    TScalar const& rightX,
+                    TScalar const& bottomY,
+                    TScalar const& topY,
+                    TScalar const& gamma) {
+  return du2dx(currentU,
+               leftU,
+               rightU,
+               currentX,
+               leftX,
+               rightX,
+               gamma)
+         + duvdy(currentU,
+                 currentV,
+                 bottomU,
+                 bottomV,
+                 rightBottomV,
+                 rightV,
+                 topU,
+                 currentY,
+                 currentX,
+                 bottomY,
+                 topY,
+                 rightX,
+                 gamma);
+}
+
+template <typename TScalar>
+inline TScalar
+computeConvection3D(TScalar const& currentU,
+                    TScalar const& currentV,
+                    TScalar const& currentW,
+                    TScalar const& leftU,
+                    TScalar const& rightU,
+                    TScalar const& rightV,
+                    TScalar const& rightW,
+                    TScalar const& bottomU,
+                    TScalar const& bottomV,
+                    TScalar const& topU,
+                    TScalar const& backU,
+                    TScalar const& backW,
+                    TScalar const& frontU,
+                    TScalar const& rightBottomV,
+                    TScalar const& rightBackW,
+                    TScalar const& currentX,
+                    TScalar const& currentY,
+                    TScalar const& currentZ,
+                    TScalar const& leftX,
+                    TScalar const& rightX,
+                    TScalar const& bottomY,
+                    TScalar const& topY,
+                    TScalar const& backZ,
+                    TScalar const& frontZ,
+                    TScalar const& gamma) {
+  return du2dx(currentU,
+               leftU,
+               rightU,
+               currentX,
+               leftX,
+               rightX,
+               gamma)
+         + duvdy(currentU,
+                 currentV,
+                 bottomU,
+                 bottomV,
+                 rightBottomV,
+                 rightV,
+                 topU,
+                 currentY,
+                 currentX,
+                 bottomY,
+                 topY,
+                 rightX,
+                 gamma)
+         + duvdy(currentU, // duwdz
+                 currentW,
+                 backU,
+                 backW,
+                 rightBackW,
+                 rightW,
+                 frontU,
+                 currentZ,
+                 currentX,
+                 backZ,
+                 frontZ,
+                 rightX,
+                 gamma);
+}
+
+template <typename TScalar>
+inline TScalar
 computeFGH2D(TScalar const& currentU,
              TScalar const& currentV,
              TScalar const& leftU,
@@ -314,22 +477,258 @@ computeFGH3D(TScalar const& currentU,
                  gx);
 }
 
-template <typename TCellAccessor,
-          typename TSimulationParameters,
-          typename TScalar,
-          int TD>
+template <int TD>
+class DiffusionProcessing {
+  template <typename TCellAccessor>
+  static inline
+  typename TCellAccessor::CellType::Velocity
+  compute(TCellAccessor const& accessor) {}
+};
+
+template <>
+class DiffusionProcessing<2> {
+public:
+  template <typename TCellAccessor>
+  static inline
+  typename TCellAccessor::CellType::Velocity
+  compute(TCellAccessor const& accessor) {
+    typedef typename TCellAccessor::CellType::Velocity Vector;
+    Vector result;
+
+    for (int d1 = 0; d1 < 2; ++d1) {
+      int d2 = d1 + 1;
+
+      if (d1 == 1) {
+        d2 = 0;
+      }
+
+      result(d1) = computeDiffusion2D(
+        accessor.currentCell()->velocity(d1),
+        accessor.leftCellInDimension(d1)->velocity(d1),
+        accessor.rightCellInDimension(d1)->velocity(d1),
+        accessor.leftCellInDimension(d2)->velocity(d1),
+        accessor.rightCellInDimension(d2)->velocity(d1),
+        accessor.currentWidth() (d1),
+        accessor.currentWidth() (d2),
+        accessor.rightWidthInDimension (d1)(d1),
+        accessor.leftWidthInDimension (d2)(d2),
+        accessor.rightWidthInDimension (d2)(d2));
+    }
+
+    return result;
+  }
+};
+
+template <>
+class DiffusionProcessing<3> {
+public:
+  template <typename TCellAccessor>
+  static inline
+  typename TCellAccessor::CellType::Velocity
+  compute(TCellAccessor const& accessor) {
+    typedef typename TCellAccessor::CellType::Velocity Vector;
+
+    Vector result;
+
+    for (int d1 = 0; d1 < 3; ++d1) {
+      int d2 = d1 + 1;
+      int d3 = d2 + 1;
+
+      if (d1 == 1) {
+        d2 = 0;
+        d3 = 2;
+      } else if (d1 == 2) {
+        d2 = 0;
+        d3 = 1;
+      }
+
+      result(d1) = computeDiffusion3D(
+        accessor.currentCell()->velocity(d1),
+        accessor.leftCellInDimension(d1)->velocity(d1),
+        accessor.rightCellInDimension(d1)->velocity(d1),
+        accessor.leftCellInDimension(d2)->velocity(d1),
+        accessor.rightCellInDimension(d2)->velocity(d1),
+        accessor.leftCellInDimension(d3)->velocity(d1),
+        accessor.rightCellInDimension(d3)->velocity(d1),
+        accessor.currentWidth() (d1),
+        accessor.currentWidth() (d2),
+        accessor.currentWidth() (d3),
+        accessor.rightWidthInDimension (d1)(d1),
+        accessor.leftWidthInDimension (d2)(d2),
+        accessor.rightWidthInDimension (d2)(d2),
+        accessor.leftWidthInDimension (d3)(d3),
+        accessor.rightWidthInDimension (d3)(d3));
+    }
+
+    return result;
+  }
+};
+
+template <int TD>
+class ConvectionProcessing {
+  template <typename TCellAccessor,
+            typename TSimulationParameters>
+  static inline
+  typename TCellAccessor::CellType::Velocity
+  compute(TCellAccessor const&         accessor,
+          TSimulationParameters const& simulationParameters) {}
+};
+
+template <>
+class ConvectionProcessing<2> {
+public:
+  template <typename TCellAccessor,
+            typename TSimulationParameters>
+  static inline
+  typename TCellAccessor::CellType::Velocity
+  compute(TCellAccessor const&         accessor,
+          TSimulationParameters const& simulationParameters) {
+    typedef typename TCellAccessor::CellType::Velocity Vector;
+
+    Vector result;
+
+    for (int d1 = 0; d1 < 2; ++d1) {
+      int d2 = d1 + 1;
+
+      if (d1 == 1) {
+        d2 = 0;
+      }
+      result(d1) = computeConvection2D(
+        accessor.currentCell()->velocity(d1),
+        accessor.currentCell()->velocity(d2),
+        accessor.leftCellInDimension(d1)->velocity(d1),
+        accessor.rightCellInDimension(d1)->velocity(d1),
+        accessor.rightCellInDimension(d1)->velocity(d2),
+        accessor.leftCellInDimension(d2)->velocity(d1),
+        accessor.leftCellInDimension(d2)->velocity(d2),
+        accessor.rightCellInDimension(d2)->velocity(d1),
+        accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
+        accessor.currentWidth() (d1),
+        accessor.currentWidth() (d2),
+        accessor.leftWidthInDimension (d1)(d1),
+        accessor.rightWidthInDimension (d1)(d1),
+        accessor.leftWidthInDimension (d2)(d2),
+        accessor.rightWidthInDimension (d2)(d2),
+        simulationParameters.gamma());
+    }
+
+    return result;
+  }
+};
+
+template <>
+class ConvectionProcessing<3> {
+public:
+  template <typename TCellAccessor,
+            typename TSimulationParameters>
+  static inline
+  typename TCellAccessor::CellType::Velocity
+  compute(TCellAccessor const&         accessor,
+          TSimulationParameters const& simulationParameters) {
+    typedef typename TCellAccessor::CellType::Velocity Vector;
+    Vector result;
+
+    for (int d1 = 0; d1 < 3; ++d1) {
+      int d2 = d1 + 1;
+      int d3 = d2 + 1;
+
+      if (d1 == 1) {
+        d2 = 0;
+        d3 = 2;
+      } else if (d1 == 2) {
+        d2 = 0;
+        d3 = 1;
+      }
+
+      result(d1) = computeConvection3D(
+        accessor.currentCell()->velocity(d1),
+        accessor.currentCell()->velocity(d2),
+        accessor.currentCell()->velocity(d3),
+        accessor.leftCellInDimension(d1)->velocity(d1),
+        accessor.rightCellInDimension(d1)->velocity(d1),
+        accessor.rightCellInDimension(d1)->velocity(d2),
+        accessor.rightCellInDimension(d1)->velocity(d3),
+        accessor.leftCellInDimension(d2)->velocity(d1),
+        accessor.leftCellInDimension(d2)->velocity(d2),
+        accessor.rightCellInDimension(d2)->velocity(d1),
+        accessor.leftCellInDimension(d3)->velocity(d1),
+        accessor.leftCellInDimension(d3)->velocity(d3),
+        accessor.rightCellInDimension(d3)->velocity(d1),
+        accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
+        accessor.leftRightCellInDimensions(d3, d1)->velocity(d3),
+        accessor.currentWidth() (d1),
+        accessor.currentWidth() (d2),
+        accessor.currentWidth() (d3),
+        accessor.leftWidthInDimension (d1)(d1),
+        accessor.rightWidthInDimension (d1)(d1),
+        accessor.leftWidthInDimension (d2)(d2),
+        accessor.rightWidthInDimension (d2)(d2),
+        accessor.leftWidthInDimension (d3)(d3),
+        accessor.rightWidthInDimension (d3)(d3),
+        simulationParameters.gamma());
+    }
+
+    return result;
+  }
+};
+
+template <int TD>
 class FghProcessing {
+  template <typename TCellAccessor,
+            typename TSimulationParameters,
+            typename TScalar>
   static inline void
   compute(TCellAccessor const&         accessor,
           TSimulationParameters const& simulationParameters,
           TScalar const&               dt) {}
 };
 
-template <typename TCellAccessor,
-          typename TSimulationParameters,
-          typename TScalar>
-class FghProcessing<TCellAccessor, TSimulationParameters, TScalar, 3> {
+template <>
+class FghProcessing<2> {
 public:
+  template <typename TCellAccessor,
+            typename TSimulationParameters,
+            typename TScalar>
+  static inline void
+  compute(TCellAccessor const&         accessor,
+          TSimulationParameters const& simulationParameters,
+          TScalar const&               dt) {
+    for (int d1 = 0; d1 < 2; ++d1) {
+      int d2 = d1 + 1;
+
+      if (d1 == 1) {
+        d2 = 0;
+      }
+      accessor.currentCell()->fgh(d1) = computeFGH2D(
+        accessor.currentCell()->velocity(d1),
+        accessor.currentCell()->velocity(d2),
+        accessor.leftCellInDimension(d1)->velocity(d1),
+        accessor.rightCellInDimension(d1)->velocity(d1),
+        accessor.rightCellInDimension(d1)->velocity(d2),
+        accessor.leftCellInDimension(d2)->velocity(d1),
+        accessor.leftCellInDimension(d2)->velocity(d2),
+        accessor.rightCellInDimension(d2)->velocity(d1),
+        accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
+        accessor.currentWidth() (d1),
+        accessor.currentWidth() (d2),
+        accessor.leftWidthInDimension (d1)(d1),
+        accessor.rightWidthInDimension (d1)(d1),
+        accessor.leftWidthInDimension (d2)(d2),
+        accessor.rightWidthInDimension (d2)(d2),
+        simulationParameters.re(),
+        simulationParameters.gamma(),
+        simulationParameters.g(d1),
+        dt);
+    }
+  }
+};
+
+template <>
+class FghProcessing<3> {
+public:
+  template <typename TCellAccessor,
+            typename TSimulationParameters,
+            typename TScalar>
   static inline void
   compute(TCellAccessor const&         accessor,
           TSimulationParameters const& simulationParameters,
@@ -378,72 +777,106 @@ public:
   }
 };
 
-template <typename TCellAccessor,
-          typename TSimulationParameters,
-          typename TScalar>
-class FghProcessing<TCellAccessor, TSimulationParameters, TScalar, 2> {
-public:
-  static inline void
-  compute(TCellAccessor const&         accessor,
-          TSimulationParameters const& simulationParameters,
-          TScalar const&               dt) {
-    for (int d1 = 0; d1 < 2; ++d1) {
-      int d2 = d1 + 1;
+template <typename TCellAccessor>
+inline
+typename TCellAccessor::CellType::Velocity
+computePressureGradient(TCellAccessor const& accessor) {
+  typedef typename TCellAccessor::CellType::Velocity Vector;
+  Vector result;
 
-      if (d1 == 1) {
-        d2 = 0;
-      }
-      accessor.currentCell()->fgh(d1) = computeFGH2D(
-        accessor.currentCell()->velocity(d1),
-        accessor.currentCell()->velocity(d2),
-        accessor.leftCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d2),
-        accessor.leftCellInDimension(d2)->velocity(d1),
-        accessor.leftCellInDimension(d2)->velocity(d2),
-        accessor.rightCellInDimension(d2)->velocity(d1),
-        accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
-        accessor.currentWidth() (d1),
-        accessor.currentWidth() (d2),
-        accessor.leftWidthInDimension (d1)(d1),
-        accessor.rightWidthInDimension (d1)(d1),
-        accessor.leftWidthInDimension (d2)(d2),
-        accessor.rightWidthInDimension (d2)(d2),
-        simulationParameters.re(),
-        simulationParameters.gamma(),
-        simulationParameters.g(d1),
-        dt);
-    }
+  for (int d = 0; d < result.size(); ++d) {
+      result(d)
+      = (0.5 * (accessor.rightWidthInDimension (d)(d)
+                + accessor.currentWidth() (d)))
+        * (accessor.rightCellInDimension(d)->pressure() -
+           accessor.currentCell()->pressure());
   }
-};
+  return result;
+}
 
-template <typename TCellAccessor, typename TScalar, int TD>
-class RhsProcessing {
+template <int TD>
+class VpeStencilGenerator {
 public:
-  static inline TScalar
-  compute(TCellAccessor const& accessor,
-          TScalar const&       dt) {
-    TScalar result = 0.0;
+  template <typename TParallelTopology,
+            typename TCellAccessor,
+            typename TScalar,
+            typename TStencil,
+            typename TRow,
+            typename TColumns>
+  static inline void
+  compute(TParallelTopology const* topology,
+          TCellAccessor const&     accessor,
+          TScalar const&           dt,
+          TScalar const&           re,
+          TStencil&                stencil,
+          TRow&                    row,
+          TColumns&                columns) {
+    typedef typename TCellAccessor::CellType::VectorDs::Scalar Scalar;
+    typedef Eigen::Matrix<Scalar, 2* TD, 1>                    Vector2Ds;
+
+    auto corner = topology->corner;
+
+    Vector2Ds meanWidths;
 
     for (int d = 0; d < TD; ++d) {
-      result += (accessor.currentCell()->fgh(d)
-                 - accessor.leftCellInDimension(d)->fgh(d))
-                / accessor.currentWidth() (d);
+      meanWidths(2 * d) = 0.5 *
+                          (accessor.currentWidth() (d) +
+                           accessor.leftWidthInDimension (d)(d));
+      meanWidths(2 * d + 1) = 0.5 *
+                              (accessor.currentWidth() (d) +
+                               accessor.rightWidthInDimension (d)(d));
+
+      auto leftIndex = accessor.leftIndexInDimension(d);
+      leftIndex += corner;
+      auto rightIndex = accessor.rightIndexInDimension(d);
+      rightIndex += corner;
+
+      columns[2 * d].i     = leftIndex(0);
+      columns[2 * d].j     = leftIndex(1);
+      columns[2 * d + 1].i = rightIndex(0);
+      columns[2 * d + 1].j = rightIndex(1);
+
+      if (TD == 3) {
+        columns[2 * d].k     = leftIndex(2);
+        columns[2 * d + 1].k = rightIndex(2);
+      }
     }
+    auto currentIndex = accessor.currentIndex();
+    currentIndex     += corner;
+    columns[2 * TD].i = currentIndex(0);
+    columns[2 * TD].j = currentIndex(1);
 
-    result = 1.0 / dt * result;
+    if (TD == 3) {
+      columns[2 * TD].k = currentIndex(2);
+    }
+    row = columns[2 * TD];
 
-    return result;
+    stencil[2 * TD] = 0;
+
+    TScalar const coeff =  -dt / (2.0 * re);
+
+    for (int d = 0; d < TD; ++d) {
+      auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);
+      stencil[2 * d] =
+        2.0 * coeff / (meanWidths(2 * d) * meanLeftAndRightWidth);
+      stencil[2 * d + 1] =
+        2.0 * coeff / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
+      TScalar const diagonalCoeff = 2.0 / (meanWidths(2 * d) * meanWidths(2 *
+                                                                          d +
+                                                                          1));
+      diagonalCoeff    = coeff * diagonalCoeff;
+      diagonalCoeff    = 2.0 * (1.0 - diagonalCoeff);
+      stencil[2 * TD] += diagonalCoeff;
+    }
   }
 };
 
-template <typename TParallelTopology,
-          typename TCellAccessor,
-          typename TScalar,
-          int TD>
-class PressurePoissonStencilProcessing {
+template <int TD>
+class PpeStencilGenerator {
 public:
-  template <typename TStencil,
+  template <typename TParallelTopology,
+            typename TCellAccessor,
+            typename TStencil,
             typename TRow,
             typename TColumns>
   static inline void
@@ -452,7 +885,8 @@ public:
           TStencil&                stencil,
           TRow&                    row,
           TColumns&                columns) {
-    typedef Eigen::Matrix<TScalar, 2* TD, 1> Vector2Ds;
+    typedef typename TCellAccessor::CellType::VectorDs::Scalar Scalar;
+    typedef Eigen::Matrix<Scalar, 2* TD, 1>                    Vector2Ds;
 
     auto corner = topology->corner;
 
@@ -501,6 +935,26 @@ public:
         2.0 / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
       stencil[2 * TD] -= 2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
     }
+  }
+};
+
+template <typename TCellAccessor, typename TScalar, int TD>
+class RhsProcessing {
+public:
+  static inline TScalar
+  compute(TCellAccessor const& accessor,
+          TScalar const&       dt) {
+    TScalar result = 0.0;
+
+    for (int d = 0; d < TD; ++d) {
+      result += (accessor.currentCell()->fgh(d)
+                 - accessor.leftCellInDimension(d)->fgh(d))
+                / accessor.currentWidth() (d);
+    }
+
+    result = 1.0 / dt * result;
+
+    return result;
   }
 };
 

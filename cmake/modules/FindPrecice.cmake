@@ -56,11 +56,16 @@ if (PRECICE_LIBRARY_DIRS)
     )
 endif()
 
+set(_Precice_build_type "release")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(_Precice_build_type "debug")
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
 if (PRECICE_DIR)
   find_library(Precice_LIBRARY
     NAMES precice
     PATHS ${PRECICE_DIR}
-    PATH_SUFFIXES build/release
+    PATH_SUFFIXES "build/${_Precice_build_type}"
     NO_DEFAULT_PATH
     )
 endif()
@@ -68,7 +73,7 @@ endif()
 if (NOT Precice_LIBRARY)
   find_library(Precice_LIBRARY
     NAMES precice
-    PATH_SUFFIXES build/release
+    PATH_SUFFIXES "build/${_Precice_build_type}"
     )
 endif()
 

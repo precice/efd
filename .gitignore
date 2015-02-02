@@ -36,7 +36,6 @@
 
 !/source
 !/source/EntryPoint/
-!/source/EntryPoint/Private
 !/source/FluidSimulation
 !/source/FluidSimulation/GhostLayer
 !/source/FluidSimulation/GhostLayer/Private
@@ -46,6 +45,7 @@
 !/source/FluidSimulation/ImmersedBoundary/FeedbackForcing
 !/source/FluidSimulation/Private
 !/source/StructuredMemory/
+!/source/Utility/
 !/source/**/*.c
 !/source/**/*.cpp
 !/source/**/*.h

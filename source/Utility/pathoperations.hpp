@@ -1,12 +1,11 @@
-#ifndef FsiSimulation_EntryPoint_Private_convertUtfPathToAnsi_hpp
-#define FsiSimulation_EntryPoint_Private_convertUtfPathToAnsi_hpp
+#ifndef FsiSimulation_Utility_pathoperations_hpp
+#define FsiSimulation_Utility_pathoperations_hpp
 
 #include <boost/filesystem.hpp>
 #include <boost/locale.hpp>
 
 namespace FsiSimulation {
-namespace EntryPoint {
-namespace Private {
+namespace Utility {
 inline std::string
 convertUtfPathToAnsi(std::string const& input,
                      std::locale const& utfLocale,
@@ -33,7 +32,6 @@ convertUtfPathToAnsi(std::string const& input) {
   return convertUtfPathToAnsi(input,
                               globalLocale,
                               ansiLocale);
-}
 }
 }
 }
