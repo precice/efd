@@ -35,9 +35,9 @@
 
 
     <geometry:builtin-sphere of-mesh = "Body">
-      <discretization-width value = "0.01"/>
+      <discretization-width value = "0.001"/>
       <radius value = "0.05"/>
-      <offset value = "0.2; 0.20"/>
+      <offset value = "0.2; 0.2"/>
     </geometry:builtin-sphere>
 
     <!-- TAG spacetree:dynamic-octree
@@ -77,16 +77,16 @@
          participant. -->
     <participant name = "Fluid">
 
-      <mapping:rbf-thin-plate-splines
-        constraint="conservative"
-        direction="write"
+      <mapping:nearest-neighbor
+        constraint = "consistent"
+        direction = "write"
         from = "FluidMesh"
         to = "Body"
         timing = "ondemand"/>
 
-      <mapping:rbf-thin-plate-splines
-        constraint="conservative"
-        direction="read"
+      <mapping:nearest-neighbor
+        constraint = "conservative"
+        direction = "read"
         from = "Body"
         to = "FluidMesh"
         timing = "ondemand"/>

@@ -18,7 +18,8 @@
 #include <Uni/Logging/macros>
 #include <Uni/Stopwatch>
 
-#include <memory>
+#include <map>
+#include <unordered_map>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
@@ -125,7 +126,24 @@ public:
           _preciceInterface->setMeshVertex(
             fluidMeshId,
             position.data());
-        _vertexIds.push_back(vertexId);
+        VectorDiType leftPositions[TD];
+
+        for (int d = 0; d < TD; ++d) {
+          if (accessor.leftIndexInDimension (d)(d)
+              >= _grid.innerGrid.leftIndent(d)) {
+            _preciceInterface->setMeshEdge(
+              fluidMeshId,
+              vertexId,
+              _vertexIds[accessor.leftIndexInDimension(d)]);
+
+            if (_vertexIds.find(accessor.leftIndexInDimension(d))
+                == _vertexIds.end()) {
+              logInfo("Failed {1}", accessor.leftIndexInDimension(d));
+            }
+          }
+        }
+
+        _vertexIds.insert(std::make_pair(accessor.indexValues(), vertexId));
       }
 
       // ImmersedBoundary::Fadlun::template computeDistances<CellAccessorType,
@@ -133,7 +151,6 @@ public:
       // accessor,
       // _preciceInterface);
     }
-        logInfo("@@@@@@@@@@@@@");
 
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
@@ -184,7 +201,7 @@ public:
     _maxVelocity = VelocityType::Zero();
 
     if (_parallelDistribution.rank == 0) {
-        logInfo("N = {1}; t = {2}", _iterationCount, _time);
+              logInfo("N = {1}; t = {2}", _iterationCount, _time);
     }
     // logInfo("Time step size {1}",   _dt);
 
@@ -265,17 +282,28 @@ public:
       diffusion = (1.0 / _parameters.re()) * diffusion;
       VelocityType temp = VelocityType::Zero();
 
+      VelocityType velocity;
+
+      for (int d = 0; d < TD; ++d) {
+        velocity(d) = 0.5 * (accessor.leftCellInDimension(d)->velocity(d)
+                             + accessor.currentCell()->velocity(d));
+      }
       // if (isBody) {
-      temp = -accessor.currentCell()->velocity() + _dt * (
-        1.5 * convection - 0.5 * previousConvection
-        - diffusion
-        + computePressureGradient(accessor));
+      temp = velocity; // + _dt * (
+      // -1.5 * convection + 0.5 * previousConvection
+      // + diffusion
+      // - computePressureGradient(accessor));
       // }
 
       _preciceInterface->writeVectorData(
         fluidMeshVelocitiesId,
-        _vertexIds[index],
+        _vertexIds[accessor.currentIndex()],
         temp.data());
+
+      if (_vertexIds.find(accessor.currentIndex())
+          == _vertexIds.end()) {
+        logInfo("Failed {1}", accessor.currentIndex());
+      }
 
       accessor.currentCell()->convection() = convection;
 
@@ -297,16 +325,16 @@ public:
         index,
         velocity.data());
 
-      velocity = velocity / _dt;
+      VectorDsType force = -velocity;
 
-      //if (velocity != VelocityType::Zero()) {
-      //  logInfo("{1}", velocity.transpose());
-      //}
+      // if (velocity != VelocityType::Zero()) {
+      // logInfo("{1}", velocity.transpose());
+      // }
 
       _preciceInterface->writeVectorData(
         bodyMeshForcesId,
         index,
-        velocity.data());
+        force.data());
     }
 
     _preciceInterface->mapReadDataTo(fluidMeshId);
@@ -317,14 +345,18 @@ public:
       VelocityType velocity;
       _preciceInterface->readVectorData(
         fluidMeshForcesId,
-        _vertexIds[index],
+        _vertexIds[accessor.currentIndex()],
         velocity.data());
 
-      if (velocity != VelocityType::Zero()) {
-        logInfo("{2} {1}", velocity.transpose(), accessor.indexValues().transpose());
-      }
+      // if (velocity != VelocityType::Zero()) {
+      // logInfo("{2} {1}", velocity.transpose(),
+      // accessor.indexValues().transpose());
 
-      accessor.currentCell()->fgh() += _dt * velocity;
+      // if (velocity != VelocityType::Zero()) {
+      //   accessor.currentCell()->fgh() +=
+      //     -accessor.currentCell()->velocity();
+      // }
+        accessor.currentCell()->fgh() += velocity;
 
       ++index;
     }
@@ -408,12 +440,28 @@ public:
     return true;
   }
 
-  MemoryType                _memory;
-  GridGeometryType          _gridGeometry;
-  GridType                  _grid;
-  std::vector<int>          _vertexIds;
-  ParametersType            _parameters;
-  ParallelDistributionType  _parallelDistribution;
+  struct Comparison {
+    bool
+    operator()(VectorDiType const& one,
+               VectorDiType const& two) const {
+      return (one.array() == two.array()).all();
+    }
+  };
+
+  struct Hash {
+    std::size_t
+    operator()(VectorDiType const& one) const {
+      return one.sum();
+    }
+  };
+
+  MemoryType                                  _memory;
+  GridGeometryType                            _gridGeometry;
+  GridType                                    _grid;
+  std::unordered_map<VectorDiType, int, Hash> _vertexIds;
+  ParametersType                              _parameters;
+  ParallelDistributionType
+                            _parallelDistribution;
   precice::SolverInterface* _preciceInterface;
   TScalar                   _dt;
   TScalar                   _time;
