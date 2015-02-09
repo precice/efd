@@ -69,21 +69,23 @@ public:
   }
 
   VectorDi
-  relativeIndex(int const& dimension, int const& direction) const {
+  relativeIndex(int const& dimension, int const& direction,
+                int const& distance = 1) const {
     VectorDi result(this->indexValues());
 
     if (direction == 0) {
-      result(dimension) -= 1;
+      result(dimension) -= distance;
     } else {
-      result(dimension) += 1;
+      result(dimension) += distance;
     }
 
     return result;
   }
 
   Cell*
-  relativeCell(int const& dimension, int const& direction) const {
-    return (* _memory)(relativeIndex(dimension, direction));
+  relativeCell(int const& dimension, int const& direction,
+               int const& distance = 1) const {
+    return (* _memory)(relativeIndex(dimension, direction, distance));
   }
 
   Cell*

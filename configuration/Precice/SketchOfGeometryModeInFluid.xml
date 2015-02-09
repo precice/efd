@@ -77,15 +77,15 @@
          participant. -->
     <participant name = "Fluid">
 
-      <mapping:nearest-neighbor
+      <mapping:rbf-thin-plate-splines
         constraint = "consistent"
         direction = "write"
         from = "FluidMesh"
         to = "Body"
         timing = "ondemand"/>
 
-      <mapping:nearest-neighbor
-        constraint = "conservative"
+      <mapping:rbf-thin-plate-splines
+        constraint = "consistent"
         direction = "read"
         from = "Body"
         to = "FluidMesh"

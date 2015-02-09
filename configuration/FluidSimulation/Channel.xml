@@ -2,21 +2,21 @@
 <!-- Re = 20 size = "200,50" N = 4239; t = 0.916082 -->
 <!-- 6.37099 -0.0372942 -->
 <scenario
-  Re = "20"
-  timeLimit = "0.2"
-  iterationLimit = "100"
-  plotInterval = "0.0"
+  Re = "100"
+  timeLimit = "1.0"
+  iterationLimit = "0"
+  plotInterval = "0.01"
   tau = "0.5"
   gamma = "0.5"
   dim = "2"
   width = "2.2,0.41"
-  size = "220,41"
+  size = "220,82"
   parallelizationSize = "1,1,1"
   environment = "0,0"
   filename = "Channel2D"
   >
   <walls>
-    <left type = "ParabolicInput" velocity = "0.3,0.0" />
+    <left type = "ParabolicInput" velocity = "1.5,0.0" />
     <right type = "Output" />
     <bottom type = "Input" velocity = "0.0,0.0" />
     <top type = "Input" velocity = "0.0,0.0" />

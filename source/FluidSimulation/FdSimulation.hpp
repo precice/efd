@@ -92,6 +92,80 @@ public:
     logParallelTopologyInfo(_parallelDistribution);
   }
 
+  int
+  isOutside(int const& position) const {
+    namespace pc = precice::constants;
+
+    if (position == pc::positionOutsideOfGeometry()) {
+      return 1;
+    } else if (position == pc::positionOnGeometry()) {
+      return 0;
+    } else if (position == pc::positionInsideOfGeometry()) {
+      return 0;
+    }
+
+    return -1;
+  }
+
+  int
+  isTheSamePosition(int const& position0,
+                    int const& position1) const {
+    auto const& result0 = isOutside(position0);
+    auto const& result1 = isOutside(position1);
+
+    if ((result0 == -1)
+        || (result1 == -1)) {
+      return -1;
+    }
+
+    if (result0 == result1) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+
+  int
+  computeCellDistance(CellAccessorType const& accessor,
+                      int const&              distance) const {
+    int position = accessor.currentCell()->position();
+
+    bool result = true;
+
+    for (int currentDistance = 1;
+         currentDistance <= distance;
+         ++currentDistance) {
+      for (int d = 0; d < TD; ++d) {
+        for (int d2 = 0; d2 < 2; ++d2) {
+          auto index = accessor.currentIndex();
+
+          if (d2 == 0) {
+            index(d) -= currentDistance;
+          } else {
+            index(d) += currentDistance;
+          }
+
+          if ((index(d) < _grid.innerGrid.leftIndent() (d))
+              || (index(d) >= _grid.innerGrid.innerLimit() (d))) {
+            continue;
+          }
+
+          auto const position1 = accessor.absoluteCell(index)->position();
+
+          if (isTheSamePosition(position, position1) == 0) {
+            result = false;
+
+            return currentDistance;
+          } else {
+            result = true;
+          }
+        }
+      }
+    }
+
+    return -1;
+  }
+
   void
   initialize(precice::SolverInterface* preciceInteface,
              Path const&               outputDirectory,
@@ -101,59 +175,82 @@ public:
                           &_parallelDistribution,
                           &_ghostHandler,
                           &_dt);
+    _preciceInterface->initialize();
+    _preciceInterface->initializeData();
 
     auto fluidMeshId = _preciceInterface->getMeshID("FluidMesh");
 
-    for (auto const& accessor : _grid) {
-      accessor.currentCell()->velocity() = VelocityType::Zero();
-      accessor.currentCell()->fgh()      = VelocityType::Zero();
-      accessor.currentCell()->pressure() = 0.0;
+    for (auto const& accessor : _grid.innerGrid) {
+      ImmersedBoundary::Fadlun::template
+      computeDistances<CellAccessorType, TD>(accessor, _preciceInterface);
+    }
 
-      bool isInnerCell = true;
+    for (auto const& accessor : _grid.innerGrid) {
+      Eigen::Vector4i pattern({ 0, 1, 1, 0 });
 
-      for (int d = 0; d < TD; ++d) {
-        if ((accessor.indexValue(d) >= _grid.innerGrid.innerLimit(d))
-            || accessor.indexValue(d) < _grid.innerGrid.leftIndent(d)) {
-          isInnerCell = false;
+      bool doAdd = false;
+
+      int distance = computeCellDistance(accessor, 2);
+      // logInfo("{1} {2}", accessor.indexValues().transpose(),
+      // distance);
+
+      if (distance != -1) {
+        for (int i = 0; i < 4; ++i) {
+          auto const& position = pattern(i);
+
+          if (!((i == distance)
+                && (position == 1))) {
+            continue;
+          }
+
+          if (i < 2) {
+            if (isOutside(accessor.currentCell()->position()) == 1) {
+              doAdd = true;
+            }
+          } else {
+            if (isOutside(accessor.currentCell()->position()) == 0) {
+              doAdd = true;
+            }
+          }
           break;
         }
       }
 
-      if (isInnerCell) {
+      if (doAdd) {
+        logInfo("{1} {2}", accessor.indexValues().transpose(),
+                distance);
         VectorDsType position = accessor.currentPosition();
         position += 0.5 * accessor.currentWidth();
         auto vertexId =
           _preciceInterface->setMeshVertex(
             fluidMeshId,
             position.data());
-        VectorDiType leftPositions[TD];
+        // VectorDiType leftPositions[TD];
 
-        for (int d = 0; d < TD; ++d) {
-          if (accessor.leftIndexInDimension (d)(d)
-              >= _grid.innerGrid.leftIndent(d)) {
-            _preciceInterface->setMeshEdge(
-              fluidMeshId,
-              vertexId,
-              _vertexIds[accessor.leftIndexInDimension(d)]);
+        // for (int d = 0; d < TD; ++d) {
+        // if (accessor.leftIndexInDimension (d)(d)
+        // >= _grid.innerGrid.leftIndent(d)) {
+        // _preciceInterface->setMeshEdge(
+        // fluidMeshId,
+        // vertexId,
+        // _vertexIds[accessor.leftIndexInDimension(d)]);
 
-            if (_vertexIds.find(accessor.leftIndexInDimension(d))
-                == _vertexIds.end()) {
-              logInfo("Failed {1}", accessor.leftIndexInDimension(d));
-            }
-          }
-        }
+        // if (_vertexIds.find(accessor.leftIndexInDimension(d))
+        // == _vertexIds.end()) {
+        // logInfo("Failed {1}", accessor.leftIndexInDimension(d));
+        // }
+        // }
+        // }
 
         _vertexIds.insert(std::make_pair(accessor.indexValues(), vertexId));
       }
-
-      // ImmersedBoundary::Fadlun::template computeDistances<CellAccessorType,
-      // TD>(
-      // accessor,
-      // _preciceInterface);
     }
 
-    _preciceInterface->initialize();
-    _preciceInterface->initializeData();
+    for (auto const& accessor : _grid) {
+      accessor.currentCell()->velocity() = VelocityType::Zero();
+      accessor.currentCell()->fgh()      = VelocityType::Zero();
+      accessor.currentCell()->pressure() = 0.0;
+    }
 
     for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
@@ -196,12 +293,13 @@ public:
 
     _dt = TimeStepProcessing<TScalar, TD>::compute(_parameters.re(),
                                                    _parameters.tau(),
-                                                   _gridGeometry.minCellWidth(),
+                                                   _gridGeometry.
+                                                   minCellWidth(),
                                                    _maxVelocity);
     _maxVelocity = VelocityType::Zero();
 
     if (_parallelDistribution.rank == 0) {
-              logInfo("N = {1}; t = {2}", _iterationCount, _time);
+      logInfo("N = {1}; t = {2}", _iterationCount, _time);
     }
     // logInfo("Time step size {1}",   _dt);
 
@@ -227,9 +325,10 @@ public:
     // }
     //
     auto fluidMeshId     = _preciceInterface->getMeshID("FluidMesh");
-    auto fluidVertexSize = _preciceInterface->getMeshVertexSize(fluidMeshId);
-    auto bodyMeshId      = _preciceInterface->getMeshID("Body");
-    auto bodyVertexSize  = _preciceInterface->getMeshVertexSize(bodyMeshId);
+    auto fluidVertexSize = _preciceInterface->getMeshVertexSize(
+      fluidMeshId);
+    auto bodyMeshId     = _preciceInterface->getMeshID("Body");
+    auto bodyVertexSize = _preciceInterface->getMeshVertexSize(bodyMeshId);
 
     auto fluidMeshVelocitiesId = _preciceInterface->getDataID(
       "Velocities",
@@ -288,21 +387,16 @@ public:
         velocity(d) = 0.5 * (accessor.leftCellInDimension(d)->velocity(d)
                              + accessor.currentCell()->velocity(d));
       }
-      // if (isBody) {
-      temp = velocity; // + _dt * (
-      // -1.5 * convection + 0.5 * previousConvection
-      // + diffusion
-      // - computePressureGradient(accessor));
-      // }
 
-      _preciceInterface->writeVectorData(
-        fluidMeshVelocitiesId,
-        _vertexIds[accessor.currentIndex()],
-        temp.data());
-
-      if (_vertexIds.find(accessor.currentIndex())
-          == _vertexIds.end()) {
-        logInfo("Failed {1}", accessor.currentIndex());
+      if (_vertexIds.find(accessor.currentIndex()) != _vertexIds.end()) {
+        temp = velocity + _dt * (
+          -1.5 * convection + 0.5 * previousConvection
+          + diffusion
+          - computePressureGradient(accessor));
+        _preciceInterface->writeVectorData(
+          fluidMeshVelocitiesId,
+          _vertexIds[accessor.currentIndex()],
+          temp.data());
       }
 
       accessor.currentCell()->convection() = convection;
@@ -339,13 +433,16 @@ public:
 
     _preciceInterface->mapReadDataTo(fluidMeshId);
 
-    index = 0;
-
     for (auto const& accessor : _grid.innerGrid) {
+      auto find_it =  _vertexIds.find(accessor.currentIndex());
+
+      if (find_it == _vertexIds.end()) {
+        continue;
+      }
       VelocityType velocity;
       _preciceInterface->readVectorData(
         fluidMeshForcesId,
-        _vertexIds[accessor.currentIndex()],
+        find_it->second,
         velocity.data());
 
       // if (velocity != VelocityType::Zero()) {
@@ -353,12 +450,10 @@ public:
       // accessor.indexValues().transpose());
 
       // if (velocity != VelocityType::Zero()) {
-      //   accessor.currentCell()->fgh() +=
-      //     -accessor.currentCell()->velocity();
+      // accessor.currentCell()->fgh() +=
+      // -accessor.currentCell()->velocity();
       // }
-        accessor.currentCell()->fgh() += velocity;
-
-      ++index;
+      accessor.currentCell()->fgh() += velocity;
     }
 
     for (int d = 0; d < TD; ++d) {

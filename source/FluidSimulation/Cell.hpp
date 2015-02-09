@@ -114,6 +114,16 @@ public:
     return _pressure;
   }
 
+  int&
+  position() {
+    return _position;
+  }
+
+  int const&
+  position() const {
+    return _position;
+  }
+
   VectorDi&
   positions() {
     return _positions;
@@ -140,6 +150,7 @@ private:
   VectorDs _convection;
   VectorDs _distances;
   Scalar   _pressure;
+  int _position;
   VectorDi _positions;
 };
 }
