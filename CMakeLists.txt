@@ -201,7 +201,7 @@ install(DIRECTORY "${PROJECT_DIR}/configuration/FluidPetsc"
 
 install(DIRECTORY "${PROJECT_DIR}/configuration/Precice"
   DESTINATION "${INSTALL_BINARY_DIR}"
-  FILES_MATCHING REGEX "(.*\\.xml)$"
+  FILES_MATCHING REGEX "(.*\\.(xml|py))$"
   )
 
 

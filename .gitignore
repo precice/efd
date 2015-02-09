@@ -22,6 +22,7 @@
 !/configuration/FluidPetsc/*.conf
 !/configuration/FluidSimulation/*.xml
 !/configuration/Precice/*.xml
+!/configuration/Precice/*.py
 
 !/documentation
 !/documentation/development

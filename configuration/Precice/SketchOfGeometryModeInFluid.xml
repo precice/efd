@@ -82,14 +82,14 @@
         direction = "write"
         from = "FluidMesh"
         to = "Body"
-        timing = "ondemand"/>
+        timing = "initial"/>
 
       <mapping:rbf-thin-plate-splines
         constraint = "consistent"
         direction = "read"
         from = "Body"
         to = "FluidMesh"
-        timing = "ondemand"/>
+        timing = "initial"/>
 
       <!-- TAG write-data Sets data to be written by the participant to
            preCICE. Data is defined by using the <data> tag.
@@ -167,6 +167,12 @@
       <!--
       <server:mpi-single/>
         -->
+      <action:python mesh="Body" timing="regular-post">
+        <path name="/home/wscrichy/Documents/Thesis/CppProject/configuration/Precice"/>
+        <module name="directForcingAction"/>
+        <source-data name="Velocities"/>
+        <target-data name="Forces"/>
+      </action:python>
     </participant>
   </solver-interface>
 </precice-configuration>

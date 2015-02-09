@@ -217,8 +217,6 @@ public:
       }
 
       if (doAdd) {
-        logInfo("{1} {2}", accessor.indexValues().transpose(),
-                distance);
         VectorDsType position = accessor.currentPosition();
         position += 0.5 * accessor.currentWidth();
         auto vertexId =
@@ -407,31 +405,33 @@ public:
       ++index;
     }
 
-    _preciceInterface->mapWriteDataFrom(fluidMeshId);
+    // _preciceInterface->mapWriteDataFrom(fluidMeshId);
 
-    index = 0;
+    // index = 0;
 
-    for (; index < _preciceInterface->getMeshVertexSize(bodyMeshId);
-         ++index) {
-      VelocityType velocity;
-      _preciceInterface->readVectorData(
-        bodyMeshVelocitiesId,
-        index,
-        velocity.data());
+    // for (; index < _preciceInterface->getMeshVertexSize(bodyMeshId);
+    //      ++index) {
+    //   VelocityType velocity;
+    //   _preciceInterface->readVectorData(
+    //     bodyMeshVelocitiesId,
+    //     index,
+    //     velocity.data());
 
-      VectorDsType force = -velocity;
+    //   VectorDsType force = -velocity;
 
-      // if (velocity != VelocityType::Zero()) {
-      // logInfo("{1}", velocity.transpose());
-      // }
+    //   // if (velocity != VelocityType::Zero()) {
+    //   // logInfo("{1}", velocity.transpose());
+    //   // }
 
-      _preciceInterface->writeVectorData(
-        bodyMeshForcesId,
-        index,
-        force.data());
-    }
+    //   _preciceInterface->writeVectorData(
+    //     bodyMeshForcesId,
+    //     index,
+    //     force.data());
+    // }
 
-    _preciceInterface->mapReadDataTo(fluidMeshId);
+    // _preciceInterface->mapReadDataTo(fluidMeshId);
+    // 
+    _preciceInterface->advance(_dt);
 
     for (auto const& accessor : _grid.innerGrid) {
       auto find_it =  _vertexIds.find(accessor.currentIndex());
