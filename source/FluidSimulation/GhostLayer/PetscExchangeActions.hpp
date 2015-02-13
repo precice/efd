@@ -1,7 +1,6 @@
 #ifndef FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Actions_hpp
 #define FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Actions_hpp
 
-#include "FluidSimulation/Configuration.hpp"
 #include "FluidSimulation/ParallelDistribution.hpp"
 
 #include "StructuredMemory/Pointers.hpp"
@@ -13,64 +12,52 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
 namespace PetscExchange {
-template <typename TGrid,
-          int TD,
-          int TDimension,
-          int TDirection>
-class MovingWallRhsAction {
+template <typename TCellAccessor>
+class ConstantRhsGenerationAction {
 public:
-  typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
-  typedef ParallelDistribution<TD>
-    SpecializedParallelTopology;
+  typedef TCellAccessor                           CellAccessorType;
+  typedef typename CellAccessorType::CellType     CellType;
+  typedef typename CellAccessorType::VectorDiType VectorDiType;
+  typedef typename CellType::Scalar               Scalar;
+
+  enum {
+    Dimensions = CellType::Dimensions
+  };
+
+private:
+  typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
 
 public:
-  MovingWallRhsAction(
-    Configuration*                     parameters,
-    SpecializedParallelTopology const* parallelTopology)
-    : _parameters(parameters),
-      _parallelTopology(parallelTopology) {}
+  ConstantRhsGenerationAction(Scalar const& value)
+    : _value(value) {}
 
-  void
-  exchange(typename TGrid::CellAccessor const& current,
-           typename Pointers::Type             array) {
-    auto corner = _parallelTopology->corner;
-
-    auto index = current.indexValues();
-    index += corner;
-
-    Pointers::dereference(array, index) = 0.0;
+  inline void
+  exchange(typename Pointers::Type array,
+           VectorDiType const&              index,
+           CellAccessorType const& accessor) {
+    Pointers::dereference(array, index) = _value;
   }
 
-  Configuration*                     _parameters;
-  SpecializedParallelTopology const* _parallelTopology;
+private:
+  Scalar _value;
 };
 
-template <typename TGrid,
-          int TD,
-          int TDimension,
-          int TDirection>
-class CopyPressureAction {
+class PpeRhsAcquiererAction {
 public:
-  typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
-  typedef ParallelDistribution<TD>
-    SpecializedParallelTopology;
-
-public:
-  CopyPressureAction(SpecializedParallelTopology const* parallelTopology)
-    : _parallelTopology(parallelTopology) {}
-
-  void
-  exchange(typename TGrid::CellAccessor const& current,
-           typename Pointers::Type             array) {
-    auto corner = _parallelTopology->corner;
-
-    auto index = current.indexValues();
-    index += corner;
-
-    current.currentCell()->pressure() = Pointers::dereference(array, index);
+  template <typename TCellAccessor>
+  inline void
+  exchange(
+    typename StructuredMemory::Pointers
+    <PetscScalar, TCellAccessor::CellType::Dimensions>::Type array,
+    typename TCellAccessor::VectorDiType const& index,
+    TCellAccessor const&
+    accessor) {
+    typedef TCellAccessor                       CellAccessorType;
+    typedef typename CellAccessorType::CellType CellType;
+    typedef StructuredMemory::Pointers
+      <PetscScalar, CellType::Dimensions> Pointers;
+    accessor.currentCell()->pressure() = Pointers::dereference(array, index);
   }
-
-  SpecializedParallelTopology const* _parallelTopology;
 };
 }
 }

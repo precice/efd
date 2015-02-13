@@ -55,6 +55,7 @@ public:
        SimulationBuilder::velocityAccessor, Scalar, TD,
        TDimension, TDirection>
       VelocityMpiExchange;
+
     typedef
       FluidSimulation::GhostLayer::Initialization::MovingWallFghAction
       <typename GridS::Base, Scalar, TD, TDimension, TDirection>
@@ -91,28 +92,29 @@ public:
       <typename GridS::Base, OutputFghInitializationAction, TD,
        TDimension, TDirection>
       OutputFghInitialization;
+
     typedef
-      FluidSimulation::GhostLayer::PressureStencil::Handler
-      <GridS, Scalar, TD, TDimension, TDirection>
-      PressureStencil;
+      FluidSimulation::GhostLayer::LsStencilGenerator::Handler
+      <GridS, TDimension, TDirection>
+      PpeStencilGenerationHandler;
+
     typedef
-      FluidSimulation::GhostLayer::PetscExchange::MovingWallRhsAction
-      <GridS, TD, TDimension, TDirection>
-      MovingWallRhsAction;
-    typedef
-      FluidSimulation::GhostLayer::PetscExchange::Handler
-      <GridS, MovingWallRhsAction, TD,
-       TDimension, TDirection>
-      MovingWallRhsHandler;
-    typedef
-      FluidSimulation::GhostLayer::PetscExchange::CopyPressureAction
-      <GridS, TD, TDimension, TDirection>
-      CopyPressureAction;
+      FluidSimulation::GhostLayer::PetscExchange::ConstantRhsGenerationAction<
+        CellAccessorS>
+      PpeRhsGenerationAction;
     typedef
       FluidSimulation::GhostLayer::PetscExchange::Handler
-      <GridS, CopyPressureAction, TD,
-       TDimension, TDirection>
-      CopyPressureHandler;
+      <GridS, PpeRhsGenerationAction, TDimension, TDirection>
+      PpeRhsGenerationHandler;
+
+    typedef
+      FluidSimulation::GhostLayer::PetscExchange::PpeRhsAcquiererAction
+      PpeRhsAcquiererAction;
+    typedef
+      FluidSimulation::GhostLayer::PetscExchange::Handler
+      <GridS, PpeRhsAcquiererAction, TDimension, TDirection>
+      PpeRhsAcquiererHandler;
+
     typedef
       FluidSimulation::GhostLayer::Initialization::MovingWallVelocityAction
       <typename GridS::Base, Scalar, TD, TDimension, TDirection>
@@ -319,33 +321,37 @@ private:
       FghAction;
     typedef typename LeftHandlers::MovingWallFghInitialization
       FghHandler;
-    typedef typename LeftHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename LeftHandlers::MovingWallRhsHandler
-      RhsHandler;
+
+    typedef typename LeftHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename LeftHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename LeftHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+
     typedef typename LeftHandlers::MovingWallVelocityInitializationAction
       VelocityAction;
     typedef typename LeftHandlers::MovingWallVelocityInitialization
       VelocityHandler;
-    typedef typename LeftHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[0][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][0],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[0][0] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[0][0] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[0][0] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+
     _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[0][0] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -355,33 +361,37 @@ private:
       FghAction;
     typedef typename LeftHandlers::InputFghInitialization
       FghHandler;
-    typedef typename LeftHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename LeftHandlers::MovingWallRhsHandler
-      RhsHandler;
+
+    typedef typename LeftHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename LeftHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename LeftHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+
     typedef typename LeftHandlers::InputVelocityInitializationAction
       VelocityAction;
     typedef typename LeftHandlers::InputVelocityInitialization
       VelocityHandler;
-    typedef typename LeftHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[0][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][0],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[0][0] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[0][0] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[0][0] =
+      PpeRhsGenerationHandler::getHandler(_grid, _parallelDistribution,
+                                          new PpeRhsGenerationAction(0.0));
+
     _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[0][0] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -391,33 +401,37 @@ private:
       FghAction;
     typedef typename LeftHandlers::ParabolicInputFghInitialization
       FghHandler;
-    typedef typename LeftHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename LeftHandlers::MovingWallRhsHandler
-      RhsHandler;
+
+    typedef typename LeftHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename LeftHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename LeftHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+
     typedef typename LeftHandlers::ParabolicInputVelocityInitializationAction
       VelocityAction;
     typedef typename LeftHandlers::ParabolicInputVelocityInitialization
       VelocityHandler;
-    typedef typename LeftHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[0][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][0],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[0][0] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[0][0] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[0][0] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+
     _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[0][0] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -427,33 +441,37 @@ private:
       FghAction;
     typedef typename LeftHandlers::OutputFghInitialization
       FghHandler;
-    typedef typename LeftHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename LeftHandlers::MovingWallRhsHandler
-      RhsHandler;
+
+    typedef typename LeftHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename LeftHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename LeftHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+
     typedef typename LeftHandlers::OutputVelocityInitializationAction
       VelocityAction;
     typedef typename LeftHandlers::OutputVelocityInitialization
       VelocityHandler;
-    typedef typename LeftHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[0][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][0],
         _parallelDistribution,
         new FghAction());
-    _handlers->rhsInitialization[0][0] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[0][0] =
+      PpeStencilGenerationHandler::getDirichletMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[0][0] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+
     _handlers->velocityInitialization[0][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][0],
         _parallelDistribution,
         new VelocityAction(_maxVelocity));
-    _handlers->pressureStencilStack[0][0] =
-      PressureStencil::getNeumannHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -495,41 +513,44 @@ private:
       FghAction;
     typedef typename RightHandlers::MovingWallFghInitialization
       FghHandler;
-    typedef typename RightHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename RightHandlers::MovingWallRhsHandler
-      RhsHandler;
-    typedef typename RightHandlers::CopyPressureAction
-      CopyPressureAction;
-    typedef typename RightHandlers::CopyPressureHandler
-      CopyPressureHandler;
+
+    typedef typename RightHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename RightHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename RightHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+    typedef typename RightHandlers::PpeRhsAcquiererAction
+      PpeRhsAcquiererAction;
+    typedef typename RightHandlers::PpeRhsAcquiererHandler
+      PpeRhsAcquiererHandler;
+
     typedef typename RightHandlers::MovingWallVelocityInitializationAction
       VelocityAction;
     typedef typename RightHandlers::MovingWallVelocityInitialization
       VelocityHandler;
-    typedef typename RightHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[0][1] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][1],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[0][1] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
-    _handlers->pressureInitialization[0][1] =
-      CopyPressureHandler::getHandler(
-        _grid,
-        new CopyPressureAction(_parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[0][1] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[0][1] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+    _handlers->ppeRhsAcquiererStack[0][1] =
+      PpeRhsAcquiererHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsAcquiererAction());
+
     _handlers->velocityInitialization[0][1] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][1],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[0][1] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
   void
   _setRightAsInput() {
@@ -538,41 +559,44 @@ private:
       FghAction;
     typedef typename RightHandlers::InputFghInitialization
       FghHandler;
-    typedef typename RightHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename RightHandlers::MovingWallRhsHandler
-      RhsHandler;
-    typedef typename RightHandlers::CopyPressureAction
-      CopyPressureAction;
-    typedef typename RightHandlers::CopyPressureHandler
-      CopyPressureHandler;
+
+    typedef typename RightHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename RightHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename RightHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+    typedef typename RightHandlers::PpeRhsAcquiererAction
+      PpeRhsAcquiererAction;
+    typedef typename RightHandlers::PpeRhsAcquiererHandler
+      PpeRhsAcquiererHandler;
+
     typedef typename RightHandlers::InputVelocityInitializationAction
       VelocityAction;
     typedef typename RightHandlers::InputVelocityInitialization
       VelocityHandler;
-    typedef typename RightHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[0][1] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][1],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[0][1] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
-    _handlers->pressureInitialization[0][1] =
-      CopyPressureHandler::getHandler(
-        _grid,
-        new CopyPressureAction(_parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[0][1] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[0][1] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+    _handlers->ppeRhsAcquiererStack[0][1] =
+      PpeRhsAcquiererHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsAcquiererAction());
+
     _handlers->velocityInitialization[0][1] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][1],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[0][1] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -582,41 +606,44 @@ private:
       FghAction;
     typedef typename RightHandlers::OutputFghInitialization
       FghHandler;
-    typedef typename RightHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename RightHandlers::MovingWallRhsHandler
-      RhsHandler;
-    typedef typename RightHandlers::CopyPressureAction
-      CopyPressureAction;
-    typedef typename RightHandlers::CopyPressureHandler
-      CopyPressureHandler;
+
+    typedef typename RightHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename RightHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename RightHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+    typedef typename RightHandlers::PpeRhsAcquiererAction
+      PpeRhsAcquiererAction;
+    typedef typename RightHandlers::PpeRhsAcquiererHandler
+      PpeRhsAcquiererHandler;
+
     typedef typename RightHandlers::OutputVelocityInitializationAction
       VelocityAction;
     typedef typename RightHandlers::OutputVelocityInitialization
       VelocityHandler;
-    typedef typename RightHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[0][1] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[0][1],
         _parallelDistribution,
         new FghAction());
-    _handlers->rhsInitialization[0][1] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
-    _handlers->pressureInitialization[0][1] =
-      CopyPressureHandler::getHandler(
-        _grid,
-        new CopyPressureAction(_parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[0][1] =
+      PpeStencilGenerationHandler::getDirichletMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[0][1] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+    _handlers->ppeRhsAcquiererStack[0][1] =
+      PpeRhsAcquiererHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsAcquiererAction());
+
     _handlers->velocityInitialization[0][1] =
       VelocityHandler::getHandler(
         &_grid->boundaries[0][1],
         _parallelDistribution,
         new VelocityAction(_maxVelocity));
-    _handlers->pressureStencilStack[0][1] =
-      PressureStencil::getNeumannHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -658,33 +685,37 @@ private:
       FghAction;
     typedef typename BottomHandlers::MovingWallFghInitialization
       FghHandler;
-    typedef typename BottomHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename BottomHandlers::MovingWallRhsHandler
-      RhsHandler;
+
+    typedef typename BottomHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename BottomHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename BottomHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+
     typedef typename BottomHandlers::MovingWallVelocityInitializationAction
       VelocityAction;
     typedef typename BottomHandlers::MovingWallVelocityInitialization
       VelocityHandler;
-    typedef typename BottomHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[1][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[1][0],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[1][0] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[1][0] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[1][0] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+
     _handlers->velocityInitialization[1][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[1][0],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[1][0] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -726,41 +757,44 @@ private:
       FghAction;
     typedef typename TopHandlers::MovingWallFghInitialization
       FghHandler;
-    typedef typename TopHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename TopHandlers::MovingWallRhsHandler
-      RhsHandler;
-    typedef typename TopHandlers::CopyPressureAction
-      CopyPressureAction;
-    typedef typename TopHandlers::CopyPressureHandler
-      CopyPressureHandler;
+
+    typedef typename TopHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename TopHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename TopHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+    typedef typename TopHandlers::PpeRhsAcquiererAction
+      PpeRhsAcquiererAction;
+    typedef typename TopHandlers::PpeRhsAcquiererHandler
+      PpeRhsAcquiererHandler;
+
     typedef typename TopHandlers::MovingWallVelocityInitializationAction
       VelocityAction;
     typedef typename TopHandlers::MovingWallVelocityInitialization
       VelocityHandler;
-    typedef typename TopHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[1][1] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[1][1],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[1][1] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
-    _handlers->pressureInitialization[1][1] =
-      CopyPressureHandler::getHandler(
-        _grid,
-        new CopyPressureAction(_parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[1][1] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[1][1] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+    _handlers->ppeRhsAcquiererStack[1][1] =
+      PpeRhsAcquiererHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsAcquiererAction());
+
     _handlers->velocityInitialization[1][1] =
       VelocityHandler::getHandler(
         &_grid->boundaries[1][1],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[1][1] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -802,33 +836,37 @@ private:
       FghAction;
     typedef typename BackHandlers::MovingWallFghInitialization
       FghHandler;
-    typedef typename BackHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename BackHandlers::MovingWallRhsHandler
-      RhsHandler;
+
+    typedef typename BackHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename BackHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename BackHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+
     typedef typename BackHandlers::MovingWallVelocityInitializationAction
       VelocityAction;
     typedef typename BackHandlers::MovingWallVelocityInitialization
       VelocityHandler;
-    typedef typename BackHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[2][0] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[2][0],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[2][0] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[2][0] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[2][0] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+
     _handlers->velocityInitialization[2][0] =
       VelocityHandler::getHandler(
         &_grid->boundaries[2][0],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[2][0] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void
@@ -870,41 +908,44 @@ private:
       FghAction;
     typedef typename FrontHandlers::MovingWallFghInitialization
       FghHandler;
-    typedef typename FrontHandlers::MovingWallRhsAction
-      RhsAction;
-    typedef typename FrontHandlers::MovingWallRhsHandler
-      RhsHandler;
-    typedef typename FrontHandlers::CopyPressureAction
-      CopyPressureAction;
-    typedef typename FrontHandlers::CopyPressureHandler
-      CopyPressureHandler;
+
+    typedef typename FrontHandlers::PpeStencilGenerationHandler
+      PpeStencilGenerationHandler;
+    typedef typename FrontHandlers::PpeRhsGenerationAction
+      PpeRhsGenerationAction;
+    typedef typename FrontHandlers::PpeRhsGenerationHandler
+      PpeRhsGenerationHandler;
+    typedef typename FrontHandlers::PpeRhsAcquiererAction
+      PpeRhsAcquiererAction;
+    typedef typename FrontHandlers::PpeRhsAcquiererHandler
+      PpeRhsAcquiererHandler;
+
     typedef typename FrontHandlers::MovingWallVelocityInitializationAction
       VelocityAction;
     typedef typename FrontHandlers::MovingWallVelocityInitialization
       VelocityHandler;
-    typedef typename FrontHandlers::PressureStencil
-      PressureStencil;
 
     _handlers->fghInitialization[2][1] =
       FghHandler::getHandler(
         &_grid->indentedBoundaries[2][1],
         _parallelDistribution,
         new FghAction(_configuration));
-    _handlers->rhsInitialization[2][1] =
-      RhsHandler::getHandler(
-        _grid,
-        new RhsAction(_configuration, _parallelDistribution));
-    _handlers->pressureInitialization[2][1] =
-      CopyPressureHandler::getHandler(
-        _grid,
-        new CopyPressureAction(_parallelDistribution));
+
+    _handlers->ppeStencilGeneratorStack[2][1] =
+      PpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                    _parallelDistribution);
+    _handlers->ppeRhsGeneratorStack[2][1] =
+      PpeRhsGenerationHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsGenerationAction(0.0));
+    _handlers->ppeRhsAcquiererStack[2][1] =
+      PpeRhsAcquiererHandler::getHandler(
+        _grid, _parallelDistribution, new PpeRhsAcquiererAction());
+
     _handlers->velocityInitialization[2][1] =
       VelocityHandler::getHandler(
         &_grid->boundaries[2][1],
         _parallelDistribution,
         new VelocityAction(_configuration, _maxVelocity));
-    _handlers->pressureStencilStack[2][1] =
-      PressureStencil::getDirichletHandler(_grid, _parallelDistribution);
   }
 
   void

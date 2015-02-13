@@ -14,6 +14,10 @@ public:
   typedef VectorDs                     Velocity;
   typedef Scalar                       Pressure;
 
+  enum {
+    Dimensions = TD
+  };
+
 public:
   Cell() {}
 

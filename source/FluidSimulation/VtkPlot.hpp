@@ -115,11 +115,9 @@ public:
           != CellAccessorType::VectorDiType::Zero() &&
           (accessor.indexValues().array()
            <= (_grid->innerGrid.innerLimit().array())).all()) {
-        typedef RhsProcessing
-          <typename GridType::CellAccessorType, TScalar, TD> rhspr;
         // rhsStream << "RHS "
         rhsStream
-          << rhspr::compute(accessor, dt) << std::endl;
+          << PpeRhsGenerator::get(accessor, dt) << std::endl;
       } else {
         // rhsStream << "RHS "
         rhsStream

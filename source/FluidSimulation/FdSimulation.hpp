@@ -48,11 +48,10 @@ public:
   typedef ParallelDistribution<TD> ParallelDistributionType;
 
   typedef FluidSimulation::LinearSolver<
-      TMemory,
-      TGridGeometry,
-      PpeStencilGenerator<TD>,
-      ScalarType,
-      TD>
+      GridType,
+      PpeStencilGenerator,
+      PpeRhsGenerator,
+      PpeResultAcquirer>
     PpeSolverType;
 
   typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
@@ -173,7 +172,9 @@ public:
     _preciceInterface = preciceInteface;
     _ppeSolver.initialize(&_grid,
                           &_parallelDistribution,
-                          &_ghostHandler,
+                          &_ghostHandler.ppeStencilGeneratorStack,
+                          &_ghostHandler.ppeRhsGeneratorStack,
+                          &_ghostHandler.ppeRhsAcquiererStack,
                           &_dt);
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
@@ -186,7 +187,7 @@ public:
     }
 
     for (auto const& accessor : _grid.innerGrid) {
-      Eigen::Vector4i pattern({ 0, 1, 1, 0 });
+      Eigen::Vector4i pattern({ 1, 1, 1, 1 });
 
       bool doAdd = false;
 
@@ -410,27 +411,27 @@ public:
     // index = 0;
 
     // for (; index < _preciceInterface->getMeshVertexSize(bodyMeshId);
-    //      ++index) {
-    //   VelocityType velocity;
-    //   _preciceInterface->readVectorData(
-    //     bodyMeshVelocitiesId,
-    //     index,
-    //     velocity.data());
+    // ++index) {
+    // VelocityType velocity;
+    // _preciceInterface->readVectorData(
+    // bodyMeshVelocitiesId,
+    // index,
+    // velocity.data());
 
-    //   VectorDsType force = -velocity;
+    // VectorDsType force = -velocity;
 
-    //   // if (velocity != VelocityType::Zero()) {
-    //   // logInfo("{1}", velocity.transpose());
-    //   // }
+    //// if (velocity != VelocityType::Zero()) {
+    //// logInfo("{1}", velocity.transpose());
+    //// }
 
-    //   _preciceInterface->writeVectorData(
-    //     bodyMeshForcesId,
-    //     index,
-    //     force.data());
+    // _preciceInterface->writeVectorData(
+    // bodyMeshForcesId,
+    // index,
+    // force.data());
     // }
 
     // _preciceInterface->mapReadDataTo(fluidMeshId);
-    // 
+    //
     _preciceInterface->advance(_dt);
 
     for (auto const& accessor : _grid.innerGrid) {

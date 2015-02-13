@@ -13,21 +13,40 @@
 
 #include <Uni/Logging/macros>
 
+#include <functional>
+
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TMemory,
-          typename TGridGeometry,
+template <typename TGrid,
           typename TStencilGenerator,
-          typename TScalar,
-          int TD>
+          typename TRhsGenerator,
+          typename TResultAcquirer>
 class LinearSolver {
 public:
-  typedef Grid<TMemory, TGridGeometry, TD>  GridType;
-  typedef typename GridType::CellAccessorType CellAccessorType;
-  typedef ParallelDistribution<TD>          ParallelDistributionType;
-  typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
-  typedef Eigen::Matrix<TScalar, TD, 1>     VectorDsType;
-  typedef Eigen::Matrix<int, TD, 1>         VectorDiType;
+  typedef TGrid                               GridType;
+  typedef typename GridType::CellAccessorType     CellAccessorType;
+  typedef typename CellAccessorType::CellType CellType;
+  typedef typename CellType::Scalar           Scalar;
+
+  enum {
+    Dimensions = CellType::Dimensions
+  };
+
+  typedef ParallelDistribution<Dimensions>
+    ParallelDistributionType;
+
+  typedef
+    GhostLayer::LsStencilGenerator::FunctorStack<Dimensions>
+    GhostStencilGenerator;
+  typedef
+    GhostLayer::PetscExchange::FunctorStack<Dimensions>
+    GhostRhsGenerator;
+  typedef
+    GhostLayer::PetscExchange::FunctorStack<Dimensions>
+    GhostRhsAcquierer;
+
+  typedef Eigen::Matrix<Scalar, Dimensions, 1> VectorDsType;
+  typedef Eigen::Matrix<int, Dimensions, 1>    VectorDiType;
 
 public:
   LinearSolver() {}
@@ -35,18 +54,22 @@ public:
   void
   initialize(GridType const*                 grid,
              ParallelDistributionType const* parallelTopology,
-             GhostHandlersType const*        ghostCellsHandler,
-             TScalar const*                  dt) {
-    _grid              = grid;
-    _parallelTopology  = parallelTopology;
-    _ghostCellsHandler = ghostCellsHandler;
-    _dt                = dt;
+             GhostStencilGenerator const*    ghostStencilGenerator,
+             GhostRhsGenerator const*        ghostRhsGenerator,
+             GhostRhsAcquierer const*        ghostRhsAcquierer,
+             Scalar const*                   dt) {
+    _grid                  = grid;
+    _parallelTopology      = parallelTopology;
+    _ghostStencilGenerator = ghostStencilGenerator;
+    _ghostRhsGenerator     = ghostRhsGenerator;
+    _ghostRhsAcquierer     = ghostRhsAcquierer;
+    _dt                    = dt;
     KSPCreate(PETSC_COMM_WORLD, &_context);
     PCCreate(PETSC_COMM_WORLD, &_preconditioner);
 
-    VectorDConstPetscIntPointer<TD> localSizes;
+    VectorDConstPetscIntPointer<Dimensions> localSizes;
 
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < Dimensions; ++d) {
       auto array = new PetscInt[_parallelTopology->processorSize(d)];
       localSizes(d) = UniqueConstPetscIntArray(array);
 
@@ -57,15 +80,16 @@ public:
       ++array[_parallelTopology->processorSize(d) - 1];
     }
 
-    DMCreate<TD>(PETSC_COMM_WORLD,
-                 createDMBoundaries<TD>(),
-                 DMDA_STENCIL_STAR,
-                 _parallelTopology->globalCellSize + 2 * VectorDiType::Ones(),
-                 _parallelTopology->processorSize,
-                 1,
-                 2,
-                 localSizes,
-                 &_da);
+    DMCreate<Dimensions>(PETSC_COMM_WORLD,
+                         createDMBoundaries<Dimensions>(),
+                         DMDA_STENCIL_STAR,
+                         _parallelTopology->globalCellSize + 2 *
+                         VectorDiType::Ones(),
+                         _parallelTopology->processorSize,
+                         1,
+                         2,
+                         localSizes,
+                         &_da);
 
     DMCreateGlobalVector(_da, &_x);
     KSPSetDM(_context, _da);
@@ -108,7 +132,7 @@ public:
 
   void
   solve() {
-    typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
+    typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
 
     KSPSetComputeRHS(_context, computeRHS, this);
     KSPSolve(_context, PETSC_NULL, _x);
@@ -122,12 +146,12 @@ public:
       auto index = accessor.indexValues();
       index += corner;
 
-      accessor.currentCell()->pressure() = Pointers::dereference(array, index);
+      TResultAcquirer::set(accessor, Pointers::dereference(array, index));
     }
 
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostCellsHandler->pressureInitialization[d][d2](array);
+        (*_ghostRhsAcquierer)[d][d2](array);
       }
     }
 
@@ -139,24 +163,24 @@ private:
   computeMatrix(KSP ksp, Mat A, Mat pc, void* ctx) {
     auto solver = static_cast<LinearSolver*>(ctx);
 
-    PetscScalar stencil[2 * TD + 1];
+    PetscScalar stencil[2 * Dimensions + 1];
     MatStencil  row;
-    MatStencil  columns[2 * TD + 1];
+    MatStencil  columns[2 * Dimensions + 1];
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      TStencilGenerator::compute(solver->_parallelTopology,
-                                 accessor,
-                                 stencil,
-                                 row,
-                                 columns);
+      TStencilGenerator::get(solver->_parallelTopology,
+                             accessor,
+                             stencil,
+                             row,
+                             columns);
 
-      MatSetValuesStencil(A, 1, &row, 2 * TD + 1, columns, stencil,
+      MatSetValuesStencil(A, 1, &row, 2 * Dimensions + 1, columns, stencil,
                           INSERT_VALUES);
     }
 
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        solver->_ghostCellsHandler->pressureStencilStack[d][d2](A);
+        (*solver->_ghostStencilGenerator)[d][d2](A);
       }
     }
 
@@ -174,28 +198,26 @@ private:
   static PetscErrorCode
   computeRHS(KSP ksp, Vec b, void* ctx) {
     auto solver = static_cast<LinearSolver*>(ctx);
-    typedef StructuredMemory::Pointers<PetscScalar, TD> Pointers;
+    typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
     typename Pointers::Type array;
 
     DM da;
     KSPGetDM(ksp, &da);
     DMDAVecGetArray(da, b, &array);
 
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        solver->_ghostCellsHandler->rhsInitialization[d][d2](array);
+        (*solver->_ghostRhsGenerator)[d][d2](array);
       }
     }
 
     auto corner = solver->_parallelTopology->corner;
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      typedef RhsProcessing<CellAccessorType, TScalar, TD> Rhs;
+      auto value = TRhsGenerator::get(accessor, *solver->_dt);
 
       auto index = accessor.indexValues();
-      index += corner;
-
-      auto value = Rhs::compute(accessor, *solver->_dt);
+      index                              += corner;
       Pointers::dereference(array, index) = value;
     }
 
@@ -208,8 +230,10 @@ private:
 
   GridType const*                 _grid;
   ParallelDistributionType const* _parallelTopology;
-  GhostHandlersType const*        _ghostCellsHandler;
-  TScalar const*                  _dt;
+  GhostStencilGenerator const*    _ghostStencilGenerator;
+  GhostRhsGenerator const*        _ghostRhsGenerator;
+  GhostRhsAcquierer const*        _ghostRhsAcquierer;
+  Scalar const*                   _dt;
 
   Vec _x;
   DM  _da;
