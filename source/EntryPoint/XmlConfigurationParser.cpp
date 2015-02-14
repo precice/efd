@@ -10,6 +10,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/locale.hpp>
 
+#include <regex>
 #include <sstream>
 
 using FsiSimulation::EntryPoint::XmlConfigurationParser;
@@ -174,10 +175,25 @@ parseScenarioChildren(xmlNodePtr     node,
   while (currentNode) {
     if (xmlStrEqual(currentNode->name, (xmlChar* const)"walls")) {
       parseWallsChildren(currentNode, configuration);
-    } else if (xmlStrEqual(currentNode->name, (xmlChar* const)"immersed-boundary")) {
+    } else if (xmlStrEqual(currentNode->name,
+                           (xmlChar* const)"immersed-boundary")) {
       parseImmersedBoundary(currentNode, configuration);
     }
     currentNode = currentNode->next;
+  }
+}
+
+static void
+parseSolverType(std::string    typeString,
+                Configuration* configuration) {
+  static std::regex type1_regex(
+    "Fractional\\s*Step\\s*Finite\\s*Difference", std::regex::icase);
+
+  // static std::regex type2_regex(
+  // "Simple\\s*Staggered\\s*Grid\\s*Finite\\s*Difference", std::regex::icase);
+
+  if (std::regex_search(typeString, type1_regex)) {
+    configuration->solver = Configuration::SolverType::Fsfd;
   }
 }
 
@@ -194,6 +210,7 @@ parseScenarioParameters(xmlNodePtr     node,
   static xmlChar* const width               = (xmlChar* const)"width";
   static xmlChar* const size                = (xmlChar* const)"size";
   static xmlChar* const filename            = (xmlChar* const)"filename";
+  static xmlChar* const solver              = (xmlChar* const)"solver";
   static xmlChar* const parallelizationSize =
     (xmlChar* const)"parallelizationSize";
   static xmlChar* const environment = (xmlChar* const)"environment";
@@ -227,6 +244,9 @@ parseScenarioParameters(xmlNodePtr     node,
       configuration->environment = parseVector<Scalar>(attr->children->content);
     } else if (xmlStrEqual(attr->name, filename)) {
       configuration->filename = (const char*)attr->children->content;
+    } else if (xmlStrEqual(attr->name, solver)) {
+      parseSolverType(((const char*)attr->children->content),
+                      configuration);
     }
     attr = attr->next;
   }

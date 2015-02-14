@@ -4,6 +4,7 @@
 #include "GhostLayer/Handlers.hpp"
 #include "Grid.hpp"
 #include "ParallelDistribution.hpp"
+#include "Parameters.hpp"
 #include "Private/petscgenerics.hpp"
 #include "StructuredMemory/Pointers.hpp"
 #include "functions.hpp"
@@ -24,7 +25,7 @@ template <typename TGrid,
 class LinearSolver {
 public:
   typedef TGrid                               GridType;
-  typedef typename GridType::CellAccessorType     CellAccessorType;
+  typedef typename GridType::CellAccessorType CellAccessorType;
   typedef typename CellAccessorType::CellType CellType;
   typedef typename CellType::Scalar           Scalar;
 
@@ -34,6 +35,8 @@ public:
 
   typedef ParallelDistribution<Dimensions>
     ParallelDistributionType;
+
+  typedef Parameters<Scalar, Dimensions> ParametersType;
 
   typedef
     GhostLayer::LsStencilGenerator::FunctorStack<Dimensions>
@@ -53,13 +56,15 @@ public:
 
   void
   initialize(GridType const*                 grid,
-             ParallelDistributionType const* parallelTopology,
+             ParallelDistributionType const* parallelDistribution,
+             ParametersType const*           parameters,
              GhostStencilGenerator const*    ghostStencilGenerator,
              GhostRhsGenerator const*        ghostRhsGenerator,
              GhostRhsAcquierer const*        ghostRhsAcquierer,
              Scalar const*                   dt) {
     _grid                  = grid;
-    _parallelTopology      = parallelTopology;
+    _parallelDistribution  = parallelDistribution;
+    _parameters            = parameters;
     _ghostStencilGenerator = ghostStencilGenerator;
     _ghostRhsGenerator     = ghostRhsGenerator;
     _ghostRhsAcquierer     = ghostRhsAcquierer;
@@ -70,22 +75,22 @@ public:
     VectorDConstPetscIntPointer<Dimensions> localSizes;
 
     for (int d = 0; d < Dimensions; ++d) {
-      auto array = new PetscInt[_parallelTopology->processorSize(d)];
+      auto array = new PetscInt[_parallelDistribution->processorSize(d)];
       localSizes(d) = UniqueConstPetscIntArray(array);
 
-      for (int j = 0; j < _parallelTopology->processorSize(d); ++j) {
-        array[j] = _parallelTopology->localCellSize(d);
+      for (int j = 0; j < _parallelDistribution->processorSize(d); ++j) {
+        array[j] = _parallelDistribution->localCellSize(d);
       }
       ++array[0];
-      ++array[_parallelTopology->processorSize(d) - 1];
+      ++array[_parallelDistribution->processorSize(d) - 1];
     }
 
     DMCreate<Dimensions>(PETSC_COMM_WORLD,
                          createDMBoundaries<Dimensions>(),
                          DMDA_STENCIL_STAR,
-                         _parallelTopology->globalCellSize + 2 *
+                         _parallelDistribution->globalCellSize + 2 *
                          VectorDiType::Ones(),
-                         _parallelTopology->processorSize,
+                         _parallelDistribution->processorSize,
                          1,
                          2,
                          localSizes,
@@ -140,7 +145,7 @@ public:
     typename Pointers::Type array;
     DMDAVecGetArray(_da, _x, &array);
 
-    auto corner = _parallelTopology->corner;
+    auto corner = _parallelDistribution->corner;
 
     for (auto const& accessor : _grid->innerGrid) {
       auto index = accessor.indexValues();
@@ -168,8 +173,10 @@ private:
     MatStencil  columns[2 * Dimensions + 1];
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      TStencilGenerator::get(solver->_parallelTopology,
-                             accessor,
+      TStencilGenerator::get(accessor,
+                             solver->_parallelDistribution,
+                             solver->_parameters,
+                             *solver->_dt,
                              stencil,
                              row,
                              columns);
@@ -211,7 +218,7 @@ private:
       }
     }
 
-    auto corner = solver->_parallelTopology->corner;
+    auto corner = solver->_parallelDistribution->corner;
 
     for (auto const& accessor : solver->_grid->innerGrid) {
       auto value = TRhsGenerator::get(accessor, *solver->_dt);
@@ -229,7 +236,8 @@ private:
   }
 
   GridType const*                 _grid;
-  ParallelDistributionType const* _parallelTopology;
+  ParallelDistributionType const* _parallelDistribution;
+  ParametersType const*           _parameters;
   GhostStencilGenerator const*    _ghostStencilGenerator;
   GhostRhsGenerator const*        _ghostRhsGenerator;
   GhostRhsAcquierer const*        _ghostRhsAcquierer;

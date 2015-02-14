@@ -12,10 +12,10 @@ using FsiSimulation::EntryPoint::SimulationFactory;
 namespace FsiSimulation {
 namespace EntryPoint {
 namespace Private {
-template <typename TScalar, int TD>
+template <typename TScalar, int TD, int TSolverType = 0>
 SimulationFactory::Simulation*
-createUniformGridFromTemplate(FluidSimulation::Configuration* parameters) {
-  SimulationBuilder<TScalar, TD> builder(parameters);
+createUniformGridFromTemplate(FluidSimulation::Configuration* configuration) {
+  SimulationBuilder<TScalar, TD, TSolverType> builder(configuration);
 
   builder.setLeftAsParabolicInput();
   builder.setRightAsOutput();
@@ -37,24 +37,25 @@ createUniformGridFromTemplate(FluidSimulation::Configuration* parameters) {
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridFloat2D(FluidSimulation::Configuration* parameters) {
-  return Private::createUniformGridFromTemplate<double, 2>(parameters);
+createSimpleFdDouble2D(FluidSimulation::Configuration* configuration) {
+  return Private::createUniformGridFromTemplate<double, 2>(configuration);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridDouble2D(FluidSimulation::Configuration* parameters) {
-  return Private::createUniformGridFromTemplate<double, 2>(parameters);
+createSimpleFdDouble3D(FluidSimulation::Configuration* configuration) {
+  return Private::createUniformGridFromTemplate<double, 2>(configuration);
+}
+
+
+SimulationFactory::Simulation*
+SimulationFactory::
+createFractionalStepFdDouble2D(FluidSimulation::Configuration* configuration) {
+  return Private::createUniformGridFromTemplate<double, 2, 1>(configuration);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
-createUniformGridFloat3D(FluidSimulation::Configuration* parameters) {
-  return Private::createUniformGridFromTemplate<double, 2>(parameters);
-}
-
-SimulationFactory::Simulation*
-SimulationFactory::
-createUniformGridDouble3D(FluidSimulation::Configuration* parameters) {
-  return Private::createUniformGridFromTemplate<double, 2>(parameters);
+createFractionalStepDouble3D(FluidSimulation::Configuration* configuration) {
+  return Private::createUniformGridFromTemplate<double, 2, 1>(configuration);
 }

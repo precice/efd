@@ -23,12 +23,28 @@ public:
           MpiExchange::getEmptyFunctor<TD>();
         fghInitialization[d][d2] =
           Initialization::getEmptyFunctor<TD>();
+
         ppeStencilGeneratorStack[d][d2] =
           LsStencilGenerator::getEmptyFunctor<TD>();
         ppeRhsGeneratorStack[d][d2] =
           PetscExchange::getEmptyFunctor<TD>();
         ppeRhsAcquiererStack[d][d2] =
           PetscExchange::getEmptyFunctor<TD>();
+
+        vxpeStencilGeneratorStack[d][d2] =
+          LsStencilGenerator::getEmptyFunctor<TD>();
+        vxpeRhsGeneratorStack[d][d2] =
+          PetscExchange::getEmptyFunctor<TD>();
+        vxpeRhsAcquiererStack[d][d2] =
+          PetscExchange::getEmptyFunctor<TD>();
+
+        vypeStencilGeneratorStack[d][d2] =
+          LsStencilGenerator::getEmptyFunctor<TD>();
+        vypeRhsGeneratorStack[d][d2] =
+          PetscExchange::getEmptyFunctor<TD>();
+        vypeRhsAcquiererStack[d][d2] =
+          PetscExchange::getEmptyFunctor<TD>();
+
         velocityInitialization[d][d2] =
           Initialization::getEmptyFunctor<TD>();
       }
@@ -51,6 +67,14 @@ public:
   LsStencilGenerator::FunctorStack<TD> ppeStencilGeneratorStack;
   PetscExchange::FunctorStack<TD>      ppeRhsGeneratorStack;
   PetscExchange::FunctorStack<TD>      ppeRhsAcquiererStack;
+
+  LsStencilGenerator::FunctorStack<TD> vxpeStencilGeneratorStack;
+  PetscExchange::FunctorStack<TD>      vxpeRhsGeneratorStack;
+  PetscExchange::FunctorStack<TD>      vxpeRhsAcquiererStack;
+
+  LsStencilGenerator::FunctorStack<TD> vypeStencilGeneratorStack;
+  PetscExchange::FunctorStack<TD>      vypeRhsGeneratorStack;
+  PetscExchange::FunctorStack<TD>      vypeRhsAcquiererStack;
 
   Initialization::FunctorStack<TD>     velocityInitialization;
 

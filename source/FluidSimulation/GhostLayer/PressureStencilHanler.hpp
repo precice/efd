@@ -236,9 +236,9 @@ public:
 
   static void
   neumannStencilRight(PetscScalar* stencil) {
-    stencil[0] = 0.0;
-    stencil[1] = 1.0;
-    stencil[2] = -1.0;
+    stencil[0] = 1.0;
+    stencil[1] = -1.0;
+    stencil[2] = 0.0;
   }
 
   static void
@@ -250,15 +250,15 @@ public:
 
   static void
   dirichletStencilLeft(PetscScalar* stencil) {
-    stencil[0] = 1.0;
-    stencil[0] = 0.0;
+    stencil[0] = 0.5;
+    stencil[0] = 0.5;
     stencil[2] = 0.0;
   }
 
   static void
   dirichletStencilRight(PetscScalar* stencil) {
-    stencil[0] = 0.0;
-    stencil[0] = 1.0;
+    stencil[0] = 0.5;
+    stencil[0] = 0.5;
     stencil[2] = 0.0;
   }
 

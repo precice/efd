@@ -510,9 +510,9 @@ public:
         accessor.rightCellInDimension(d2)->velocity(d1),
         accessor.currentWidth() (d1),
         accessor.currentWidth() (d2),
-        accessor.rightWidthInDimension (d1)(d1),
-        accessor.leftWidthInDimension (d2)(d2),
-        accessor.rightWidthInDimension (d2)(d2));
+        accessor.rightWidthInDimension(d1)(d1),
+        accessor.leftWidthInDimension(d2)(d2),
+        accessor.rightWidthInDimension(d2)(d2));
     }
 
     return result;
@@ -553,11 +553,11 @@ public:
         accessor.currentWidth() (d1),
         accessor.currentWidth() (d2),
         accessor.currentWidth() (d3),
-        accessor.rightWidthInDimension (d1)(d1),
-        accessor.leftWidthInDimension (d2)(d2),
-        accessor.rightWidthInDimension (d2)(d2),
-        accessor.leftWidthInDimension (d3)(d3),
-        accessor.rightWidthInDimension (d3)(d3));
+        accessor.rightWidthInDimension(d1)(d1),
+        accessor.leftWidthInDimension(d2)(d2),
+        accessor.rightWidthInDimension(d2)(d2),
+        accessor.leftWidthInDimension(d3)(d3),
+        accessor.rightWidthInDimension(d3)(d3));
     }
 
     return result;
@@ -605,10 +605,10 @@ public:
         accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
         accessor.currentWidth() (d1),
         accessor.currentWidth() (d2),
-        accessor.leftWidthInDimension (d1)(d1),
-        accessor.rightWidthInDimension (d1)(d1),
-        accessor.leftWidthInDimension (d2)(d2),
-        accessor.rightWidthInDimension (d2)(d2),
+        accessor.leftWidthInDimension(d1)(d1),
+        accessor.rightWidthInDimension(d1)(d1),
+        accessor.leftWidthInDimension(d2)(d2),
+        accessor.rightWidthInDimension(d2)(d2),
         simulationParameters.gamma());
     }
 
@@ -659,12 +659,12 @@ public:
         accessor.currentWidth() (d1),
         accessor.currentWidth() (d2),
         accessor.currentWidth() (d3),
-        accessor.leftWidthInDimension (d1)(d1),
-        accessor.rightWidthInDimension (d1)(d1),
-        accessor.leftWidthInDimension (d2)(d2),
-        accessor.rightWidthInDimension (d2)(d2),
-        accessor.leftWidthInDimension (d3)(d3),
-        accessor.rightWidthInDimension (d3)(d3),
+        accessor.leftWidthInDimension(d1)(d1),
+        accessor.rightWidthInDimension(d1)(d1),
+        accessor.leftWidthInDimension(d2)(d2),
+        accessor.rightWidthInDimension(d2)(d2),
+        accessor.leftWidthInDimension(d3)(d3),
+        accessor.rightWidthInDimension(d3)(d3),
         simulationParameters.gamma());
     }
 
@@ -711,10 +711,10 @@ public:
         accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
         accessor.currentWidth() (d1),
         accessor.currentWidth() (d2),
-        accessor.leftWidthInDimension (d1)(d1),
-        accessor.rightWidthInDimension (d1)(d1),
-        accessor.leftWidthInDimension (d2)(d2),
-        accessor.rightWidthInDimension (d2)(d2),
+        accessor.leftWidthInDimension(d1)(d1),
+        accessor.rightWidthInDimension(d1)(d1),
+        accessor.leftWidthInDimension(d2)(d2),
+        accessor.rightWidthInDimension(d2)(d2),
         simulationParameters.re(),
         simulationParameters.gamma(),
         simulationParameters.g(d1),
@@ -763,12 +763,12 @@ public:
         accessor.currentWidth() (d1),
         accessor.currentWidth() (d2),
         accessor.currentWidth() (d3),
-        accessor.leftWidthInDimension (d1)(d1),
-        accessor.rightWidthInDimension (d1)(d1),
-        accessor.leftWidthInDimension (d2)(d2),
-        accessor.rightWidthInDimension (d2)(d2),
-        accessor.leftWidthInDimension (d3)(d3),
-        accessor.rightWidthInDimension (d3)(d3),
+        accessor.leftWidthInDimension(d1)(d1),
+        accessor.rightWidthInDimension(d1)(d1),
+        accessor.leftWidthInDimension(d2)(d2),
+        accessor.rightWidthInDimension(d2)(d2),
+        accessor.leftWidthInDimension(d3)(d3),
+        accessor.rightWidthInDimension(d3)(d3),
         simulationParameters.re(),
         simulationParameters.gamma(),
         simulationParameters.g(d1),
@@ -785,8 +785,8 @@ computePressureGradient(TCellAccessor const& accessor) {
   Vector result;
 
   for (int d = 0; d < result.size(); ++d) {
-      result(d)
-      = (0.5 * (accessor.rightWidthInDimension (d)(d)
+    result(d)
+      = (0.5 * (accessor.rightWidthInDimension(d)(d)
                 + accessor.currentWidth() (d)))
         * (accessor.rightCellInDimension(d)->pressure() -
            accessor.currentCell()->pressure());
@@ -795,37 +795,40 @@ computePressureGradient(TCellAccessor const& accessor) {
   return result;
 }
 
-template <int TD>
 class VpeStencilGenerator {
 public:
-  template <typename TParallelTopology,
-            typename TCellAccessor,
-            typename TScalar,
+  template <typename TCellAccessor,
+            typename TParallelDistribution,
+            typename TParameters,
             typename TStencil,
             typename TRow,
             typename TColumns>
   static inline void
-  compute(TParallelTopology const* topology,
-          TCellAccessor const&     accessor,
-          TScalar const&           dt,
-          TScalar const&           re,
-          TStencil&                stencil,
-          TRow&                    row,
-          TColumns&                columns) {
-    typedef typename TCellAccessor::CellType::VectorDs::Scalar Scalar;
-    typedef Eigen::Matrix<Scalar, 2* TD, 1>                    Vector2Ds;
+  get(TCellAccessor const&                            accessor,
+      TParallelDistribution const*                    parallelDistribution,
+      TParameters const*                              parameters,
+      typename TCellAccessor::CellType::Scalar const& dt,
+      TStencil&                                       stencil,
+      TRow&                                           row,
+      TColumns&                                       columns) {
+    typedef typename TCellAccessor::CellType CellType;
+    typedef typename CellType::Scalar        Scalar;
+    enum {
+      Dimensions = CellType::Dimensions
+    };
+    typedef Eigen::Matrix<Scalar, 2* Dimensions, 1> Vector2Ds;
 
-    auto corner = topology->corner;
+    auto corner = parallelDistribution->corner;
 
     Vector2Ds meanWidths;
 
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < Dimensions; ++d) {
       meanWidths(2 * d) = 0.5 *
                           (accessor.currentWidth() (d) +
-                           accessor.leftWidthInDimension (d)(d));
+                           accessor.leftWidthInDimension(d)(d));
       meanWidths(2 * d + 1) = 0.5 *
                               (accessor.currentWidth() (d) +
-                               accessor.rightWidthInDimension (d)(d));
+                               accessor.rightWidthInDimension(d)(d));
 
       auto leftIndex = accessor.leftIndexInDimension(d);
       leftIndex += corner;
@@ -837,69 +840,102 @@ public:
       columns[2 * d + 1].i = rightIndex(0);
       columns[2 * d + 1].j = rightIndex(1);
 
-      if (TD == 3) {
+      if (Dimensions == 3) {
         columns[2 * d].k     = leftIndex(2);
         columns[2 * d + 1].k = rightIndex(2);
       }
     }
     auto currentIndex = accessor.currentIndex();
-    currentIndex     += corner;
-    columns[2 * TD].i = currentIndex(0);
-    columns[2 * TD].j = currentIndex(1);
+    currentIndex             += corner;
+    columns[2 * Dimensions].i = currentIndex(0);
+    columns[2 * Dimensions].j = currentIndex(1);
 
-    if (TD == 3) {
-      columns[2 * TD].k = currentIndex(2);
+    if (Dimensions == 3) {
+      columns[2 * Dimensions].k = currentIndex(2);
     }
-    row = columns[2 * TD];
+    row = columns[2 * Dimensions];
 
-    stencil[2 * TD] = 0;
+    stencil[2 * Dimensions] = 0;
 
-    TScalar const coeff =  -dt / (2.0 * re);
+    Scalar const coeff =  -dt / (2.0 * parameters->re());
 
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < Dimensions; ++d) {
       auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);
-      stencil[2 * d] =
-        2.0 * coeff / (meanWidths(2 * d) * meanLeftAndRightWidth);
-      stencil[2 * d + 1] =
-        2.0 * coeff / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
-      TScalar const diagonalCoeff = 2.0 / (meanWidths(2 * d) * meanWidths(2 *
-                                                                          d +
-                                                                          1));
-      diagonalCoeff    = coeff * diagonalCoeff;
-      diagonalCoeff    = 2.0 * (1.0 - diagonalCoeff);
-      stencil[2 * TD] += diagonalCoeff;
+
+      stencil[2 * d]
+        = 2.0 * coeff / (meanWidths(2 * d) * meanLeftAndRightWidth);
+      stencil[2 * d + 1]
+        = 2.0 * coeff / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
+
+      Scalar diagonalCoeff
+        = -2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
+
+      diagonalCoeff            = coeff * diagonalCoeff;
+      // diagonalCoeff            = 2.0 * (1.0 - diagonalCoeff);
+      diagonalCoeff            = 1.0 + diagonalCoeff;
+      stencil[2 * Dimensions] += diagonalCoeff;
     }
+  }
+};
+
+template <int TDimension>
+class VpeRhsGenerator {
+public:
+  template <typename TCellAccessor>
+  static inline typename TCellAccessor::CellType::Scalar
+  get(TCellAccessor const&                            accessor,
+      typename TCellAccessor::CellType::Scalar const& dt) {
+    ((void)(dt));
+    typedef typename TCellAccessor::CellType Cell;
+    typedef typename Cell::Scalar            Scalar;
+    Scalar result = accessor.currentCell()->fgh(TDimension);
+
+    return result;
+  }
+};
+
+template <int TDimension>
+class VpeResultAcquirer {
+public:
+  template <typename TCellAccessor>
+  static inline void
+  set(TCellAccessor const&                            accessor,
+      typename TCellAccessor::CellType::Scalar const& value) {
+    accessor.currentCell()->fgh(TDimension) = value;
   }
 };
 
 class PpeStencilGenerator {
 public:
-  template <typename TParallelTopology,
-            typename TCellAccessor,
+  template <typename TCellAccessor,
+            typename TParallelDistribution,
+            typename TParameters,
             typename TStencil,
             typename TRow,
             typename TColumns>
   static inline void
-  get(TParallelTopology const* topology,
-          TCellAccessor const&     accessor,
-          TStencil&                stencil,
-          TRow&                    row,
-          TColumns&                columns) {
+  get(TCellAccessor const&                            accessor,
+      TParallelDistribution const*                    parallelDistribution,
+      TParameters const*                              parameters,
+      typename TCellAccessor::CellType::Scalar const& dt,
+      TStencil&                                       stencil,
+      TRow&                                           row,
+      TColumns&                                       columns) {
     typedef typename TCellAccessor::CellType              Cell;
     typedef typename Cell::Scalar                         Scalar;
     typedef Eigen::Matrix<Scalar, 2* Cell::Dimensions, 1> Vector2Ds;
 
-    auto corner = topology->corner;
+    auto corner = parallelDistribution->corner;
 
     Vector2Ds meanWidths;
 
     for (int d = 0; d < Cell::Dimensions; ++d) {
       meanWidths(2 * d) = 0.5 *
                           (accessor.currentWidth() (d) +
-                           accessor.leftWidthInDimension (d)(d));
+                           accessor.leftWidthInDimension(d)(d));
       meanWidths(2 * d + 1) = 0.5 *
                               (accessor.currentWidth() (d) +
-                               accessor.rightWidthInDimension (d)(d));
+                               accessor.rightWidthInDimension(d)(d));
 
       auto leftIndex = accessor.leftIndexInDimension(d);
       leftIndex += corner;
@@ -934,9 +970,8 @@ public:
         2.0 / (meanWidths(2 * d) * meanLeftAndRightWidth);
       stencil[2 * d + 1] =
         2.0 / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
-      stencil[2 * Cell::Dimensions] -= 2.0 / (meanWidths(2 * d) * meanWidths(2 *
-                                                                             d +
-                                                                             1));
+      stencil[2 * Cell::Dimensions]
+        -= 2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
     }
   }
 };
@@ -973,7 +1008,6 @@ public:
   }
 };
 
-
 template <typename TCellAccessor, typename TScalar, int TD>
 class VelocityProcessing {
 public:
@@ -983,7 +1017,7 @@ public:
           TScalar const&       dt) {
     accessor.currentCell()->velocity() (dimension) =
       accessor.currentCell()->fgh() (dimension) -
-      dt / (0.5 * (accessor.rightWidthInDimension (dimension)(dimension) +
+      dt / (0.5 * (accessor.rightWidthInDimension(dimension)(dimension) +
                    accessor.currentWidth() (dimension)))
       * (accessor.rightCellInDimension(dimension)->pressure() -
          accessor.currentCell()->pressure());

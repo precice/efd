@@ -26,7 +26,8 @@ namespace FluidSimulation {
 template <typename TGridGeometry,
           typename TMemory,
           typename TScalar,
-          int TD>
+          int TD,
+          int TSolverType = 0>
 class FdSimulation : public Simulation {
 public:
   typedef Simulation              BaseType;
@@ -53,6 +54,20 @@ public:
       PpeRhsGenerator,
       PpeResultAcquirer>
     PpeSolverType;
+
+  typedef FluidSimulation::LinearSolver<
+      GridType,
+      VpeStencilGenerator,
+      VpeRhsGenerator<0>,
+      VpeResultAcquirer<0>>
+    VxpeSolverType;
+
+  typedef FluidSimulation::LinearSolver<
+      GridType,
+      VpeStencilGenerator,
+      VpeRhsGenerator<1>,
+      VpeResultAcquirer<1>>
+    VypeSolverType;
 
   typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
 
@@ -82,8 +97,9 @@ public:
 
     CellAccessorFactory cellAccessorFactory(
       [&] (VectorDiType const& i) {
-        return CellAccessorType(i, &_memory, &_grid.innerGrid, &_gridGeometry);
-      });
+          return CellAccessorType(i, &_memory, &_grid.innerGrid,
+                                  &_gridGeometry);
+        });
 
     _grid.initialize(localSize, cellAccessorFactory);
 
@@ -172,10 +188,28 @@ public:
     _preciceInterface = preciceInteface;
     _ppeSolver.initialize(&_grid,
                           &_parallelDistribution,
+                          &_parameters,
                           &_ghostHandler.ppeStencilGeneratorStack,
                           &_ghostHandler.ppeRhsGeneratorStack,
                           &_ghostHandler.ppeRhsAcquiererStack,
                           &_dt);
+
+    _vxpeSolver.initialize(&_grid,
+                           &_parallelDistribution,
+                           &_parameters,
+                           &_ghostHandler.vxpeStencilGeneratorStack,
+                           &_ghostHandler.vxpeRhsGeneratorStack,
+                           &_ghostHandler.vxpeRhsAcquiererStack,
+                           &_dt);
+
+    _vypeSolver.initialize(&_grid,
+                           &_parallelDistribution,
+                           &_parameters,
+                           &_ghostHandler.vypeStencilGeneratorStack,
+                           &_ghostHandler.vypeRhsGeneratorStack,
+                           &_ghostHandler.vypeRhsAcquiererStack,
+                           &_dt);
+
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
 
@@ -224,22 +258,6 @@ public:
           _preciceInterface->setMeshVertex(
             fluidMeshId,
             position.data());
-        // VectorDiType leftPositions[TD];
-
-        // for (int d = 0; d < TD; ++d) {
-        // if (accessor.leftIndexInDimension (d)(d)
-        // >= _grid.innerGrid.leftIndent(d)) {
-        // _preciceInterface->setMeshEdge(
-        // fluidMeshId,
-        // vertexId,
-        // _vertexIds[accessor.leftIndexInDimension(d)]);
-
-        // if (_vertexIds.find(accessor.leftIndexInDimension(d))
-        // == _vertexIds.end()) {
-        // logInfo("Failed {1}", accessor.leftIndexInDimension(d));
-        // }
-        // }
-        // }
 
         _vertexIds.insert(std::make_pair(accessor.indexValues(), vertexId));
       }
@@ -300,29 +318,7 @@ public:
     if (_parallelDistribution.rank == 0) {
       logInfo("N = {1}; t = {2}", _iterationCount, _time);
     }
-    // logInfo("Time step size {1}",   _dt);
 
-    // for (auto accessor : _grid.innerGrid) {
-    // for (int d = 0; d < TD; ++d) {
-    // if (!ImmersedBoundary::Fadlun::treatBoundary
-    // <CellAccessorType, TScalar, TD>(
-    // accessor,
-    // _preciceInterface,
-    // _dt,
-    // d)) {
-    ////
-    // } else {
-    // computeMaxVelocity<CellAccessorType, TScalar, TD>
-    // (accessor, _maxVelocity);
-    // }
-    // }
-    // }
-
-    // for (auto const& accessor : _grid.innerGrid) {
-    // _preciceInterface->mapWriteDataFrom(
-    // _preciceInterface->getMeshID("MeshName"));
-    // }
-    //
     auto fluidMeshId     = _preciceInterface->getMeshID("FluidMesh");
     auto fluidVertexSize = _preciceInterface->getMeshVertexSize(
       fluidMeshId);
@@ -342,29 +338,9 @@ public:
       "Forces",
       _preciceInterface->getMeshID("Body"));
 
-    // logInfo("FluidMesh1 {1}", fluidMeshId);
-    // logInfo("FluidMesh {1}",  bodyMeshId);
-    // logInfo("Body Size{1}",   bodyVertexSize);
-
     int index = 0;
 
     for (auto const& accessor : _grid.innerGrid) {
-      // typedef FghProcessing<TD> Fgh;
-      // Fgh::compute(accessor, _parameters, _dt);
-
-      accessor.currentCell()->fgh() = VelocityType::Zero();
-
-      // bool isBody = false;
-
-      // for (int d = 0; d < TD; ++d) {
-      // if (ImmersedBoundary::FeedbackForcing
-      // ::template treatBoundary<CellAccessorType, TD>(accessor,
-      // _parameters.alpha(),
-      // d)) {
-      // isBody = true;
-      // }
-      // }
-
       auto convection = ConvectionProcessing<TD>::compute(
         accessor,
         _parameters);
@@ -378,6 +354,9 @@ public:
       auto diffusion = DiffusionProcessing<TD>::compute(accessor);
 
       diffusion = (1.0 / _parameters.re()) * diffusion;
+
+      auto pressureGradient = computePressureGradient(accessor);
+
       VelocityType temp = VelocityType::Zero();
 
       VelocityType velocity;
@@ -391,7 +370,7 @@ public:
         temp = velocity + _dt * (
           -1.5 * convection + 0.5 * previousConvection
           + diffusion
-          - computePressureGradient(accessor));
+          - pressureGradient);
         _preciceInterface->writeVectorData(
           fluidMeshVelocitiesId,
           _vertexIds[accessor.currentIndex()],
@@ -400,38 +379,20 @@ public:
 
       accessor.currentCell()->convection() = convection;
 
-      accessor.currentCell()->fgh()
-        += accessor.currentCell()->velocity()
-           + _dt * (diffusion - convection + _parameters.g());
-      ++index;
+      if (TSolverType == 1) {
+        accessor.currentCell()->fgh()
+          = accessor.currentCell()->velocity()
+            + _dt * (-1.5 * convection + 0.5 * previousConvection
+                     + 0.5 * diffusion
+                     - pressureGradient
+                     + _parameters.g());
+      } else {
+        accessor.currentCell()->fgh()
+          = accessor.currentCell()->velocity()
+            + _dt * (diffusion - convection + _parameters.g());
+      }
     }
 
-    // _preciceInterface->mapWriteDataFrom(fluidMeshId);
-
-    // index = 0;
-
-    // for (; index < _preciceInterface->getMeshVertexSize(bodyMeshId);
-    // ++index) {
-    // VelocityType velocity;
-    // _preciceInterface->readVectorData(
-    // bodyMeshVelocitiesId,
-    // index,
-    // velocity.data());
-
-    // VectorDsType force = -velocity;
-
-    //// if (velocity != VelocityType::Zero()) {
-    //// logInfo("{1}", velocity.transpose());
-    //// }
-
-    // _preciceInterface->writeVectorData(
-    // bodyMeshForcesId,
-    // index,
-    // force.data());
-    // }
-
-    // _preciceInterface->mapReadDataTo(fluidMeshId);
-    //
     _preciceInterface->advance(_dt);
 
     for (auto const& accessor : _grid.innerGrid) {
@@ -440,32 +401,29 @@ public:
       if (find_it == _vertexIds.end()) {
         continue;
       }
-      VelocityType velocity;
+      VelocityType force;
       _preciceInterface->readVectorData(
         fluidMeshForcesId,
         find_it->second,
-        velocity.data());
+        force.data());
 
-      // if (velocity != VelocityType::Zero()) {
-      // logInfo("{2} {1}", velocity.transpose(),
-      // accessor.indexValues().transpose());
-
-      // if (velocity != VelocityType::Zero()) {
-      // accessor.currentCell()->fgh() +=
-      // -accessor.currentCell()->velocity();
-      // }
-      accessor.currentCell()->fgh() += velocity;
+      accessor.currentCell()->fgh() += force;
     }
 
-    for (int d = 0; d < TD; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.fghInitialization[d][d2]();
+    if (TSolverType == 1) {
+      _vxpeSolver.solve();
+      _vypeSolver.solve();
+    } else {
+      for (int d = 0; d < TD; ++d) {
+        for (int d2 = 0; d2 < 2; ++d2) {
+          _ghostHandler.fghInitialization[d][d2]();
+        }
       }
-    }
 
-    for (int d = 0; d < TD; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.mpiFghExchangeStack[d][d2](PETSC_COMM_WORLD);
+      for (int d = 0; d < TD; ++d) {
+        for (int d2 = 0; d2 < 2; ++d2) {
+          _ghostHandler.mpiFghExchangeStack[d][d2](PETSC_COMM_WORLD);
+        }
       }
     }
 
@@ -556,20 +514,21 @@ public:
   GridType                                    _grid;
   std::unordered_map<VectorDiType, int, Hash> _vertexIds;
   ParametersType                              _parameters;
-  ParallelDistributionType
-                            _parallelDistribution;
-  precice::SolverInterface* _preciceInterface;
-  TScalar                   _dt;
-  TScalar                   _time;
-  TScalar                   _timeLimit;
-  TScalar                   _lastPlotTimeStamp;
-  TScalar                   _plotInterval;
-  int                       _iterationCount;
-  int                       _iterationLimit;
-  PpeSolverType             _ppeSolver;
-  VelocityType              _maxVelocity;
-  GhostHandlersType         _ghostHandler;
-  VtkPlotType               _plot;
+  ParallelDistributionType                    _parallelDistribution;
+  precice::SolverInterface*                   _preciceInterface;
+  TScalar                                     _dt;
+  TScalar                                     _time;
+  TScalar                                     _timeLimit;
+  TScalar                                     _lastPlotTimeStamp;
+  TScalar                                     _plotInterval;
+  int                                         _iterationCount;
+  int                                         _iterationLimit;
+  PpeSolverType                               _ppeSolver;
+  VxpeSolverType                              _vxpeSolver;
+  VypeSolverType                              _vypeSolver;
+  VelocityType                                _maxVelocity;
+  GhostHandlersType                           _ghostHandler;
+  VtkPlotType                                 _plot;
 };
 }
 }

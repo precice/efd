@@ -29,9 +29,9 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     Application* in,
     int&         argc_,
     char**       argv_) : _in(in),
-                          argc(argc_),
-                          argv(argv_),
-                          masterRank(0) {
+    argc(argc_),
+    argv(argv_),
+    masterRank(0) {
     namespace fs          = boost::filesystem;
     using LocaleGenerator = boost::locale::generator;
     globalLocale          = LocaleGenerator().generate("");
@@ -184,13 +184,28 @@ initialize() {
   initializePrecice();
 
   if (_im->parameters->dim == 3) {
-    _im->mySimulation =
-      Implementation::UniqueMySimulation(
-        SimulationFactory::createUniformGridDouble3D(_im->parameters.get()));
+    if (_im->parameters->solver
+        == FluidSimulation::Configuration::SolverType::Fsfd) {
+      _im->mySimulation
+        = Implementation::UniqueMySimulation(
+        SimulationFactory::createFractionalStepDouble3D(_im->parameters.get()));
+    } else {
+      _im->mySimulation
+        = Implementation::UniqueMySimulation(
+        SimulationFactory::createSimpleFdDouble3D(_im->parameters.get()));
+    }
   } else if (_im->parameters->dim == 2) {
-    _im->mySimulation =
-      Implementation::UniqueMySimulation(
-        SimulationFactory::createUniformGridDouble2D(_im->parameters.get()));
+    if (_im->parameters->solver
+        == FluidSimulation::Configuration::SolverType::Fsfd) {
+      _im->mySimulation
+        = Implementation::UniqueMySimulation(
+        SimulationFactory::createFractionalStepFdDouble2D(
+          _im->parameters.get()));
+    } else {
+      _im->mySimulation
+        = Implementation::UniqueMySimulation(
+        SimulationFactory::createSimpleFdDouble2D(_im->parameters.get()));
+    }
   } else {
     throwException("Dimension {1} is not supported",
                    _im->parameters->dim);
@@ -257,6 +272,4 @@ initializePrecice() {
       _im->ansiLocale);
 
   _im->preciceInterface->configure(preciceConfigurationPath);
-
-
 }

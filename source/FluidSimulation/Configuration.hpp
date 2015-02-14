@@ -134,6 +134,11 @@ public:
   typedef std::array<std::array<UniqueWallType, 2>, 3>
     WallsType;
 
+  enum class SolverType {
+    Fsfd, // Fractional Step Finite Difference
+    Ssgfd, // Simple Staggered Grid Finite Difference
+  };
+
 public:
   Configuration()
     : re(0),
@@ -142,7 +147,8 @@ public:
       tau(0),
       gamma(0),
       dim(0),
-      immersedBoundaryMethod(-1) {}
+      immersedBoundaryMethod(-1),
+      solver(SolverType::Ssgfd) {}
 
   ScalarType   re;
   ScalarType   timeLimit;
@@ -159,6 +165,7 @@ public:
   std::string  filename;
   int          immersedBoundaryMethod;
   float        alpha;
+  SolverType solver;
 
   static int const FeedbackForcingMethod;
 };

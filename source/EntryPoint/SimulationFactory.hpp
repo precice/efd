@@ -14,16 +14,16 @@ public:
 
 public:
   static Simulation*
-  createUniformGridFloat2D(FluidSimulation::Configuration* parameters);
+  createSimpleFdDouble2D(FluidSimulation::Configuration*);
 
   static Simulation*
-  createUniformGridDouble2D(FluidSimulation::Configuration* parameters);
+  createSimpleFdDouble3D(FluidSimulation::Configuration*);
 
   static Simulation*
-  createUniformGridFloat3D(FluidSimulation::Configuration* parameters);
+  createFractionalStepFdDouble2D(FluidSimulation::Configuration*);
 
   static Simulation*
-  createUniformGridDouble3D(FluidSimulation::Configuration* parameters);
+  createFractionalStepDouble3D(FluidSimulation::Configuration*);
 };
 }
 }

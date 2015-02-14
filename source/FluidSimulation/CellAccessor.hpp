@@ -81,6 +81,7 @@ public:
     result(dimension) +=
       0.5 * _gridGeometry->cellWidth(
         this->indexValues()) (dimension);
+    return result;
   }
 
   VectorDsType
