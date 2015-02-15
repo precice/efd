@@ -20,12 +20,11 @@ if _platform == "Windows":
 elif _platform == "Linux":
   systemDependentFlags = [
   '-I/usr/include/clang/3.5/include',
-  '-I/usr/include/c++/4.9.2',
+  '-I/usr/include/c++/4.9',
   '-isystem/usr/include',
   '-isystem/usr/include/eigen3',
   '-isystem/usr/include/libxml2',
-  '-isystem/usr/include/qt',
-  '-isystem/opt/petsc/arch-linux2-cxx-opt/include',
+  '-isystem/usr/lib/petscdir/3.4.2/linux-gnu-cxx-opt/include',
   '-isystem/opt/Uni/include',
   '-isystem/opt/Precice/src'
   ]
@@ -34,8 +33,6 @@ flags = [
 #'-Wall',
 #'-Wextra',
 #'-Werror',
-'-Wno-long-long',
-'-Wno-variadic-macros',
 '-fexceptions',
 '-DNDEBUG',
 # THIS IS IMPORTANT! Without a "-std=<something>" flag, clang won't know which
@@ -53,11 +50,7 @@ flags = [
 'c++',
 '-march=native',
 '-fPIC',
-'-DQT_NO_DEBUG',
-'-Isource',
-'-Isource/stencils',
-'-Isource/turbulence_algebraic',
-'-I3rdParty'
+'-Isource'
 ]
 
 flags.extend(systemDependentFlags)
