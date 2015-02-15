@@ -88,26 +88,6 @@ public:
     return _convection.data()[i];
   }
 
-  VectorDs&
-  distances() {
-    return _distances;
-  }
-
-  VectorDs const&
-  distances() const {
-    return _distances;
-  }
-
-  Scalar&
-  distances(int const& i) {
-    return _distances.data()[i];
-  }
-
-  Scalar const&
-  distances(int const& i) const {
-    return _distances.data()[i];
-  }
-
   Scalar&
   pressure() {
     return _pressure;
@@ -116,6 +96,16 @@ public:
   Scalar const&
   pressure() const {
     return _pressure;
+  }
+
+  Scalar&
+  pressureProjection() {
+    return _pressureProjection;
+  }
+
+  Scalar const&
+  pressureProjection() const {
+    return _pressureProjection;
   }
 
   int&
@@ -152,8 +142,8 @@ private:
   VectorDs _velocity;
   VectorDs _fgh;
   VectorDs _convection;
-  VectorDs _distances;
   Scalar   _pressure;
+  Scalar   _pressureProjection;
   int _position;
   VectorDi _positions;
 };

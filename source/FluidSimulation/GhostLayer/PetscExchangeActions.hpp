@@ -42,7 +42,16 @@ public:
     };
 
     typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
-    Pointers::dereference(array, index)
+
+    auto tempIndex = index;
+
+    if (TSolverDimension == TDirection) {
+      if (TDirection == 1) {
+        tempIndex(TSolverDimension) -= 1;
+      }
+    }
+
+    Pointers::dereference(array, tempIndex)
       = _configuration->walls[TDimension][TDirection]
         ->velocity() (TSolverDimension);
   }
@@ -78,6 +87,7 @@ public:
     typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
 
     Scalar temp;
+    auto   tempIndex = index;
 
     if (TSolverDimension == TDimension) {
       temp = computeParabolicInputVelocity(
@@ -85,20 +95,25 @@ public:
         _configuration->walls[TDimension][TDirection]
         ->velocity(),
         TSolverDimension);
+
+      if (TDirection == 1) {
+        tempIndex(TSolverDimension) -= 1;
+      }
     } else {
       temp = _configuration->walls[TDimension][TDirection]
              ->velocity() (TSolverDimension);
     }
 
-    Pointers::dereference(array, index) = temp;
-
+    Pointers::dereference(array, tempIndex) = temp;
+    // logInfo("{1}", temp);
   }
 
 private:
   Configuration* _configuration;
 };
 
-template <typename TCellAccessor>
+template <typename TCellAccessor,
+          int TDimension>
 class ConstantRhsGenerationAction {
 public:
   typedef TCellAccessor                           CellAccessorType;
@@ -114,18 +129,23 @@ private:
   typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
 
 public:
-  ConstantRhsGenerationAction(Scalar const& value)
-    : _value(value) {}
+  ConstantRhsGenerationAction(Scalar const& value,
+                              int const&    offset = 0)
+    : _value(value),
+    _offset(offset) {}
 
   inline void
   exchange(typename Pointers::Type array,
            VectorDiType const&     index,
            CellAccessorType const& accessor) {
-    Pointers::dereference(array, index) = _value;
+    auto temp = index;
+    temp(TDimension)                  -= _offset;
+    Pointers::dereference(array, temp) = _value;
   }
 
 private:
-  Scalar _value;
+  Scalar    _value;
+  int const _offset;
 };
 
 template <int TSolverDimension>

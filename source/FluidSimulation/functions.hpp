@@ -795,30 +795,189 @@ computePressureGradient(TCellAccessor const& accessor) {
   return result;
 }
 
+template <typename TCellAccessor>
+inline
+typename TCellAccessor::CellType::Velocity
+computeProjectionPressureGradient(TCellAccessor const& accessor) {
+  typedef typename TCellAccessor::CellType::Velocity Vector;
+  Vector result;
+
+  for (int d = 0; d < result.size(); ++d) {
+    result(d)
+      = (0.5 * (accessor.rightWidthInDimension(d)(d)
+                + accessor.currentWidth() (d)))
+        * (accessor.rightCellInDimension(d)->pressureProjection() -
+           accessor.currentCell()->pressureProjection());
+  }
+
+  return result;
+}
+
+template <typename TCellAccessor,
+          typename TParallelDistribution,
+          typename TParameters>
 class VpeStencilGenerator {
 public:
-  template <typename TCellAccessor,
-            typename TParallelDistribution,
-            typename TParameters,
-            typename TStencil,
+  using CellAccessorType         = TCellAccessor;
+  using CellType                 = typename CellAccessorType::CellType;
+  using ParallelDistributionType = TParallelDistribution;
+  using ParametersType           = TParameters;
+  using Scalar                   = typename CellType::Scalar;
+
+  enum {
+    Dimensions = CellType::Dimensions
+  };
+
+  VpeStencilGenerator() {}
+
+  void
+  initialize(ParallelDistributionType const* parallelDistribution,
+             ParametersType const*           parameters,
+             Scalar const*                   dt) {
+    _parallelDistribution = parallelDistribution;
+    _parameters           = parameters;
+    _dt                   = dt;
+  }
+
+  template <typename TStencil,
             typename TRow,
             typename TColumns>
-  static inline void
-  get(TCellAccessor const&                            accessor,
-      TParallelDistribution const*                    parallelDistribution,
-      TParameters const*                              parameters,
-      typename TCellAccessor::CellType::Scalar const& dt,
-      TStencil&                                       stencil,
-      TRow&                                           row,
-      TColumns&                                       columns) {
-    typedef typename TCellAccessor::CellType CellType;
-    typedef typename CellType::Scalar        Scalar;
-    enum {
-      Dimensions = CellType::Dimensions
-    };
+  inline void
+  get(TCellAccessor const& accessor,
+      TStencil&            stencil,
+      TRow&                row,
+      TColumns&            columns) const {
     typedef Eigen::Matrix<Scalar, 2* Dimensions, 1> Vector2Ds;
 
-    auto corner = parallelDistribution->corner;
+    auto corner = _parallelDistribution->corner;
+
+    Vector2Ds meanWidths;
+
+    for (int d = 0; d < Dimensions; ++d) {
+      meanWidths(2 * d) = 0.5 *
+                          (accessor.currentWidth() (d) +
+                           accessor.leftWidthInDimension(d)(d));
+      meanWidths(2 * d + 1) = 0.5 *
+                              (accessor.currentWidth() (d) +
+                               accessor.rightWidthInDimension(d)(d));
+
+      auto leftIndex = accessor.leftIndexInDimension(d);
+      leftIndex += corner;
+      auto rightIndex = accessor.rightIndexInDimension(d);
+      rightIndex += corner;
+
+      columns[2 * d].i     = leftIndex(0);
+      columns[2 * d].j     = leftIndex(1);
+      columns[2 * d + 1].i = rightIndex(0);
+      columns[2 * d + 1].j = rightIndex(1);
+
+      if (Dimensions == 3) {
+        columns[2 * d].k     = leftIndex(2);
+        columns[2 * d + 1].k = rightIndex(2);
+      }
+    }
+    auto currentIndex = accessor.currentIndex();
+    currentIndex             += corner;
+    columns[2 * Dimensions].i = currentIndex(0);
+    columns[2 * Dimensions].j = currentIndex(1);
+
+    if (Dimensions == 3) {
+      columns[2 * Dimensions].k = currentIndex(2);
+    }
+    row = columns[2 * Dimensions];
+
+    stencil[2 * Dimensions] = 1.0;
+
+    Scalar const coeff =  -(*_dt) / (2.0 * _parameters->re());
+
+    for (int d = 0; d < Dimensions; ++d) {
+      auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);
+
+      stencil[2 * d]
+        = 2.0 * coeff / (meanWidths(2 * d) * meanLeftAndRightWidth);
+      stencil[2 * d + 1]
+        = 2.0 * coeff / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
+
+      Scalar diagonalCoeff
+        = -2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
+
+      diagonalCoeff = coeff * diagonalCoeff;
+      // diagonalCoeff            = 2.0 * (1.0 - diagonalCoeff);
+      stencil[2 * Dimensions] += diagonalCoeff;
+    }
+    // logInfo("{1} {2} {3} {4} {5} {6}",
+    // stencil[0],
+    // stencil[1],
+    // stencil[2],
+    // stencil[3],
+    // stencil[4],
+    // Dimensions);
+  }
+
+private:
+  ParallelDistributionType const* _parallelDistribution;
+  ParametersType const*           _parameters;
+  Scalar const*                   _dt;
+};
+
+template <typename TCellAccessor,
+          int TDimension>
+class VpeRhsGenerator {
+public:
+  using CellAccessorType = TCellAccessor;
+  using CellType         = typename CellAccessorType::CellType;
+  using Scalar           = typename CellType::Scalar;
+
+  inline Scalar
+  get(CellAccessorType const& accessor) const {
+    Scalar result = accessor.currentCell()->fgh(TDimension);
+
+    return result;
+  }
+};
+
+template <int TDimension>
+class VpeResultAcquirer {
+public:
+  template <typename TCellAccessor>
+  inline void
+  set(TCellAccessor const&                            accessor,
+      typename TCellAccessor::CellType::Scalar const& value) const {
+    accessor.currentCell()->fgh(TDimension) = value;
+  }
+};
+
+template <typename TCellAccessor,
+          typename TParallelDistribution>
+class PpeStencilGenerator {
+public:
+  using CellAccessorType         = TCellAccessor;
+  using CellType                 = typename CellAccessorType::CellType;
+  using ParallelDistributionType = TParallelDistribution;
+  using Scalar                   = typename CellType::Scalar;
+
+  enum {
+    Dimensions = CellType::Dimensions
+  };
+
+  PpeStencilGenerator() {}
+
+  void
+  initialize(ParallelDistributionType const* parallelDistribution) {
+    _parallelDistribution = parallelDistribution;
+  }
+
+  template <typename TStencil,
+            typename TRow,
+            typename TColumns>
+  inline void
+  get(CellAccessorType const& accessor,
+      TStencil&               stencil,
+      TRow&                   row,
+      TColumns&               columns) const {
+    typedef Eigen::Matrix<Scalar, 2* Dimensions, 1> Vector2Ds;
+
+    auto corner = _parallelDistribution->corner;
 
     Vector2Ds meanWidths;
 
@@ -857,171 +1016,92 @@ public:
 
     stencil[2 * Dimensions] = 0;
 
-    Scalar const coeff =  -dt / (2.0 * parameters->re());
-
     for (int d = 0; d < Dimensions; ++d) {
-      auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);
-
-      stencil[2 * d]
-        = 2.0 * coeff / (meanWidths(2 * d) * meanLeftAndRightWidth);
-      stencil[2 * d + 1]
-        = 2.0 * coeff / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
-
-      Scalar diagonalCoeff
-        = -2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
-
-      diagonalCoeff            = coeff * diagonalCoeff;
-      // diagonalCoeff            = 2.0 * (1.0 - diagonalCoeff);
-      diagonalCoeff            = 1.0 + diagonalCoeff;
-      stencil[2 * Dimensions] += diagonalCoeff;
-    }
-  }
-};
-
-template <int TDimension>
-class VpeRhsGenerator {
-public:
-  template <typename TCellAccessor>
-  static inline typename TCellAccessor::CellType::Scalar
-  get(TCellAccessor const&                            accessor,
-      typename TCellAccessor::CellType::Scalar const& dt) {
-    ((void)(dt));
-    typedef typename TCellAccessor::CellType Cell;
-    typedef typename Cell::Scalar            Scalar;
-    Scalar result = accessor.currentCell()->fgh(TDimension);
-
-    return result;
-  }
-};
-
-template <int TDimension>
-class VpeResultAcquirer {
-public:
-  template <typename TCellAccessor>
-  static inline void
-  set(TCellAccessor const&                            accessor,
-      typename TCellAccessor::CellType::Scalar const& value) {
-    accessor.currentCell()->fgh(TDimension) = value;
-  }
-};
-
-class PpeStencilGenerator {
-public:
-  template <typename TCellAccessor,
-            typename TParallelDistribution,
-            typename TParameters,
-            typename TStencil,
-            typename TRow,
-            typename TColumns>
-  static inline void
-  get(TCellAccessor const&                            accessor,
-      TParallelDistribution const*                    parallelDistribution,
-      TParameters const*                              parameters,
-      typename TCellAccessor::CellType::Scalar const& dt,
-      TStencil&                                       stencil,
-      TRow&                                           row,
-      TColumns&                                       columns) {
-    typedef typename TCellAccessor::CellType              Cell;
-    typedef typename Cell::Scalar                         Scalar;
-    typedef Eigen::Matrix<Scalar, 2* Cell::Dimensions, 1> Vector2Ds;
-
-    auto corner = parallelDistribution->corner;
-
-    Vector2Ds meanWidths;
-
-    for (int d = 0; d < Cell::Dimensions; ++d) {
-      meanWidths(2 * d) = 0.5 *
-                          (accessor.currentWidth() (d) +
-                           accessor.leftWidthInDimension(d)(d));
-      meanWidths(2 * d + 1) = 0.5 *
-                              (accessor.currentWidth() (d) +
-                               accessor.rightWidthInDimension(d)(d));
-
-      auto leftIndex = accessor.leftIndexInDimension(d);
-      leftIndex += corner;
-      auto rightIndex = accessor.rightIndexInDimension(d);
-      rightIndex += corner;
-
-      columns[2 * d].i     = leftIndex(0);
-      columns[2 * d].j     = leftIndex(1);
-      columns[2 * d + 1].i = rightIndex(0);
-      columns[2 * d + 1].j = rightIndex(1);
-
-      if (Cell::Dimensions == 3) {
-        columns[2 * d].k     = leftIndex(2);
-        columns[2 * d + 1].k = rightIndex(2);
-      }
-    }
-    auto currentIndex = accessor.currentIndex();
-    currentIndex                   += corner;
-    columns[2 * Cell::Dimensions].i = currentIndex(0);
-    columns[2 * Cell::Dimensions].j = currentIndex(1);
-
-    if (Cell::Dimensions == 3) {
-      columns[2 * Cell::Dimensions].k = currentIndex(2);
-    }
-    row = columns[2 * Cell::Dimensions];
-
-    stencil[2 * Cell::Dimensions] = 0;
-
-    for (int d = 0; d < Cell::Dimensions; ++d) {
       auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);
       stencil[2 * d] =
         2.0 / (meanWidths(2 * d) * meanLeftAndRightWidth);
       stencil[2 * d + 1] =
         2.0 / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
-      stencil[2 * Cell::Dimensions]
+      stencil[2 * Dimensions]
         -= 2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
     }
   }
+
+private:
+  ParallelDistributionType const* _parallelDistribution;
 };
 
+template <typename TCellAccessor>
 class PpeRhsGenerator {
 public:
-  template <typename TCellAccessor>
-  static inline typename TCellAccessor::CellType::Scalar
-  get(TCellAccessor const&                            accessor,
-      typename TCellAccessor::CellType::Scalar const& dt) {
-    typedef typename TCellAccessor::CellType Cell;
-    typedef typename Cell::Scalar            Scalar;
+  using CellAccessorType = TCellAccessor;
+  using CellType         = typename CellAccessorType::CellType;
+  using Scalar           = typename CellType::Scalar;
+
+  PpeRhsGenerator() {}
+
+  void
+  initialize(Scalar const* dt) { _dt = dt; }
+
+  inline Scalar
+  get(CellAccessorType const& accessor) const {
     Scalar result = 0.0;
 
-    for (int d = 0; d < Cell::Dimensions; ++d) {
+    for (int d = 0; d < CellType::Dimensions; ++d) {
       result += (accessor.currentCell()->fgh(d)
                  - accessor.leftCellInDimension(d)->fgh(d))
                 / accessor.currentWidth() (d);
     }
 
-    result = 1.0 / dt * result;
+    result = 1.0 / (*_dt) * result;
 
     return result;
   }
+
+private:
+  Scalar const* _dt;
 };
 
-class PpeResultAcquirer {
+template <typename TCellAccessor>
+class PpeResultAcquirer1 {
 public:
-  template <typename TCellAccessor>
-  static inline void
-  set(TCellAccessor const&                            accessor,
-      typename TCellAccessor::CellType::Scalar const& value) {
+  using CellAccessorType = TCellAccessor;
+  using CellType         = typename CellAccessorType::CellType;
+  using Scalar           = typename CellType::Scalar;
+
+  inline void
+  set(CellAccessorType const& accessor,
+      Scalar const&           value) const {
     accessor.currentCell()->pressure() = value;
   }
 };
 
-template <typename TCellAccessor, typename TScalar, int TD>
-class VelocityProcessing {
+template <typename TCellAccessor>
+class PpeResultAcquirer2 {
 public:
-  static inline void
-  compute(TCellAccessor const& accessor,
-          int const&           dimension,
-          TScalar const&       dt) {
-    accessor.currentCell()->velocity() (dimension) =
-      accessor.currentCell()->fgh() (dimension) -
-      dt / (0.5 * (accessor.rightWidthInDimension(dimension)(dimension) +
-                   accessor.currentWidth() (dimension)))
-      * (accessor.rightCellInDimension(dimension)->pressure() -
-         accessor.currentCell()->pressure());
+  using CellAccessorType = TCellAccessor;
+  using CellType         = typename CellAccessorType::CellType;
+  using Scalar           = typename CellType::Scalar;
+
+  PpeResultAcquirer2() {}
+
+  void
+  initialize(Scalar const* dt) { _dt = dt; }
+
+  inline void
+  set(CellAccessorType const& accessor,
+      Scalar const&           value) const {
+    accessor.currentCell()->pressure()
+      =  accessor.currentCell()->pressureProjection()
+        + value;
+    // + (1.0 / (*_dt)) * value;
+
+    accessor.currentCell()->pressureProjection()
+      = value;
   }
+
+private:
+  Scalar const* _dt;
 };
 }
 }

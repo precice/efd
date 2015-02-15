@@ -101,7 +101,7 @@ public:
 
     typedef
       FluidSimulation::GhostLayer::PetscExchange::ConstantRhsGenerationAction<
-        CellAccessorS>
+        CellAccessorS, TDimension>
       PpeRhsGenerationAction;
     typedef
       FluidSimulation::GhostLayer::PetscExchange::Handler
@@ -123,7 +123,7 @@ public:
 
     typedef
       FluidSimulation::GhostLayer::PetscExchange::ConstantRhsGenerationAction
-      <CellAccessorS>
+      <CellAccessorS, TDimension>
       VpeConstantRhsGenerationAction;
     typedef
       FluidSimulation::GhostLayer::PetscExchange::Handler
@@ -330,20 +330,32 @@ public:
         PpeRhsGenerationHandler::getHandler(_grid, _parallelDistribution,
                                             new PpeRhsGenerationAction(0.0));
 
+      int offset = 0;
+      if (TDimension == 0) {
+        if (TDirection == 1) {
+          offset = 1;
+        }
+      }
       _handlers->vxpeRhsGeneratorStack[TDimension][TDirection] =
         VpeConstantRhsGenerationHandler::getHandler(
           _grid,
           _parallelDistribution,
-          new VpeConstantRhsGenerationAction(0.0));
+          new VpeConstantRhsGenerationAction(0.0, offset));
       _handlers->vxpeRhsAcquiererStack[TDimension][TDirection] =
         VxpeRhsAcquiererHandler::getHandler(
           _grid, _parallelDistribution, new VxpeRhsAcquiererAction());
 
+      offset = 0;
+      if (TDimension == 1) {
+        if (TDirection == 1) {
+          offset = 1;
+        }
+      }
       _handlers->vypeRhsGeneratorStack[TDimension][TDirection] =
         VpeConstantRhsGenerationHandler::getHandler(
           _grid,
           _parallelDistribution,
-          new VpeConstantRhsGenerationAction(0.0));
+          new VpeConstantRhsGenerationAction(0.0, offset));
       _handlers->vypeRhsAcquiererStack[TDimension][TDirection] =
         VypeRhsAcquiererHandler::getHandler(
           _grid, _parallelDistribution, new VypeRhsAcquiererAction());

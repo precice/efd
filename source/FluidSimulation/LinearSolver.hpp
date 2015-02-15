@@ -4,7 +4,6 @@
 #include "GhostLayer/Handlers.hpp"
 #include "Grid.hpp"
 #include "ParallelDistribution.hpp"
-#include "Parameters.hpp"
 #include "Private/petscgenerics.hpp"
 #include "StructuredMemory/Pointers.hpp"
 #include "functions.hpp"
@@ -33,10 +32,7 @@ public:
     Dimensions = CellType::Dimensions
   };
 
-  typedef ParallelDistribution<Dimensions>
-    ParallelDistributionType;
-
-  typedef Parameters<Scalar, Dimensions> ParametersType;
+  typedef ParallelDistribution<Dimensions> ParallelDistributionType;
 
   typedef
     GhostLayer::LsStencilGenerator::FunctorStack<Dimensions>
@@ -57,18 +53,20 @@ public:
   void
   initialize(GridType const*                 grid,
              ParallelDistributionType const* parallelDistribution,
-             ParametersType const*           parameters,
+             TStencilGenerator const*        stencilGenerator,
+             TRhsGenerator const*            rhsGenerator,
+             TResultAcquirer const*          resultAcquierer,
              GhostStencilGenerator const*    ghostStencilGenerator,
              GhostRhsGenerator const*        ghostRhsGenerator,
-             GhostRhsAcquierer const*        ghostRhsAcquierer,
-             Scalar const*                   dt) {
+             GhostRhsAcquierer const*        ghostRhsAcquierer) {
     _grid                  = grid;
     _parallelDistribution  = parallelDistribution;
-    _parameters            = parameters;
+    _stencilGenerator      = stencilGenerator;
+    _rhsGenerator          = rhsGenerator;
+    _resultAcquierer       = resultAcquierer;
     _ghostStencilGenerator = ghostStencilGenerator;
     _ghostRhsGenerator     = ghostRhsGenerator;
     _ghostRhsAcquierer     = ghostRhsAcquierer;
-    _dt                    = dt;
     KSPCreate(PETSC_COMM_WORLD, &_context);
     PCCreate(PETSC_COMM_WORLD, &_preconditioner);
 
@@ -98,41 +96,51 @@ public:
 
     DMCreateGlobalVector(_da, &_x);
     KSPSetDM(_context, _da);
+
+    KSPSetComputeOperators(_context, computeMatrix, this);
+
+    setupCustomOptions(_context, _preconditioner);
+    // DMDALocalInfo petscInfo;
+    // DMDAGetLocalInfo(_da, &petscInfo);
+    // logInfo("dim {1} dof {2} sw {3} \n"
+    // "global number of grid points in each direction {4} {5} {6} \n"
+    // "starting point of this processor, excluding ghosts {7} {8} {9} \n"
+    // "number of grid points on this processor, excluding ghosts {10} {11} {12}
+    // \n"
+    // "starting point of this processor including ghosts {13} {14} {15} \n"
+    // "number of grid points on this processor including ghosts {16} {17} {18}
+    // \n",
+    // petscInfo.dim, petscInfo.dof, petscInfo.sw,
+    // petscInfo.mx, petscInfo.my, petscInfo.mz,
+    // petscInfo.xs, petscInfo.ys, petscInfo.zs,
+    // petscInfo.xm, petscInfo.ym, petscInfo.zm,
+    // petscInfo.gxs, petscInfo.gys, petscInfo.gzs,
+    // petscInfo.gxm, petscInfo.gym, petscInfo.gzm);
+
+    // int _firstX;
+    // int _firstY;
+    // int _firstZ;
+    // int _lengthX;
+    // int _lengthY;
+    // int _lengthZ;
+    // DMDAGetCorners(_da,
+    // &_firstX,
+    // &_firstY,
+    // &_firstZ,
+    // &_lengthX,
+    // &_lengthY,
+    // &_lengthZ);
+
+    // logInfo("Corner beginning {1} {2} {3}\n"
+    // "Corener end      {4} {5} {6}\n",
+    // _firstX, _firstY, _firstZ,
+    // _firstX + _lengthX, _firstY + _lengthY, _firstZ + _lengthZ);
+  }
+
+  void
+  update() {
     KSPSetComputeOperators(_context, computeMatrix, this);
     setupCustomOptions(_context, _preconditioner);
-    DMDALocalInfo petscInfo;
-    DMDAGetLocalInfo(_da, &petscInfo);
-    logInfo("dim {1} dof {2} sw {3} \n"
-            "global number of grid points in each direction {4} {5} {6} \n"
-            "starting point of this processor, excluding ghosts {7} {8} {9} \n"
-            "number of grid points on this processor, excluding ghosts {10} {11} {12} \n"
-            "starting point of this processor including ghosts {13} {14} {15} \n"
-            "number of grid points on this processor including ghosts {16} {17} {18} \n",
-            petscInfo.dim, petscInfo.dof, petscInfo.sw,
-            petscInfo.mx, petscInfo.my, petscInfo.mz,
-            petscInfo.xs, petscInfo.ys, petscInfo.zs,
-            petscInfo.xm, petscInfo.ym, petscInfo.zm,
-            petscInfo.gxs, petscInfo.gys, petscInfo.gzs,
-            petscInfo.gxm, petscInfo.gym, petscInfo.gzm);
-
-    int _firstX;
-    int _firstY;
-    int _firstZ;
-    int _lengthX;
-    int _lengthY;
-    int _lengthZ;
-    DMDAGetCorners(_da,
-                   &_firstX,
-                   &_firstY,
-                   &_firstZ,
-                   &_lengthX,
-                   &_lengthY,
-                   &_lengthZ);
-
-    logInfo("Corner beginning {1} {2} {3}\n"
-            "Corener end      {4} {5} {6}\n",
-            _firstX, _firstY, _firstZ,
-            _firstX + _lengthX, _firstY + _lengthY, _firstZ + _lengthZ);
   }
 
   void
@@ -151,7 +159,8 @@ public:
       auto index = accessor.indexValues();
       index += corner;
 
-      TResultAcquirer::set(accessor, Pointers::dereference(array, index));
+      _resultAcquierer->set(accessor,
+                            Pointers::dereference(array, index));
     }
 
     for (int d = 0; d < Dimensions; ++d) {
@@ -173,13 +182,10 @@ private:
     MatStencil  columns[2 * Dimensions + 1];
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      TStencilGenerator::get(accessor,
-                             solver->_parallelDistribution,
-                             solver->_parameters,
-                             *solver->_dt,
-                             stencil,
-                             row,
-                             columns);
+      solver->_stencilGenerator->get(accessor,
+                                     stencil,
+                                     row,
+                                     columns);
 
       MatSetValuesStencil(A, 1, &row, 2 * Dimensions + 1, columns, stencil,
                           INSERT_VALUES);
@@ -212,20 +218,20 @@ private:
     KSPGetDM(ksp, &da);
     DMDAVecGetArray(da, b, &array);
 
-    for (int d = 0; d < Dimensions; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        (*solver->_ghostRhsGenerator)[d][d2](array);
-      }
-    }
-
     auto corner = solver->_parallelDistribution->corner;
 
     for (auto const& accessor : solver->_grid->innerGrid) {
-      auto value = TRhsGenerator::get(accessor, *solver->_dt);
+      auto value = solver->_rhsGenerator->get(accessor);
 
       auto index = accessor.indexValues();
       index                              += corner;
       Pointers::dereference(array, index) = value;
+    }
+
+    for (int d = 0; d < Dimensions; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        (*solver->_ghostRhsGenerator)[d][d2](array);
+      }
     }
 
     DMDAVecRestoreArray(da, b, &array);
@@ -237,11 +243,12 @@ private:
 
   GridType const*                 _grid;
   ParallelDistributionType const* _parallelDistribution;
-  ParametersType const*           _parameters;
+  TStencilGenerator const*        _stencilGenerator;
+  TRhsGenerator const*            _rhsGenerator;
+  TResultAcquirer const*          _resultAcquierer;
   GhostStencilGenerator const*    _ghostStencilGenerator;
   GhostRhsGenerator const*        _ghostRhsGenerator;
   GhostRhsAcquierer const*        _ghostRhsAcquierer;
-  Scalar const*                   _dt;
 
   Vec _x;
   DM  _da;

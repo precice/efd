@@ -116,8 +116,8 @@ public:
           (accessor.indexValues().array()
            <= (_grid->innerGrid.innerLimit().array())).all()) {
         // rhsStream << "RHS "
-        rhsStream
-          << PpeRhsGenerator::get(accessor, dt) << std::endl;
+        // rhsStream
+        //   << PpeRhsGenerator::get(accessor, dt) << std::endl;
       } else {
         // rhsStream << "RHS "
         rhsStream

@@ -40,13 +40,15 @@ public:
     Dimensions = CellType::Dimensions
   };
 
-  typedef ParallelDistribution<Dimensions> SpecializedParallelTopology;
+  typedef ParallelDistribution<Dimensions> ParallelDistributionType;
 
 public:
-  Handler(TGrid const*                       grid,
-          SpecializedParallelTopology const* parallelTopology)
+  Handler(TGrid const*                    grid,
+          ParallelDistributionType const* parallelTopology,
+          int const&                      offset = 0)
     : _grid(grid),
-      _parallelTopology(parallelTopology) {}
+    _parallelDistribution(parallelTopology),
+    _offset(offset) {}
 
   ~Handler() {
     logInfo("GhostPeStencilGeneratorHanlers destroyed");
@@ -82,88 +84,160 @@ public:
     genericHandler<Handler::neumannStencilMiddle>(A);
   }
 
+  template <typename TCellAccessor>
+  inline void
+  computeGhostIndexes(TCellAccessor const& accessor,
+                      MatStencil*          columns,
+                      MatStencil*          row) {
+    auto corner = _parallelDistribution->corner;
+
+    if (TDimension == 0) {
+      if (TDirection == 1) {
+        columns[0].i = _parallelDistribution->globalCellSize(0)
+                       + _grid->innerGrid.leftIndent() (0);
+        columns[1].i = columns[0].i - 1;
+      } else {
+        columns[0].i = _grid->innerGrid.leftIndent() (0) - 1;
+        columns[1].i = columns[0].i + 1;
+      }
+      columns[0].j = accessor.indexValue(1) + corner(1);
+      columns[1].j = columns[0].j;
+
+      if (Dimensions == 3) {
+        columns[0].k = accessor.indexValue(2) + corner(2);
+        columns[1].k = columns[0].k;
+      }
+    } else if (TDimension == 1) {
+      if (TDirection == 1) {
+        columns[0].j = _parallelDistribution->globalCellSize(1)
+                       + _grid->innerGrid.leftIndent() (1);
+        columns[1].j = columns[0].j - 1;
+      } else {
+        columns[0].j = _grid->innerGrid.leftIndent() (1) - 1;
+        columns[1].j = columns[0].j + 1;
+      }
+      columns[0].i = accessor.indexValue(0) + corner(0);
+      columns[1].i = columns[0].i;
+
+      if (Dimensions == 3) {
+        columns[0].k = accessor.indexValue(2) + corner(2);
+        columns[1].k = columns[0].k;
+      }
+    } else if (TDimension == 2) {
+      if (TDirection == 1) {
+        columns[0].k = _parallelDistribution->globalCellSize(2)
+                       + _grid->innerGrid.leftIndent() (2);
+        columns[1].k = columns[0].k - 1;
+      } else {
+        columns[0].k = _grid->innerGrid.leftIndent() (2) - 1;
+        columns[1].k = columns[0].k + 1;
+      }
+      columns[0].i = accessor.indexValue(0) + corner(0);
+      columns[1].i = columns[0].i;
+
+      columns[0].j = accessor.indexValue(1) + corner(1);
+      columns[1].j = columns[0].j;
+    }
+
+    *row = columns[0];
+  }
+
+  template <typename TCellAccessor>
+  inline void
+  computeInnerIndexes(TCellAccessor const& accessor,
+                      MatStencil*          columns,
+                      MatStencil*          row,
+                      PetscScalar*         stencil) {
+    auto corner = _parallelDistribution->corner;
+
+    int offset = 0;
+
+    for (int d = 0; d < Dimensions; ++d) {
+      typename CellAccessorType::VectorDiType leftIndex;
+      typename CellAccessorType::VectorDiType rightIndex;
+      int currentOffset = 1;
+
+      if (TDimension == d) {
+        if (TDirection == 1) {
+          leftIndex  = (accessor.leftIndexInDimension(d) + corner).eval();
+          rightIndex = (accessor.rightIndexInDimension(d) + corner).eval();
+        } else {
+          leftIndex  = (accessor.rightIndexInDimension(d) + corner).eval();
+          rightIndex = (accessor.leftIndexInDimension(d) + corner).eval();
+        }
+      } else {
+        currentOffset += 2 + 2 * offset;
+        ++offset;
+        leftIndex  = (accessor.leftIndexInDimension(d) + corner).eval();
+        rightIndex = (accessor.rightIndexInDimension(d) + corner).eval();
+      }
+
+      if (TDirection == 1) {
+        leftIndex(TDimension)  -= _offset;
+        rightIndex(TDimension) -= _offset;
+      }
+
+      columns[currentOffset].i     = leftIndex(0);
+      columns[currentOffset].j     = leftIndex(1);
+      columns[currentOffset + 1].i = rightIndex(0);
+      columns[currentOffset + 1].j = rightIndex(1);
+
+      if (Dimensions == 3) {
+        columns[currentOffset].k     = leftIndex(2);
+        columns[currentOffset + 1].k = rightIndex(2);
+      }
+      stencil[currentOffset]     = 0.0;
+      stencil[currentOffset + 1] = 0.0;
+    }
+    auto currentIndex = (accessor.currentIndex() + corner).eval();
+    currentIndex(TDimension) -= _offset;
+    columns[0].i              = currentIndex(0);
+    columns[0].j              = currentIndex(1);
+
+    if (Dimensions == 3) {
+      columns[0].k = currentIndex(2);
+    }
+    *row = columns[0];
+  }
+
   template <void(* TStencil) (PetscScalar*)>
   void
   genericHandler(Mat& A) {
-    PetscScalar stencil[3];
-    MatStencil  row;
-    MatStencil  columns[3];
+    if (_offset == 0) {
+      PetscScalar stencil[2];
+      MatStencil  columns[2];
+      MatStencil  row;
 
-    auto corner = _parallelTopology->corner;
+      for (auto const
+           & accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
+        computeGhostIndexes(accessor, columns, &row);
+        TStencil(stencil);
 
-    for (auto const
-         & accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
-      if (TDimension == 0) {
-        if (TDirection == 1) {
-          columns[0].i = _parallelTopology->globalCellSize(0)
-                         + _grid->innerGrid.leftIndent() (0);
-          columns[1].i = columns[0].i - 1;
-          columns[2].i = columns[0].i - 2;
-        } else {
-          columns[0].i = _grid->innerGrid.leftIndent() (0) - 1;
-          columns[1].i = columns[0].i + 1;
-          columns[2].i = columns[0].i + 2;
-        }
-        columns[0].j = accessor.indexValue(1) + corner(1);
-        columns[1].j = columns[0].j;
-        columns[2].j = columns[0].j;
-
-        if (Dimensions == 3) {
-          columns[0].k = accessor.indexValue(2) + corner(2);
-          columns[1].k = columns[0].k;
-          columns[2].k = columns[0].k;
-        }
-      } else if (TDimension == 1) {
-        if (TDirection == 1) {
-          columns[0].j = _parallelTopology->globalCellSize(1)
-                         + _grid->innerGrid.leftIndent() (1);
-          columns[1].j = columns[0].j - 1;
-          columns[2].j = columns[0].j - 2;
-        } else {
-          columns[0].j = _grid->innerGrid.leftIndent() (1) - 1;
-          columns[1].j = columns[0].j + 1;
-          columns[2].j = columns[0].j + 2;
-        }
-        columns[0].i = accessor.indexValue(0) + corner(0);
-        columns[1].i = columns[0].i;
-        columns[2].i = columns[0].i;
-
-        if (Dimensions == 3) {
-          columns[0].k = accessor.indexValue(2) + corner(2);
-          columns[1].k = columns[0].k;
-          columns[2].k = columns[0].k;
-        }
-      } else if (TDimension == 2) {
-        if (TDirection == 1) {
-          columns[0].k = _parallelTopology->globalCellSize(2)
-                         + _grid->innerGrid.leftIndent() (2);
-          columns[1].k = columns[0].k - 1;
-          columns[2].k = columns[0].k - 2;
-        } else {
-          columns[0].k = _grid->innerGrid.leftIndent() (2) - 1;
-          columns[1].k = columns[0].k + 1;
-          columns[2].k = columns[0].k + 2;
-        }
-        columns[0].i = accessor.indexValue(0) + corner(0);
-        columns[1].i = columns[0].i;
-        columns[2].i = columns[0].i;
-
-        columns[0].j = accessor.indexValue(1) + corner(1);
-        columns[1].j = columns[0].j;
-        columns[2].j = columns[0].j;
+        MatSetValuesStencil(A, 1, &row, 2, columns, stencil, INSERT_VALUES);
       }
+    } else {
+      PetscScalar stencil[2 * Dimensions + 1];
+      MatStencil  columns[2 * Dimensions + 1];
+      MatStencil  row;
 
-      row = columns[0];
+      for (auto const
+           & accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
+        computeInnerIndexes(accessor, columns, &row, stencil);
+        TStencil(stencil);
 
-      TStencil(stencil);
-
-      MatSetValuesStencil(A, 1, &row, 3, columns, stencil, INSERT_VALUES);
+        MatSetValuesStencil(A, 1,
+                            &row,
+                            2 * Dimensions + 1,
+                            columns,
+                            stencil,
+                            INSERT_VALUES);
+      }
     }
   }
 
   static Functor
-  getNeumannLeft(TGrid const*                       grid,
-                    SpecializedParallelTopology const* parallelTopology) {
+  getNeumannLeft(TGrid const*                    grid,
+                 ParallelDistributionType const* parallelTopology) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -173,19 +247,19 @@ public:
   }
 
   static Functor
-  getNeumannRight(TGrid const*                       grid,
-                    SpecializedParallelTopology const* parallelTopology) {
+  getNeumannRight(TGrid const*                    grid,
+                  ParallelDistributionType const* parallelTopology) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology));
+                     (new Handler(grid, parallelTopology, 1));
 
-    return Functor(std::bind(&Handler::neumannRight, pointer, _1));
+    return Functor(std::bind(&Handler::neumannLeft, pointer, _1));
   }
 
   static Functor
-  getNeumannMiddle(TGrid const*                       grid,
-                    SpecializedParallelTopology const* parallelTopology) {
+  getNeumannMiddle(TGrid const*                    grid,
+                   ParallelDistributionType const* parallelTopology) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -195,8 +269,8 @@ public:
   }
 
   static Functor
-  getDirichletLeft(TGrid const*                       grid,
-                      SpecializedParallelTopology const* parallelTopology) {
+  getDirichletLeft(TGrid const*                    grid,
+                   ParallelDistributionType const* parallelTopology) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -206,19 +280,19 @@ public:
   }
 
   static Functor
-  getDirichletRight(TGrid const*                       grid,
-                      SpecializedParallelTopology const* parallelTopology) {
+  getDirichletRight(TGrid const*                    grid,
+                    ParallelDistributionType const* parallelTopology) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology));
+                     (new Handler(grid, parallelTopology, 1));
 
-    return Functor(std::bind(&Handler::dirichletRight, pointer, _1));
+    return Functor(std::bind(&Handler::dirichletLeft, pointer, _1));
   }
 
   static Functor
-  getDirichletMiddle(TGrid const*                       grid,
-                      SpecializedParallelTopology const* parallelTopology) {
+  getDirichletMiddle(TGrid const*                    grid,
+                     ParallelDistributionType const* parallelTopology) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -231,47 +305,30 @@ public:
   neumannStencilLeft(PetscScalar* stencil) {
     stencil[0] = 1.0;
     stencil[1] = -1.0;
-    stencil[2] = 0.0;
-  }
-
-  static void
-  neumannStencilRight(PetscScalar* stencil) {
-    stencil[0] = 1.0;
-    stencil[1] = -1.0;
-    stencil[2] = 0.0;
   }
 
   static void
   neumannStencilMiddle(PetscScalar* stencil) {
     stencil[0] = 1.0;
     stencil[1] = -1.0;
-    stencil[2] = 0.0;
   }
 
   static void
   dirichletStencilLeft(PetscScalar* stencil) {
-    stencil[0] = 0.5;
-    stencil[0] = 0.5;
-    stencil[2] = 0.0;
-  }
-
-  static void
-  dirichletStencilRight(PetscScalar* stencil) {
-    stencil[0] = 0.5;
-    stencil[0] = 0.5;
-    stencil[2] = 0.0;
+    stencil[0] = 1.0;
+    stencil[1] = 0.0;
   }
 
   static void
   dirichletStencilMiddle(PetscScalar* stencil) {
     stencil[0] = 0.5;
     stencil[1] = 0.5;
-    stencil[2] = 0.0;
   }
 
 private:
-  TGrid const*                       _grid;
-  SpecializedParallelTopology const* _parallelTopology;
+  TGrid const*                    _grid;
+  ParallelDistributionType const* _parallelDistribution;
+  int const                       _offset;
 };
 }
 }

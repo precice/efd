@@ -32,6 +32,18 @@ createDMBoundaries() {
   return result;
 }
 
+template <typename TParallelDistribution,
+          typename TCellAccessor>
+inline void
+compute_petsc_operator_indexes(
+  TParallelDistribution const*
+  parallelDistribution,
+  TCellAccessor const& accessor,
+  MatStencil*          columns,
+  MatStencil*          row) {
+  //
+}
+
 inline void
 setupCustomOptions(KSP& context,
                    PC&  preconditioner) {

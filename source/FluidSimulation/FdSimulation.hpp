@@ -48,25 +48,55 @@ public:
 
   typedef ParallelDistribution<TD> ParallelDistributionType;
 
-  typedef FluidSimulation::LinearSolver<
-      GridType,
-      PpeStencilGenerator,
-      PpeRhsGenerator,
-      PpeResultAcquirer>
-    PpeSolverType;
+  typedef PpeStencilGenerator<CellAccessorType, ParallelDistributionType>
+    PpeStencilGeneratorType;
+  typedef PpeRhsGenerator<CellAccessorType>
+    PpeRhsGeneratorType;
+  typedef PpeResultAcquirer1<CellAccessorType>
+    PpeResultAcquirer1Type;
+  typedef PpeResultAcquirer2<CellAccessorType>
+    PpeResultAcquirer2Type;
+
+  typedef VpeStencilGenerator
+    <CellAccessorType, ParallelDistributionType, ParametersType>
+    VpeStencilGeneratorType;
+
+  typedef VpeRhsGenerator<CellAccessorType, 0>
+    VxpeRhsGeneratorType;
+  typedef VpeResultAcquirer<0>
+    VxpeResultAcquirerType;
+
+  typedef VpeRhsGenerator<CellAccessorType, 1>
+    VypeRhsGeneratorType;
+  typedef VpeResultAcquirer<1>
+    VypeResultAcquirerType;
 
   typedef FluidSimulation::LinearSolver<
       GridType,
-      VpeStencilGenerator,
-      VpeRhsGenerator<0>,
-      VpeResultAcquirer<0>>
+      PpeStencilGeneratorType,
+      PpeRhsGeneratorType,
+      PpeResultAcquirer1Type>
+    PpeSolver1Type;
+
+  typedef FluidSimulation::LinearSolver<
+      GridType,
+      PpeStencilGeneratorType,
+      PpeRhsGeneratorType,
+      PpeResultAcquirer2Type>
+    PpeSolver2Type;
+
+  typedef FluidSimulation::LinearSolver<
+      GridType,
+      VpeStencilGeneratorType,
+      VxpeRhsGeneratorType,
+      VxpeResultAcquirerType>
     VxpeSolverType;
 
   typedef FluidSimulation::LinearSolver<
       GridType,
-      VpeStencilGenerator,
-      VpeRhsGenerator<1>,
-      VpeResultAcquirer<1>>
+      VpeStencilGeneratorType,
+      VypeRhsGeneratorType,
+      VypeResultAcquirerType>
     VypeSolverType;
 
   typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
@@ -186,29 +216,49 @@ public:
              Path const&               outputDirectory,
              std::string const&        fileNamePrefix) {
     _preciceInterface = preciceInteface;
-    _ppeSolver.initialize(&_grid,
-                          &_parallelDistribution,
-                          &_parameters,
-                          &_ghostHandler.ppeStencilGeneratorStack,
-                          &_ghostHandler.ppeRhsGeneratorStack,
-                          &_ghostHandler.ppeRhsAcquiererStack,
-                          &_dt);
+
+    _vpeStencilGenerator.initialize(&_parallelDistribution,
+                                    &_parameters,
+                                    &_dt);
+    _ppeStencilGenerator.initialize(&_parallelDistribution);
+    _ppeRhsGenerator.initialize(&_dt);
+    _ppeResultAcquierer2.initialize(&_dt);
 
     _vxpeSolver.initialize(&_grid,
                            &_parallelDistribution,
-                           &_parameters,
+                           &_vpeStencilGenerator,
+                           &_vxpeRhsGenerator,
+                           &_vxpeResultGenerator,
                            &_ghostHandler.vxpeStencilGeneratorStack,
                            &_ghostHandler.vxpeRhsGeneratorStack,
-                           &_ghostHandler.vxpeRhsAcquiererStack,
-                           &_dt);
+                           &_ghostHandler.vxpeRhsAcquiererStack);
 
     _vypeSolver.initialize(&_grid,
                            &_parallelDistribution,
-                           &_parameters,
+                           &_vpeStencilGenerator,
+                           &_vypeRhsGenerator,
+                           &_vypeResultGenerator,
                            &_ghostHandler.vypeStencilGeneratorStack,
                            &_ghostHandler.vypeRhsGeneratorStack,
-                           &_ghostHandler.vypeRhsAcquiererStack,
-                           &_dt);
+                           &_ghostHandler.vypeRhsAcquiererStack);
+
+    _ppeSolver1.initialize(&_grid,
+                           &_parallelDistribution,
+                           &_ppeStencilGenerator,
+                           &_ppeRhsGenerator,
+                           &_ppeResultAcquierer1,
+                           &_ghostHandler.ppeStencilGeneratorStack,
+                           &_ghostHandler.ppeRhsGeneratorStack,
+                           &_ghostHandler.ppeRhsAcquiererStack);
+
+    _ppeSolver2.initialize(&_grid,
+                           &_parallelDistribution,
+                           &_ppeStencilGenerator,
+                           &_ppeRhsGenerator,
+                           &_ppeResultAcquierer2,
+                           &_ghostHandler.ppeStencilGeneratorStack,
+                           &_ghostHandler.ppeRhsGeneratorStack,
+                           &_ghostHandler.ppeRhsAcquiererStack);
 
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
@@ -355,8 +405,6 @@ public:
 
       diffusion = (1.0 / _parameters.re()) * diffusion;
 
-      auto pressureGradient = computePressureGradient(accessor);
-
       VelocityType temp = VelocityType::Zero();
 
       VelocityType velocity;
@@ -366,20 +414,22 @@ public:
                              + accessor.currentCell()->velocity(d));
       }
 
-      if (_vertexIds.find(accessor.currentIndex()) != _vertexIds.end()) {
-        temp = velocity + _dt * (
-          -1.5 * convection + 0.5 * previousConvection
-          + diffusion
-          - pressureGradient);
-        _preciceInterface->writeVectorData(
-          fluidMeshVelocitiesId,
-          _vertexIds[accessor.currentIndex()],
-          temp.data());
-      }
-
       accessor.currentCell()->convection() = convection;
 
       if (TSolverType == 1) {
+        auto pressureGradient = computeProjectionPressureGradient(accessor);
+
+        if (_vertexIds.find(accessor.currentIndex()) != _vertexIds.end()) {
+          temp = velocity + _dt * (
+            -1.5 * convection + 0.5 * previousConvection
+            + diffusion
+            - pressureGradient);
+
+          _preciceInterface->writeVectorData(
+            fluidMeshVelocitiesId,
+            _vertexIds[accessor.currentIndex()],
+            temp.data());
+        }
         accessor.currentCell()->fgh()
           = accessor.currentCell()->velocity()
             + _dt * (-1.5 * convection + 0.5 * previousConvection
@@ -387,6 +437,20 @@ public:
                      - pressureGradient
                      + _parameters.g());
       } else {
+        auto pressureGradient = computePressureGradient(accessor);
+
+        if (_vertexIds.find(accessor.currentIndex()) != _vertexIds.end()) {
+          temp = velocity + _dt * (
+            -1.5 * convection + 0.5 * previousConvection
+            + diffusion
+            - pressureGradient);
+
+          _preciceInterface->writeVectorData(
+            fluidMeshVelocitiesId,
+            _vertexIds[accessor.currentIndex()],
+            temp.data());
+        }
+
         accessor.currentCell()->fgh()
           = accessor.currentCell()->velocity()
             + _dt * (diffusion - convection + _parameters.g());
@@ -411,23 +475,29 @@ public:
     }
 
     if (TSolverType == 1) {
+      _vxpeSolver.update();
       _vxpeSolver.solve();
+      _vypeSolver.update();
       _vypeSolver.solve();
-    } else {
-      for (int d = 0; d < TD; ++d) {
-        for (int d2 = 0; d2 < 2; ++d2) {
-          _ghostHandler.fghInitialization[d][d2]();
-        }
-      }
+    }
 
-      for (int d = 0; d < TD; ++d) {
-        for (int d2 = 0; d2 < 2; ++d2) {
-          _ghostHandler.mpiFghExchangeStack[d][d2](PETSC_COMM_WORLD);
-        }
+    for (int d = 0; d < TD; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        _ghostHandler.fghInitialization[d][d2]();
       }
     }
 
-    _ppeSolver.solve();
+    for (int d = 0; d < TD; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        _ghostHandler.mpiFghExchangeStack[d][d2](PETSC_COMM_WORLD);
+      }
+    }
+
+    if (TSolverType == 1) {
+      _ppeSolver2.solve();
+    } else {
+      _ppeSolver1.solve();
+    }
 
     for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
@@ -436,12 +506,22 @@ public:
     }
 
     for (auto const& accessor : _grid.innerGrid) {
-      typedef VelocityProcessing<CellAccessorType,
-                                 TScalar,
-                                 TD> VelocityProcessingType;
-
       for (int d = 0; d < TD; ++d) {
-        VelocityProcessingType::compute(accessor, d, _dt);
+        if (TSolverType == 1) {
+          accessor.currentCell()->velocity() (d)
+            = accessor.currentCell()->fgh() (d)
+              - _dt / (0.5 * (accessor.rightWidthInDimension(d)(d)
+                              + accessor.currentWidth() (d)))
+              * (accessor.rightCellInDimension(d)->pressureProjection()
+                 - accessor.currentCell()->pressureProjection());
+        } else {
+          accessor.currentCell()->velocity() (d)
+            = accessor.currentCell()->fgh() (d)
+              - _dt / (0.5 * (accessor.rightWidthInDimension(d)(d)
+                              + accessor.currentWidth() (d)))
+              * (accessor.rightCellInDimension(d)->pressure()
+                 - accessor.currentCell()->pressure());
+        }
       }
       computeMaxVelocity<CellAccessorType, TScalar, TD>
         (accessor, _maxVelocity);
@@ -523,9 +603,19 @@ public:
   TScalar                                     _plotInterval;
   int                                         _iterationCount;
   int                                         _iterationLimit;
-  PpeSolverType                               _ppeSolver;
+  VpeStencilGeneratorType                     _vpeStencilGenerator;
+  VxpeRhsGeneratorType                        _vxpeRhsGenerator;
+  VxpeResultAcquirerType                      _vxpeResultGenerator;
+  VypeRhsGeneratorType                        _vypeRhsGenerator;
+  VypeResultAcquirerType                      _vypeResultGenerator;
   VxpeSolverType                              _vxpeSolver;
   VypeSolverType                              _vypeSolver;
+  PpeStencilGeneratorType                     _ppeStencilGenerator;
+  PpeRhsGeneratorType                         _ppeRhsGenerator;
+  PpeResultAcquirer1Type                      _ppeResultAcquierer1;
+  PpeResultAcquirer2Type                      _ppeResultAcquierer2;
+  PpeSolver1Type                              _ppeSolver1;
+  PpeSolver2Type                              _ppeSolver2;
   VelocityType                                _maxVelocity;
   GhostHandlersType                           _ghostHandler;
   VtkPlotType                                 _plot;
