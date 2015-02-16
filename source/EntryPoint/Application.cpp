@@ -181,6 +181,10 @@ initialize() {
   parseSimulationConfiguration();
   createOutputDirectory();
 
+  // Change current working directory of the application to overcome a Precice
+  // configuration issue with python modules paths.
+  boost::filesystem::current_path(_im->applicationPath);
+
   initializePrecice();
 
   if (_im->parameters->dim == 3) {

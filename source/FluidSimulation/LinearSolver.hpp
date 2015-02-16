@@ -174,7 +174,12 @@ public:
 
 private:
   static PetscErrorCode
+#if ((PETSC_VERSION_MAJOR == 3) && (PETSC_VERSION_MINOR >= 5))
   computeMatrix(KSP ksp, Mat A, Mat pc, void* ctx) {
+#else
+  computeMatrix(KSP ksp, Mat A, Mat pc, MatStructure * matStructure,
+                void* ctx) {
+#endif
     auto solver = static_cast<LinearSolver*>(ctx);
 
     PetscScalar stencil[2 * Dimensions + 1];

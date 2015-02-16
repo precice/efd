@@ -10,8 +10,14 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+#if ((PETSC_VERSION_MAJOR == 3) && (PETSC_VERSION_MINOR >= 5))
 template <int TD>
 using DMBoundaryTypeVector = Eigen::Matrix<DMBoundaryType, TD, 1>;
+#else
+template <int TD>
+using DMBoundaryTypeVector = Eigen::Matrix<DMDABoundaryType, TD, 1>;
+#endif
+
 template <int TD>
 using VectorDi = Eigen::Matrix<int, TD, 1>;
 
@@ -26,7 +32,11 @@ createDMBoundaries() {
   DMBoundaryTypeVector<TD> result;
 
   for (int i = 0; i < TD; ++i) {
+#if ((PETSC_VERSION_MAJOR == 3) && (PETSC_VERSION_MINOR >= 5))
     result(i) = DM_BOUNDARY_NONE;
+#else
+    result(i) = DMDA_BOUNDARY_NONE;
+#endif
   }
 
   return result;

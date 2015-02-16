@@ -168,7 +168,7 @@
       <server:mpi-single/>
         -->
       <action:python mesh="Body" timing="regular-post">
-        <path name="/home/wscrichy/Documents/Thesis/CppProject/configuration/Precice"/>
+        <path name="Precice"/>
         <module name="directForcingAction"/>
         <source-data name="Velocities"/>
         <target-data name="Forces"/>
