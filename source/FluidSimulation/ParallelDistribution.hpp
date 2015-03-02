@@ -28,7 +28,7 @@ public:
   typedef std::array<std::array<int, 2>, TD> Neighbors;
 
 public:
-  ParallelDistribution() {}
+  ParallelDistribution(): mpiCommunicator(PETSC_COMM_WORLD){}
 
   ParallelDistribution(ParallelDistribution const& other) = delete;
 
@@ -104,6 +104,7 @@ public:
   VectorDi  index;
   VectorDi  corner;
   Neighbors neighbors;
+  MPI_Comm  mpiCommunicator;
 };
 
 template <int TD>

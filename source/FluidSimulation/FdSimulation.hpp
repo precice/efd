@@ -13,6 +13,7 @@
 #include "Private/mpigenerics.hpp"
 #include "Simulation.hpp"
 #include "VtkPlot.hpp"
+#include "XdmfHdf5Output/XdmfHdf5Writer.hpp"
 #include "functions.hpp"
 
 #include <Uni/Logging/macros>
@@ -105,6 +106,8 @@ public:
     VtkPlot<TMemory, TGridGeometry, TScalar, TD>
     VtkPlotType;
 
+  using Plotter = XdmfHdf5Output::XdmfHdf5Writer<GridType>;
+
 public:
   FdSimulation() {}
 
@@ -127,9 +130,9 @@ public:
 
     CellAccessorFactory cellAccessorFactory(
       [&] (VectorDiType const& i) {
-          return CellAccessorType(i, &_memory, &_grid.innerGrid,
-                                  &_gridGeometry);
-        });
+        return CellAccessorType(i, &_memory, &_grid.innerGrid,
+                                &_gridGeometry);
+      });
 
     _grid.initialize(localSize, cellAccessorFactory);
 
@@ -260,6 +263,11 @@ public:
                            &_ghostHandler.ppeRhsGeneratorStack,
                            &_ghostHandler.ppeRhsAcquiererStack);
 
+    _plotter.initialize(&_parallelDistribution,
+                        &_grid,
+                        outputDirectory,
+                        fileNamePrefix);
+
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
 
@@ -338,12 +346,14 @@ public:
     _iterationCount    = 0;
 
     if (_plotInterval >= 0) {
+      _plotter.writeGeometry();
       _plot.initialize(&_grid,
                        &_parallelDistribution,
                        &_gridGeometry,
                        outputDirectory,
                        fileNamePrefix);
 
+      _plotter.writeAttributes(_iterationCount);
       _plot.plot(_iterationCount, _time, _dt);
     }
   }
@@ -561,7 +571,9 @@ public:
     if (_plotInterval >= 0) {
       if ((_time - _lastPlotTimeStamp) > _plotInterval) {
         _lastPlotTimeStamp = _time;
-        _plot.plot(_iterationCount, _time, _dt);
+
+        _plotter.writeAttributes(_iterationCount);
+        //_plot.plot(_iterationCount, _time, _dt);
       }
     }
 
@@ -619,6 +631,7 @@ public:
   VelocityType                                _maxVelocity;
   GhostHandlersType                           _ghostHandler;
   VtkPlotType                                 _plot;
+  Plotter                                     _plotter;
 };
 }
 }

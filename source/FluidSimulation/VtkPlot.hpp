@@ -72,7 +72,7 @@ public:
     // fileStream.close();
 
     fileStream << "# vtk DataFile Version 2.0" << std::endl
-               << "I need something to put here" << std::endl
+               << "Fsi Simulation Results" << std::endl
                << "ASCII" << std::endl << std::endl;
 
     typedef typename GridType::Base TempGrid;
@@ -155,6 +155,91 @@ public:
 
   void
   plot(int const&     iterationCount,
+       TScalar const& timeStamp,
+       TScalar const& dt) {
+    FileStream       fileStream;
+
+    auto tempFileNamePrefix = _fileNamePrefix;
+    tempFileNamePrefix += (Format(".{1}.vtk")
+                           % iterationCount
+                           // % timeStamp
+                           ).str(_locale);
+
+    auto tempPath = _outputDirectory / tempFileNamePrefix;
+
+    fileStream.open(tempPath);
+
+    if (!fileStream.is_open()) {
+      fileStream.clear();
+      fileStream.open(tempPath, FileStream::out);
+    }
+
+    fileStream << "# vtk DataFile Version 2.0" << std::endl
+               << "I need something to put here" << std::endl
+               << "ASCII" << std::endl << std::endl;
+
+    typedef typename GridType::Base TempGrid;
+
+    TempGrid grid = _grid->innerGrid;
+
+    grid.setIndents(grid.leftIndent(),
+                    grid.rightIndent() - TempGrid::VectorDi::Ones());
+
+    fileStream << (Format("DATASET STRUCTURED_GRID\n"
+                          "DIMENSIONS {1}{2}\n"
+                          "POINTS {3} float\n")
+                   % grid.innerSize().transpose()
+                   % (TD == 2 ? " 1" : "")
+                   % grid.innerSize().prod()).str(_locale);
+    std::stringstream pointsStream;
+
+    for (auto const& accessor : grid) {
+      pointsStream << accessor.currentPosition() (0) << " "
+                   << accessor.currentPosition() (1);
+
+      if (TD == 3) {
+        pointsStream << " " << accessor.currentPosition() (2);
+      } else if (TD == 2) {
+        pointsStream << " " << 0.0;
+      }
+      pointsStream << std::endl;
+    }
+    fileStream << pointsStream.str() << std::endl;
+
+    std::stringstream pressureStream;
+    std::stringstream velocityStream;
+
+    fileStream << "\nCELL_DATA " << _grid->innerGrid.innerSize().prod()
+               << std::endl;
+
+    fileStream << "\nVECTORS velocity float" << std::endl;
+
+    for (auto const& accessor : _grid->innerGrid) {
+      velocityStream << accessor.currentCell()->velocity(0) << " "
+                     << accessor.currentCell()->velocity(1);
+
+      if (TD == 3) {
+        velocityStream << " " << accessor.currentCell()->velocity(2);
+      } else if (TD == 2) {
+        velocityStream << " " << 0.0;
+      }
+      velocityStream << std::endl;
+    }
+    fileStream << velocityStream.str() << std::endl;
+
+    fileStream << "\nSCALARS pressure float 1" << std::endl
+               << "LOOKUP_TABLE default" << std::endl;
+
+    for (auto const& accessor : _grid->innerGrid) {
+      pressureStream << accessor.currentCell()->pressure() << std::endl;
+    }
+    fileStream << pressureStream.str() << std::endl;
+
+    fileStream.close();
+  }
+
+  void
+  simplePlot(int const&     iterationCount,
        TScalar const& timeStamp,
        TScalar const& dt) {
     FileStream       fileStream;

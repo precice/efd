@@ -1,22 +1,46 @@
 #ifndef FsiSimulation_FluidSimulation_Cell_hpp
 #define FsiSimulation_FluidSimulation_Cell_hpp
 
+#include "BasicCell.hpp"
+
 #include <Eigen/Core>
+
+#include <cassert>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TScalar, int TD>
+template <typename TScalar, int TDimensions>
+class Cell;
+
+template <typename TScalar, int TDimensions>
+class CellTraits < Cell < TScalar, TDimensions >>
+  : public BasicCellTraits < CellTraits < Cell<TScalar, 2 >>> {
+  using Base = BasicCellTraits < CellTraits < Cell<TScalar, 2 >>>;
+
+  static bool
+  initializeAttributes() {
+    Base::setAttribute(0, "velocity", Attribute::Type::Vector);
+    Base::setAttribute(1, "pressure", Attribute::Type::Scalar);
+  }
+};
+
+template <typename TScalar, int TDimensions>
 class Cell {
+  static_assert((TDimensions > 1) && (TDimensions < 4),
+                "Only 2D and 3D simulations supported");
+
 public:
-  typedef TScalar                      Scalar;
-  typedef Eigen::Matrix<Scalar, TD, 1> VectorDs;
-  typedef Eigen::Matrix<int, TD, 1>    VectorDi;
-  typedef VectorDs                     Velocity;
-  typedef Scalar                       Pressure;
+  typedef TScalar                               Scalar;
+  typedef Eigen::Matrix<Scalar, TDimensions, 1> VectorDs;
+  typedef Eigen::Matrix<int, TDimensions, 1>    VectorDi;
+  typedef VectorDs                              Velocity;
+  typedef Scalar                                Pressure;
 
   enum {
-    Dimensions = TD
+    Dimensions = TDimensions
   };
+
+  using Traits = CellTraits < Cell < Scalar, Dimensions >>;
 
 public:
   Cell() {}
@@ -27,6 +51,31 @@ public:
 
   Cell&
   operator=(Cell const& other) = delete;
+
+  Scalar&
+  attribute(int const& index, int dimension = 0) {
+    switch (index) {
+    case 0:
+
+      return _velocity(dimension);
+
+    case 1:
+
+      return _pressure;
+    }
+  }
+  Scalar const&
+  attribute(int const& index, int dimension = 0) const {
+    switch (index) {
+    case 0:
+
+      return _velocity(dimension);
+
+    case 1:
+
+      return _pressure;
+    }
+  }
 
   VectorDs&
   velocity() {
@@ -144,9 +193,15 @@ private:
   VectorDs _convection;
   Scalar   _pressure;
   Scalar   _pressureProjection;
-  int _position;
+  int      _position;
   VectorDi _positions;
+
+  static Traits const traits;
 };
+
+template <typename TScalar, int TDimensions>
+typename Cell<TScalar, TDimensions>::Traits const Cell<TScalar,
+                                                       TDimensions>::traits;
 }
 }
 

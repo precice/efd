@@ -45,7 +45,7 @@ find_package(Petsc REQUIRED)
 set(MPI_CXX_COMPILER ${PETSC_COMPILER})
 find_package(MPI REQUIRED)
 find_package(Precice REQUIRED)
-find_package(Uni REQUIRED)
+find_package(PythonLibs 2.7 REQUIRED)
 set(Boost_USE_STATIC_LIBS    OFF)
 set(Boost_USE_MULTITHREADED  ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -57,9 +57,16 @@ find_package(Boost 1.57 # Versions 1.54, 1.55 have failed
   system
   thread # Required for precice
   REQUIRED)
+find_package(Precice REQUIRED)
 find_package(Eigen REQUIRED)
+find_package(Uni REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(PythonLibs 2.7 REQUIRED)
+find_package(XDMF REQUIRED)
+find_library(XDMF_LIBRARIES
+  NAMES Xdmf
+  PATHS ${XDMF_LIBRARY_DIRS}
+  NO_DEFAULT_PATH
+  )
 # ==============================================================================
 # }}} Packages
 
@@ -144,6 +151,7 @@ add_executable(Simulation ${CPP_FILES})
 target_include_directories(Simulation PRIVATE
   "${PROJECT_DIR}/source"
   )
+
 target_include_directories(Simulation SYSTEM PRIVATE
   ${Precice_INCLUDE_DIRS}
   ${PETSC_INCLUDES}
@@ -151,6 +159,9 @@ target_include_directories(Simulation SYSTEM PRIVATE
   ${Boost_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR}
   ${PYTHON_INCLUDE_DIRS}
+  ${XDMF_HDF5_INCLUDE}
+  ${XDMF_LIBXML2_INCLUDE}
+  ${XDMF_ZLIB_INCLUDE}
   )
 target_link_libraries(Simulation PRIVATE
   Uni
@@ -159,6 +170,10 @@ target_link_libraries(Simulation PRIVATE
   ${Boost_LIBRARIES}
   ${LIBXML2_LIBRARIES}
   ${PYTHON_LIBRARIES}
+  ${XDMF_LIBRARIES}
+  ${XDMF_LIBXML2_LIBRARIES}
+  ${XDMF_HDF5_LIBRARIES}
+  ${XDMF_ZLIB_LIBRARIES}
   )
 # ==============================================================================
 # }}} Targets

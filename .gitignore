@@ -36,7 +36,7 @@
 !/documentation/user/UsageGuide.md
 
 !/source
-!/source/EntryPoint/
+!/source/EntryPoint
 !/source/FluidSimulation
 !/source/FluidSimulation/GhostLayer
 !/source/FluidSimulation/GhostLayer/Private
@@ -45,8 +45,9 @@
 !/source/FluidSimulation/ImmersedBoundary/Fadlun
 !/source/FluidSimulation/ImmersedBoundary/FeedbackForcing
 !/source/FluidSimulation/Private
-!/source/StructuredMemory/
-!/source/Utility/
+!/source/FluidSimulation/XdmfHdf5Output
+!/source/StructuredMemory
+!/source/Utility
 !/source/**/*.c
 !/source/**/*.cpp
 !/source/**/*.h
