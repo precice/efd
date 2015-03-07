@@ -7,6 +7,8 @@
 #include "FluidSimulation/GhostLayer/InitializationActions.hpp"
 #include "FluidSimulation/GhostLayer/PetscExchangeActions.hpp"
 #include "FluidSimulation/GridGeometry.hpp"
+#include "FluidSimulation/VtkOutput/VtkWriter.hpp"
+#include "FluidSimulation/XdmfHdf5Output/XdmfHdf5Writer.hpp"
 
 #include "StructuredMemory/Accessor.hpp"
 #include "StructuredMemory/Memory.hpp"
@@ -18,9 +20,13 @@ namespace EntryPoint {
 template <typename Scalar, int TD, int TSolverType = 0>
 class SimulationBuilder {
 public:
-  typedef FluidSimulation::FdSimulation<
-      FluidSimulation::UniformGridGeometry<Scalar, TD>,
+  typedef FluidSimulation::FdSimulation <
+    FluidSimulation::UniformGridGeometry<Scalar, TD>,
+    StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar, TD>, TD>,
+    FluidSimulation::XdmfHdf5Output::XdmfHdf5Writer <FluidSimulation::Grid<
       StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar, TD>, TD>,
+      FluidSimulation::UniformGridGeometry<Scalar, TD>,
+      TD >>,
       Scalar,
       TD,
       TSolverType> Simulation;
@@ -331,6 +337,7 @@ public:
                                             new PpeRhsGenerationAction(0.0));
 
       int offset = 0;
+
       if (TDimension == 0) {
         if (TDirection == 1) {
           offset = 1;
@@ -346,6 +353,7 @@ public:
           _grid, _parallelDistribution, new VxpeRhsAcquiererAction());
 
       offset = 0;
+
       if (TDimension == 1) {
         if (TDirection == 1) {
           offset = 1;
@@ -920,8 +928,8 @@ private:
     handlers.setVypeInNonYDimensionAsInput();
 
     // _handlers->vxpeStencilGeneratorStack[2][0] =
-    //   VpeStencilGenerationHandler::getDirichletLeft(_grid,
-    //                                                 _parallelDistribution);
+    // VpeStencilGenerationHandler::getDirichletLeft(_grid,
+    // _parallelDistribution);
   }
 
   void
@@ -975,8 +983,8 @@ private:
     handlers.setPpeRhsAcquierer();
 
     // _handlers->vxpeStencilGeneratorStack[2][1] =
-    //   VpeStencilGenerationHandler::getDirichletRight(_grid,
-    //                                                  _parallelDistribution);
+    // VpeStencilGenerationHandler::getDirichletRight(_grid,
+    // _parallelDistribution);
   }
 
   void

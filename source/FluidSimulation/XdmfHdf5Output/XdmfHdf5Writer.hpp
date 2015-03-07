@@ -46,7 +46,7 @@ public:
              GridType const*                 grid,
              Path const&                     directory_path,
              std::string                     file_name_prefix) {
-    _filePath       = directory_path;
+    _directoryPath  = directory_path;
     _fileNamePrefix = file_name_prefix;
 
     _hdf5Writer.initialize(parallel_distribution,
@@ -56,59 +56,71 @@ public:
       _xdmfWriter.reset(new XdmfWriterType());
     }
 
+    CellType::Traits::initializeAttributes();
     int const attributes_size = CellType::Traits::getAttributesSize();
 
     for (int i = 0; i < attributes_size; ++i) {
-      auto const& attribute = CellType::Traits::getAttribute(i);
-      _attributes.emplace_back(attribute);
+      auto attribute = CellType::Traits::getAttribute(i);
+      _attributes.emplace_back(*attribute);
     }
   }
 
   void
   writeGeometry() {
-    std::string dimensions_name;
+    std::vector<std::string> dimension_names;
 
-    if (Dimensions == 2) {
-      dimensions_name = "XY";
-    } else {
-      dimensions_name = "XYZ";
-    }
+    dimension_names.push_back("X");
+    dimension_names.push_back("Y");
+    dimension_names.push_back("Z");
 
-    auto geometry_file_path = _hdf5Writer.writeGeometry(_filePath,
+    auto geometry_file_path = _hdf5Writer.writeGeometry(_directoryPath,
                                                         _fileNamePrefix,
-                                                        dimensions_name);
+                                                        dimension_names);
 
     if (_xdmfWriter.get()) {
       _xdmfWriter->initialize(geometry_file_path.filename().string(),
-                              dimensions_name,
+                              dimension_names,
                               _attributes,
                               _hdf5Writer.size().template cast<int>());
     }
   }
 
   void
-  writeAttributes(int const& iteration_number) {
+  writeAttributes(int const&    iteration_number,
+                  double const& time) {
     auto attribute_file_path = _hdf5Writer.writeAttributes(
-      _filePath,
+      _directoryPath,
       _fileNamePrefix,
       _attributes,
       iteration_number);
 
     if (_xdmfWriter.get()) {
-      _xdmfWriter->write(
-        _filePath,
-        _fileNamePrefix,
-        attribute_file_path.filename().string(),
-        iteration_number);
+      Path xmdf_file_path = _directoryPath;
+      xmdf_file_path.append(_fileNamePrefix
+                            + "."
+                            + std::to_string(iteration_number)
+                            + ".xdmf");
+      _timeStepFileNames.push_back(xmdf_file_path.filename().string());
+
+      _xdmfWriter->write(xmdf_file_path,
+                         attribute_file_path.filename().string(),
+                         time);
+
+      xmdf_file_path = _directoryPath;
+      xmdf_file_path.append(_fileNamePrefix + ".xdmf");
+
+      _xdmfWriter->writeTemporal(xmdf_file_path,
+                         _timeStepFileNames);
     }
   }
 
 private:
-  Hdf5WriterType         _hdf5Writer;
-  UniqueXdmfWriterType   _xdmfWriter;
-  Path                   _filePath;
-  std::string            _fileNamePrefix;
-  std::vector<Attribute> _attributes;
+  Hdf5WriterType           _hdf5Writer;
+  UniqueXdmfWriterType     _xdmfWriter;
+  Path                     _directoryPath;
+  std::string              _fileNamePrefix;
+  std::vector<Attribute>   _attributes;
+  std::vector<std::string> _timeStepFileNames;
 };
 }
 }

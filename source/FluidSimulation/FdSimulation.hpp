@@ -12,8 +12,6 @@
 #include "Parameters.hpp"
 #include "Private/mpigenerics.hpp"
 #include "Simulation.hpp"
-#include "VtkPlot.hpp"
-#include "XdmfHdf5Output/XdmfHdf5Writer.hpp"
 #include "functions.hpp"
 
 #include <Uni/Logging/macros>
@@ -26,6 +24,7 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TGridGeometry,
           typename TMemory,
+          typename TSimulationResultsWriter,
           typename TScalar,
           int TD,
           int TSolverType = 0>
@@ -101,12 +100,6 @@ public:
     VypeSolverType;
 
   typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
-
-  typedef
-    VtkPlot<TMemory, TGridGeometry, TScalar, TD>
-    VtkPlotType;
-
-  using Plotter = XdmfHdf5Output::XdmfHdf5Writer<GridType>;
 
 public:
   FdSimulation() {}
@@ -263,10 +256,10 @@ public:
                            &_ghostHandler.ppeRhsGeneratorStack,
                            &_ghostHandler.ppeRhsAcquiererStack);
 
-    _plotter.initialize(&_parallelDistribution,
-                        &_grid,
-                        outputDirectory,
-                        fileNamePrefix);
+    _resultWriter.initialize(&_parallelDistribution,
+                             &_grid,
+                             outputDirectory,
+                             fileNamePrefix);
 
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
@@ -346,15 +339,8 @@ public:
     _iterationCount    = 0;
 
     if (_plotInterval >= 0) {
-      _plotter.writeGeometry();
-      _plot.initialize(&_grid,
-                       &_parallelDistribution,
-                       &_gridGeometry,
-                       outputDirectory,
-                       fileNamePrefix);
-
-      _plotter.writeAttributes(_iterationCount);
-      _plot.plot(_iterationCount, _time, _dt);
+      _resultWriter.writeGeometry();
+      _resultWriter.writeAttributes(_iterationCount, _time);
     }
   }
 
@@ -572,8 +558,7 @@ public:
       if ((_time - _lastPlotTimeStamp) > _plotInterval) {
         _lastPlotTimeStamp = _time;
 
-        _plotter.writeAttributes(_iterationCount);
-        //_plot.plot(_iterationCount, _time, _dt);
+        _resultWriter.writeAttributes(_iterationCount, _time);
       }
     }
 
@@ -630,8 +615,7 @@ public:
   PpeSolver2Type                              _ppeSolver2;
   VelocityType                                _maxVelocity;
   GhostHandlersType                           _ghostHandler;
-  VtkPlotType                                 _plot;
-  Plotter                                     _plotter;
+  TSimulationResultsWriter                    _resultWriter;
 };
 }
 }

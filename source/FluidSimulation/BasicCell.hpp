@@ -1,10 +1,12 @@
 #ifndef FsiSimulation_FluidSimulation_BasicCell_hpp
 #define FsiSimulation_FluidSimulation_BasicCell_hpp
 
+#include <Uni/Logging/macros>
+
 #include <map>
 #include <set>
 #include <string>
-#include <vector>
+#include <list>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
@@ -26,6 +28,10 @@ public:
     name(name_),
     index(index_),
     type(type_) {}
+
+  Attribute(Attribute const& other) : name(other.name),
+    index(other.index),
+    type(other.type) {}
 
   std::string const name;
   int               index;
@@ -55,7 +61,7 @@ private:
   using AttributeNameMap
           = std::map<std::string const*, Attribute*, StringPointerLess>;
   using Attributes
-          = std::vector<Attribute>;
+          = std::list<Attribute>;
 
 public:
   BasicCellTraits() {
@@ -63,13 +69,14 @@ public:
   }
 
   static void
-  setAttribute(std::string const& name, int const& index, Attribute::Type
-               type) {
+  setAttribute(std::string const& name,
+               int const&         index,
+               Attribute::Type type) {
     _attributes.emplace_back(name, index, type);
-    _attributeNameMap.emplace(std::make_pair(
+    _attributeNameMap.insert(std::make_pair(
                                 &_attributes.back().name,
                                 &_attributes.back()));
-    _attributeIndexMap.emplace(std::make_pair(
+    _attributeIndexMap.insert(std::make_pair(
                                  &_attributes.back().index,
                                  &_attributes.back()));
   }
@@ -79,14 +86,14 @@ public:
     return _attributes.size();
   }
 
-  static Attribute const&
+  static Attribute*
   getAttribute(int const& index) {
-    return *_attributeIndexMap[&index];
+    return _attributeIndexMap.find(&index)->second;
   }
 
-  static Attribute const&
+  static Attribute*
   getAttribute(std::string const& name) {
-    return _attributeNameMap[&name];
+    return _attributeNameMap.find(&name)->second;
   }
 
   static bool

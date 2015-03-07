@@ -17,10 +17,16 @@ class CellTraits < Cell < TScalar, TDimensions >>
   : public BasicCellTraits < CellTraits < Cell<TScalar, 2 >>> {
   using Base = BasicCellTraits < CellTraits < Cell<TScalar, 2 >>>;
 
+  CellTraits() : Base() {
+    logInfo("sdfsdfsdf Gotya2");
+  }
+
+public:
   static bool
   initializeAttributes() {
-    Base::setAttribute(0, "velocity", Attribute::Type::Vector);
-    Base::setAttribute(1, "pressure", Attribute::Type::Scalar);
+    Base::setAttribute("velocity", 0, Attribute::Type::Vector);
+    Base::setAttribute("pressure", 1, Attribute::Type::Scalar);
+    return true;
   }
 };
 

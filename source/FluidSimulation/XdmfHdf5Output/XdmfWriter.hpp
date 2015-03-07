@@ -34,7 +34,7 @@ class XdmfWriter {
   using ParallelDistributionType = ParallelDistribution<Dimensions>;
 
   struct DataItem {
-    VectorDi                  dimensions;
+    std::vector<int>          dimensions;
     static  std::string const numberType;
     static  std::string const format;
     std::string               data;
@@ -45,9 +45,9 @@ class XdmfWriter {
 
       for (int d = 0; d < dimensions.size(); ++d) {
         if (ss.str().empty()) {
-          ss << dimensions(d);
+          ss << dimensions[d];
         } else {
-          ss << ' ' << dimensions(d);
+          ss << ' ' << dimensions[d];
         }
       }
 
@@ -60,7 +60,7 @@ class XdmfWriter {
 
   struct Topology {
     static  std::string const topologyType;
-    VectorDi                  dimensions;
+    std::vector<int>          dimensions;
 
     void
     updateNode(PropertyTree& node) {
@@ -69,9 +69,9 @@ class XdmfWriter {
 
       for (int d = 0; d < dimensions.size(); ++d) {
         if (ss.str().empty()) {
-          ss << dimensions(d);
+          ss << dimensions[d];
         } else {
-          ss << ' ' << dimensions(d);
+          ss << ' ' << dimensions[d];
         }
       }
 
@@ -81,15 +81,15 @@ class XdmfWriter {
 
   struct Geometry {
     static  std::string const        geometryType;
-    std::array<DataItem, Dimensions> coords;
+    std::array<DataItem, Dimensions> data_items;
 
     void
     updateNode(PropertyTree& node) {
       PropertyTree& geometry_node = node.add("Geometry", "");
       geometry_node.put("<xmlattr>.GeometryType", geometryType);
 
-      for (auto& c : coords) {
-        c.updateNode(geometry_node);
+      for (auto& item : data_items) {
+        item.updateNode(geometry_node);
       }
     }
   };
@@ -114,24 +114,37 @@ class XdmfWriter {
 public:
   void
   initialize(std::string const&                             geometry_hdf_name,
-             std::string const&                             dimensions_name,
+             std::vector<std::string> const&                dimension_names,
              std::vector<FluidSimulation::Attribute> const& attributes,
              VectorDi const&                                dimensions) {
-    topology.dimensions           = dimensions;
-    geometry.coords[0].dimensions = dimensions;
-    geometry.coords[0].data       = geometry_hdf_name + ":/" + dimensions_name;
+    for (int d = Dimensions - 1; d >= 0; --d) {
+      auto& item = geometry.data_items[Dimensions - 1 - d];
+
+      if (d < Dimensions) {
+        topology.dimensions.push_back(dimensions(d) + 1);
+        item.dimensions.push_back(dimensions(d) + 1);
+      } else {
+        // topology.dimensions.push_back(1);
+        item.dimensions.push_back(1);
+      }
+      item.data = geometry_hdf_name + ":/" + dimension_names[d];
+    }
 
     for (auto const& attribute : attributes) {
       logInfo("{1}", attribute.name);
       _attributes.emplace_back();
       _attributes.back().name = attribute.name;
-      _attributes.back().item.dimensions = dimensions;
+
+      for (int d = Dimensions - 1; d >= 0; --d) {
+        _attributes.back().item.dimensions.push_back(dimensions(d));
+      }
 
       int attribute_size = 1;
 
       if (attribute.type == FluidSimulation::Attribute::Type::Vector) {
         attribute_size = Dimensions;
         _attributes.back().type = "Vector";
+        _attributes.back().item.dimensions.push_back(3);
       } else {
         _attributes.back().type = "Scalar";
       }
@@ -140,16 +153,9 @@ public:
   }
 
   void
-  write(Path const&        directory_path,
-        std::string const& file_name_prefix,
+  write(Path const&        file_path,
         std::string const& attribute_hdf_name,
-        int const&         iteration_number) {
-    Path current_file_path = directory_path;
-    current_file_path.append(file_name_prefix
-                             + "."
-                             + std::to_string(iteration_number)
-                             + ".xdmf");
-
+        double const&      time) {
     for (auto& attribute : _attributes) {
       attribute.item.data = attribute_hdf_name
                             + ":/"
@@ -161,7 +167,7 @@ public:
     grid_node.put("<xmlattr>.Name", name);
     grid_node.put("<xmlattr>.GridType", gridType);
     grid_node.put("<xmlattr>.xml:id", "gid");
-    grid_node.put("Time.<xmlattr>.Value", std::to_string(iteration_number));
+    grid_node.put("Time.<xmlattr>.Value", std::to_string(time));
 
     topology.updateNode(grid_node);
     geometry.updateNode(grid_node);
@@ -170,14 +176,14 @@ public:
       attribute.updateNode(grid_node);
     }
 
-    boost::property_tree::xml_parser::write_xml(current_file_path.string(),
+    boost::property_tree::xml_parser::write_xml(file_path.string(),
                                                 property_tree,
                                                 std::locale(),
                                                 _settings);
   }
 
   void
-  writeTemporal(std::string const&              xmf_name,
+  writeTemporal(Path const&                     file_path,
                 std::vector<std::string> const& timesteps) {
     PropertyTree  property_tree;
     PropertyTree& xdmf_node = property_tree.put("Xdmf", "");
@@ -193,7 +199,7 @@ public:
       ts_node.put("<xmlattr>.xpointer", "gid");
     }
 
-    boost::property_tree::xml_parser::write_xml(xmf_name,
+    boost::property_tree::xml_parser::write_xml(file_path.string(),
                                                 property_tree,
                                                 std::locale(),
                                                 _settings);
@@ -218,13 +224,13 @@ template <int Dimensions>
 std::string const XdmfWriter<Dimensions>::DataItem::format = "HDF";
 
 template <>
-std::string const XdmfWriter<3>::Topology::topologyType = "3DSMesh";
+std::string const XdmfWriter<3>::Topology::topologyType = "3DRectMesh";
 template <>
-std::string const XdmfWriter<2>::Topology::topologyType = "2DSMesh";
+std::string const XdmfWriter<2>::Topology::topologyType = "2DRectMesh";
 template <>
-std::string const XdmfWriter<3>::Geometry::geometryType = "XYZ";
+std::string const XdmfWriter<3>::Geometry::geometryType = "VXVYVZ";
 template <>
-std::string const XdmfWriter<2>::Geometry::geometryType = "XY";
+std::string const XdmfWriter<2>::Geometry::geometryType = "VXVY";
 template <int Dimensions>
 std::string const XdmfWriter<Dimensions>::Attribute::center = "Cell";
 template <int Dimensions>
