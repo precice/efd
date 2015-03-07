@@ -17,16 +17,6 @@ SimulationFactory::Simulation*
 createUniformGridFromTemplate(FluidSimulation::Configuration* configuration) {
   SimulationBuilder<TScalar, TD, TSolverType> builder(configuration);
 
-  builder.setLeftAsParabolicInput();
-  builder.setRightAsOutput();
-  builder.setBottomAsMoving();
-  builder.setTopAsMoving();
-
-  if (TD == 3) {
-    builder.setBackAsMoving();
-    builder.setFrontAsMoving();
-  }
-
   auto simulation = builder.simulation();
 
   return simulation;
@@ -38,15 +28,14 @@ createUniformGridFromTemplate(FluidSimulation::Configuration* configuration) {
 SimulationFactory::Simulation*
 SimulationFactory::
 createSimpleFdDouble2D(FluidSimulation::Configuration* configuration) {
-  return Private::createUniformGridFromTemplate<double, 2>(configuration);
+  return Private::createUniformGridFromTemplate<double, 2, 1>(configuration);
 }
 
 SimulationFactory::Simulation*
 SimulationFactory::
 createSimpleFdDouble3D(FluidSimulation::Configuration* configuration) {
-  return Private::createUniformGridFromTemplate<double, 2>(configuration);
+  return Private::createUniformGridFromTemplate<double, 2, 1>(configuration);
 }
-
 
 SimulationFactory::Simulation*
 SimulationFactory::

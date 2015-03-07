@@ -9,6 +9,11 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+enum class WallType {
+  Input,
+  ParabolicInput,
+  Output
+};
 class Configuration {
 public:
   class Wall {
@@ -17,7 +22,7 @@ public:
     typedef Eigen::Matrix<Scalar, 3, 1> VectorDs;
 
 public:
-    Wall(int const& type)
+    Wall(WallType const& type)
       : _type(type) {}
 
     Wall(Wall const&) = delete;
@@ -29,11 +34,11 @@ public:
     operator=(Wall const&) = delete;
 
     bool
-    operator==(int const& type) const {
+    operator==(WallType const& type) const {
       return _type == type;
     }
 
-    int const&
+    WallType const&
     type() const {
       return _type;
     }
@@ -41,17 +46,13 @@ public:
     virtual
     VectorDs const&
     velocity() const {
-      static VectorDs const _velocity;
+      static VectorDs const _velocity = VectorDs::Zero();
 
       return _velocity;
     }
 
-    static int const Input;
-    static int const ParabolicInput;
-    static int const Output;
-
 private:
-    int _type;
+    WallType _type;
   };
 
   class Input : public Wall {
@@ -61,8 +62,11 @@ public:
     typedef typename Base::VectorDs VectorDs;
 
 public:
-    Input(VectorDs const& velocity) : Base(Base::Input),
-                                      _velocity(velocity) {}
+    Input() : Base(WallType::Input),
+      _velocity(VectorDs::Zero()) {}
+
+    Input(VectorDs const& velocity) : Base(WallType::Input),
+      _velocity(velocity) {}
 
     Input(Input const&) = delete;
 
@@ -88,8 +92,8 @@ public:
     typedef typename Base::VectorDs VectorDs;
 
 public:
-    ParabolicInput(VectorDs const& velocity) : Base(Base::ParabolicInput),
-                                               _velocity(velocity) {}
+    ParabolicInput(VectorDs const& velocity) : Base(WallType::ParabolicInput),
+      _velocity(velocity) {}
 
     ParabolicInput(ParabolicInput const&) = delete;
 
@@ -115,7 +119,7 @@ public:
     typedef typename Base::VectorDs VectorDs;
 
 public:
-    Output() : Base(Base::Output) {}
+    Output() : Base(WallType::Output) {}
 
     Output(Output const&) = delete;
 
@@ -127,12 +131,11 @@ public:
   };
 
 public:
-  typedef double                          ScalarType;
-  typedef Eigen::Matrix<int, 3, 1>        VectorDiType;
-  typedef Eigen::Matrix<ScalarType, 3, 1> VectorDsType;
-  typedef std::unique_ptr<Wall>           UniqueWallType;
-  typedef std::array<std::array<UniqueWallType, 2>, 3>
-    WallsType;
+  typedef double                                       ScalarType;
+  typedef Eigen::Matrix<int, 3, 1>                     VectorDiType;
+  typedef Eigen::Matrix<ScalarType, 3, 1>              VectorDsType;
+  typedef std::unique_ptr<Wall>                        UniqueWallType;
+  typedef std::array<std::array<UniqueWallType, 2>, 3> WallTypes;
 
   enum class SolverType {
     Fsfd, // Fractional Step Finite Difference
@@ -142,13 +145,18 @@ public:
 public:
   Configuration()
     : re(0),
-      timeLimit(0),
-      plotInterval(0),
-      tau(0),
-      gamma(0),
-      dim(0),
-      immersedBoundaryMethod(-1),
-      solver(SolverType::Ssgfd) {}
+    timeLimit(0),
+    plotInterval(0),
+    tau(0),
+    gamma(0),
+    dim(0),
+    immersedBoundaryMethod(-1),
+    solver(SolverType::Ssgfd) {
+    for (int d = 0; d < 3; ++d) {
+      walls[d][0] = UniqueWallType(new Input());
+      walls[d][1] = UniqueWallType(new Input());
+    }
+  }
 
   ScalarType   re;
   ScalarType   timeLimit;
@@ -161,11 +169,11 @@ public:
   VectorDiType size;
   VectorDiType parallelizationSize;
   VectorDsType environment;
-  WallsType    walls;
+  WallTypes    walls;
   std::string  filename;
   int          immersedBoundaryMethod;
   float        alpha;
-  SolverType solver;
+  SolverType   solver;
 
   static int const FeedbackForcingMethod;
 };

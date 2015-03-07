@@ -225,18 +225,18 @@ public:
                            &_vpeStencilGenerator,
                            &_vxpeRhsGenerator,
                            &_vxpeResultGenerator,
-                           &_ghostHandler.vxpeStencilGeneratorStack,
-                           &_ghostHandler.vxpeRhsGeneratorStack,
-                           &_ghostHandler.vxpeRhsAcquiererStack);
+                           &_ghostHandler.vpeStencilGeneratorStack[0],
+                           &_ghostHandler.vpeRhsGeneratorStack[0],
+                           &_ghostHandler.vpeRhsAcquiererStack[0]);
 
     _vypeSolver.initialize(&_grid,
                            &_parallelDistribution,
                            &_vpeStencilGenerator,
                            &_vypeRhsGenerator,
                            &_vypeResultGenerator,
-                           &_ghostHandler.vypeStencilGeneratorStack,
-                           &_ghostHandler.vypeRhsGeneratorStack,
-                           &_ghostHandler.vypeRhsAcquiererStack);
+                           &_ghostHandler.vpeStencilGeneratorStack[1],
+                           &_ghostHandler.vpeRhsGeneratorStack[1],
+                           &_ghostHandler.vpeRhsAcquiererStack[1]);
 
     _ppeSolver1.initialize(&_grid,
                            &_parallelDistribution,

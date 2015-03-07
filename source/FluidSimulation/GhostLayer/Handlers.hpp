@@ -9,44 +9,43 @@
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
-template <int TD>
+template <int TDimensions>
 class Handlers {
 public:
+ enum {
+   Dimensions = TDimensions
+ };
+
   Handlers() {
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         mpiFghExchangeStack[d][d2] =
-          MpiExchange::getEmptyFunctor<TD>();
+          MpiExchange::getEmptyFunctor<Dimensions>();
         mpiPressureExchangeStack[d][d2] =
-          MpiExchange::getEmptyFunctor<TD>();
+          MpiExchange::getEmptyFunctor<Dimensions>();
         mpiVelocityExchangeStack[d][d2] =
-          MpiExchange::getEmptyFunctor<TD>();
+          MpiExchange::getEmptyFunctor<Dimensions>();
         fghInitialization[d][d2] =
-          Initialization::getEmptyFunctor<TD>();
+          Initialization::getEmptyFunctor<Dimensions>();
 
         ppeStencilGeneratorStack[d][d2] =
-          LsStencilGenerator::getEmptyFunctor<TD>();
+          LsStencilGenerator::getEmptyFunctor<Dimensions>();
         ppeRhsGeneratorStack[d][d2] =
-          PetscExchange::getEmptyFunctor<TD>();
+          PetscExchange::getEmptyFunctor<Dimensions>();
         ppeRhsAcquiererStack[d][d2] =
-          PetscExchange::getEmptyFunctor<TD>();
+          PetscExchange::getEmptyFunctor<Dimensions>();
 
-        vxpeStencilGeneratorStack[d][d2] =
-          LsStencilGenerator::getEmptyFunctor<TD>();
-        vxpeRhsGeneratorStack[d][d2] =
-          PetscExchange::getEmptyFunctor<TD>();
-        vxpeRhsAcquiererStack[d][d2] =
-          PetscExchange::getEmptyFunctor<TD>();
-
-        vypeStencilGeneratorStack[d][d2] =
-          LsStencilGenerator::getEmptyFunctor<TD>();
-        vypeRhsGeneratorStack[d][d2] =
-          PetscExchange::getEmptyFunctor<TD>();
-        vypeRhsAcquiererStack[d][d2] =
-          PetscExchange::getEmptyFunctor<TD>();
+        for (int i = 0; i < Dimensions; ++i) {
+          vpeStencilGeneratorStack[i][d][d2] =
+            LsStencilGenerator::getEmptyFunctor<Dimensions>();
+          vpeRhsGeneratorStack[i][d][d2] =
+            PetscExchange::getEmptyFunctor<Dimensions>();
+          vpeRhsAcquiererStack[i][d][d2] =
+            PetscExchange::getEmptyFunctor<Dimensions>();
+        }
 
         velocityInitialization[d][d2] =
-          Initialization::getEmptyFunctor<TD>();
+          Initialization::getEmptyFunctor<Dimensions>();
       }
     }
   }
@@ -58,25 +57,21 @@ public:
   Handlers&
   operator=(Handlers const& other) = delete;
 
-  MpiExchange::FunctorStack<TD>        mpiFghExchangeStack;
-  MpiExchange::FunctorStack<TD>        mpiVelocityExchangeStack;
-  MpiExchange::FunctorStack<TD>        mpiPressureExchangeStack;
+  MpiExchange::FunctorStack<Dimensions> mpiFghExchangeStack;
+  MpiExchange::FunctorStack<Dimensions> mpiVelocityExchangeStack;
+  MpiExchange::FunctorStack<Dimensions> mpiPressureExchangeStack;
 
-  Initialization::FunctorStack<TD>     fghInitialization;
+  Initialization::FunctorStack<Dimensions> fghInitialization;
 
-  LsStencilGenerator::FunctorStack<TD> ppeStencilGeneratorStack;
-  PetscExchange::FunctorStack<TD>      ppeRhsGeneratorStack;
-  PetscExchange::FunctorStack<TD>      ppeRhsAcquiererStack;
+  LsStencilGenerator::FunctorStack<Dimensions> ppeStencilGeneratorStack;
+  PetscExchange::FunctorStack<Dimensions>      ppeRhsGeneratorStack;
+  PetscExchange::FunctorStack<Dimensions>      ppeRhsAcquiererStack;
 
-  LsStencilGenerator::FunctorStack<TD> vxpeStencilGeneratorStack;
-  PetscExchange::FunctorStack<TD>      vxpeRhsGeneratorStack;
-  PetscExchange::FunctorStack<TD>      vxpeRhsAcquiererStack;
+  std::array<LsStencilGenerator::FunctorStack<Dimensions>, Dimensions> vpeStencilGeneratorStack;
+  std::array<PetscExchange::FunctorStack<Dimensions>, Dimensions>      vpeRhsGeneratorStack;
+  std::array<PetscExchange::FunctorStack<Dimensions>, Dimensions>      vpeRhsAcquiererStack;
 
-  LsStencilGenerator::FunctorStack<TD> vypeStencilGeneratorStack;
-  PetscExchange::FunctorStack<TD>      vypeRhsGeneratorStack;
-  PetscExchange::FunctorStack<TD>      vypeRhsAcquiererStack;
-
-  Initialization::FunctorStack<TD>     velocityInitialization;
+  Initialization::FunctorStack<Dimensions> velocityInitialization;
 
 private:
 };

@@ -14,21 +14,31 @@
 #include "StructuredMemory/Memory.hpp"
 
 #include <Uni/StructuredGrid/Basic/MultiIndex>
+#include <Uni/Logging/macros>
 
 namespace FsiSimulation {
 namespace EntryPoint {
-template <typename Scalar, int TD, int TSolverType = 0>
+template <typename Scalar, int TDimensions, int TSolverType = 0>
 class SimulationBuilder {
+  static_assert((TDimensions > 1) && (TDimensions < 4),
+                "Only 2D and 3D simulations supported");
+
 public:
+  enum {
+    Dimensions = TDimensions
+  };
   typedef FluidSimulation::FdSimulation <
-    FluidSimulation::UniformGridGeometry<Scalar, TD>,
-    StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar, TD>, TD>,
-    FluidSimulation::XdmfHdf5Output::XdmfHdf5Writer <FluidSimulation::Grid<
-      StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar, TD>, TD>,
-      FluidSimulation::UniformGridGeometry<Scalar, TD>,
-      TD >>,
+    FluidSimulation::UniformGridGeometry<Scalar, TDimensions>,
+    StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar, TDimensions>,
+                                     TDimensions>,
+    FluidSimulation::XdmfHdf5Output::XdmfHdf5Writer < FluidSimulation::Grid<
+      StructuredMemory::IterableMemory<FluidSimulation::Cell<Scalar,
+                                                             TDimensions>,
+                                       TDimensions>,
+      FluidSimulation::UniformGridGeometry<Scalar, TDimensions>,
+      TDimensions >>,
       Scalar,
-      TD,
+      TDimensions,
       TSolverType> Simulation;
   typedef typename Simulation::GridType                 GridS;
   typedef typename Simulation::GridGeometryType         GridGeometryS;
@@ -48,55 +58,55 @@ public:
       FluidSimulation::GhostLayer::MpiExchange::Handler
       <Scalar, typename GridS::Base,
        SimulationBuilder::template fghAccessor<TDimension>,
-       Scalar, TD, TDimension, TDirection>
+       Scalar, TDimensions, TDimension, TDirection>
       FghMpiExchange;
     typedef
       FluidSimulation::GhostLayer::MpiExchange::Handler
       <PressureS, typename GridS::Base,
-       SimulationBuilder::pressureAccessor, Scalar, TD,
+       SimulationBuilder::pressureAccessor, Scalar, TDimensions,
        TDimension, TDirection>
       PressureMpiExchange;
     typedef
       FluidSimulation::GhostLayer::MpiExchange::Handler
       <VelocityS, typename GridS::Base,
-       SimulationBuilder::velocityAccessor, Scalar, TD,
+       SimulationBuilder::velocityAccessor, Scalar, TDimensions,
        TDimension, TDirection>
       VelocityMpiExchange;
 
     typedef
       FluidSimulation::GhostLayer::Initialization::MovingWallFghAction
-      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TDimensions, TDimension, TDirection>
       MovingWallFghInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, MovingWallFghInitializationAction, TD,
+      <typename GridS::Base, MovingWallFghInitializationAction, TDimensions,
        TDimension, TDirection>
       MovingWallFghInitialization;
     typedef
       FluidSimulation::GhostLayer::Initialization::InputFghAction
-      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TDimensions, TDimension, TDirection>
       InputFghInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, InputFghInitializationAction, TD,
+      <typename GridS::Base, InputFghInitializationAction, TDimensions,
        TDimension, TDirection>
       InputFghInitialization;
     typedef
       FluidSimulation::GhostLayer::Initialization::ParabolicInputFghAction
-      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TDimensions, TDimension, TDirection>
       ParabolicInputFghInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, ParabolicInputFghInitializationAction, TD,
+      <typename GridS::Base, ParabolicInputFghInitializationAction, TDimensions,
        TDimension, TDirection>
       ParabolicInputFghInitialization;
     typedef
       FluidSimulation::GhostLayer::Initialization::OutputFghAction
-      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TDimensions, TDimension, TDirection>
       OutputFghInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, OutputFghInitializationAction, TD,
+      <typename GridS::Base, OutputFghInitializationAction, TDimensions,
        TDimension, TDirection>
       OutputFghInitialization;
 
@@ -191,39 +201,68 @@ public:
       VypeRhsAcquiererHandler;
 
     typedef
+      FluidSimulation::GhostLayer::PetscExchange::VpeInputRhsGenerationAction
+      <2, TDimension, TDirection>
+      VzpeInputRhsGenerationAction;
+    typedef
+      FluidSimulation::GhostLayer::PetscExchange::Handler
+      <GridS, VzpeInputRhsGenerationAction, TDimension, TDirection>
+      VzpeInputRhsGenerationHandler;
+
+    typedef
+      FluidSimulation::GhostLayer::PetscExchange::
+      VpeParabolicInputRhsGenerationAction
+      <2, TDimension, TDirection>
+      VzpeParabolicInputRhsGenerationAction;
+    typedef
+      FluidSimulation::GhostLayer::PetscExchange::Handler
+      <GridS, VzpeParabolicInputRhsGenerationAction, TDimension, TDirection>
+      VzpeParabolicInputRhsGenerationHandler;
+
+    typedef
+      FluidSimulation::GhostLayer::PetscExchange::VpeRhsAcquiererAction<0>
+      VzpeRhsAcquiererAction;
+    typedef
+      FluidSimulation::GhostLayer::PetscExchange::Handler
+      <GridS, VzpeRhsAcquiererAction, TDimension, TDirection>
+      VzpeRhsAcquiererHandler;
+
+    typedef
       FluidSimulation::GhostLayer::Initialization::MovingWallVelocityAction
-      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TDimensions, TDimension, TDirection>
       MovingWallVelocityInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, MovingWallVelocityInitializationAction, TD,
+      <typename GridS::Base, MovingWallVelocityInitializationAction,
+       TDimensions,
        TDimension, TDirection>
       MovingWallVelocityInitialization;
     typedef
       FluidSimulation::GhostLayer::Initialization::InputVelocityAction
-      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TDimensions, TDimension, TDirection>
       InputVelocityInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, InputVelocityInitializationAction, TD,
+      <typename GridS::Base, InputVelocityInitializationAction, TDimensions,
        TDimension, TDirection>
       InputVelocityInitialization;
     typedef
       FluidSimulation::GhostLayer::Initialization::ParabolicInputVelocityAction
-      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TDimensions, TDimension, TDirection>
       ParabolicInputVelocityInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, ParabolicInputVelocityInitializationAction, TD,
+      <typename GridS::Base, ParabolicInputVelocityInitializationAction,
+       TDimensions,
        TDimension, TDirection>
       ParabolicInputVelocityInitialization;
     typedef
       FluidSimulation::GhostLayer::Initialization::OutputVelocityAction
-      <typename GridS::Base, Scalar, TD, TDimension, TDirection>
+      <typename GridS::Base, Scalar, TDimensions, TDimension, TDirection>
       OutputVelocityInitializationAction;
     typedef
       FluidSimulation::GhostLayer::Initialization::Handler
-      <typename GridS::Base, OutputVelocityInitializationAction, TD,
+      <typename GridS::Base, OutputVelocityInitializationAction, TDimensions,
        TDimension, TDirection>
       OutputVelocityInitialization;
 
@@ -255,23 +294,58 @@ public:
         PpeRhsGenerationHandler::getHandler(_grid, _parallelDistribution,
                                             new PpeRhsGenerationAction(0.0));
 
-      _handlers->vxpeRhsGeneratorStack[TDimension][TDirection] =
+      if (TDirection == 1) {
+        _handlers->ppeRhsAcquiererStack[TDimension][TDirection] =
+          PpeRhsAcquiererHandler::getHandler(
+            _grid, _parallelDistribution, new PpeRhsAcquiererAction());
+      }
+
+      for (int d = 0; d < Dimensions; ++d) {
+        if (d == TDimension) {
+          if (TDirection == 0) {
+            _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+              VpeStencilGenerationHandler::getDirichletLeft(_grid,
+                                                            _parallelDistribution);
+          } else {
+            _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+              VpeStencilGenerationHandler::getDirichletRight(_grid,
+                                                             _parallelDistribution);
+          }
+        } else {
+          _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+            VpeStencilGenerationHandler::getDirichletMiddle(_grid,
+                                                            _parallelDistribution);
+        }
+      }
+
+      _handlers->vpeRhsGeneratorStack[0][TDimension][TDirection] =
         VxpeInputRhsGenerationHandler::getHandler(
           _grid,
           _parallelDistribution,
           new VxpeInputRhsGenerationAction(_configuration));
-      _handlers->vxpeRhsAcquiererStack[TDimension][TDirection] =
+      _handlers->vpeRhsAcquiererStack[0][TDimension][TDirection] =
         VxpeRhsAcquiererHandler::getHandler(
           _grid, _parallelDistribution, new VxpeRhsAcquiererAction());
 
-      _handlers->vypeRhsGeneratorStack[TDimension][TDirection] =
+      _handlers->vpeRhsGeneratorStack[1][TDimension][TDirection] =
         VypeInputRhsGenerationHandler::getHandler(
           _grid,
           _parallelDistribution,
           new VypeInputRhsGenerationAction(_configuration));
-      _handlers->vypeRhsAcquiererStack[TDimension][TDirection] =
+      _handlers->vpeRhsAcquiererStack[1][TDimension][TDirection] =
         VypeRhsAcquiererHandler::getHandler(
           _grid, _parallelDistribution, new VypeRhsAcquiererAction());
+
+      if (Dimensions > 2) {
+        _handlers->vpeRhsGeneratorStack[2][TDimension][TDirection] =
+          VzpeInputRhsGenerationHandler::getHandler(
+            _grid,
+            _parallelDistribution,
+            new VzpeInputRhsGenerationAction(_configuration));
+        _handlers->vpeRhsAcquiererStack[2][TDimension][TDirection] =
+          VzpeRhsAcquiererHandler::getHandler(
+            _grid, _parallelDistribution, new VzpeRhsAcquiererAction());
+      }
 
       _handlers->velocityInitialization[TDimension][TDirection] =
         InputVelocityInitialization::getHandler(
@@ -295,23 +369,58 @@ public:
         PpeRhsGenerationHandler::getHandler(_grid, _parallelDistribution,
                                             new PpeRhsGenerationAction(0.0));
 
-      _handlers->vxpeRhsGeneratorStack[TDimension][TDirection] =
+      if (TDirection == 1) {
+        _handlers->ppeRhsAcquiererStack[TDimension][TDirection] =
+          PpeRhsAcquiererHandler::getHandler(
+            _grid, _parallelDistribution, new PpeRhsAcquiererAction());
+      }
+
+      for (int d = 0; d < Dimensions; ++d) {
+        if (d == TDimension) {
+          if (TDirection == 0) {
+            _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+              VpeStencilGenerationHandler::getDirichletLeft(_grid,
+                                                            _parallelDistribution);
+          } else {
+            _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+              VpeStencilGenerationHandler::getDirichletRight(_grid,
+                                                             _parallelDistribution);
+          }
+        } else {
+          _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+            VpeStencilGenerationHandler::getDirichletMiddle(_grid,
+                                                            _parallelDistribution);
+        }
+      }
+
+      _handlers->vpeRhsGeneratorStack[0][TDimension][TDirection] =
         VxpeParabolicInputRhsGenerationHandler::getHandler(
           _grid,
           _parallelDistribution,
           new VxpeParabolicInputRhsGenerationAction(_configuration));
-      _handlers->vxpeRhsAcquiererStack[TDimension][TDirection] =
+      _handlers->vpeRhsAcquiererStack[0][TDimension][TDirection] =
         VxpeRhsAcquiererHandler::getHandler(
           _grid, _parallelDistribution, new VxpeRhsAcquiererAction());
 
-      _handlers->vypeRhsGeneratorStack[TDimension][TDirection] =
+      _handlers->vpeRhsGeneratorStack[1][TDimension][TDirection] =
         VypeParabolicInputRhsGenerationHandler::getHandler(
           _grid,
           _parallelDistribution,
           new VypeParabolicInputRhsGenerationAction(_configuration));
-      _handlers->vypeRhsAcquiererStack[TDimension][TDirection] =
+      _handlers->vpeRhsAcquiererStack[1][TDimension][TDirection] =
         VypeRhsAcquiererHandler::getHandler(
           _grid, _parallelDistribution, new VypeRhsAcquiererAction());
+
+      if (Dimensions > 2) {
+        _handlers->vpeRhsGeneratorStack[2][TDimension][TDirection] =
+          VzpeInputRhsGenerationHandler::getHandler(
+            _grid,
+            _parallelDistribution,
+            new VzpeInputRhsGenerationAction(_configuration));
+        _handlers->vpeRhsAcquiererStack[2][TDimension][TDirection] =
+          VzpeRhsAcquiererHandler::getHandler(
+            _grid, _parallelDistribution, new VzpeRhsAcquiererAction());
+      }
 
       _handlers->velocityInitialization[TDimension][TDirection] =
         ParabolicInputVelocityInitialization::getHandler(
@@ -336,6 +445,30 @@ public:
         PpeRhsGenerationHandler::getHandler(_grid, _parallelDistribution,
                                             new PpeRhsGenerationAction(0.0));
 
+      if (TDirection == 1) {
+        _handlers->ppeRhsAcquiererStack[TDimension][TDirection] =
+          PpeRhsAcquiererHandler::getHandler(
+            _grid, _parallelDistribution, new PpeRhsAcquiererAction());
+      }
+
+      for (int d = 0; d < Dimensions; ++d) {
+        if (d == TDimension) {
+          if (TDirection == 0) {
+            _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+              VpeStencilGenerationHandler::getNeumannLeft(_grid,
+                                                          _parallelDistribution);
+          } else {
+            _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+              VpeStencilGenerationHandler::getNeumannRight(_grid,
+                                                           _parallelDistribution);
+          }
+        } else {
+          _handlers->vpeStencilGeneratorStack[d][TDimension][TDirection] =
+            VpeStencilGenerationHandler::getNeumannMiddle(_grid,
+                                                          _parallelDistribution);
+        }
+      }
+
       int offset = 0;
 
       if (TDimension == 0) {
@@ -343,12 +476,12 @@ public:
           offset = 1;
         }
       }
-      _handlers->vxpeRhsGeneratorStack[TDimension][TDirection] =
+      _handlers->vpeRhsGeneratorStack[0][TDimension][TDirection] =
         VpeConstantRhsGenerationHandler::getHandler(
           _grid,
           _parallelDistribution,
           new VpeConstantRhsGenerationAction(0.0, offset));
-      _handlers->vxpeRhsAcquiererStack[TDimension][TDirection] =
+      _handlers->vpeRhsAcquiererStack[0][TDimension][TDirection] =
         VxpeRhsAcquiererHandler::getHandler(
           _grid, _parallelDistribution, new VxpeRhsAcquiererAction());
 
@@ -359,69 +492,39 @@ public:
           offset = 1;
         }
       }
-      _handlers->vypeRhsGeneratorStack[TDimension][TDirection] =
+
+      _handlers->vpeRhsGeneratorStack[1][TDimension][TDirection] =
         VpeConstantRhsGenerationHandler::getHandler(
           _grid,
           _parallelDistribution,
           new VpeConstantRhsGenerationAction(0.0, offset));
-      _handlers->vypeRhsAcquiererStack[TDimension][TDirection] =
+      _handlers->vpeRhsAcquiererStack[1][TDimension][TDirection] =
         VypeRhsAcquiererHandler::getHandler(
           _grid, _parallelDistribution, new VypeRhsAcquiererAction());
+
+      if (Dimensions > 2) {
+        offset = 0;
+
+        if (TDimension == 2) {
+          if (TDirection == 1) {
+            offset = 1;
+          }
+        }
+        _handlers->vpeRhsGeneratorStack[2][TDimension][TDirection] =
+          VpeConstantRhsGenerationHandler::getHandler(
+            _grid,
+            _parallelDistribution,
+            new VpeConstantRhsGenerationAction(0.0, offset));
+        _handlers->vpeRhsAcquiererStack[2][TDimension][TDirection] =
+          VzpeRhsAcquiererHandler::getHandler(
+            _grid, _parallelDistribution, new VzpeRhsAcquiererAction());
+      }
 
       _handlers->velocityInitialization[TDimension][TDirection] =
         OutputVelocityInitialization::getHandler(
           &_grid->boundaries[TDimension][TDirection],
           _parallelDistribution,
           new OutputVelocityInitializationAction(_maxVelocity));
-    }
-
-    inline void
-    setVxpeInNonXDimensionAsInput() {
-      _handlers->vxpeStencilGeneratorStack[TDimension][TDirection] =
-        VpeStencilGenerationHandler::getDirichletMiddle(_grid,
-                                                        _parallelDistribution);
-    }
-
-    inline void
-    setVxpeInNonXDimensionAsParabolicInput() {
-      _handlers->vxpeStencilGeneratorStack[TDimension][TDirection] =
-        VpeStencilGenerationHandler::getDirichletMiddle(_grid,
-                                                        _parallelDistribution);
-    }
-
-    inline void
-    setVxpeInNonXDimensionAsOutput() {
-      _handlers->vxpeStencilGeneratorStack[TDimension][TDirection] =
-        VpeStencilGenerationHandler::getNeumannMiddle(_grid,
-                                                      _parallelDistribution);
-    }
-
-    inline void
-    setVypeInNonYDimensionAsInput() {
-      _handlers->vypeStencilGeneratorStack[TDimension][TDirection] =
-        VpeStencilGenerationHandler::getDirichletMiddle(_grid,
-                                                        _parallelDistribution);
-    }
-
-    inline void
-    setVypeInNonYDimensionAsParabolicInput() {
-      _handlers->vypeStencilGeneratorStack[TDimension][TDirection] =
-        VpeStencilGenerationHandler::getDirichletMiddle(_grid,
-                                                        _parallelDistribution);
-    }
-
-    inline void
-    setVypeInNonYDimensionAsOutput() {
-      _handlers->vypeStencilGeneratorStack[TDimension][TDirection] =
-        VpeStencilGenerationHandler::getNeumannMiddle(_grid,
-                                                      _parallelDistribution);
-    }
-
-    inline void
-    setPpeRhsAcquierer() {
-      _handlers->ppeRhsAcquiererStack[TDimension][TDirection] =
-        PpeRhsAcquiererHandler::getHandler(
-          _grid, _parallelDistribution, new PpeRhsAcquiererAction());
     }
 
 private:
@@ -454,7 +557,7 @@ public:
     globalCellSize(1) = configuration->size(1);
     width(1)          = (Scalar)configuration->width(1);
 
-    if (TD == 3) {
+    if (TDimensions == 3) {
       processorSize(2)  = configuration->parallelizationSize(2);
       globalCellSize(2) = configuration->size(2);
       width(2)          = (Scalar)configuration->width(2);
@@ -478,7 +581,7 @@ public:
     _simulation->_timeLimit       = configuration->timeLimit;
     _simulation->_plotInterval    = configuration->plotInterval;
 
-    if (TD == 3) {
+    if (TDimensions == 3) {
       _simulation->_parameters.g(2) = configuration->environment(2);
     }
 
@@ -486,6 +589,13 @@ public:
                        VectorDi::Ones());
 
     _simulation->setParameters(localSize, width);
+
+    setLeftWallAs(configuration->walls[0][0]->type());
+    setRightWallAs(configuration->walls[0][1]->type());
+    setBottomWallAs(configuration->walls[1][0]->type());
+    setTopWallAs(configuration->walls[1][1]->type());
+    setBackWallAs(configuration->walls[2][0]->type());
+    setFrontWallAs(configuration->walls[2][1]->type());
   }
 
   Simulation*
@@ -494,126 +604,92 @@ public:
   }
 
   void
-  setLeftAsMoving() {
-    if (_parallelDistribution->neighbors[0][0] < 0) {
-      _setLeftAsMoving();
-    } else {
+  setLeftWallAs(FluidSimulation::WallType type) {
+    if (_parallelDistribution->neighbors[0][0] >= 0) {
       _setLeftAsMpiExchange();
-    }
-  }
-
-  void
-  setLeftAsInput() {
-    if (_parallelDistribution->neighbors[0][0] < 0) {
+    } else if (type == FluidSimulation::WallType::Input) {
       _setLeftAsInput();
-    } else {
-      _setLeftAsMpiExchange();
-    }
-  }
-
-  void
-  setLeftAsParabolicInput() {
-    if (_parallelDistribution->neighbors[0][0] < 0) {
+    } else if (type == FluidSimulation::WallType::ParabolicInput) {
       _setLeftAsParabolicInput();
-    } else {
-      _setLeftAsMpiExchange();
-    }
-  }
-
-  void
-  setLeftAsOutput() {
-    if (_parallelDistribution->neighbors[0][0] < 0) {
+    } else if (type == FluidSimulation::WallType::Output) {
       _setLeftAsOutput();
-    } else {
-      _setLeftAsMpiExchange();
     }
   }
 
   void
-  setRightAsMoving() {
-    if (_parallelDistribution->neighbors[0][1] < 0) {
-      _setRightAsMoving();
-    } else {
+  setRightWallAs(FluidSimulation::WallType type) {
+    if (_parallelDistribution->neighbors[0][1] >= 0) {
       _setRightAsMpiExchange();
-    }
-  }
-
-  void
-  setRightAsInput() {
-    if (_parallelDistribution->neighbors[0][1] < 0) {
+    } else if (type == FluidSimulation::WallType::Input) {
       _setRightAsInput();
-    } else {
-      _setRightAsMpiExchange();
-    }
-  }
-
-  void
-  setRightAsOutput() {
-    if (_parallelDistribution->neighbors[0][1] < 0) {
+    } else if (type == FluidSimulation::WallType::ParabolicInput) {
+      _setRightAsParabolicInput();
+    } else if (type == FluidSimulation::WallType::Output) {
       _setRightAsOutput();
-    } else {
-      _setRightAsMpiExchange();
     }
   }
 
   void
-  setBottomAsMoving() {
-    if (_parallelDistribution->neighbors[1][0] < 0) {
-      _setBottomAsMoving();
-    } else {
+  setBottomWallAs(FluidSimulation::WallType type) {
+    if (Dimensions < 2) { return; }
+
+    if (_parallelDistribution->neighbors[1][0] >= 0) {
       _setBottomAsMpiExchange();
+    } else if (type == FluidSimulation::WallType::Input) {
+      _setBottomAsInput();
+    } else if (type == FluidSimulation::WallType::ParabolicInput) {
+      _setBottomAsParabolicInput();
+    } else if (type == FluidSimulation::WallType::Output) {
+      _setBottomAsOutput();
     }
   }
 
   void
-  setTopAsMoving() {
-    if (_parallelDistribution->neighbors[1][1] < 0) {
-      _setTopAsMoving();
-    } else {
+  setTopWallAs(FluidSimulation::WallType type) {
+    if (Dimensions < 2) { return; }
+
+    if (_parallelDistribution->neighbors[1][1] >= 0) {
       _setTopAsMpiExchange();
+    } else if (type == FluidSimulation::WallType::Input) {
+      _setTopAsInput();
+    } else if (type == FluidSimulation::WallType::ParabolicInput) {
+      _setTopAsParabolicInput();
+    } else if (type == FluidSimulation::WallType::Output) {
+      _setTopAsOutput();
     }
   }
 
   void
-  setBackAsMoving() {
-    if (_parallelDistribution->neighbors[2][0] < 0) {
-      _setBackAsMoving();
-    } else {
+  setBackWallAs(FluidSimulation::WallType type) {
+    if (Dimensions < 3) { return; }
+
+    if (_parallelDistribution->neighbors[2][0] >= 0) {
       _setBackAsMpiExchange();
+    } else if (type == FluidSimulation::WallType::Input) {
+      _setBackAsInput();
+    } else if (type == FluidSimulation::WallType::ParabolicInput) {
+      _setBackAsParabolicInput();
+    } else if (type == FluidSimulation::WallType::Output) {
+      _setBackAsOutput();
     }
   }
 
   void
-  setFrontAsMoving() {
-    if (_parallelDistribution->neighbors[2][1] < 0) {
-      _setFrontAsMoving();
-    } else {
-      setFrontAsMpiExchange();
+  setFrontWallAs(FluidSimulation::WallType type) {
+    if (Dimensions < 3) { return; }
+
+    if (_parallelDistribution->neighbors[2][1] >= 0) {
+      _setFrontAsMpiExchange();
+    } else if (type == FluidSimulation::WallType::Input) {
+      _setFrontAsInput();
+    } else if (type == FluidSimulation::WallType::ParabolicInput) {
+      _setFrontAsParabolicInput();
+    } else if (type == FluidSimulation::WallType::Output) {
+      _setFrontAsOutput();
     }
   }
 
 private:
-  void
-  _setLeftAsMoving() {
-    typedef GhostHandlers<0, 0> LeftHandlers;
-
-    typedef typename LeftHandlers::VpeStencilGenerationHandler
-      VpeStencilGenerationHandler;
-
-    LeftHandlers handlers(_configuration,
-                          _grid,
-                          _parallelDistribution,
-                          _handlers,
-                          _maxVelocity);
-
-    handlers.setAsInput();
-    handlers.setVypeInNonYDimensionAsInput();
-
-    _handlers->vxpeStencilGeneratorStack[0][0] =
-      VpeStencilGenerationHandler::getDirichletLeft(_grid,
-                                                    _parallelDistribution);
-  }
-
   void
   _setLeftAsInput() {
     typedef GhostHandlers<0, 0> LeftHandlers;
@@ -627,11 +703,6 @@ private:
                           _maxVelocity);
 
     handlers.setAsInput();
-    handlers.setVypeInNonYDimensionAsInput();
-
-    _handlers->vxpeStencilGeneratorStack[0][0] =
-      VpeStencilGenerationHandler::getDirichletLeft(_grid,
-                                                    _parallelDistribution);
   }
 
   void
@@ -647,11 +718,6 @@ private:
                           _maxVelocity);
 
     handlers.setAsParabolicInput();
-    handlers.setVypeInNonYDimensionAsParabolicInput();
-
-    _handlers->vxpeStencilGeneratorStack[0][0] =
-      VpeStencilGenerationHandler::getDirichletLeft(_grid,
-                                                    _parallelDistribution);
   }
 
   void
@@ -668,11 +734,6 @@ private:
                           _maxVelocity);
 
     handlers.setAsOutput();
-    handlers.setVypeInNonYDimensionAsOutput();
-
-    _handlers->vxpeStencilGeneratorStack[0][0] =
-      VpeStencilGenerationHandler::getNeumannLeft(_grid,
-                                                  _parallelDistribution);
   }
 
   void
@@ -708,28 +769,6 @@ private:
   }
 
   void
-  _setRightAsMoving() {
-    typedef GhostHandlers<0, 1> RightHandlers;
-
-    typedef typename RightHandlers::VpeStencilGenerationHandler
-      VpeStencilGenerationHandler;
-
-    RightHandlers handlers(_configuration,
-                           _grid,
-                           _parallelDistribution,
-                           _handlers,
-                           _maxVelocity);
-
-    handlers.setAsInput();
-    handlers.setVypeInNonYDimensionAsInput();
-    handlers.setPpeRhsAcquierer();
-
-    _handlers->vxpeStencilGeneratorStack[0][1] =
-      VpeStencilGenerationHandler::getDirichletRight(_grid,
-                                                     _parallelDistribution);
-  }
-
-  void
   _setRightAsInput() {
     typedef GhostHandlers<0, 1> RightHandlers;
 
@@ -743,12 +782,21 @@ private:
                            _maxVelocity);
 
     handlers.setAsInput();
-    handlers.setVypeInNonYDimensionAsInput();
-    handlers.setPpeRhsAcquierer();
+  }
 
-    _handlers->vxpeStencilGeneratorStack[0][1] =
-      VpeStencilGenerationHandler::getDirichletRight(_grid,
-                                                     _parallelDistribution);
+  void
+  _setRightAsParabolicInput() {
+    typedef GhostHandlers<0, 1> RightHandlers;
+    typedef typename RightHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    RightHandlers handlers(_configuration,
+                           _grid,
+                           _parallelDistribution,
+                           _handlers,
+                           _maxVelocity);
+
+    handlers.setAsParabolicInput();
   }
 
   void
@@ -765,12 +813,6 @@ private:
                            _maxVelocity);
 
     handlers.setAsOutput();
-    handlers.setVypeInNonYDimensionAsOutput();
-    handlers.setPpeRhsAcquierer();
-
-    _handlers->vxpeStencilGeneratorStack[0][1] =
-      VpeStencilGenerationHandler::getNeumannRight(_grid,
-                                                   _parallelDistribution);
   }
 
   void
@@ -806,7 +848,7 @@ private:
   }
 
   void
-  _setBottomAsMoving() {
+  _setBottomAsInput() {
     typedef GhostHandlers<1, 0> BottomHandlers;
     typedef typename BottomHandlers::VpeStencilGenerationHandler
       VpeStencilGenerationHandler;
@@ -818,11 +860,37 @@ private:
                             _maxVelocity);
 
     handlers.setAsInput();
-    handlers.setVxpeInNonXDimensionAsInput();
+  }
 
-    _handlers->vypeStencilGeneratorStack[1][0] =
-      VpeStencilGenerationHandler::getDirichletLeft(_grid,
-                                                    _parallelDistribution);
+  void
+  _setBottomAsParabolicInput() {
+    typedef GhostHandlers<1, 0> BottomHandlers;
+    typedef typename BottomHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    BottomHandlers handlers(_configuration,
+                            _grid,
+                            _parallelDistribution,
+                            _handlers,
+                            _maxVelocity);
+
+    handlers.setAsParabolicInput();
+  }
+
+  void
+  _setBottomAsOutput() {
+    typedef GhostHandlers<1, 0> BottomHandlers;
+
+    typedef typename BottomHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    BottomHandlers handlers(_configuration,
+                            _grid,
+                            _parallelDistribution,
+                            _handlers,
+                            _maxVelocity);
+
+    handlers.setAsOutput();
   }
 
   void
@@ -858,7 +926,7 @@ private:
   }
 
   void
-  _setTopAsMoving() {
+  _setTopAsInput() {
     typedef GhostHandlers<1, 1> TopHandlers;
 
     typedef typename TopHandlers::VpeStencilGenerationHandler
@@ -871,12 +939,37 @@ private:
                          _maxVelocity);
 
     handlers.setAsInput();
-    handlers.setVxpeInNonXDimensionAsInput();
-    handlers.setPpeRhsAcquierer();
+  }
 
-    _handlers->vypeStencilGeneratorStack[1][1] =
-      VpeStencilGenerationHandler::getDirichletRight(_grid,
-                                                     _parallelDistribution);
+  void
+  _setTopAsParabolicInput() {
+    typedef GhostHandlers<1, 1> TopHandlers;
+    typedef typename TopHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    TopHandlers handlers(_configuration,
+                         _grid,
+                         _parallelDistribution,
+                         _handlers,
+                         _maxVelocity);
+
+    handlers.setAsParabolicInput();
+  }
+
+  void
+  _setTopAsOutput() {
+    typedef GhostHandlers<1, 1> TopHandlers;
+
+    typedef typename TopHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    TopHandlers handlers(_configuration,
+                         _grid,
+                         _parallelDistribution,
+                         _handlers,
+                         _maxVelocity);
+
+    handlers.setAsOutput();
   }
 
   void
@@ -912,7 +1005,7 @@ private:
   }
 
   void
-  _setBackAsMoving() {
+  _setBackAsInput() {
     typedef GhostHandlers<2, 0> BackHandlers;
     typedef typename BackHandlers::VpeStencilGenerationHandler
       VpeStencilGenerationHandler;
@@ -924,12 +1017,37 @@ private:
                           _maxVelocity);
 
     handlers.setAsInput();
-    handlers.setVxpeInNonXDimensionAsInput();
-    handlers.setVypeInNonYDimensionAsInput();
+  }
 
-    // _handlers->vxpeStencilGeneratorStack[2][0] =
-    // VpeStencilGenerationHandler::getDirichletLeft(_grid,
-    // _parallelDistribution);
+  void
+  _setBackAsParabolicInput() {
+    typedef GhostHandlers<2, 0> BackHandlers;
+    typedef typename BackHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    BackHandlers handlers(_configuration,
+                          _grid,
+                          _parallelDistribution,
+                          _handlers,
+                          _maxVelocity);
+
+    handlers.setAsParabolicInput();
+  }
+
+  void
+  _setBackAsOutput() {
+    typedef GhostHandlers<2, 0> BackHandlers;
+
+    typedef typename BackHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    BackHandlers handlers(_configuration,
+                          _grid,
+                          _parallelDistribution,
+                          _handlers,
+                          _maxVelocity);
+
+    handlers.setAsOutput();
   }
 
   void
@@ -965,7 +1083,7 @@ private:
   }
 
   void
-  _setFrontAsMoving() {
+  _setFrontAsInput() {
     typedef GhostHandlers<2, 1> FrontHandlers;
 
     typedef typename FrontHandlers::VpeStencilGenerationHandler
@@ -978,17 +1096,41 @@ private:
                            _maxVelocity);
 
     handlers.setAsInput();
-    handlers.setVxpeInNonXDimensionAsInput();
-    handlers.setVypeInNonYDimensionAsInput();
-    handlers.setPpeRhsAcquierer();
-
-    // _handlers->vxpeStencilGeneratorStack[2][1] =
-    // VpeStencilGenerationHandler::getDirichletRight(_grid,
-    // _parallelDistribution);
   }
 
   void
-  setFrontAsMpiExchange() {
+  _setFrontAsParabolicInput() {
+    typedef GhostHandlers<2, 1> FrontHandlers;
+    typedef typename FrontHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    FrontHandlers handlers(_configuration,
+                           _grid,
+                           _parallelDistribution,
+                           _handlers,
+                           _maxVelocity);
+
+    handlers.setAsParabolicInput();
+  }
+
+  void
+  _setFrontAsOutput() {
+    typedef GhostHandlers<2, 1> FrontHandlers;
+
+    typedef typename FrontHandlers::VpeStencilGenerationHandler
+      VpeStencilGenerationHandler;
+
+    FrontHandlers handlers(_configuration,
+                           _grid,
+                           _parallelDistribution,
+                           _handlers,
+                           _maxVelocity);
+
+    handlers.setAsOutput();
+  }
+
+  void
+  _setFrontAsMpiExchange() {
     typedef GhostHandlers<2, 1>                         FrontHandlers;
     typedef typename FrontHandlers::FghMpiExchange      FghHandler;
     typedef typename FrontHandlers::PressureMpiExchange PressureHandler;

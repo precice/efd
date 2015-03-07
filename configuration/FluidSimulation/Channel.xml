@@ -20,7 +20,7 @@
   <!-- solver = "Simple Staggered Grid Finite Difference" -->
   <walls>
     <left type = "ParabolicInput" velocity = "0.3,0.0" />
-    <rig0t type = "Output" />
+    <right type = "Output" />
     <bottom type = "Input" velocity = "0.0,0.0" />
     <top type = "Input" velocity = "0.0,0.0" />
   </walls>
