@@ -33,11 +33,10 @@ template <typename TGrid,
 class Handler {
 public:
   typedef TGrid                               GridType;
-  typedef typename GridType::CellAccessor     CellAccessorType;
-  typedef typename CellAccessorType::CellType CellType;
+  typedef typename GridType::CellAccessorType     CellAccessorType;
 
   enum {
-    Dimensions = CellType::Dimensions
+    Dimensions = CellAccessorType::Dimensions
   };
 
   typedef ParallelDistribution<Dimensions> ParallelDistributionType;
@@ -159,17 +158,17 @@ public:
 
       if (TDimension == d) {
         if (TDirection == 1) {
-          leftIndex  = (accessor.leftIndexInDimension(d) + corner).eval();
-          rightIndex = (accessor.rightIndexInDimension(d) + corner).eval();
+          leftIndex  = (accessor.relativeIndex(d, -1) + corner).eval();
+          rightIndex = (accessor.relativeIndex(d, +1) + corner).eval();
         } else {
-          leftIndex  = (accessor.rightIndexInDimension(d) + corner).eval();
-          rightIndex = (accessor.leftIndexInDimension(d) + corner).eval();
+          leftIndex  = (accessor.relativeIndex(d, +1) + corner).eval();
+          rightIndex = (accessor.relativeIndex(d, -1) + corner).eval();
         }
       } else {
         currentOffset += 2 + 2 * offset;
         ++offset;
-        leftIndex  = (accessor.leftIndexInDimension(d) + corner).eval();
-        rightIndex = (accessor.rightIndexInDimension(d) + corner).eval();
+        leftIndex  = (accessor.relativeIndex(d, -1) + corner).eval();
+        rightIndex = (accessor.relativeIndex(d, +1) + corner).eval();
       }
 
       if (TDirection == 1) {
@@ -189,7 +188,7 @@ public:
       stencil[currentOffset]     = 0.0;
       stencil[currentOffset + 1] = 0.0;
     }
-    auto currentIndex = (accessor.currentIndex() + corner).eval();
+    auto currentIndex = (accessor.index() + corner).eval();
     currentIndex(TDimension) -= _offset;
     columns[0].i              = currentIndex(0);
     columns[0].j              = currentIndex(1);

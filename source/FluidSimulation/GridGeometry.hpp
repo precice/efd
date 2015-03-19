@@ -5,11 +5,18 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TScalar, int TD>
+template <typename TScalar, int TDimensions>
 class UniformGridGeometry {
 public:
-  typedef Eigen::Matrix<int, TD, 1>     VectorDi;
-  typedef Eigen::Matrix<TScalar, TD, 1> VectorDs;
+  using Scalar = TScalar;
+
+  enum {
+    Dimensions = TDimensions
+  };
+
+  using VectorDi =  Eigen::Matrix<int, Dimensions, 1>;
+
+  using VectorDs = Eigen::Matrix<Scalar, Dimensions, 1>;
 
 public:
   UniformGridGeometry() {}
@@ -26,7 +33,7 @@ public:
              VectorDi const& cellSize,
              VectorDi const& corner) {
     _size      = size;
-    _cellWidth = _size.cwiseQuotient(cellSize.template cast<TScalar>());
+    _cellWidth = _size.cwiseQuotient(cellSize.template cast<Scalar>());
     _corner    = corner;
   }
 
@@ -49,7 +56,17 @@ public:
 
   VectorDs
   cellPosition(VectorDi const& i) const {
-    return _cellWidth.cwiseProduct((_corner + i).template cast<TScalar>());
+    return _cellWidth.cwiseProduct((_corner + i).template cast<Scalar>());
+  }
+
+  VectorDs
+  computeCellPosition(VectorDi const& i) const {
+    return _cellWidth.cwiseProduct(i.template cast<Scalar>());
+  }
+
+  Scalar
+  computeCellPosition(int const& dimension, int const& i) const {
+    return _cellWidth(dimension) * i;
   }
 
   VectorDs const&

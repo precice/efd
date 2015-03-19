@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_GhostLayer_Handler_hpp
-#define FsiSimulation_FluidSimulation_GhostLayer_Handler_hpp
+#pragma once
 
 #include "InitializationHandler.hpp"
 #include "MpiExchangeHandler.hpp"
@@ -10,13 +9,13 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
 template <int TDimensions>
-class Handlers {
+class SfsfdHandlers {
 public:
- enum {
-   Dimensions = TDimensions
- };
+  enum {
+    Dimensions = TDimensions
+  };
 
-  Handlers() {
+  SfsfdHandlers() {
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         mpiFghExchangeStack[d][d2] =
@@ -35,31 +34,58 @@ public:
         ppeRhsAcquiererStack[d][d2] =
           PetscExchange::getEmptyFunctor<Dimensions>();
 
-        for (int i = 0; i < Dimensions; ++i) {
-          vpeStencilGeneratorStack[i][d][d2] =
-            LsStencilGenerator::getEmptyFunctor<Dimensions>();
-          vpeRhsGeneratorStack[i][d][d2] =
-            PetscExchange::getEmptyFunctor<Dimensions>();
-          vpeRhsAcquiererStack[i][d][d2] =
-            PetscExchange::getEmptyFunctor<Dimensions>();
-        }
-
         velocityInitialization[d][d2] =
           Initialization::getEmptyFunctor<Dimensions>();
       }
     }
   }
 
-  Handlers(Handlers const& other) = delete;
+  SfsfdHandlers(SfsfdHandlers const& other) = delete;
 
-  ~Handlers() {}
+  ~SfsfdHandlers() {}
 
-  Handlers&
-  operator=(Handlers const& other) = delete;
+  SfsfdHandlers&
+  operator=(SfsfdHandlers const& other) = delete;
+
+  void
+  executeFghMpiExchange() {
+    for (int d = 0; d < Dimensions; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        mpiFghExchangeStack[d][d2]();
+      }
+    }
+  }
+
+  void
+  executePressureMpiExchange() {
+    for (int d = 0; d < Dimensions; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        mpiPressureExchangeStack[d][d2]();
+      }
+    }
+  }
+
+  void
+  executeVelocityMpiExchange() {
+    for (int d = 0; d < Dimensions; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        mpiVelocityExchangeStack[d][d2]();
+      }
+    }
+  }
+
+  void
+  executeVelocityInitialization() {
+    for (int d = 0; d < Dimensions; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        velocityInitialization[d][d2]();
+      }
+    }
+  }
 
   MpiExchange::FunctorStack<Dimensions> mpiFghExchangeStack;
-  MpiExchange::FunctorStack<Dimensions> mpiVelocityExchangeStack;
   MpiExchange::FunctorStack<Dimensions> mpiPressureExchangeStack;
+  MpiExchange::FunctorStack<Dimensions> mpiVelocityExchangeStack;
 
   Initialization::FunctorStack<Dimensions> fghInitialization;
 
@@ -67,15 +93,8 @@ public:
   PetscExchange::FunctorStack<Dimensions>      ppeRhsGeneratorStack;
   PetscExchange::FunctorStack<Dimensions>      ppeRhsAcquiererStack;
 
-  std::array<LsStencilGenerator::FunctorStack<Dimensions>, Dimensions> vpeStencilGeneratorStack;
-  std::array<PetscExchange::FunctorStack<Dimensions>, Dimensions>      vpeRhsGeneratorStack;
-  std::array<PetscExchange::FunctorStack<Dimensions>, Dimensions>      vpeRhsAcquiererStack;
-
   Initialization::FunctorStack<Dimensions> velocityInitialization;
-
-private:
 };
 }
 }
 }
-#endif

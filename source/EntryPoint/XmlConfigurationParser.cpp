@@ -15,6 +15,7 @@
 
 using FsiSimulation::EntryPoint::XmlConfigurationParser;
 using FsiSimulation::FluidSimulation::Configuration;
+using FsiSimulation::FluidSimulation::SolverEnum;
 
 static
 std::locale const locale(boost::locale::generator() ("en_US.UTF-8"));
@@ -187,13 +188,13 @@ static void
 parseSolverType(std::string    typeString,
                 Configuration* configuration) {
   static std::regex type1_regex(
-    "Fractional\\s*Step\\s*Finite\\s*Difference", std::regex::icase);
+    "Improved\\s*Fractional\\s*Step\\s*Finite\\s*Difference", std::regex::icase);
 
   // static std::regex type2_regex(
   // "Simple\\s*Staggered\\s*Grid\\s*Finite\\s*Difference", std::regex::icase);
 
   if (std::regex_search(typeString, type1_regex)) {
-    configuration->solver = Configuration::SolverType::Fsfd;
+    configuration->solver = SolverEnum::Ifsfd;
   }
 }
 

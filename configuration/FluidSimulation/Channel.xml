@@ -4,20 +4,20 @@
 <scenario
   Re = "30"
   timeLimit = "1.0"
-  iterationLimit = "0"
-  plotInterval = "0.01"
+  iterationLimit = "30"
+  plotInterval = "0.00"
   tau = "0.5"
   gamma = "0.5"
   dim = "2"
   width = "2.2,0.41"
-  size = "220,82"
+  size = "220,85"
   parallelizationSize = "1,1,1"
   environment = "0,0"
   filename = "Channel2D"
-  solver = "Fractional Step Finite Difference"
+  solver = "Simple Fractional Step Finite Difference"
   >
-  <!-- solver = "Fractional Step Finite Difference" -->
-  <!-- solver = "Simple Staggered Grid Finite Difference" -->
+  <!-- solver = "Improved Fractional Step Finite Difference" -->
+  <!-- solver = "Simple Fractional Step Finite Difference" -->
   <walls>
     <left type = "ParabolicInput" velocity = "0.3,0.0" />
     <right type = "Output" />

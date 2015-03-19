@@ -26,6 +26,7 @@ public:
   initializeAttributes() {
     Base::setAttribute("velocity", 0, Attribute::Type::Vector);
     Base::setAttribute("pressure", 1, Attribute::Type::Scalar);
+
     return true;
   }
 };
@@ -69,6 +70,8 @@ public:
 
       return _pressure;
     }
+
+    return _pressure;
   }
   Scalar const&
   attribute(int const& index, int dimension = 0) const {
@@ -81,6 +84,8 @@ public:
 
       return _pressure;
     }
+
+    return _pressure;
   }
 
   VectorDs&

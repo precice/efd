@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_EntryPoint_Application_hpp
-#define FsiSimulation_EntryPoint_Application_hpp
+#pragma once
 
 #include <Uni/Firewall/Implementation>
 
@@ -52,4 +51,3 @@ private:
 }
 }
 
-#endif

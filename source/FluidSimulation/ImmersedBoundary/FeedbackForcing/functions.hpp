@@ -20,13 +20,13 @@ treatBoundary(TCellAccessor const&                            accessor,
 
   Velocity const boundaryVelocity = Velocity::Zero();
 
-  if (accessor.currentCell()->positions(d)
+  if (accessor.positionInRespectToGeometrys(d)
       != precice::constants::positionOutsideOfGeometry()) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      if (accessor.relativeCell(d, d2)->positions(d)
+      if (accessor.relativeCell(d, d2)->positionInRespectToGeometrys(d)
           == precice::constants::positionOutsideOfGeometry()) {
-        accessor.currentCell()->fgh(d) += alpha
-                                          * accessor.currentCell()->velocity(d);
+        accessor.fgh(d) += alpha
+                                          * accessor.velocity(d);
 
         return true;
       }

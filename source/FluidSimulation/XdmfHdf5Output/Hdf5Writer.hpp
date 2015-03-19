@@ -1,9 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_XdmfHdf5Output_Hdf5Writer_hpp
-#define FsiSimulation_FluidSimulation_XdmfHdf5Output_Hdf5Writer_hpp
-
-#include "FluidSimulation/BasicCell.hpp"
-#include "FluidSimulation/ParallelDistribution.hpp"
-#include "XdmfWriter.hpp"
+#pragma once
 
 #include <Uni/Logging/macros>
 
@@ -22,40 +17,41 @@
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace XdmfHdf5Output {
-template <typename TGrid>
+template <typename TMemory>
 class Hdf5Writer {
 public:
-  using GridType = TGrid;
+  using MemoryType = TMemory;
+
+  using GridType = typename MemoryType::GridType;
 
   using CellAccessorType = typename GridType::CellAccessor;
 
-  using CellType = typename CellAccessorType::CellType;
-
-  using Scalar = typename CellType::Scalar;
-
   enum {
-    Dimensions = CellType::Dimensions
+    Dimensions = CellAccessorType::Dimensions
   };
+
+  using ScalarType = typename MemoryType::ScalarType;
+
+  using ParallelDistributionType
+          = typename MemoryType::ParallelDistributionType;
+
+  using AttributeType = typename MemoryType::AttributeType;
 
   using Path = boost::filesystem::path;
 
   using VectorDsize = Eigen::Matrix<hsize_t, Dimensions, 1>;
 
-  using ParallelDistributionType = ParallelDistribution<Dimensions>;
-
   Hdf5Writer() {}
 
   void
-  initialize(ParallelDistributionType const* parallel_distribution,
-             GridType const*                 grid) {
-    _parallelDistribution = parallel_distribution;
-    _grid                 = grid;
-    _corner               =
-      _parallelDistribution->corner.template cast<hsize_t>();
+  initialize(MemoryType const* memory) {
+    _memory = memory;
+    _corner =
+      _memory->parallelDistribution()->corner.template cast<hsize_t>();
     _globalSize =
-      _parallelDistribution->globalCellSize.template cast<hsize_t>();
+      _memory->parallelDistribution()->globalCellSize.template cast<hsize_t>();
     _localSize =
-      _parallelDistribution->localCellSize.template cast<hsize_t>();
+      _memory->parallelDistribution()->localCellSize.template cast<hsize_t>();
   }
 
   VectorDsize const&
@@ -71,12 +67,13 @@ private:
     // Set up file access property list with parallel I/O access
     hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(plist_id,
-                     _parallelDistribution->mpiCommunicator,
+                     _memory->parallelDistribution()->mpiCommunicator,
                      info);
     // Create a new file collectively and release property list identifier.
     file_id = H5Fcreate(file_path.c_str(),
                         H5F_ACC_TRUNC,
-                        H5P_DEFAULT, plist_id);
+                        H5P_DEFAULT,
+                        plist_id);
     H5Pclose(plist_id);
   }
 
@@ -108,10 +105,10 @@ private:
     // Create chunked dataset.
     hid_t plist_id = H5Pcreate(H5P_DATASET_CREATE);
     H5Pset_chunk(plist_id,
-                 // Dimensions,
                  1,
                  &block_size);
-    logInfo("{1}", attribute_name);
+    // logInfo("{1} {2}", attribute_name,
+    // _memory->parallelDistribution()->rank);
     hid_t dataset_id = H5Dcreate(file_id,
                                  (std::string("/") + attribute_name).c_str(),
                                  H5T_NATIVE_FLOAT,
@@ -120,8 +117,6 @@ private:
                                  plist_id,
                                  H5P_DEFAULT);
     H5Pclose(plist_id);
-
-    logInfo("{1}", "sodfjslfj@@!!");
 
     // Select hyperslab in the file.
     herr_t status = H5Sselect_hyperslab(
@@ -134,7 +129,7 @@ private:
 
     // Create property list for collective dataset write.
     plist_id = H5Pcreate(H5P_DATASET_XFER);
-    H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+    H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_INDEPENDENT);
 
     status = H5Dwrite(dataset_id,
                       H5T_NATIVE_FLOAT,
@@ -155,44 +150,61 @@ private:
                  std::string const& attribute_name,
                  hsize_t const&     data_size,
                  void*              data) {
-    hsize_t size       = _globalSize.prod() * data_size;
-    hsize_t start      = _corner.prod() * data_size;
-    hsize_t count      = 1;
-    hsize_t block_size = _localSize.prod() * data_size;
+    VectorDsize size;
+    VectorDsize start;
+    VectorDsize count;
+    VectorDsize block_size;
+
+    for (int d = 0; d < Dimensions - 1; ++d) {
+      size(d)       = _globalSize(Dimensions - 1 - d);
+      start(d)      = _corner(Dimensions - 1 - d);
+      count(d)      = 1;
+      block_size(d) = _localSize(Dimensions - 1 - d);
+    }
+
+    size(Dimensions - 1)       = _globalSize(0) * data_size;
+    start(Dimensions - 1)      = _corner(0) * data_size;
+    count(Dimensions - 1)      = 1;
+    block_size(Dimensions - 1) = _localSize(0) * data_size;
 
     // Create the dataspace for the dataset.
     hid_t file_space = H5Screate_simple(
-      1,
-      &size,
+      Dimensions,
+      size.data(),
       NULL);
     hid_t chunk_space = H5Screate_simple(
-      1,
-      &block_size,
+      Dimensions,
+      block_size.data(),
       NULL);
 
+    hid_t plist_id;
+
     // Create chunked dataset.
-    hid_t plist_id = H5Pcreate(H5P_DATASET_CREATE);
-    H5Pset_chunk(plist_id,
-                 1,
-                 &block_size);
-    logInfo("{1}", attribute_name);
+    // hid_t plist_id = H4Pcreate(H5P_DATASET_CREATE);
+    // H5Pset_chunk(plist_id,
+    // Dimensions,
+    // block_size.data());
+    // logInfo("{1} {2}\n{3}\n{4}", attribute_name,
+    // _memory->parallelDistribution()->rank,
+    // size.transpose(),
+    // block_size.transpose());
     hid_t dataset_id = H5Dcreate(file_id,
                                  (std::string("/") + attribute_name).c_str(),
                                  H5T_NATIVE_FLOAT,
                                  file_space,
                                  H5P_DEFAULT,
-                                 plist_id,
+                                 H5P_DEFAULT,
                                  H5P_DEFAULT);
-    H5Pclose(plist_id);
+    // H5Pclose(plist_id);
 
     // Select hyperslab in the file.
     herr_t status = H5Sselect_hyperslab(
       file_space,
       H5S_SELECT_SET,
-      &start,
-      &count,
-      &count,
-      &block_size);
+      start.data(),
+      count.data(),
+      count.data(),
+      block_size.data());
 
     // Create property list for collective dataset write.
     plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -220,52 +232,54 @@ public:
     Path current_file_path = directory_path;
     current_file_path.append(file_name_prefix + ".h5");
 
-    hid_t file_id;
+    if (_memory->parallelDistribution()->rank != 0) {
+      return current_file_path;
+    }
 
-    createFile(current_file_path.string(), file_id);
+    hid_t file_id = H5Fcreate(current_file_path.c_str(),
+                              H5F_ACC_TRUNC,
+                              H5P_DEFAULT,
+                              H5P_DEFAULT);
 
     for (int d = 0; d < dimension_names.size(); ++d) {
       float*  data = 0;
-      hsize_t size = 1;
+      hsize_t size = 0;
 
       if (d < Dimensions) {
-        size = _localSize(d);
+        size = _globalSize(d) + 1;
 
-        if (_parallelDistribution->neighbors[d][1] < 0) {
-          size += 1;
-        }
         data = new float[size];
         std::size_t data_index = 0;
 
-        auto accessor = *_grid->innerGrid.begin();
+        auto accessor = *_memory->grid()->innerGrid.begin();
 
         for (int i = 0; i < size; ++i) {
-          auto position = static_cast<float>(accessor.currentPosition()(d));
-          ++accessor.index(d);
+          auto position = static_cast<float>(
+            accessor.memory()->gridGeometry()->computeCellPosition(d, i));
           data[data_index] = position;
           ++data_index;
         }
       } else {
-        if (_parallelDistribution->rank != 0) {
-          continue;
-        }
+        size    = 1;
         data    = new float[1];
         data[0] = 0.0;
       }
-      // for (auto const& accessor : _grid->innerGrid) {
-      // auto position = accessor.currentPosition().template cast<float>();
 
-      // data[data_index] = position(d);
-      // ++data_index;
-      // }
-
-      std::string name;
-
-      writeGeometry(file_id,
-                    dimension_names[d],
-                    d,
-                    size,
-                    data);
+      hid_t file_space = H5Screate_simple(1, &size, NULL);
+      hid_t dataset_id = H5Dcreate(
+        file_id,
+        (std::string("/") + dimension_names[d]).c_str(),
+        H5T_NATIVE_FLOAT,
+        file_space,
+        H5P_DEFAULT,
+        H5P_DEFAULT,
+        H5P_DEFAULT);
+      herr_t status = H5Dwrite(dataset_id,
+                               H5T_NATIVE_FLOAT,
+                               H5S_ALL,
+                               H5S_ALL,
+                               H5P_DEFAULT,
+                               data);
 
       delete data;
     }
@@ -277,35 +291,36 @@ public:
   }
 
   Path
-  writeAttributes(Path const&            directory_path,
-                  std::string const&     file_name_prefix,
-                  std::vector<Attribute> attributes,
-                  int const&             iteration_number) {
+  writeAttributes(Path const&        directory_path,
+                  std::string const& file_name_prefix) {
     Path current_file_path = directory_path;
-    current_file_path.append(file_name_prefix
-                             + "."
-                             + std::to_string(iteration_number)
-                             + ".h5");
+    current_file_path.append(
+      file_name_prefix
+      + "."
+      + std::to_string(_memory->iterationNumber())
+      + ".h5");
 
     hid_t file_id;
 
     createFile(current_file_path.string(), file_id);
 
-    for (auto const& attribute : attributes) {
+    int attribute_index = 0;
+
+    for (auto const& attribute : * _memory->attributes()) {
       int attribute_size = 1;
 
-      if (attribute.type == Attribute::Type::Vector) {
+      if (attribute.type == AttributeType::Type::Vector) {
         attribute_size = 3;
       }
 
       float*      data       = new float[attribute_size * _localSize.prod()];
       std::size_t data_index = 0;
 
-      for (auto const& accessor : _grid->innerGrid) {
+      for (auto const& accessor : _memory->grid()->innerGrid) {
         for (int j = 0; j < attribute_size; ++j) {
           if (j < Dimensions) {
             data[data_index]
-              = static_cast<float>(accessor.currentCell()->attribute(attribute.index, j));
+             = static_cast<float>(accessor.attribute(attribute_index, j));
           } else {
             data[data_index] = 0.0;
           }
@@ -319,6 +334,7 @@ public:
                      data);
 
       delete data;
+      ++attribute_index;
     }
 
     H5Fclose(file_id);
@@ -327,14 +343,12 @@ public:
   }
 
 private:
-  ParallelDistributionType const* _parallelDistribution;
-  GridType const*                 _grid;
-  VectorDsize                     _corner;
-  VectorDsize                     _globalSize;
-  VectorDsize                     _localSize;
-  Path                            _filePath;
+  MemoryType const* _memory;
+  VectorDsize       _corner;
+  VectorDsize       _globalSize;
+  VectorDsize       _localSize;
+  Path              _filePath;
 };
 }
 }
 }
-#endif

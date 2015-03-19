@@ -14,21 +14,26 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <int TD>
+template <int TDimensions>
 class ParallelDistribution;
 
-template <int TD>
+template <int TDimensions>
 void
-logParallelTopologyInfo(ParallelDistribution<TD> const& topology);
+logParallelTopologyInfo(ParallelDistribution<TDimensions> const& topology);
 
-template <int TD>
+template <int TDimensions>
 class ParallelDistribution {
 public:
-  typedef Eigen::Matrix<int, TD, 1>          VectorDi;
-  typedef std::array<std::array<int, 2>, TD> Neighbors;
+  enum {
+    Dimensions = TDimensions
+  };
+
+  using VectorDi  =  Eigen::Matrix<int, TDimensions, 1>;
+
+  using Neighbors = std::array<std::array<int, 2>, TDimensions>;
 
 public:
-  ParallelDistribution(): mpiCommunicator(PETSC_COMM_WORLD){}
+  ParallelDistribution() : mpiCommunicator(PETSC_COMM_WORLD) {}
 
   ParallelDistribution(ParallelDistribution const& other) = delete;
 
@@ -52,31 +57,46 @@ public:
                      processorSize_.transpose());
     }
 
-    rank           = rank_;
-    processorSize  = processorSize_;
-    localCellSize  = globalSize_.cwiseQuotient(processorSize);
-    globalCellSize = localCellSize.cwiseProduct(processorSize);
+    rank                 = rank_;
+    processorSize        = processorSize_;
+    uniformLocalCellSize = globalSize_.cwiseQuotient(processorSize);
+    localCellSize        = uniformLocalCellSize;
+    lastLocalCellSize    = uniformLocalCellSize;
+    globalCellSize       = uniformLocalCellSize.cwiseProduct(processorSize);
 
     auto tempDivRank = rank;
     int  tempDivSize = 1;
 
-    for (int i = 0; i < (TD - 1); ++i) {
+    for (int i = 0; i < (TDimensions - 1); ++i) {
       tempDivSize = processorSize(i);
       auto tempDiv = std::div(tempDivRank, tempDivSize);
       index(i)    = tempDiv.rem;
-      corner(i)   = index(i) * localCellSize(i);
+      corner(i)   = index(i) * uniformLocalCellSize(i);
       tempDivRank = tempDiv.quot;
     }
-    index(TD - 1)  = tempDivRank;
-    corner(TD - 1) = index(TD - 1) * localCellSize(TD - 1);
+    index(TDimensions - 1)  = tempDivRank;
+    corner(TDimensions - 1) = index(TDimensions - 1) * uniformLocalCellSize(TDimensions - 1);
 
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < TDimensions; ++d) {
       auto tempIndex = index;
       tempIndex(d)   -= 1;
       neighbors[d][0] = getRank(tempIndex);
       tempIndex       = index;
       tempIndex(d)   += 1;
       neighbors[d][1] = getRank(tempIndex);
+    }
+
+    for (int d = 0; d < TDimensions; ++d) {
+      if (globalCellSize(d) != globalSize_(d)) {
+        auto diff = globalSize_(d) - globalCellSize(d);
+
+        if (neighbors[d][1] < 0) {
+          localCellSize(d) += diff;
+        }
+
+        lastLocalCellSize(d) += diff;
+        globalCellSize(d)     = globalSize_(d);
+      }
     }
   }
 
@@ -85,7 +105,7 @@ public:
     auto result   = 0;
     int  tempSize = 1;
 
-    for (int i = 0; i < TD; ++i) {
+    for (int i = 0; i < TDimensions; ++i) {
       if (index_(i) < 0 || index_(i) >= processorSize(i)) {
         return -1;
       }
@@ -101,18 +121,20 @@ public:
 
   int       rank;
   VectorDi  localCellSize;
+  VectorDi  uniformLocalCellSize;
+  VectorDi  lastLocalCellSize;
   VectorDi  index;
   VectorDi  corner;
   Neighbors neighbors;
   MPI_Comm  mpiCommunicator;
 };
 
-template <int TD>
+template <int TDimensions>
 void
-logParallelTopologyInfo(ParallelDistribution<TD> const& topology) {
+logParallelTopologyInfo(ParallelDistribution<TDimensions> const& topology) {
   std::string neighbors;
 
-  for (int d = 0; d < TD; ++d) {
+  for (int d = 0; d < TDimensions; ++d) {
     neighbors += Uni::Logging::format("{1} ", topology.neighbors[d][0]);
     neighbors += Uni::Logging::format("{1} ", topology.neighbors[d][1]);
   }

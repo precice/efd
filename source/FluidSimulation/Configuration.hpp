@@ -9,7 +9,12 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-enum class WallType {
+enum class SolverEnum {
+  Sfsfd,
+  Ifsfd,
+};
+
+enum class WallEnum {
   Input,
   ParabolicInput,
   Output
@@ -22,7 +27,7 @@ public:
     typedef Eigen::Matrix<Scalar, 3, 1> VectorDs;
 
 public:
-    Wall(WallType const& type)
+    Wall(WallEnum const& type)
       : _type(type) {}
 
     Wall(Wall const&) = delete;
@@ -34,11 +39,11 @@ public:
     operator=(Wall const&) = delete;
 
     bool
-    operator==(WallType const& type) const {
+    operator==(WallEnum const& type) const {
       return _type == type;
     }
 
-    WallType const&
+    WallEnum const&
     type() const {
       return _type;
     }
@@ -52,7 +57,7 @@ public:
     }
 
 private:
-    WallType _type;
+    WallEnum _type;
   };
 
   class Input : public Wall {
@@ -62,10 +67,10 @@ public:
     typedef typename Base::VectorDs VectorDs;
 
 public:
-    Input() : Base(WallType::Input),
+    Input() : Base(WallEnum::Input),
       _velocity(VectorDs::Zero()) {}
 
-    Input(VectorDs const& velocity) : Base(WallType::Input),
+    Input(VectorDs const& velocity) : Base(WallEnum::Input),
       _velocity(velocity) {}
 
     Input(Input const&) = delete;
@@ -92,7 +97,7 @@ public:
     typedef typename Base::VectorDs VectorDs;
 
 public:
-    ParabolicInput(VectorDs const& velocity) : Base(WallType::ParabolicInput),
+    ParabolicInput(VectorDs const& velocity) : Base(WallEnum::ParabolicInput),
       _velocity(velocity) {}
 
     ParabolicInput(ParabolicInput const&) = delete;
@@ -119,7 +124,7 @@ public:
     typedef typename Base::VectorDs VectorDs;
 
 public:
-    Output() : Base(WallType::Output) {}
+    Output() : Base(WallEnum::Output) {}
 
     Output(Output const&) = delete;
 
@@ -137,11 +142,6 @@ public:
   typedef std::unique_ptr<Wall>                        UniqueWallType;
   typedef std::array<std::array<UniqueWallType, 2>, 3> WallTypes;
 
-  enum class SolverType {
-    Fsfd, // Fractional Step Finite Difference
-    Ssgfd, // Simple Staggered Grid Finite Difference
-  };
-
 public:
   Configuration()
     : re(0),
@@ -151,7 +151,7 @@ public:
     gamma(0),
     dim(0),
     immersedBoundaryMethod(-1),
-    solver(SolverType::Ssgfd) {
+    solver(SolverEnum::Sfsfd) {
     for (int d = 0; d < 3; ++d) {
       walls[d][0] = UniqueWallType(new Input());
       walls[d][1] = UniqueWallType(new Input());
@@ -173,7 +173,7 @@ public:
   std::string  filename;
   int          immersedBoundaryMethod;
   float        alpha;
-  SolverType   solver;
+  SolverEnum   solver;
 
   static int const FeedbackForcingMethod;
 };

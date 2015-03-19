@@ -23,15 +23,15 @@ computeDistances(TCellAccessor const&      accessor,
   typedef Eigen::Matrix<double, TDimensions, 1> Position;
   typedef std::array<Position, TDimensions>     VelocityPositions;
 
-  auto currentPosition = accessor.currentPosition();
-  auto currentWidth    = accessor.currentWidth();
+  auto currentPosition = accessor.position();
+  auto width    = accessor.width();
 
   VelocityPositions positions;
 
   for (int d = 0; d < TDimensions; ++d) {
     positions[d]     = currentPosition.template cast<double>();
-    positions[d]    += 0.5 * currentWidth.template cast<double>();
-    positions[d](d) += 0.5 * (double)currentWidth(d);
+    positions[d]    += 0.5 * width.template cast<double>();
+    positions[d](d) += 0.5 * (double)width(d);
     // logInfo("1 {1}", positions[d].transpose());
   }
 
@@ -39,12 +39,12 @@ computeDistances(TCellAccessor const&      accessor,
     auto position = preciceInterface->inquirePosition(
       positions[d].data(),
       std::set<int>({ preciceInterface->getMeshID("Body") }));
-    accessor.currentCell()->positions(d) = position;
+    accessor.positionInRespectToGeometrys(d) = position;
   }
 
-  auto position = (accessor.currentPosition() + 0.5 *
-                   accessor.currentWidth()).eval();
-  accessor.currentCell()->position()
+  auto position = (accessor.position() + 0.5 *
+                   accessor.width()).eval();
+  accessor.positionInRespectToGeometry()
     = preciceInterface->inquirePosition(
     position.data(),
     std::set<int>({ preciceInterface->getMeshID("Body") }));
@@ -60,9 +60,9 @@ computeVelocity(
   int const&                                  d,
   int const&                                  d2) {
   TScalar const width =
-    0.5 * accessor.currentWidth() (d)
+    0.5 * accessor.width() (d)
     + 0.5 * accessor.relativeWidth(d, d2) (d);
-  TScalar const b1 = accessor.currentCell()->distances(d);
+  TScalar const b1 = accessor.distances(d);
   TScalar const b2 = accessor.relativeCell(d, d2)->distances(d);
   TScalar const a1 = width * b1 / (b2 + b1);
   TScalar const a2 = width - a1;
@@ -73,9 +73,9 @@ computeVelocity(
     return;
   }
   TScalar const width2 =
-    0.5 * accessor.currentWidth() (d)
+    0.5 * accessor.width() (d)
     + 0.5 * accessor.relativeWidth(d, !d2) (d);
-  accessor.currentCell()->velocity(d)
+  accessor.velocity(d)
   // = boundaryVelocity(d);
     = (a1 * boundaryVelocity(d)
        + width2 * accessor.relativeCell(d, !d2)->velocity(d))
@@ -95,12 +95,12 @@ treatBoundary(TCellAccessor const&      accessor,
 
   Velocity const boundaryVelocity = Velocity::Zero();
 
-  if (accessor.currentCell()->positions(d)
+  if (accessor.positionInRespectToGeometrys(d)
       == precice::constants::positionOutsideOfGeometry()) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      if (accessor.relativeCell(d, d2)->positions(d)
+      if (accessor.relativeCell(d, d2)->positionInRespectToGeometrys(d)
           == precice::constants::positionInsideOfGeometry()) {
-        if (accessor.relativeCell(d, !d2)->positions(d)
+        if (accessor.relativeCell(d, !d2)->positionInRespectToGeometrys(d)
             == precice::constants::positionOutsideOfGeometry()) {
           computeVelocity<TCellAccessor, TScalar, TDimensions>(
             accessor,
@@ -110,23 +110,23 @@ treatBoundary(TCellAccessor const&      accessor,
           return true;
         } else {
           logError("This is bad {1}", accessor.indexValues().transpose());
-          accessor.currentCell()->velocity(d)
+          accessor.velocity(d)
             = boundaryVelocity(d);
 
           return true;
         }
       }
     }
-  } else if (accessor.currentCell()->positions(d)
+  } else if (accessor.positionInRespectToGeometrys(d)
              == precice::constants::positionInsideOfGeometry()) {
-    accessor.currentCell()->velocity(d) = boundaryVelocity(d);
+    accessor.velocity(d) = boundaryVelocity(d);
 
     return true;
 
     for (int d2 = 0; d2 < 2; ++d2) {
-      if (accessor.relativeCell(d, d2)->positions(d)
+      if (accessor.relativeCell(d, d2)->positionInRespectToGeometrys(d)
           == precice::constants::positionOutsideOfGeometry()) {
-        if (accessor.relativeCell(d, !d2)->positions(d)
+        if (accessor.relativeCell(d, !d2)->positionInRespectToGeometrys(d)
             == precice::constants::positionInsideOfGeometry()) {
           computeVelocity<TCellAccessor, TScalar, TDimensions>(
             accessor,
@@ -136,16 +136,16 @@ treatBoundary(TCellAccessor const&      accessor,
           return true;
         } else {
           logWarning("Gottya {1}", accessor.indexValues().transpose());
-          accessor.currentCell()->velocity(d)
+          accessor.velocity(d)
             = boundaryVelocity(d);
 
           return true;
         }
       }
     }
-  } else if (accessor.currentCell()->positions(d)
+  } else if (accessor.positionInRespectToGeometrys(d)
              == precice::constants::positionOnGeometry()) {
-    accessor.currentCell()->velocity(d) = boundaryVelocity(d);
+    accessor.velocity(d) = boundaryVelocity(d);
 
     return true;
   }

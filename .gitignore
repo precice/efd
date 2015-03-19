@@ -45,6 +45,7 @@
 !/source/FluidSimulation/ImmersedBoundary/Fadlun
 !/source/FluidSimulation/ImmersedBoundary/FeedbackForcing
 !/source/FluidSimulation/Private
+!/source/FluidSimulation/VtkOutput
 !/source/FluidSimulation/XdmfHdf5Output
 !/source/StructuredMemory
 !/source/Utility

@@ -1,30 +1,28 @@
-#ifndef FsiSimulation_EntryPoint_SimulationFactory
-#define FsiSimulation_EntryPoint_SimulationFactory
+#pragma once
 
 #include "FluidSimulation/Configuration.hpp"
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-class Simulation;
+class Solver;
 }
 namespace EntryPoint {
-class SimulationFactory {
+class SolverFactory {
 public:
-  typedef FluidSimulation::Simulation Simulation;
+  typedef FluidSimulation::Solver Solver;
 
 public:
-  static Simulation*
+  static Solver*
   createSimpleFdDouble2D(FluidSimulation::Configuration*);
 
-  static Simulation*
+  static Solver*
   createSimpleFdDouble3D(FluidSimulation::Configuration*);
 
-  static Simulation*
+  static Solver*
   createFractionalStepFdDouble2D(FluidSimulation::Configuration*);
 
-  static Simulation*
+  static Solver*
   createFractionalStepDouble3D(FluidSimulation::Configuration*);
 };
 }
 }
-#endif

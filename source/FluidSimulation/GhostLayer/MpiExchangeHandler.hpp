@@ -17,14 +17,14 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
 namespace MpiExchange {
-typedef std::function<void (MPI_Comm&)> Functor;
-template <int TD>
-using FunctorStack = FunctorStack<Functor, TD>;
+typedef std::function<void ()> Functor;
+template <int Dimensions>
+using FunctorStack = FunctorStack<Functor, Dimensions>;
 
-template <int TD>
+template <int Dimensions>
 Functor
 getEmptyFunctor() {
-  return Functor([] (MPI_Comm&) {});
+  return Functor([] () {});
 }
 
 template <typename TCell, typename TGrid>
@@ -33,24 +33,35 @@ using GetValueFunction = TCell * (*)(typename TGrid::CellAccessor const &);
 template <typename TCell,
           typename TGrid,
           GetValueFunction<TCell, TGrid> TgetValue,
-          typename TScalar,
-          int TD,
           int TDimension,
           int TDirection>
 class Handler {
 public:
-  typedef ParallelDistribution<TD>                SpecializedParallelTopology;
-  typedef StructuredMemory::Memory<TCell, TD - 1> Memory;
-  typedef typename Memory::VectorDi               InternalVectorDi;
-  typedef typename TGrid::VectorDi                VectorDi;
+  using GridType = TGrid;
 
-  Handler(TGrid const*                       grid,
-          SpecializedParallelTopology const* parallelTopology,
-          VectorDi const&                    leftIndent = VectorDi::Zero(),
-          VectorDi const&                    rightIndent = VectorDi::Zero())
+  using CellAccessorType = typename GridType::CellAccessor;
+
+  enum {
+    Dimensions = CellAccessorType::Dimensions
+  };
+
+  using ScalarType = typename CellAccessorType::ScalarType;
+
+  using ParallelDistributionType =  ParallelDistribution<Dimensions>;
+
+  typedef StructuredMemory::Memory<TCell, Dimensions - 1> Memory;
+
+  typedef typename Memory::VectorDi                       InternalVectorDi;
+
+  typedef typename TGrid::VectorDi                        VectorDi;
+
+  Handler(TGrid const*                    grid,
+          ParallelDistributionType const* parallelTopology,
+          VectorDi const&                 leftIndent = VectorDi::Zero(),
+          VectorDi const&                 rightIndent = VectorDi::Zero())
     : _ghostGrid(*grid),
-      _boundaryGrid(*grid),
-      _parallelTopology(parallelTopology) {
+    _boundaryGrid(*grid),
+    _parallelDistribution(parallelTopology) {
     InternalVectorDi size;
     VectorDi         ghostGridLeftIndent(VectorDi::Zero());
     VectorDi         ghostGridRightIndent(VectorDi::Zero());
@@ -58,7 +69,7 @@ public:
     VectorDi         boundaryGridRightIndent(VectorDi::Zero());
     int              i = 0;
 
-    for (int d = 0; d < TD; ++d) {
+    for (int d = 0; d < Dimensions; ++d) {
       if (d != TDimension) {
         size(i) = grid->size(d) - leftIndent(d) - rightIndent(d);
 
@@ -95,10 +106,10 @@ public:
 
   static Functor
   getSendHandler(
-    TGrid const*                       grid,
-    SpecializedParallelTopology const* parallelTopology,
-    VectorDi const&                    leftIndent = VectorDi::Zero(),
-    VectorDi const&                    rightIndent = VectorDi::Zero()) {
+    TGrid const*                    grid,
+    ParallelDistributionType const* parallelTopology,
+    VectorDi const&                 leftIndent = VectorDi::Zero(),
+    VectorDi const&                 rightIndent = VectorDi::Zero()) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -107,15 +118,15 @@ public:
                                   leftIndent,
                                   rightIndent));
 
-    return Functor(std::bind(&Handler::send, pointer, _1));
+    return Functor(std::bind(&Handler::send, pointer));
   }
 
   static Functor
   getReceiveHandler(
-    TGrid const*                       grid,
-    SpecializedParallelTopology const* parallelTopology,
-    VectorDi const&                    leftIndent = VectorDi::Zero(),
-    VectorDi const&                    rightIndent = VectorDi::Zero()) {
+    TGrid const*                    grid,
+    ParallelDistributionType const* parallelTopology,
+    VectorDi const&                 leftIndent = VectorDi::Zero(),
+    VectorDi const&                 rightIndent = VectorDi::Zero()) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -124,15 +135,15 @@ public:
                                   leftIndent,
                                   rightIndent));
 
-    return Functor(std::bind(&Handler::receive, pointer, _1));
+    return Functor(std::bind(&Handler::receive, pointer));
   }
 
   static Functor
   getExchangeHandler(
-    TGrid const*                       grid,
-    SpecializedParallelTopology const* parallelTopology,
-    VectorDi const&                    leftIndent = VectorDi::Zero(),
-    VectorDi const&                    rightIndent = VectorDi::Zero()) {
+    TGrid const*                    grid,
+    ParallelDistributionType const* parallelTopology,
+    VectorDi const&                 leftIndent = VectorDi::Zero(),
+    VectorDi const&                 rightIndent = VectorDi::Zero()) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -141,16 +152,16 @@ public:
                                   leftIndent,
                                   rightIndent));
 
-    return Functor(std::bind(&Handler::exchange, pointer, _1));
+    return Functor(std::bind(&Handler::exchange, pointer));
   }
 
   void
-  send(MPI_Comm& mpiCommunicator) {
+  send() {
     for (auto const& accessor : _boundaryGrid) {
       InternalVectorDi index;
       int              i = 0;
 
-      for (int d = 0; d < TD; ++d) {
+      for (int d = 0; d < Dimensions; ++d) {
         if (d != TDimension) {
           index(i) = accessor.indexValue(d) - _boundaryGrid.leftIndent(d);
           ++i;
@@ -160,30 +171,30 @@ public:
     }
     MPI_Isend(
       _memory.data(),
-      _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
-      Private::getMpiScalarType<TScalar>(),
-      _parallelTopology->neighbors[TDimension][TDirection],
+      _memory.size().prod() * sizeof (TCell) / sizeof (ScalarType),
+      Private::getMpiScalarType<ScalarType>(),
+      _parallelDistribution->neighbors[TDimension][TDirection],
       0,
-      mpiCommunicator,
+      _parallelDistribution->mpiCommunicator,
       &_mpiRequest);
   }
 
   void
-  receive(MPI_Comm& mpiCommunicator) {
+  receive() {
     MPI_Recv(
       _memory.data(),
-      _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
-      Private::getMpiScalarType<TScalar>(),
-      _parallelTopology->neighbors[TDimension][TDirection],
+      _memory.size().prod() * sizeof (TCell) / sizeof (ScalarType),
+      Private::getMpiScalarType<ScalarType>(),
+      _parallelDistribution->neighbors[TDimension][TDirection],
       0,
-      mpiCommunicator,
+      _parallelDistribution->mpiCommunicator,
       &_mpiStatus);
 
     for (auto const& accessor : _ghostGrid) {
       InternalVectorDi index;
       int              i = 0;
 
-      for (int d = 0; d < TD; ++d) {
+      for (int d = 0; d < Dimensions; ++d) {
         if (d != TDimension) {
           index(i) = accessor.indexValue(d) - _ghostGrid.leftIndent(d);
           ++i;
@@ -194,12 +205,12 @@ public:
   }
 
   void
-  exchange(MPI_Comm& mpiCommunicator) {
+  exchange() {
     for (auto const& accessor : _boundaryGrid) {
       InternalVectorDi index;
       int              i = 0;
 
-      for (int d = 0; d < TD; ++d) {
+      for (int d = 0; d < Dimensions; ++d) {
         if (d != TDimension) {
           index(i) = accessor.indexValue(d) - _boundaryGrid.leftIndent(d);
           ++i;
@@ -209,20 +220,20 @@ public:
     }
     MPI_Sendrecv_replace(
       _memory.data(),
-      _memory.size().prod() * sizeof (TCell) / sizeof (TScalar),
-      Private::getMpiScalarType<TScalar>(),
-      _parallelTopology->neighbors[TDimension][TDirection],
+      _memory.size().prod() * sizeof (TCell) / sizeof (ScalarType),
+      Private::getMpiScalarType<ScalarType>(),
+      _parallelDistribution->neighbors[TDimension][TDirection],
       0,
-      _parallelTopology->neighbors[TDimension][TDirection],
+      _parallelDistribution->neighbors[TDimension][TDirection],
       0,
-      mpiCommunicator,
+      _parallelDistribution->mpiCommunicator,
       &_mpiStatus);
 
     for (auto const& accessor : _ghostGrid) {
       InternalVectorDi index;
       int              i = 0;
 
-      for (int d = 0; d < TD; ++d) {
+      for (int d = 0; d < Dimensions; ++d) {
         if (d != TDimension) {
           index(i) = accessor.indexValue(d) - _ghostGrid.leftIndent(d);
           ++i;
@@ -234,15 +245,15 @@ public:
 
 public:
   template <typename TType>
-  using TwoDArray = std::array<std::array<TType, 2>, TD>;
+  using TwoDArray = std::array<std::array<TType, 2>, Dimensions>;
 
 private:
-  TGrid                              _ghostGrid;
-  TGrid                              _boundaryGrid;
-  SpecializedParallelTopology const* _parallelTopology;
-  Memory                             _memory;
-  MPI_Request                        _mpiRequest;
-  MPI_Status                         _mpiStatus;
+  TGrid                           _ghostGrid;
+  TGrid                           _boundaryGrid;
+  ParallelDistributionType const* _parallelDistribution;
+  Memory                          _memory;
+  MPI_Request                     _mpiRequest;
+  MPI_Status                      _mpiStatus;
 };
 }
 }

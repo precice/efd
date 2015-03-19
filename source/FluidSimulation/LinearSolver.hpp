@@ -1,8 +1,6 @@
 #ifndef FsiSimulation_FluidSimulation_Solvers_LinearSolver_hpp
 #define FsiSimulation_FluidSimulation_Solvers_LinearSolver_hpp
 
-#include "GhostLayer/Handlers.hpp"
-#include "Grid.hpp"
 #include "ParallelDistribution.hpp"
 #include "Private/petscgenerics.hpp"
 #include "StructuredMemory/Pointers.hpp"
@@ -23,13 +21,14 @@ template <typename TGrid,
           typename TResultAcquirer>
 class LinearSolver {
 public:
-  typedef TGrid                               GridType;
+  typedef TGrid GridType;
+
   typedef typename GridType::CellAccessorType CellAccessorType;
-  typedef typename CellAccessorType::CellType CellType;
-  typedef typename CellType::Scalar           Scalar;
+
+  typedef typename CellAccessorType::ScalarType ScalarType;
 
   enum {
-    Dimensions = CellType::Dimensions
+    Dimensions = CellAccessorType::Dimensions
   };
 
   typedef ParallelDistribution<Dimensions> ParallelDistributionType;
@@ -37,15 +36,18 @@ public:
   typedef
     GhostLayer::LsStencilGenerator::FunctorStack<Dimensions>
     GhostStencilGenerator;
+
   typedef
     GhostLayer::PetscExchange::FunctorStack<Dimensions>
     GhostRhsGenerator;
+
   typedef
     GhostLayer::PetscExchange::FunctorStack<Dimensions>
     GhostRhsAcquierer;
 
-  typedef Eigen::Matrix<Scalar, Dimensions, 1> VectorDsType;
-  typedef Eigen::Matrix<int, Dimensions, 1>    VectorDiType;
+  typedef Eigen::Matrix<ScalarType, Dimensions, 1> VectorDsType;
+
+  typedef Eigen::Matrix<int, Dimensions, 1> VectorDiType;
 
 public:
   LinearSolver() {}
@@ -76,18 +78,19 @@ public:
       auto array = new PetscInt[_parallelDistribution->processorSize(d)];
       localSizes(d) = UniqueConstPetscIntArray(array);
 
-      for (int j = 0; j < _parallelDistribution->processorSize(d); ++j) {
-        array[j] = _parallelDistribution->localCellSize(d);
+      for (int j = 0; j < _parallelDistribution->processorSize(d) - 1; ++j) {
+        array[j] = _parallelDistribution->uniformLocalCellSize(d);
       }
+      array[_parallelDistribution->processorSize(d) - 1]
+        = _parallelDistribution->lastLocalCellSize(d) + 1;
       ++array[0];
-      ++array[_parallelDistribution->processorSize(d) - 1];
     }
 
     DMCreate<Dimensions>(PETSC_COMM_WORLD,
                          createDMBoundaries<Dimensions>(),
                          DMDA_STENCIL_STAR,
-                         _parallelDistribution->globalCellSize + 2 *
-                         VectorDiType::Ones(),
+                         _parallelDistribution->globalCellSize
+                         + 2 * VectorDiType::Ones(),
                          _parallelDistribution->processorSize,
                          1,
                          2,

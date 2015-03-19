@@ -1,19 +1,20 @@
-#ifndef FsiSimulation_FluidSimulation_Simulation_hpp
-#define FsiSimulation_FluidSimulation_Simulation_hpp
-
-#include <precice/SolverInterface.hpp>
+#pragma once
 
 #include <boost/filesystem.hpp>
 
+namespace precice {
+class SolverInterface;
+}
+
 namespace FsiSimulation {
 namespace FluidSimulation {
-class Simulation {
+class Solver {
 public:
   typedef boost::filesystem::path Path;
 
 public:
   virtual
-  ~Simulation() {}
+  ~Solver() {}
 
   virtual void
   initialize(precice::SolverInterface* preciceInteface,
@@ -25,4 +26,3 @@ public:
 };
 }
 }
-#endif

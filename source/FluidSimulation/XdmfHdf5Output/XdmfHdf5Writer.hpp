@@ -1,8 +1,6 @@
 #ifndef FsiSimulation_FluidSimulation_XdmfHdf5Output_XdmfHdf5Writer_hpp
 #define FsiSimulation_FluidSimulation_XdmfHdf5Output_XdmfHdf5Writer_hpp
 
-#include "FluidSimulation/BasicCell.hpp"
-#include "FluidSimulation/ParallelDistribution.hpp"
 #include "Hdf5Writer.hpp"
 #include "XdmfWriter.hpp"
 
@@ -15,53 +13,35 @@
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace XdmfHdf5Output {
-template <typename TGrid>
+template <typename TMemory>
 class XdmfHdf5Writer {
 public:
-  using GridType = TGrid;
+  using MemoryType = TMemory;
 
-  using CellAccessorType = typename GridType::CellAccessor;
+  using Hdf5WriterType = Hdf5Writer<MemoryType>;
 
-  using CellType = typename CellAccessorType::CellType;
-
-  enum {
-    Dimensions = CellType::Dimensions
-  };
-
-  using Hdf5WriterType = Hdf5Writer<GridType>;
-
-  using XdmfWriterType = XdmfWriter<Hdf5WriterType::Dimensions>;
+  using XdmfWriterType = XdmfWriter<MemoryType>;
 
   using UniqueXdmfWriterType = std::unique_ptr<XdmfWriterType>;
-
-  using ParallelDistributionType
-          = typename Hdf5WriterType::ParallelDistributionType;
 
   using Path = boost::filesystem::path;
 
   XdmfHdf5Writer() {}
 
   void
-  initialize(ParallelDistributionType const* parallel_distribution,
-             GridType const*                 grid,
-             Path const&                     directory_path,
-             std::string                     file_name_prefix) {
+  initialize(MemoryType const* memory,
+             Path const&       directory_path,
+             std::string       file_name_prefix) {
+    _memory         = memory;
     _directoryPath  = directory_path;
     _fileNamePrefix = file_name_prefix;
+    _timeStepFileNames.clear();
 
-    _hdf5Writer.initialize(parallel_distribution,
-                           grid);
+    _hdf5Writer.initialize(_memory);
 
-    if (parallel_distribution->rank == 0) {
+    if (_memory->parallelDistribution()->rank == 0) {
       _xdmfWriter.reset(new XdmfWriterType());
-    }
-
-    CellType::Traits::initializeAttributes();
-    int const attributes_size = CellType::Traits::getAttributesSize();
-
-    for (int i = 0; i < attributes_size; ++i) {
-      auto attribute = CellType::Traits::getAttribute(i);
-      _attributes.emplace_back(*attribute);
+      _xdmfWriter->initialize(_memory);
     }
   }
 
@@ -78,48 +58,42 @@ public:
                                                         dimension_names);
 
     if (_xdmfWriter.get()) {
-      _xdmfWriter->initialize(geometry_file_path.filename().string(),
-                              dimension_names,
-                              _attributes,
-                              _hdf5Writer.size().template cast<int>());
+      _xdmfWriter->writeGeometry(geometry_file_path.filename().string(),
+                                 dimension_names,
+                                 _hdf5Writer.size().template cast<int>());
     }
   }
 
   void
-  writeAttributes(int const&    iteration_number,
-                  double const& time) {
-    auto attribute_file_path = _hdf5Writer.writeAttributes(
-      _directoryPath,
-      _fileNamePrefix,
-      _attributes,
-      iteration_number);
+  writeAttributes() {
+    auto attribute_file_path = _hdf5Writer.writeAttributes(_directoryPath,
+                                                           _fileNamePrefix);
 
     if (_xdmfWriter.get()) {
       Path xmdf_file_path = _directoryPath;
       xmdf_file_path.append(_fileNamePrefix
                             + "."
-                            + std::to_string(iteration_number)
+                            + std::to_string(_memory->iterationNumber())
                             + ".xdmf");
       _timeStepFileNames.push_back(xmdf_file_path.filename().string());
 
-      _xdmfWriter->write(xmdf_file_path,
-                         attribute_file_path.filename().string(),
-                         time);
+      _xdmfWriter->writeAttributes(xmdf_file_path,
+                                   attribute_file_path.filename().string());
 
       xmdf_file_path = _directoryPath;
       xmdf_file_path.append(_fileNamePrefix + ".xdmf");
 
       _xdmfWriter->writeTemporal(xmdf_file_path,
-                         _timeStepFileNames);
+                                 _timeStepFileNames);
     }
   }
 
 private:
+  MemoryType const*        _memory;
   Hdf5WriterType           _hdf5Writer;
   UniqueXdmfWriterType     _xdmfWriter;
   Path                     _directoryPath;
   std::string              _fileNamePrefix;
-  std::vector<Attribute>   _attributes;
   std::vector<std::string> _timeStepFileNames;
 };
 }

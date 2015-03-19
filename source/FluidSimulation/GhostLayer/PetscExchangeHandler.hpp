@@ -21,18 +21,16 @@ namespace GhostLayer {
 namespace PetscExchange {
 template <int TD>
 using Functor
-        = std::function<void(typename StructuredMemory::Pointers<PetscScalar,
-                                                                 TD>::Type)>;
+        = std::function
+          <void(typename StructuredMemory::Pointers<PetscScalar, TD>::Type)>;
 template <int TD>
 using FunctorStack = FunctorStack<Functor<TD>, TD>;
 
 template <int TD>
 inline Functor<TD>
 getEmptyFunctor() {
-  return Functor<TD>([] (
-                       typename StructuredMemory::Pointers<PetscScalar,
-                                                           TD>::Type
-                       array) {});
+  return Functor<TD>(
+    [] (typename StructuredMemory::Pointers<PetscScalar, TD>::Type array) {});
 }
 
 template <typename TGrid,
@@ -42,11 +40,10 @@ template <typename TGrid,
 class Handler {
 public:
   typedef TGrid                               GridType;
-  typedef typename GridType::CellAccessor     CellAccessorType;
-  typedef typename CellAccessorType::CellType CellType;
+  typedef typename GridType::CellAccessorType CellAccessorType;
 
   enum {
-    Dimensions = CellType::Dimensions
+    Dimensions = CellAccessorType::Dimensions
   };
 
   typedef ParallelDistribution<Dimensions> ParallelDistributionType;
@@ -59,8 +56,8 @@ public:
           ParallelDistributionType const* parallelDistribution,
           TAction*                        action)
     : _grid(grid),
-      _parallelDistribution(parallelDistribution),
-      _action(action) {}
+    _parallelDistribution(parallelDistribution),
+    _action(action) {}
 
   ~Handler() {}
 
@@ -78,7 +75,7 @@ public:
 
   void
   initialize(typename Pointers::Type array) {
-    for (auto const& accessor :
+    for (auto& accessor :
          _grid->indentedBoundaries[TDimension][TDirection]) {
       auto corner = _parallelDistribution->corner;
 

@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_XdmfHdf5Output_XdmfWriter_hpp
-#define FsiSimulation_FluidSimulation_XdmfHdf5Output_XdmfWriter_hpp
+#pragma once
 
 #include "FluidSimulation/BasicCell.hpp"
 #include "FluidSimulation/ParallelDistribution.hpp"
@@ -8,30 +7,50 @@
 
 #include <Eigen/Core>
 
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+
 #include <array>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include <boost/filesystem.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace XdmfHdf5Output {
-template <int Dimensions>
+namespace Private {
+template <int TDimensions>
+struct XdmfWriterStaticData {};
+}
+template <typename TMemory>
 class XdmfWriter {
-  using VectorDi = Eigen::Matrix<int, Dimensions, 1>;
+public:
+  using Path = boost::filesystem::path;
 
   using PropertyTree = boost::property_tree::ptree;
 
-  using XmlWriterSettings =
-          boost::property_tree::xml_writer_settings<std::string>;
+  using XmlWriterSettings
+          = boost::property_tree::xml_writer_settings<std::string>;
 
-  using Path = boost::filesystem::path;
+  using MemoryType = TMemory;
 
-  using ParallelDistributionType = ParallelDistribution<Dimensions>;
+  using GridType = typename MemoryType::GridType;
+
+  using CellAccessorType = typename GridType::CellAccessor;
+
+  enum {
+    Dimensions = CellAccessorType::Dimensions
+  };
+
+  using ScalarType = typename MemoryType::ScalarType;
+
+  using ParallelDistributionType
+          = typename MemoryType::ParallelDistributionType;
+
+  using AttributeType = typename MemoryType::AttributeType;
+
+  using VectorDiType = typename MemoryType::VectorDiType;
 
   struct DataItem {
     std::vector<int>          dimensions;
@@ -113,10 +132,14 @@ class XdmfWriter {
 
 public:
   void
-  initialize(std::string const&                             geometry_hdf_name,
-             std::vector<std::string> const&                dimension_names,
-             std::vector<FluidSimulation::Attribute> const& attributes,
-             VectorDi const&                                dimensions) {
+  initialize(MemoryType const* memory) {
+    _memory = memory;
+  }
+
+  void
+  writeGeometry(std::string const&              geometry_hdf_name,
+                std::vector<std::string> const& dimension_names,
+                VectorDiType const&             dimensions) {
     for (int d = Dimensions - 1; d >= 0; --d) {
       auto& item = geometry.data_items[Dimensions - 1 - d];
 
@@ -130,7 +153,7 @@ public:
       item.data = geometry_hdf_name + ":/" + dimension_names[d];
     }
 
-    for (auto const& attribute : attributes) {
+    for (auto const& attribute : * _memory->attributes()) {
       logInfo("{1}", attribute.name);
       _attributes.emplace_back();
       _attributes.back().name = attribute.name;
@@ -141,7 +164,7 @@ public:
 
       int attribute_size = 1;
 
-      if (attribute.type == FluidSimulation::Attribute::Type::Vector) {
+      if (attribute.type == AttributeType::Type::Vector) {
         attribute_size = Dimensions;
         _attributes.back().type = "Vector";
         _attributes.back().item.dimensions.push_back(3);
@@ -153,9 +176,8 @@ public:
   }
 
   void
-  write(Path const&        file_path,
-        std::string const& attribute_hdf_name,
-        double const&      time) {
+  writeAttributes(Path const&        file_path,
+                  std::string const& attribute_hdf_name) {
     for (auto& attribute : _attributes) {
       attribute.item.data = attribute_hdf_name
                             + ":/"
@@ -167,7 +189,7 @@ public:
     grid_node.put("<xmlattr>.Name", name);
     grid_node.put("<xmlattr>.GridType", gridType);
     grid_node.put("<xmlattr>.xml:id", "gid");
-    grid_node.put("Time.<xmlattr>.Value", std::to_string(time));
+    grid_node.put("Time.<xmlattr>.Value", std::to_string(_memory->time()));
 
     topology.updateNode(grid_node);
     geometry.updateNode(grid_node);
@@ -206,6 +228,7 @@ public:
   }
 
 private:
+  MemoryType const*      _memory;
   Topology               topology;
   Geometry               geometry;
   std::vector<Attribute> _attributes;
@@ -215,30 +238,27 @@ private:
   static  std::string const       gridType;
 };
 
-template <int Dimensions>
-typename XdmfWriter<Dimensions>::XmlWriterSettings const
-XdmfWriter<Dimensions>::_settings(' ', 4, "utf-8");
-template <int Dimensions>
-std::string const XdmfWriter<Dimensions>::DataItem::numberType = "Float";
-template <int Dimensions>
-std::string const XdmfWriter<Dimensions>::DataItem::format = "HDF";
+template <typename TMemory>
+typename XdmfWriter<TMemory>::XmlWriterSettings const
+XdmfWriter<TMemory>::_settings(' ', 4, "utf-8");
 
-template <>
-std::string const XdmfWriter<3>::Topology::topologyType = "3DRectMesh";
-template <>
-std::string const XdmfWriter<2>::Topology::topologyType = "2DRectMesh";
-template <>
-std::string const XdmfWriter<3>::Geometry::geometryType = "VXVYVZ";
-template <>
-std::string const XdmfWriter<2>::Geometry::geometryType = "VXVY";
-template <int Dimensions>
-std::string const XdmfWriter<Dimensions>::Attribute::center = "Cell";
-template <int Dimensions>
-std::string const XdmfWriter<Dimensions>::name = "Grid";
-template <int Dimensions>
-std::string const XdmfWriter<Dimensions>::gridType = "Uniform";
-}
-}
-}
+template <typename TMemory>
+std::string const XdmfWriter<TMemory>::DataItem::numberType = "Float";
+template <typename TMemory>
+std::string const XdmfWriter<TMemory>::DataItem::format = "HDF";
 
-#endif
+template <typename TMemory>
+std::string const XdmfWriter<TMemory>::Topology::topologyType
+  = TMemory::Dimensions == 3 ? "3DRectMesh" :  "2DRectMesh";
+template <typename TMemory>
+std::string const XdmfWriter<TMemory>::Geometry::geometryType
+  = TMemory::Dimensions == 3 ? "VXVYVZ" :  "VXVY";
+template <typename TMemory>
+std::string const XdmfWriter<TMemory>::Attribute::center = "Cell";
+template <typename TMemory>
+std::string const XdmfWriter<TMemory>::name = "Grid";
+template <typename TMemory>
+std::string const XdmfWriter<TMemory>::gridType = "Uniform";
+}
+}
+}

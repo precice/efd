@@ -1,41 +1,39 @@
-#ifndef FsiSimulation_FluidSimulation_Grid_hpp
-#define FsiSimulation_FluidSimulation_Grid_hpp
+#pragma once
 
-#include <Uni/StructuredGrid/Basic/Grid>
 #include <Uni/Logging/macros>
+#include <Uni/StructuredGrid/Basic/Grid>
 
 #include <array>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TMemory,
-          typename TGridGeometry,
-          int TD>
-class CellAccessor;
-
-template <typename TMemory, typename TGridGeometry, int TD>
+template <typename TSolverTraits>
 class Grid;
 
-template <typename TMemory, typename TGridGeometry, int TD>
+template <typename TSolverTraits>
 void
-logGridInitializationInfo(Grid<TMemory, TGridGeometry, TD> const& grid);
+logGridInitializationInfo(Grid<TSolverTraits> const& grid);
 
-template <typename TMemory, typename TGridGeometry, int TD>
+template <typename TSolverTraits>
 class Grid
-  : public Uni::StructuredGrid::Basic::Grid<
-      CellAccessor<TMemory, TGridGeometry, TD>,
-      TD> {
+  : public Uni::StructuredGrid::Basic::Grid
+    <typename TSolverTraits::CellAccessorType> {
 public:
-  typedef
-    Uni::StructuredGrid::Basic::Grid<
-      CellAccessor<TMemory, TGridGeometry, TD>,
-      TD>
-    Base;
+  using BaseType = Uni::StructuredGrid::Basic::Grid
+                   <typename TSolverTraits::CellAccessorType>;
 
-  typedef typename Base::Factory      Factory;
-  typedef typename Base::Iterator     Iterator;
-  typedef typename Base::CellAccessor CellAccessorType;
-  typedef typename Base::VectorDi     VectorDi;
+  using CellAccessorType =  typename TSolverTraits::CellAccessorType;
+
+  enum {
+    Dimensions = CellAccessorType::Dimensions
+  };
+
+  using VectorDiType = typename BaseType::VectorDi;
+
+  using FactoryType = std::function
+                      <CellAccessorType(BaseType const*, VectorDiType const&)>;
+
+  using IteratorType = typename BaseType::Iterator;
 
 public:
   Grid() {}
@@ -48,57 +46,93 @@ public:
   operator=(Grid const& other) = delete;
 
   void
-  initialize(VectorDi const& size,
-             Factory const&  factory) {
-    this->Base::initialize(size,
-                           VectorDi::Zero(),
-                           VectorDi::Zero(),
-                           factory);
+  initialize(VectorDiType const& size,
+             FactoryType const&  factory) {
+    _factory = factory;
 
-    VectorDi indent(VectorDi::Ones());
+    typename BaseType::Factory cell_accessor_factory(
+      [&] (VectorDiType const& index) {
+        return _factory(this, index);
+      });
 
-    for (int i = 0; i < TD; ++i) {
-      VectorDi leftIndent(VectorDi::Zero());
+    this->BaseType::initialize(size,
+                               VectorDiType::Zero(),
+                               VectorDiType::Zero(),
+                               cell_accessor_factory);
+
+    VectorDiType indent(VectorDiType::Ones());
+
+    for (int i = 0; i < Dimensions; ++i) {
+      VectorDiType leftIndent(VectorDiType::Zero());
       leftIndent(i) = 0;
-      VectorDi rightIndent(VectorDi::Zero());
+      VectorDiType rightIndent(VectorDiType::Zero());
       rightIndent(i) = size(i) - 1;
+
+      typename BaseType::Factory cell_accessor_factory_1(
+        [&] (VectorDiType const& index) {
+          return _factory(&boundaries[i][0], index);
+        });
       boundaries[i][0].initialize(size,
                                   leftIndent,
                                   rightIndent,
-                                  factory);
+                                  cell_accessor_factory_1);
+
+      typename BaseType::Factory cell_accessor_factory_2(
+        [&] (VectorDiType const& index) {
+          return _factory(&boundaries[i][1], index);
+        });
       boundaries[i][1].initialize(size,
                                   rightIndent,
                                   leftIndent,
-                                  factory);
+                                  cell_accessor_factory_2);
       leftIndent     = indent;
       leftIndent(i)  = 0;
       rightIndent    = indent;
       rightIndent(i) = size(i) - rightIndent(i);
+
+      typename BaseType::Factory cell_accessor_factory_3(
+        [&] (VectorDiType const& index) {
+          return _factory(&indentedBoundaries[i][1], index);
+        });
       indentedBoundaries[i][0].initialize(size,
                                           leftIndent,
                                           rightIndent,
-                                          factory);
+                                          cell_accessor_factory_3);
+
+      typename BaseType::Factory cell_accessor_factory_4(
+        [&] (VectorDiType const& index) {
+          return _factory(&indentedBoundaries[i][1], index);
+        });
       indentedBoundaries[i][1].initialize(size,
                                           rightIndent,
                                           leftIndent,
-                                          factory);
+                                          cell_accessor_factory_4);
     }
-    innerGrid.initialize(size, indent, indent, factory);
+
+    typename BaseType::Factory cell_accessor_factory_5(
+      [&] (VectorDiType const& index) {
+        return _factory(&innerGrid, index);
+      });
+    innerGrid.initialize(size, indent, indent, cell_accessor_factory_5);
   }
 
 public:
-  Base                                innerGrid;
-  std::array<std::array<Base, 2>, TD> boundaries;
-  std::array<std::array<Base, 2>, TD> indentedBoundaries;
+  BaseType                                        innerGrid;
+  FactoryType                                     _factory;
+  std::array<std::array<BaseType, 2>, Dimensions> boundaries;
+  std::array<std::array<BaseType, 2>, Dimensions> indentedBoundaries;
 
   friend void
-  logGridInitializationInfo<TMemory, TGridGeometry, TD
-                            >(Grid const& grid);
+  logGridInitializationInfo<TSolverTraits>(Grid const& grid);
 };
 
-template <typename TMemory, typename TGridGeometry, int TD>
+template <typename TSolverTraits>
 void
-logGridInitializationInfo(Grid<TMemory, TGridGeometry, TD> const& grid) {
+logGridInitializationInfo(Grid<TSolverTraits> const& grid) {
+  enum {
+    Dimensions = TSolverTraits::Dimensions
+  };
+
   INFO << "Grid size: "
        << grid.size().transpose() << "\n"
        << "Grid left indent: "
@@ -112,7 +146,7 @@ logGridInitializationInfo(Grid<TMemory, TGridGeometry, TD> const& grid) {
        << "Inner grid right indent: "
        << grid.innerGrid.rightIndent().transpose() << "\n";
 
-  for (int d = 0; d < TD; ++d) {
+  for (int d = 0; d < Dimensions; ++d) {
     INFO
       << 2 * d << " grid size: "
       << grid.boundaries[d][0].size().transpose() << "\n"
@@ -130,7 +164,3 @@ logGridInitializationInfo(Grid<TMemory, TGridGeometry, TD> const& grid) {
 }
 }
 }
-
-#include "CellAccessor.hpp"
-
-#endif

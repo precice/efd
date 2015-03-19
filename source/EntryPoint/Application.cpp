@@ -1,7 +1,7 @@
 #include "Application.hpp"
 
-#include "FluidSimulation/Simulation.hpp"
-#include "SimulationFactory.hpp"
+#include "FluidSimulation/Solver.hpp"
+#include "SolverFactory.hpp"
 #include "XmlConfigurationParser.hpp"
 
 #include "Utility/executablepath.hpp"
@@ -20,10 +20,13 @@
 using FsiSimulation::EntryPoint::Application;
 
 class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
-  typedef precice::SolverInterface                     PreciceInterface;
-  typedef std::unique_ptr<PreciceInterface>            UniquePreciceInterface;
-  typedef std::unique_ptr<FluidSimulation::Simulation> UniqueMySimulation;
-  typedef boost::filesystem::path                      Path;
+  typedef precice::SolverInterface                 PreciceInterface;
+
+  typedef std::unique_ptr<PreciceInterface>        UniquePreciceInterface;
+
+  typedef std::unique_ptr<FluidSimulation::Solver> UniqueSolver;
+
+  typedef boost::filesystem::path                  Path;
 
   ApplicationPrivateImplementation(
     Application* in,
@@ -75,7 +78,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   std::unique_ptr<FluidSimulation::Configuration> parameters;
 
   UniquePreciceInterface preciceInterface;
-  UniqueMySimulation     mySimulation;
+  UniqueSolver           mySimulation;
 
   bool
   isMaster() {
@@ -189,26 +192,26 @@ initialize() {
 
   if (_im->parameters->dim == 3) {
     if (_im->parameters->solver
-        == FluidSimulation::Configuration::SolverType::Fsfd) {
+        == FluidSimulation::SolverEnum::Ifsfd) {
       _im->mySimulation
-        = Implementation::UniqueMySimulation(
-        SimulationFactory::createFractionalStepDouble3D(_im->parameters.get()));
+        = Implementation::UniqueSolver(
+        SolverFactory::createFractionalStepDouble3D(_im->parameters.get()));
     } else {
       _im->mySimulation
-        = Implementation::UniqueMySimulation(
-        SimulationFactory::createSimpleFdDouble3D(_im->parameters.get()));
+        = Implementation::UniqueSolver(
+        SolverFactory::createSimpleFdDouble3D(_im->parameters.get()));
     }
   } else if (_im->parameters->dim == 2) {
     if (_im->parameters->solver
-        == FluidSimulation::Configuration::SolverType::Fsfd) {
+        == FluidSimulation::SolverEnum::Ifsfd) {
       _im->mySimulation
-        = Implementation::UniqueMySimulation(
-        SimulationFactory::createFractionalStepFdDouble2D(
+        = Implementation::UniqueSolver(
+        SolverFactory::createFractionalStepFdDouble2D(
           _im->parameters.get()));
     } else {
       _im->mySimulation
-        = Implementation::UniqueMySimulation(
-        SimulationFactory::createSimpleFdDouble2D(_im->parameters.get()));
+        = Implementation::UniqueSolver(
+        SolverFactory::createSimpleFdDouble2D(_im->parameters.get()));
     }
   } else {
     throwException("Dimension {1} is not supported",

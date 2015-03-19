@@ -16,11 +16,11 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TCellAccessor, typename TScalar, int TD>
 void
-computeMaxVelocity(TCellAccessor const&                        accessor,
-                   typename TCellAccessor::CellType::Velocity& maxVelocity) {
+computeMaxVelocity(TCellAccessor const& accessor,
+                   typename TCellAccessor::VectorDsType&      maxVelocity) {
   maxVelocity =
-    accessor.currentCell()->velocity().cwiseAbs().cwiseQuotient(
-      accessor.currentWidth()).cwiseMax(maxVelocity);
+    accessor.velocity().cwiseAbs().cwiseQuotient(
+      accessor.width()).cwiseMax(maxVelocity);
 }
 
 template <typename TScalar, int TD>
@@ -480,8 +480,7 @@ computeFGH3D(TScalar const& currentU,
 template <int TD>
 class DiffusionProcessing {
   template <typename TCellAccessor>
-  static inline
-  typename TCellAccessor::CellType::Velocity
+  static inline typename TCellAccessor::VectorDsType
   compute(TCellAccessor const& accessor) {}
 };
 
@@ -490,9 +489,9 @@ class DiffusionProcessing<2> {
 public:
   template <typename TCellAccessor>
   static inline
-  typename TCellAccessor::CellType::Velocity
+  typename TCellAccessor::VectorDsType
   compute(TCellAccessor const& accessor) {
-    typedef typename TCellAccessor::CellType::Velocity Vector;
+    typedef typename TCellAccessor::VectorDsType Vector;
     Vector result;
 
     for (int d1 = 0; d1 < 2; ++d1) {
@@ -503,16 +502,16 @@ public:
       }
 
       result(d1) = computeDiffusion2D(
-        accessor.currentCell()->velocity(d1),
-        accessor.leftCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d1),
-        accessor.leftCellInDimension(d2)->velocity(d1),
-        accessor.rightCellInDimension(d2)->velocity(d1),
-        accessor.currentWidth() (d1),
-        accessor.currentWidth() (d2),
-        accessor.rightWidthInDimension(d1)(d1),
-        accessor.leftWidthInDimension(d2)(d2),
-        accessor.rightWidthInDimension(d2)(d2));
+        accessor.velocity(d1),
+        accessor.relativeVelocity(d1, -1, d1),
+        accessor.relativeVelocity(d1, +1, d1),
+        accessor.relativeVelocity(d2, -1, d1),
+        accessor.relativeVelocity(d2, - 1, d1),
+        accessor.width(d1),
+        accessor.width(d2),
+        accessor.relativeWidth(d1, +1, d1),
+        accessor.relativeWidth(d2, -1, d2),
+        accessor.relativeWidth(d2, +1, d2));
     }
 
     return result;
@@ -524,9 +523,9 @@ class DiffusionProcessing<3> {
 public:
   template <typename TCellAccessor>
   static inline
-  typename TCellAccessor::CellType::Velocity
+  typename TCellAccessor::VectorDsType
   compute(TCellAccessor const& accessor) {
-    typedef typename TCellAccessor::CellType::Velocity Vector;
+    typedef typename TCellAccessor::VectorDsType Vector;
 
     Vector result;
 
@@ -543,21 +542,21 @@ public:
       }
 
       result(d1) = computeDiffusion3D(
-        accessor.currentCell()->velocity(d1),
-        accessor.leftCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d1),
-        accessor.leftCellInDimension(d2)->velocity(d1),
-        accessor.rightCellInDimension(d2)->velocity(d1),
-        accessor.leftCellInDimension(d3)->velocity(d1),
-        accessor.rightCellInDimension(d3)->velocity(d1),
-        accessor.currentWidth() (d1),
-        accessor.currentWidth() (d2),
-        accessor.currentWidth() (d3),
-        accessor.rightWidthInDimension(d1)(d1),
-        accessor.leftWidthInDimension(d2)(d2),
-        accessor.rightWidthInDimension(d2)(d2),
-        accessor.leftWidthInDimension(d3)(d3),
-        accessor.rightWidthInDimension(d3)(d3));
+        accessor.velocity(d1),
+        accessor.relativeVelocity(d1, -1, d1),
+        accessor.relativeVelocity(d1, +1, d1),
+        accessor.relativeVelocity(d2, -1, d1),
+        accessor.relativeVelocity(d2, +1, d1),
+        accessor.relativeVelocity(d3, -1, d1),
+        accessor.relativeVelocity(d3, +1, d1),
+        accessor.width(d1),
+        accessor.width(d2),
+        accessor.width(d3),
+        accessor.relativeWidth(d1, +1, d1),
+        accessor.relativeWidth(d2, -1, d2),
+        accessor.relativeWidth(d2, +1, d2),
+        accessor.relativeWidth(d3, -1, d3),
+        accessor.relativeWidth(d3, +1, d3));
     }
 
     return result;
@@ -568,8 +567,7 @@ template <int TD>
 class ConvectionProcessing {
   template <typename TCellAccessor,
             typename TSimulationParameters>
-  static inline
-  typename TCellAccessor::CellType::Velocity
+  static inline typename TCellAccessor::VectorDsType
   compute(TCellAccessor const&         accessor,
           TSimulationParameters const& simulationParameters) {}
 };
@@ -579,11 +577,10 @@ class ConvectionProcessing<2> {
 public:
   template <typename TCellAccessor,
             typename TSimulationParameters>
-  static inline
-  typename TCellAccessor::CellType::Velocity
+  static inline typename TCellAccessor::VectorDsType
   compute(TCellAccessor const&         accessor,
-          TSimulationParameters const& simulationParameters) {
-    typedef typename TCellAccessor::CellType::Velocity Vector;
+          TSimulationParameters const* simulationParameters) {
+    typedef typename TCellAccessor::VectorDsType Vector;
 
     Vector result;
 
@@ -594,22 +591,22 @@ public:
         d2 = 0;
       }
       result(d1) = computeConvection2D(
-        accessor.currentCell()->velocity(d1),
-        accessor.currentCell()->velocity(d2),
-        accessor.leftCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d2),
-        accessor.leftCellInDimension(d2)->velocity(d1),
-        accessor.leftCellInDimension(d2)->velocity(d2),
-        accessor.rightCellInDimension(d2)->velocity(d1),
-        accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
-        accessor.currentWidth() (d1),
-        accessor.currentWidth() (d2),
-        accessor.leftWidthInDimension(d1)(d1),
-        accessor.rightWidthInDimension(d1)(d1),
-        accessor.leftWidthInDimension(d2)(d2),
-        accessor.rightWidthInDimension(d2)(d2),
-        simulationParameters.gamma());
+        accessor.velocity(d1),
+        accessor.velocity(d2),
+        accessor.relativeVelocity(d1, -1, d1),
+        accessor.relativeVelocity(d1, +1, d1),
+        accessor.relativeVelocity(d1, +1, d2),
+        accessor.relativeVelocity(d2, -1, d1),
+        accessor.relativeVelocity(d2, -1, d2),
+        accessor.relativeVelocity(d2, +1, d1),
+        accessor.relativeVelocity(d2, -1, d1, +1, d2),
+        accessor.width(d1),
+        accessor.width(d2),
+        accessor.relativeWidth(d1, -1, d1),
+        accessor.relativeWidth(d1, +1, d1),
+        accessor.relativeWidth(d2, -1, d2),
+        accessor.relativeWidth(d2, +1, d2),
+        simulationParameters->gamma());
     }
 
     return result;
@@ -621,11 +618,10 @@ class ConvectionProcessing<3> {
 public:
   template <typename TCellAccessor,
             typename TSimulationParameters>
-  static inline
-  typename TCellAccessor::CellType::Velocity
+  static inline typename TCellAccessor::VectorDsType
   compute(TCellAccessor const&         accessor,
-          TSimulationParameters const& simulationParameters) {
-    typedef typename TCellAccessor::CellType::Velocity Vector;
+          TSimulationParameters const* simulationParameters) {
+    typedef typename TCellAccessor::VectorDsType Vector;
     Vector result;
 
     for (int d1 = 0; d1 < 3; ++d1) {
@@ -641,31 +637,31 @@ public:
       }
 
       result(d1) = computeConvection3D(
-        accessor.currentCell()->velocity(d1),
-        accessor.currentCell()->velocity(d2),
-        accessor.currentCell()->velocity(d3),
-        accessor.leftCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d2),
-        accessor.rightCellInDimension(d1)->velocity(d3),
-        accessor.leftCellInDimension(d2)->velocity(d1),
-        accessor.leftCellInDimension(d2)->velocity(d2),
-        accessor.rightCellInDimension(d2)->velocity(d1),
-        accessor.leftCellInDimension(d3)->velocity(d1),
-        accessor.leftCellInDimension(d3)->velocity(d3),
-        accessor.rightCellInDimension(d3)->velocity(d1),
-        accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
-        accessor.leftRightCellInDimensions(d3, d1)->velocity(d3),
-        accessor.currentWidth() (d1),
-        accessor.currentWidth() (d2),
-        accessor.currentWidth() (d3),
-        accessor.leftWidthInDimension(d1)(d1),
-        accessor.rightWidthInDimension(d1)(d1),
-        accessor.leftWidthInDimension(d2)(d2),
-        accessor.rightWidthInDimension(d2)(d2),
-        accessor.leftWidthInDimension(d3)(d3),
-        accessor.rightWidthInDimension(d3)(d3),
-        simulationParameters.gamma());
+        accessor.velocity(d1),
+        accessor.velocity(d2),
+        accessor.velocity(d3),
+        accessor.relativeVelocity(d1, -1, d1),
+        accessor.relativeVelocity(d1, +1, d1),
+        accessor.relativeVelocity(d1, +1, d2),
+        accessor.relativeVelocity(d1, +1, d3),
+        accessor.relativeVelocity(d2, -1, d1),
+        accessor.relativeVelocity(d2, -1, d2),
+        accessor.relativeVelocity(d2, +1, d1),
+        accessor.relativeVelocity(d3, -1, d1),
+        accessor.relativeVelocity(d3, -1, d3),
+        accessor.relativeVelocity(d3, +1, d1),
+        accessor.relativeVelocity(d2, -1, d1, +1, d2),
+        accessor.relativeVelocity(d3, -1, d1, +1, d3),
+        accessor.width(d1),
+        accessor.width(d2),
+        accessor.width(d3),
+        accessor.leftWidthInDimension(d1, -1, d1),
+        accessor.rightWidthInDimension(d1, +1, d1),
+        accessor.leftWidthInDimension(d2, -1, d2),
+        accessor.rightWidthInDimension(d2, +1, d2),
+        accessor.leftWidthInDimension(d3, -1, d3),
+        accessor.rightWidthInDimension(d3, +1, d3),
+        simulationParameters->gamma());
     }
 
     return result;
@@ -699,9 +695,9 @@ public:
       if (d1 == 1) {
         d2 = 0;
       }
-      accessor.currentCell()->fgh(d1) = computeFGH2D(
-        accessor.currentCell()->velocity(d1),
-        accessor.currentCell()->velocity(d2),
+      accessor.fgh(d1) = computeFGH2D(
+        accessor.velocity(d1),
+        accessor.velocity(d2),
         accessor.leftCellInDimension(d1)->velocity(d1),
         accessor.rightCellInDimension(d1)->velocity(d1),
         accessor.rightCellInDimension(d1)->velocity(d2),
@@ -709,8 +705,8 @@ public:
         accessor.leftCellInDimension(d2)->velocity(d2),
         accessor.rightCellInDimension(d2)->velocity(d1),
         accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
-        accessor.currentWidth() (d1),
-        accessor.currentWidth() (d2),
+        accessor.width() (d1),
+        accessor.width() (d2),
         accessor.leftWidthInDimension(d1)(d1),
         accessor.rightWidthInDimension(d1)(d1),
         accessor.leftWidthInDimension(d2)(d2),
@@ -744,10 +740,10 @@ public:
         d2 = 0;
         d3 = 1;
       }
-      accessor.currentCell()->fgh(d1) = computeFGH3D(
-        accessor.currentCell()->velocity(d1),
-        accessor.currentCell()->velocity(d2),
-        accessor.currentCell()->velocity(d3),
+      accessor.fgh(d1) = computeFGH3D(
+        accessor.velocity(d1),
+        accessor.velocity(d2),
+        accessor.velocity(d3),
         accessor.leftCellInDimension(d1)->velocity(d1),
         accessor.rightCellInDimension(d1)->velocity(d1),
         accessor.rightCellInDimension(d1)->velocity(d2),
@@ -760,9 +756,9 @@ public:
         accessor.rightCellInDimension(d3)->velocity(d1),
         accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
         accessor.leftRightCellInDimensions(d3, d1)->velocity(d3),
-        accessor.currentWidth() (d1),
-        accessor.currentWidth() (d2),
-        accessor.currentWidth() (d3),
+        accessor.width() (d1),
+        accessor.width() (d2),
+        accessor.width() (d3),
         accessor.leftWidthInDimension(d1)(d1),
         accessor.rightWidthInDimension(d1)(d1),
         accessor.leftWidthInDimension(d2)(d2),
@@ -779,17 +775,17 @@ public:
 
 template <typename TCellAccessor>
 inline
-typename TCellAccessor::CellType::Velocity
+typename TCellAccessor::VectorDsType
 computePressureGradient(TCellAccessor const& accessor) {
-  typedef typename TCellAccessor::CellType::Velocity Vector;
+  typedef typename TCellAccessor::VectorDsType Vector;
   Vector result;
 
   for (int d = 0; d < result.size(); ++d) {
     result(d)
-      = (0.5 * (accessor.rightWidthInDimension(d)(d)
-                + accessor.currentWidth() (d)))
-        * (accessor.rightCellInDimension(d)->pressure() -
-           accessor.currentCell()->pressure());
+      = (0.5 * (accessor.relativeWidth(d, +1, d)
+                + accessor.width() (d)))
+        * (accessor.relativePressure(d, +1) -
+           accessor.pressure());
   }
 
   return result;
@@ -797,17 +793,17 @@ computePressureGradient(TCellAccessor const& accessor) {
 
 template <typename TCellAccessor>
 inline
-typename TCellAccessor::CellType::Velocity
+typename TCellAccessor::VectorDsType
 computeProjectionPressureGradient(TCellAccessor const& accessor) {
-  typedef typename TCellAccessor::CellType::Velocity Vector;
+  typedef typename TCellAccessor::VectorDsType Vector;
   Vector result;
 
   for (int d = 0; d < result.size(); ++d) {
     result(d)
       = (0.5 * (accessor.rightWidthInDimension(d)(d)
-                + accessor.currentWidth() (d)))
+                + accessor.width() (d)))
         * (accessor.rightCellInDimension(d)->pressureProjection() -
-           accessor.currentCell()->pressureProjection());
+           accessor.pressureProjection());
   }
 
   return result;
@@ -819,13 +815,12 @@ template <typename TCellAccessor,
 class VpeStencilGenerator {
 public:
   using CellAccessorType         = TCellAccessor;
-  using CellType                 = typename CellAccessorType::CellType;
   using ParallelDistributionType = TParallelDistribution;
   using ParametersType           = TParameters;
-  using Scalar                   = typename CellType::Scalar;
+  using ScalarType               = typename CellAccessorType::ScalarType;
 
   enum {
-    Dimensions = CellType::Dimensions
+    Dimensions = CellAccessorType::Dimensions
   };
 
   VpeStencilGenerator() {}
@@ -833,7 +828,7 @@ public:
   void
   initialize(ParallelDistributionType const* parallelDistribution,
              ParametersType const*           parameters,
-             Scalar const*                   dt) {
+             ScalarType const*               dt) {
     _parallelDistribution = parallelDistribution;
     _parameters           = parameters;
     _dt                   = dt;
@@ -847,7 +842,7 @@ public:
       TStencil&            stencil,
       TRow&                row,
       TColumns&            columns) const {
-    typedef Eigen::Matrix<Scalar, 2* Dimensions, 1> Vector2Ds;
+    typedef Eigen::Matrix<ScalarType, 2* Dimensions, 1> Vector2Ds;
 
     auto corner = _parallelDistribution->corner;
 
@@ -855,15 +850,15 @@ public:
 
     for (int d = 0; d < Dimensions; ++d) {
       meanWidths(2 * d) = 0.5 *
-                          (accessor.currentWidth() (d) +
-                           accessor.leftWidthInDimension(d)(d));
+                          (accessor.width(d) +
+                           accessor.relativeWidth(d, -1, d));
       meanWidths(2 * d + 1) = 0.5 *
-                              (accessor.currentWidth() (d) +
-                               accessor.rightWidthInDimension(d)(d));
+                              (accessor.width(d) +
+                               accessor.relativeWidth(d, +1, d));
 
-      auto leftIndex = accessor.leftIndexInDimension(d);
+      auto leftIndex = accessor.relativeIndex(d, -1);
       leftIndex += corner;
-      auto rightIndex = accessor.rightIndexInDimension(d);
+      auto rightIndex = accessor.relativeIndex(d, +1);
       rightIndex += corner;
 
       columns[2 * d].i     = leftIndex(0);
@@ -876,7 +871,7 @@ public:
         columns[2 * d + 1].k = rightIndex(2);
       }
     }
-    auto currentIndex = accessor.currentIndex();
+    auto currentIndex = accessor.index();
     currentIndex             += corner;
     columns[2 * Dimensions].i = currentIndex(0);
     columns[2 * Dimensions].j = currentIndex(1);
@@ -888,7 +883,7 @@ public:
 
     stencil[2 * Dimensions] = 1.0;
 
-    Scalar const coeff =  -(*_dt) / (2.0 * _parameters->re());
+    ScalarType const coeff =  -(*_dt) / (2.0 * _parameters->re());
 
     for (int d = 0; d < Dimensions; ++d) {
       auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);
@@ -898,7 +893,7 @@ public:
       stencil[2 * d + 1]
         = 2.0 * coeff / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
 
-      Scalar diagonalCoeff
+      ScalarType diagonalCoeff
         = -2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
 
       diagonalCoeff = coeff * diagonalCoeff;
@@ -917,7 +912,7 @@ public:
 private:
   ParallelDistributionType const* _parallelDistribution;
   ParametersType const*           _parameters;
-  Scalar const*                   _dt;
+  ScalarType const*               _dt;
 };
 
 template <typename TCellAccessor,
@@ -925,12 +920,11 @@ template <typename TCellAccessor,
 class VpeRhsGenerator {
 public:
   using CellAccessorType = TCellAccessor;
-  using CellType         = typename CellAccessorType::CellType;
-  using Scalar           = typename CellType::Scalar;
+  using ScalarType       = typename CellAccessorType::ScalarType;
 
-  inline Scalar
+  inline ScalarType
   get(CellAccessorType const& accessor) const {
-    Scalar result = accessor.currentCell()->fgh(TDimension);
+    ScalarType result = accessor.fgh(TDimension);
 
     return result;
   }
@@ -941,9 +935,9 @@ class VpeResultAcquirer {
 public:
   template <typename TCellAccessor>
   inline void
-  set(TCellAccessor const&                            accessor,
-      typename TCellAccessor::CellType::Scalar const& value) const {
-    accessor.currentCell()->fgh(TDimension) = value;
+  set(TCellAccessor const&                                        accessor,
+      typename TCellAccessor::ScalarType const& value) const {
+    accessor.fgh(TDimension) = value;
   }
 };
 
@@ -952,12 +946,11 @@ template <typename TCellAccessor,
 class PpeStencilGenerator {
 public:
   using CellAccessorType         = TCellAccessor;
-  using CellType                 = typename CellAccessorType::CellType;
   using ParallelDistributionType = TParallelDistribution;
-  using Scalar                   = typename CellType::Scalar;
+  using ScalarType               = typename CellAccessorType::ScalarType;
 
   enum {
-    Dimensions = CellType::Dimensions
+    Dimensions = CellAccessorType::Dimensions
   };
 
   PpeStencilGenerator() {}
@@ -975,7 +968,7 @@ public:
       TStencil&               stencil,
       TRow&                   row,
       TColumns&               columns) const {
-    typedef Eigen::Matrix<Scalar, 2* Dimensions, 1> Vector2Ds;
+    typedef Eigen::Matrix<ScalarType, 2* Dimensions, 1> Vector2Ds;
 
     auto corner = _parallelDistribution->corner;
 
@@ -983,15 +976,15 @@ public:
 
     for (int d = 0; d < Dimensions; ++d) {
       meanWidths(2 * d) = 0.5 *
-                          (accessor.currentWidth() (d) +
-                           accessor.leftWidthInDimension(d)(d));
+                          (accessor.width() (d) +
+                           accessor.relativeWidth(d, -1, d));
       meanWidths(2 * d + 1) = 0.5 *
-                              (accessor.currentWidth() (d) +
-                               accessor.rightWidthInDimension(d)(d));
+                              (accessor.width() (d) +
+                               accessor.relativeWidth(d, +1, d));
 
-      auto leftIndex = accessor.leftIndexInDimension(d);
+      auto leftIndex = accessor.relativeIndex(d, -1);
       leftIndex += corner;
-      auto rightIndex = accessor.rightIndexInDimension(d);
+      auto rightIndex = accessor.relativeIndex(d, +1);
       rightIndex += corner;
 
       columns[2 * d].i     = leftIndex(0);
@@ -1004,7 +997,7 @@ public:
         columns[2 * d + 1].k = rightIndex(2);
       }
     }
-    auto currentIndex = accessor.currentIndex();
+    auto currentIndex = accessor.index();
     currentIndex             += corner;
     columns[2 * Dimensions].i = currentIndex(0);
     columns[2 * Dimensions].j = currentIndex(1);
@@ -1035,22 +1028,21 @@ template <typename TCellAccessor>
 class PpeRhsGenerator {
 public:
   using CellAccessorType = TCellAccessor;
-  using CellType         = typename CellAccessorType::CellType;
-  using Scalar           = typename CellType::Scalar;
+
+  using ScalarType       = typename CellAccessorType::ScalarType;
 
   PpeRhsGenerator() {}
 
   void
-  initialize(Scalar const* dt) { _dt = dt; }
+  initialize(ScalarType const* dt) { _dt = dt; }
 
-  inline Scalar
+  inline ScalarType
   get(CellAccessorType const& accessor) const {
-    Scalar result = 0.0;
+    ScalarType result = 0.0;
 
-    for (int d = 0; d < CellType::Dimensions; ++d) {
-      result += (accessor.currentCell()->fgh(d)
-                 - accessor.leftCellInDimension(d)->fgh(d))
-                / accessor.currentWidth() (d);
+    for (int d = 0; d < CellAccessorType::Dimensions; ++d) {
+      result += (accessor.fgh(d) - accessor.relativeFgh(d, -1, d))
+                / accessor.width(d);
     }
 
     result = 1.0 / (*_dt) * result;
@@ -1059,20 +1051,20 @@ public:
   }
 
 private:
-  Scalar const* _dt;
+  ScalarType const* _dt;
 };
 
 template <typename TCellAccessor>
 class PpeResultAcquirer1 {
 public:
   using CellAccessorType = TCellAccessor;
-  using CellType         = typename CellAccessorType::CellType;
-  using Scalar           = typename CellType::Scalar;
+
+  using ScalarType = typename CellAccessorType::ScalarType;
 
   inline void
   set(CellAccessorType const& accessor,
-      Scalar const&           value) const {
-    accessor.currentCell()->pressure() = value;
+      ScalarType const&       value) const {
+    accessor.pressure() = value;
   }
 };
 
@@ -1080,28 +1072,26 @@ template <typename TCellAccessor>
 class PpeResultAcquirer2 {
 public:
   using CellAccessorType = TCellAccessor;
-  using CellType         = typename CellAccessorType::CellType;
-  using Scalar           = typename CellType::Scalar;
+  using ScalarType       = typename CellAccessorType::ScalarType;
 
   PpeResultAcquirer2() {}
 
   void
-  initialize(Scalar const* dt) { _dt = dt; }
+  initialize(ScalarType const* dt) { _dt = dt; }
 
   inline void
   set(CellAccessorType const& accessor,
-      Scalar const&           value) const {
-    accessor.currentCell()->pressure()
-      =  accessor.currentCell()->pressureProjection()
+      ScalarType const&       value) const {
+    accessor.pressure()
+      =  accessor.pressureProjection()
         + value;
     // + (1.0 / (*_dt)) * value;
 
-    accessor.currentCell()->pressureProjection()
-      = value;
+    accessor.pressureProjection() = value;
   }
 
 private:
-  Scalar const* _dt;
+  ScalarType const* _dt;
 };
 }
 }

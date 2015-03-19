@@ -8,7 +8,7 @@
 #include "ImmersedBoundary/Fadlun/functions.hpp"
 #include "ImmersedBoundary/FeedbackForcing/functions.hpp"
 #include "LinearSolver.hpp"
-#include "ParallelDistribution.hpp"
+#include "Memory.hpp"
 #include "Parameters.hpp"
 #include "Private/mpigenerics.hpp"
 #include "Simulation.hpp"
@@ -23,30 +23,33 @@
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TGridGeometry,
-          typename TMemory,
           typename TSimulationResultsWriter,
           typename TScalar,
           int TD,
           int TSolverType = 0>
 class FdSimulation : public Simulation {
 public:
-  typedef Simulation              BaseType;
-  typedef typename BaseType::Path Path;
+  using BaseType = Simulation;
 
-  typedef TScalar                                     ScalarType;
-  typedef Grid<TMemory, TGridGeometry, TD>            GridType;
-  typedef typename GridType::CellAccessorType         CellAccessorType;
-  typedef typename CellAccessorType::MemoryType       MemoryType;
-  typedef typename CellAccessorType::CellType         CellType;
-  typedef typename CellAccessorType::GridGeometryType GridGeometryType;
-  typedef typename CellType::Velocity                 VelocityType;
-  typedef typename GridType::VectorDi                 VectorDiType;
-  typedef typename GridGeometryType::VectorDs         VectorDsType;
-  typedef typename GridType::Factory                  CellAccessorFactory;
+  using Path = typename BaseType::Path;
 
-  typedef Parameters<TScalar, TD> ParametersType;
+  using ParametersType = Parameters<TScalar, TD>;
 
-  typedef ParallelDistribution<TD> ParallelDistributionType;
+  using GridGeometryType = TGridGeometry;
+
+  using MemoryType = Memory<GridGeometryType, ParametersType>;
+
+  using CellAccessorType
+          = typename MemoryType::CellAccessorType;
+
+  using GridType
+          = typename MemoryType::GridType;
+
+  using ParallelDistributionType
+          = typename MemoryType::ParallelDistributionType;
+
+  using GhostHandlersType
+          = typename GhostLayer::Handlers<Dimensions>;
 
   typedef PpeStencilGenerator<CellAccessorType, ParallelDistributionType>
     PpeStencilGeneratorType;
@@ -99,8 +102,6 @@ public:
       VypeResultAcquirerType>
     VypeSolverType;
 
-  typedef typename GhostLayer::Handlers<TD> GhostHandlersType;
-
 public:
   FdSimulation() {}
 
@@ -110,28 +111,6 @@ public:
 
   FdSimulation const&
   operator=(FdSimulation const& other) = delete;
-
-  void
-  setParameters(VectorDiType const& localSize,
-                VectorDsType const& width) {
-    _gridGeometry.initialize(
-      width,
-      _parallelDistribution.globalCellSize,
-      _parallelDistribution.corner);
-
-    _memory.allocate(localSize);
-
-    CellAccessorFactory cellAccessorFactory(
-      [&] (VectorDiType const& i) {
-        return CellAccessorType(i, &_memory, &_grid.innerGrid,
-                                &_gridGeometry);
-      });
-
-    _grid.initialize(localSize, cellAccessorFactory);
-
-    // logGridInitializationInfo(_grid);
-    logParallelTopologyInfo(_parallelDistribution);
-  }
 
   int
   isOutside(int const& position) const {
@@ -169,7 +148,7 @@ public:
   int
   computeCellDistance(CellAccessorType const& accessor,
                       int const&              distance) const {
-    int position = accessor.currentCell()->position();
+    int position = accessor.positionInRespectToGeometry();
 
     bool result = true;
 
@@ -178,7 +157,7 @@ public:
          ++currentDistance) {
       for (int d = 0; d < TD; ++d) {
         for (int d2 = 0; d2 < 2; ++d2) {
-          auto index = accessor.currentIndex();
+          auto index = accessor.index();
 
           if (d2 == 0) {
             index(d) -= currentDistance;
@@ -186,12 +165,12 @@ public:
             index(d) += currentDistance;
           }
 
-          if ((index(d) < _grid.innerGrid.leftIndent() (d))
-              || (index(d) >= _grid.innerGrid.innerLimit() (d))) {
+          if ((index(d) < _memory.grid()->innerGrid.leftIndent() (d))
+              || (index(d) >= _memory.grid()->innerGrid.innerLimit() (d))) {
             continue;
           }
 
-          auto const position1 = accessor.absoluteCell(index)->position();
+          auto const position1 = accessor.absoluteCell(index)->positionInRespectToGeometry();
 
           if (isTheSamePosition(position, position1) == 0) {
             result = false;
@@ -213,51 +192,51 @@ public:
              std::string const&        fileNamePrefix) {
     _preciceInterface = preciceInteface;
 
-    _vpeStencilGenerator.initialize(&_parallelDistribution,
-                                    &_parameters,
-                                    &_dt);
-    _ppeStencilGenerator.initialize(&_parallelDistribution);
-    _ppeRhsGenerator.initialize(&_dt);
-    _ppeResultAcquierer2.initialize(&_dt);
+    _vpeStencilGenerator.initialize(_memory.parallelDistribution(),
+                                    _memory.parameters(),
+                                    &_memory.timeStepSize());
+    _ppeStencilGenerator.initialize(_memory.parallelDistribution());
+    _ppeRhsGenerator.initialize(&_memory.timeStepSize());
+    _ppeResultAcquierer2.initialize(&_memory.timeStepSize());
 
-    _vxpeSolver.initialize(&_grid,
-                           &_parallelDistribution,
+    _vxpeSolver.initialize(_memory.grid(),
+                           _memory.parallelDistribution(),
                            &_vpeStencilGenerator,
                            &_vxpeRhsGenerator,
                            &_vxpeResultGenerator,
-                           &_ghostHandler.vpeStencilGeneratorStack[0],
-                           &_ghostHandler.vpeRhsGeneratorStack[0],
-                           &_ghostHandler.vpeRhsAcquiererStack[0]);
+                           &_ghostHandlers.vpeStencilGeneratorStack[0],
+                           &_ghostHandlers.vpeRhsGeneratorStack[0],
+                           &_ghostHandlers.vpeRhsAcquiererStack[0]);
 
-    _vypeSolver.initialize(&_grid,
-                           &_parallelDistribution,
+    _vypeSolver.initialize(_memory.grid(),
+                           _memory.parallelDistribution(),
                            &_vpeStencilGenerator,
                            &_vypeRhsGenerator,
                            &_vypeResultGenerator,
-                           &_ghostHandler.vpeStencilGeneratorStack[1],
-                           &_ghostHandler.vpeRhsGeneratorStack[1],
-                           &_ghostHandler.vpeRhsAcquiererStack[1]);
+                           &_ghostHandlers.vpeStencilGeneratorStack[1],
+                           &_ghostHandlers.vpeRhsGeneratorStack[1],
+                           &_ghostHandlers.vpeRhsAcquiererStack[1]);
 
-    _ppeSolver1.initialize(&_grid,
-                           &_parallelDistribution,
+    _ppeSolver1.initialize(_memory.grid(),
+                           _memory.parallelDistribution(),
                            &_ppeStencilGenerator,
                            &_ppeRhsGenerator,
                            &_ppeResultAcquierer1,
-                           &_ghostHandler.ppeStencilGeneratorStack,
-                           &_ghostHandler.ppeRhsGeneratorStack,
-                           &_ghostHandler.ppeRhsAcquiererStack);
+                           &_ghostHandlers.ppeStencilGeneratorStack,
+                           &_ghostHandlers.ppeRhsGeneratorStack,
+                           &_ghostHandlers.ppeRhsAcquiererStack);
 
-    _ppeSolver2.initialize(&_grid,
-                           &_parallelDistribution,
+    _ppeSolver2.initialize(_memory.grid(),
+                           _memory.parallelDistribution(),
                            &_ppeStencilGenerator,
                            &_ppeRhsGenerator,
                            &_ppeResultAcquierer2,
-                           &_ghostHandler.ppeStencilGeneratorStack,
-                           &_ghostHandler.ppeRhsGeneratorStack,
-                           &_ghostHandler.ppeRhsAcquiererStack);
+                           &_ghostHandlers.ppeStencilGeneratorStack,
+                           &_ghostHandlers.ppeRhsGeneratorStack,
+                           &_ghostHandlers.ppeRhsAcquiererStack);
 
-    _resultWriter.initialize(&_parallelDistribution,
-                             &_grid,
+    _resultWriter.initialize(_memory.parallelDistribution(),
+                             _memory.grid(),
                              outputDirectory,
                              fileNamePrefix);
 
@@ -266,19 +245,17 @@ public:
 
     auto fluidMeshId = _preciceInterface->getMeshID("FluidMesh");
 
-    for (auto const& accessor : _grid.innerGrid) {
+    for (auto const& accessor : _memory.grid()->innerGrid) {
       ImmersedBoundary::Fadlun::template
       computeDistances<CellAccessorType, TD>(accessor, _preciceInterface);
     }
 
-    for (auto const& accessor : _grid.innerGrid) {
+    for (auto const& accessor : _memory.grid()->innerGrid) {
       Eigen::Vector4i pattern({ 1, 1, 1, 1 });
 
       bool doAdd = false;
 
       int distance = computeCellDistance(accessor, 2);
-      // logInfo("{1} {2}", accessor.indexValues().transpose(),
-      // distance);
 
       if (distance != -1) {
         for (int i = 0; i < 4; ++i) {
@@ -290,11 +267,11 @@ public:
           }
 
           if (i < 2) {
-            if (isOutside(accessor.currentCell()->position()) == 1) {
+            if (isOutside(accessor.positionInRespectToGeometry()) == 1) {
               doAdd = true;
             }
           } else {
-            if (isOutside(accessor.currentCell()->position()) == 0) {
+            if (isOutside(accessor.positionInRespectToGeometry()) == 0) {
               doAdd = true;
             }
           }
@@ -303,103 +280,101 @@ public:
       }
 
       if (doAdd) {
-        VectorDsType position = accessor.currentPosition();
-        position += 0.5 * accessor.currentWidth();
+        VectorDsType position = accessor.position();
+        position += 0.5 * accessor.width();
         auto vertexId =
-          _preciceInterface->setMeshVertex(
-            fluidMeshId,
-            position.data());
+          _preciceInterface->setMeshVertex(fluidMeshId,
+                                           position.data());
 
         _vertexIds.insert(std::make_pair(accessor.indexValues(), vertexId));
       }
     }
 
-    for (auto const& accessor : _grid) {
-      accessor.currentCell()->velocity() = VelocityType::Zero();
-      accessor.currentCell()->fgh()      = VelocityType::Zero();
-      accessor.currentCell()->pressure() = 0.0;
+    for (auto const& accessor : * _memory.grid()) {
+      accessor.velocity() = VelocityType::Zero();
+      accessor.fgh()      = VelocityType::Zero();
+      accessor.pressure() = 0.0;
     }
 
     for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.velocityInitialization[d][d2]();
+        _ghostHandlers.velocityInitialization[d][d2]();
       }
     }
 
-    for (int d = 0; d < TD; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.mpiVelocityExchangeStack[d][d2](PETSC_COMM_WORLD);
-      }
-    }
+    _ghostHandlers.executeVelocityMpiExchange();
 
-    _maxVelocity       = VelocityType::Zero();
-    _dt                = 1.0;
-    _time              = 0.0;
     _lastPlotTimeStamp = 0.0;
-    _iterationCount    = 0;
+
+    _memory.maxVelocity()     = VectorDsType::Zero();
+    _memory.timeStepSize()    = 1.0;
+    _memory.time()            = 0.0;
+    _memory.iterationNumber() = 0;
 
     if (_plotInterval >= 0) {
       _resultWriter.writeGeometry();
-      _resultWriter.writeAttributes(_iterationCount, _time);
+      _resultWriter.writeAttributes(_memory.iterationNumber(), _memory.time());
     }
   }
 
   bool
   iterate() {
-    if (_timeLimit > 0 && _time >= _timeLimit) {
+    if (_timeLimit > 0 && _memory.time() >= _timeLimit) {
       return false;
     }
 
-    if (_iterationLimit > 0 && _iterationCount >= _iterationLimit) {
+    if (_iterationLimit > 0 && _memory.iterationNumber() >= _iterationLimit) {
       return false;
     }
 
-    _dt = TimeStepProcessing<TScalar, TD>::compute(_parameters.re(),
-                                                   _parameters.tau(),
-                                                   _gridGeometry.
-                                                   minCellWidth(),
-                                                   _maxVelocity);
-    _maxVelocity = VelocityType::Zero();
+    _memory.timeStepSize() = TimeStepProcessing<TScalar, TD>::compute(
+      _memory.parameters()->re(),
+      _memory.parameters()->tau(),
+      _memory.gridGeometry()->minCellWidth(),
+      _memory.maxVelocity());
+    _memory.maxVelocity() = VelocityType::Zero();
 
-    if (_parallelDistribution.rank == 0) {
-      logInfo("N = {1}; t = {2}", _iterationCount, _time);
+    if (_memory.parallelDistribution()->rank == 0) {
+      logInfo("N = {1}; t = {2}", _memory.iterationNumber(), _memory.time());
     }
 
-    auto fluidMeshId     = _preciceInterface->getMeshID("FluidMesh");
-    auto fluidVertexSize = _preciceInterface->getMeshVertexSize(
-      fluidMeshId);
-    auto bodyMeshId     = _preciceInterface->getMeshID("Body");
-    auto bodyVertexSize = _preciceInterface->getMeshVertexSize(bodyMeshId);
-
-    auto fluidMeshVelocitiesId = _preciceInterface->getDataID(
-      "Velocities",
-      _preciceInterface->getMeshID("FluidMesh"));
-    auto fluidMeshForcesId = _preciceInterface->getDataID(
-      "Forces",
-      _preciceInterface->getMeshID("FluidMesh"));
-    auto bodyMeshVelocitiesId = _preciceInterface->getDataID(
-      "Velocities",
-      _preciceInterface->getMeshID("Body"));
-    auto bodyMeshForcesId = _preciceInterface->getDataID(
-      "Forces",
-      _preciceInterface->getMeshID("Body"));
+    auto fluidMeshId
+      = _preciceInterface->getMeshID("FluidMesh");
+    auto fluidVertexSize
+      = _preciceInterface->getMeshVertexSize(fluidMeshId);
+    auto bodyMeshId
+      = _preciceInterface->getMeshID("Body");
+    auto bodyVertexSize
+      = _preciceInterface->getMeshVertexSize(bodyMeshId);
+    auto fluidMeshVelocitiesId
+      = _preciceInterface->getDataID("Velocities",
+                                     _preciceInterface->getMeshID("FluidMesh"));
+    auto fluidMeshForcesId
+      = _preciceInterface->getDataID("Forces",
+                                     _preciceInterface->getMeshID("FluidMesh"));
+    auto bodyMeshVelocitiesId
+      = _preciceInterface->getDataID("Velocities",
+                                     _preciceInterface->getMeshID("Body"));
+    auto bodyMeshForcesId
+      = _preciceInterface->getDataID("Forces",
+                                     _preciceInterface->getMeshID("Body"));
 
     int index = 0;
 
-    for (auto const& accessor : _grid.innerGrid) {
+    for (auto const& accessor : _memory.grid()->innerGrid) {
       auto convection = ConvectionProcessing<TD>::compute(
         accessor,
-        _parameters);
+        _memory.parameters());
 
-      auto previousConvection = accessor.currentCell()->convection();
+      auto previousConvection = accessor.convection();
 
-      if (_iterationCount == 0) {
+      if (_memory.iterationNumber() == 0) {
         previousConvection = convection;
       }
 
       auto diffusion = DiffusionProcessing<TD>::compute(accessor);
 
-      diffusion = (1.0 / _parameters.re()) * diffusion;
+      diffusion = (1.0 / _memory.parameters()->re()) * diffusion;
 
       VelocityType temp = VelocityType::Zero();
 
@@ -407,56 +382,58 @@ public:
 
       for (int d = 0; d < TD; ++d) {
         velocity(d) = 0.5 * (accessor.leftCellInDimension(d)->velocity(d)
-                             + accessor.currentCell()->velocity(d));
+                             + accessor.velocity(d));
       }
 
-      accessor.currentCell()->convection() = convection;
+      accessor.convection() = convection;
 
       if (TSolverType == 1) {
         auto pressureGradient = computeProjectionPressureGradient(accessor);
 
-        if (_vertexIds.find(accessor.currentIndex()) != _vertexIds.end()) {
-          temp = velocity + _dt * (
+        if (_vertexIds.find(accessor.index()) != _vertexIds.end()) {
+          temp = velocity + _memory.timeStepSize() * (
             -1.5 * convection + 0.5 * previousConvection
             + diffusion
             - pressureGradient);
 
           _preciceInterface->writeVectorData(
             fluidMeshVelocitiesId,
-            _vertexIds[accessor.currentIndex()],
+            _vertexIds[accessor.index()],
             temp.data());
         }
-        accessor.currentCell()->fgh()
-          = accessor.currentCell()->velocity()
-            + _dt * (-1.5 * convection + 0.5 * previousConvection
-                     + 0.5 * diffusion
-                     - pressureGradient
-                     + _parameters.g());
+        accessor.fgh()
+          = accessor.velocity()
+            + _memory.timeStepSize() * (-1.5 * convection + 0.5 *
+                                        previousConvection
+                                        + 0.5 * diffusion
+                                        - pressureGradient
+                                        + _memory.parameters()->g());
       } else {
         auto pressureGradient = computePressureGradient(accessor);
 
-        if (_vertexIds.find(accessor.currentIndex()) != _vertexIds.end()) {
-          temp = velocity + _dt * (
+        if (_vertexIds.find(accessor.index()) != _vertexIds.end()) {
+          temp = velocity + _memory.timeStepSize() * (
             -1.5 * convection + 0.5 * previousConvection
             + diffusion
             - pressureGradient);
 
           _preciceInterface->writeVectorData(
             fluidMeshVelocitiesId,
-            _vertexIds[accessor.currentIndex()],
+            _vertexIds[accessor.index()],
             temp.data());
         }
 
-        accessor.currentCell()->fgh()
-          = accessor.currentCell()->velocity()
-            + _dt * (diffusion - convection + _parameters.g());
+        accessor.fgh()
+          = accessor.velocity()
+            + _memory.timeStepSize() * (diffusion - convection +
+                                        _memory.parameters()->g());
       }
     }
 
-    _preciceInterface->advance(_dt);
+    _preciceInterface->advance(_memory.timeStepSize());
 
-    for (auto const& accessor : _grid.innerGrid) {
-      auto find_it =  _vertexIds.find(accessor.currentIndex());
+    for (auto const& accessor : _memory.grid()->innerGrid) {
+      auto find_it =  _vertexIds.find(accessor.index());
 
       if (find_it == _vertexIds.end()) {
         continue;
@@ -467,7 +444,7 @@ public:
         find_it->second,
         force.data());
 
-      accessor.currentCell()->fgh() += force;
+      accessor.fgh() += force;
     }
 
     if (TSolverType == 1) {
@@ -475,19 +452,15 @@ public:
       _vxpeSolver.solve();
       _vypeSolver.update();
       _vypeSolver.solve();
-    }
-
-    for (int d = 0; d < TD; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.fghInitialization[d][d2]();
+    } else {
+      for (int d = 0; d < TD; ++d) {
+        for (int d2 = 0; d2 < 2; ++d2) {
+          _ghostHandlers.fghInitialization[d][d2]();
+        }
       }
     }
 
-    for (int d = 0; d < TD; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.mpiFghExchangeStack[d][d2](PETSC_COMM_WORLD);
-      }
-    }
+    _ghostHandlers.executeFghMpiExchange();
 
     if (TSolverType == 1) {
       _ppeSolver2.solve();
@@ -495,53 +468,47 @@ public:
       _ppeSolver1.solve();
     }
 
-    for (int d = 0; d < TD; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.mpiPressureExchangeStack[d][d2](PETSC_COMM_WORLD);
-      }
-    }
+    _ghostHandlers.executePressureMpiExchange();
 
-    for (auto const& accessor : _grid.innerGrid) {
+    for (auto const& accessor : _memory.grid()->innerGrid) {
       for (int d = 0; d < TD; ++d) {
         if (TSolverType == 1) {
-          accessor.currentCell()->velocity() (d)
-            = accessor.currentCell()->fgh() (d)
-              - _dt / (0.5 * (accessor.rightWidthInDimension(d)(d)
-                              + accessor.currentWidth() (d)))
+          accessor.velocity() (d)
+            = accessor.fgh() (d)
+              - _memory.timeStepSize() /
+              (0.5 * (accessor.rightWidthInDimension(d)(d)
+                      + accessor.width() (d)))
               * (accessor.rightCellInDimension(d)->pressureProjection()
-                 - accessor.currentCell()->pressureProjection());
+                 - accessor.pressureProjection());
         } else {
-          accessor.currentCell()->velocity() (d)
-            = accessor.currentCell()->fgh() (d)
-              - _dt / (0.5 * (accessor.rightWidthInDimension(d)(d)
-                              + accessor.currentWidth() (d)))
+          accessor.velocity() (d)
+            = accessor.fgh() (d)
+              - _memory.timeStepSize() /
+              (0.5 * (accessor.rightWidthInDimension(d)(d)
+                      + accessor.width() (d)))
               * (accessor.rightCellInDimension(d)->pressure()
-                 - accessor.currentCell()->pressure());
+                 - accessor.pressure());
         }
       }
       computeMaxVelocity<CellAccessorType, TScalar, TD>
-        (accessor, _maxVelocity);
+        (accessor, _memory.maxVelocity());
     }
 
     for (int d = 0; d < TD; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.velocityInitialization[d][d2]();
+        _ghostHandlers.velocityInitialization[d][d2]();
       }
     }
 
-    for (int d = 0; d < TD; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        _ghostHandler.mpiVelocityExchangeStack[d][d2](PETSC_COMM_WORLD);
-      }
-    }
+    _ghostHandlers.executeVelocityMpiExchange();
 
     VectorDsType force = VectorDsType::Zero();
 
-    for (auto const& accessor : _grid.innerGrid) {
+    for (auto const& accessor : _memory.grid()->innerGrid) {
       ImmersedBoundary::BodyForce::
       template computeCellForce<CellAccessorType, TD>(
         accessor,
-        _parameters.re(),
+        _memory.parameters()->re(),
         force);
     }
 
@@ -551,20 +518,21 @@ public:
                                    MPI_SUM,
                                    PETSC_COMM_WORLD);
 
-    _time += _dt;
-    ++_iterationCount;
+    _memory.time() += _memory.timeStepSize();
+    ++_memory.iterationNumber();
 
     if (_plotInterval >= 0) {
-      if ((_time - _lastPlotTimeStamp) > _plotInterval) {
-        _lastPlotTimeStamp = _time;
+      if ((_memory.time() - _lastPlotTimeStamp) > _plotInterval) {
+        _lastPlotTimeStamp = _memory.time();
 
-        _resultWriter.writeAttributes(_iterationCount, _time);
+        _resultWriter.writeAttributes(_memory.iterationNumber(),
+                                      _memory.time());
       }
     }
 
     force *= 2 / (0.3 * 0.3 * 0.1);
 
-    if (_parallelDistribution.rank == 0) {
+    if (_parallelDistribution->rank == 0) {
       logInfo("{1}", force.transpose());
     }
 
@@ -587,19 +555,12 @@ public:
   };
 
   MemoryType                                  _memory;
-  GridGeometryType                            _gridGeometry;
-  GridType                                    _grid;
   std::unordered_map<VectorDiType, int, Hash> _vertexIds;
-  ParametersType                              _parameters;
-  ParallelDistributionType                    _parallelDistribution;
   precice::SolverInterface*                   _preciceInterface;
-  TScalar                                     _dt;
-  TScalar                                     _time;
-  TScalar                                     _timeLimit;
+  long double                                 _timeLimit;
   TScalar                                     _lastPlotTimeStamp;
   TScalar                                     _plotInterval;
-  int                                         _iterationCount;
-  int                                         _iterationLimit;
+  unsigned long long                          _iterationLimit;
   VpeStencilGeneratorType                     _vpeStencilGenerator;
   VxpeRhsGeneratorType                        _vxpeRhsGenerator;
   VxpeResultAcquirerType                      _vxpeResultGenerator;
@@ -613,8 +574,7 @@ public:
   PpeResultAcquirer2Type                      _ppeResultAcquierer2;
   PpeSolver1Type                              _ppeSolver1;
   PpeSolver2Type                              _ppeSolver2;
-  VelocityType                                _maxVelocity;
-  GhostHandlersType                           _ghostHandler;
+  GhostHandlersType                           _ghostHandlers;
   TSimulationResultsWriter                    _resultWriter;
 };
 }

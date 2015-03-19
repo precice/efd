@@ -1,21 +1,17 @@
-#include "SimulationFactory.hpp"
+#include "SolverFactory.hpp"
 
-#include "FluidSimulation/Cell.hpp"
-#include "FluidSimulation/FdSimulation.hpp"
-#include "FluidSimulation/GridGeometry.hpp"
-
-#include "SimulationBuilder.hpp"
+#include "SolverBuilder.hpp"
 //
 
-using FsiSimulation::EntryPoint::SimulationFactory;
+using FsiSimulation::EntryPoint::SolverFactory;
 
 namespace FsiSimulation {
 namespace EntryPoint {
 namespace Private {
 template <typename TScalar, int TD, int TSolverType = 0>
-SimulationFactory::Simulation*
+SolverFactory::Solver*
 createUniformGridFromTemplate(FluidSimulation::Configuration* configuration) {
-  SimulationBuilder<TScalar, TD, TSolverType> builder(configuration);
+  SolverBuilder<TScalar, TD, 0, 0> builder(configuration);
 
   auto simulation = builder.simulation();
 
@@ -25,26 +21,26 @@ createUniformGridFromTemplate(FluidSimulation::Configuration* configuration) {
 }
 }
 
-SimulationFactory::Simulation*
-SimulationFactory::
+SolverFactory::Solver*
+SolverFactory::
 createSimpleFdDouble2D(FluidSimulation::Configuration* configuration) {
   return Private::createUniformGridFromTemplate<double, 2, 1>(configuration);
 }
 
-SimulationFactory::Simulation*
-SimulationFactory::
+SolverFactory::Solver*
+SolverFactory::
 createSimpleFdDouble3D(FluidSimulation::Configuration* configuration) {
   return Private::createUniformGridFromTemplate<double, 2, 1>(configuration);
 }
 
-SimulationFactory::Simulation*
-SimulationFactory::
+SolverFactory::Solver*
+SolverFactory::
 createFractionalStepFdDouble2D(FluidSimulation::Configuration* configuration) {
   return Private::createUniformGridFromTemplate<double, 2, 1>(configuration);
 }
 
-SimulationFactory::Simulation*
-SimulationFactory::
+SolverFactory::Solver*
+SolverFactory::
 createFractionalStepDouble3D(FluidSimulation::Configuration* configuration) {
   return Private::createUniformGridFromTemplate<double, 2, 1>(configuration);
 }

@@ -13,86 +13,87 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace ImmersedBoundary {
 namespace BodyForce {
-template <typename TCellAccessor,
-          int TDimensions>
+template <typename TCellAccessor>
 bool
-computeCellForce(TCellAccessor const&                        accessor,
-                 typename TCellAccessor::CellType::Scalar const& re,
-                 typename TCellAccessor::CellType::VectorDs&     force) {
-  typedef Eigen::Matrix<typename TCellAccessor::CellType::Scalar,
-                        TDimensions, TDimensions> Matrix;
-  typedef typename TCellAccessor::CellType::VectorDs Vector;
+computeCellForce(TCellAccessor const&                      accessor,
+                 typename TCellAccessor::ScalarType const& re,
+                 typename TCellAccessor::VectorDsType&     force) {
+  // typedef Eigen::Matrix<typename TCellAccessor::ScalarType,
+  //                       TCellAccessor::Dimensions,
+  //                       TCellAccessor::Dimensions> Matrix;
 
-  bool isCurrentOutside  = true;
-  bool isNeighborsInside = false;
+  // typedef typename TCellAccessor::VectorDsType Vector;
 
-  for (int d = 0; d < TDimensions; ++d) {
-    if (accessor.currentCell()->positions(d)
-        != precice::constants::positionOutsideOfGeometry()) {
-      isCurrentOutside = false;
-      break;
-    }
+  // bool isCurrentOutside  = true;
+  // bool isNeighborsInside = false;
 
-    if (isNeighborsInside) {
-      continue;
-    }
+  // for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
+  //   if (accessor.positionInRespectToGeometrys(d)
+  //       != precice::constants::positionOutsideOfGeometry()) {
+  //     isCurrentOutside = false;
+  //     break;
+  //   }
 
-    for (int d2 = 0; d2 < TDimensions; ++d2) {
-      for (int d3 = 0; d3 < 2; ++d3) {
-        if (accessor.relativeCell(d2, d3)->positions(d)
-            != precice::constants::positionOutsideOfGeometry()) {
-          isNeighborsInside = true;
-          break;
-        }
-      }
-    }
-  }
+  //   if (isNeighborsInside) {
+  //     continue;
+  //   }
 
-  if (!(isCurrentOutside && isNeighborsInside)) {
-    return false;
-  }
+  //   for (int d2 = 0; d2 < TCellAccessor::Dimensions; ++d2) {
+  //     for (int d3 = 0; d3 < 2; ++d3) {
+  //       if (accessor.relativeCell(d2, d3)->positionInRespectToGeometrys(d)
+  //           != precice::constants::positionOutsideOfGeometry()) {
+  //         isNeighborsInside = true;
+  //         break;
+  //       }
+  //     }
+  //   }
+  // }
 
-  Matrix matrix;
+  // if (!(isCurrentOutside && isNeighborsInside)) {
+  //   return false;
+  // }
 
-  for (int d = 0; d < TDimensions; ++d) {
-    for (int d2 = 0; d2 < TDimensions; ++d2) {
-      matrix (d, d2) = dudx(
-        accessor.relativeCell(d2, 0)->velocity(d),
-        accessor.relativeCell(d2, 1)->velocity(d),
-        accessor.relativeWidth(d2, 0) (d),
-        accessor.relativeWidth(d2, 1) (d));
-    }
-  }
+  // Matrix matrix;
 
-  matrix = 1.0 / re * (matrix + matrix.transpose());
+  // for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
+  //   for (int d2 = 0; d2 < TCellAccessor::Dimensions; ++d2) {
+  //     matrix(d, d2) = dudx(
+  //       accessor.relativeCell(d2, 0)->velocity(d),
+  //       accessor.relativeCell(d2, 1)->velocity(d),
+  //       accessor.relativeWidth(d2, 0) (d),
+  //       accessor.relativeWidth(d2, 1) (d));
+  //   }
+  // }
 
-  matrix -= accessor.currentCell()->pressure() * Matrix::Identity();
+  // matrix = 1.0 / re * (matrix + matrix.transpose());
 
-  for (int d = 0; d < TDimensions; ++d) {
-    for (int d2 = 0; d2 < 2; ++d2) {
-      for (int d3 = 0; d3 < TDimensions; ++d3) {
-        if (accessor.relativeCell(d, d2)->positions(d3)
-            != precice::constants::positionOutsideOfGeometry()) {
-          Vector normal = Vector::Zero();
+  // matrix -= accessor.pressure() * Matrix::Identity();
 
-          if (d2 == 0) {
-              normal(d) = 1.0;
-          } else {
-              normal(d) = -1.0;
-          }
+  // for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
+  //   for (int d2 = 0; d2 < 2; ++d2) {
+  //     for (int d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
+  //       if (accessor.relativeCell(d, d2)->positionInRespectToGeometrys(d3)
+  //           != precice::constants::positionOutsideOfGeometry()) {
+  //         Vector normal = Vector::Zero();
 
-          for (int d4 = 0; d4 < TDimensions; ++d4) {
-            if (d4 != d) {
-              normal(d) *= accessor.currentWidth() (d4);
-            }
-          }
-          force += matrix * normal;
-          //logInfo("Got it {1} {2} {3}", matrix, normal, force);
-          break;
-        }
-      }
-    }
-  }
+  //         if (d2 == 0) {
+  //           normal(d) = 1.0;
+  //         } else {
+  //           normal(d) = -1.0;
+  //         }
+
+  //         for (int d4 = 0; d4 < TCellAccessor::Dimensions; ++d4) {
+  //           if (d4 != d) {
+  //             normal(d) *= accessor.width() (d4);
+  //           }
+  //         }
+  //         force += matrix * normal;
+  //         // logInfo("Got it {1} {2} {3}", matrix, normal, force);
+  //         break;
+  //       }
+  //     }
+  //   }
+  // }
 
   //
   return true;

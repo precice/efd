@@ -17,32 +17,31 @@ using FunctorStack = std::array<std::array<TFunctor, 2>, TD>;
 template <typename TCellAccessor,
           typename TVelocity>
 inline
-typename TCellAccessor::CellType::Velocity::Scalar
+typename TCellAccessor::ScalarType
 computeParabolicInputVelocity(
   TCellAccessor const& accessor,
   TVelocity const&     initialVelocity,
   int const&           d) {
   typedef TCellAccessor                           CellAccessorType;
-  typedef typename CellAccessorType::CellType     CellType;
   typedef typename CellAccessorType::VectorDiType VectorDiType;
-  typedef typename CellType::Scalar               Scalar;
+  typedef typename CellAccessorType::ScalarType   ScalarType;
 
   enum {
-    Dimensions = CellType::Dimensions
+    Dimensions = CellAccessorType::Dimensions
   };
 
-  Scalar newVelocity;
+  ScalarType newVelocity;
 
   newVelocity = std::pow(4, (Dimensions - 1))
                 * initialVelocity(d);
 
   for (int i = 0; i < Dimensions; ++i) {
     if (i != d) {
-      newVelocity *= accessor.currentVelocityPosition(d)(i)
-                     * (accessor.gridGeometry()->size() (i)
-                        - accessor.currentVelocityPosition(d)(i))
-                     / (accessor.gridGeometry()->size() (i)
-                        * accessor.gridGeometry()->size() (i));
+      newVelocity *= accessor.velocityPosition(d, i)
+                     * (accessor.memory()->gridGeometry()->size() (i)
+                        - accessor.velocityPosition(d, i))
+                     / (accessor.memory()->gridGeometry()->size() (i)
+                        * accessor.memory()->gridGeometry()->size() (i));
     }
   }
 

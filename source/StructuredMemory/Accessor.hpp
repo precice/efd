@@ -29,10 +29,10 @@ public:
 public:
   CommonAccessor(VectorDi const& i,
                  Memory*         memory) : Base(i),
-                                           _memory(memory) {}
+    _memory(memory) {}
 
   CommonAccessor(CommonAccessor const& other) : Base(other),
-                                                _memory(other._memory) {}
+    _memory(other._memory) {}
 
   ~CommonAccessor() {}
 
@@ -53,7 +53,7 @@ public:
 
   Cell*
   currentCell() const {
-    return (* _memory)(this->indexValues());
+    return (*_memory)(this->indexValues());
   }
 
   VectorDi
@@ -65,7 +65,7 @@ public:
 
   Cell*
   relativeCell(VectorDi const& i) const {
-    return (* _memory)(this->indexValues() + i);
+    return (*_memory)(this->indexValues() + i);
   }
 
   VectorDi
@@ -85,46 +85,46 @@ public:
   Cell*
   relativeCell(int const& dimension, int const& direction,
                int const& distance = 1) const {
-    return (* _memory)(relativeIndex(dimension, direction, distance));
+    return (*_memory)(relativeIndex(dimension, direction, distance));
   }
 
   Cell*
   absoluteCell(VectorDi const& i) const {
-    return (* _memory)(i);
+    return (*_memory)(i);
   }
 
   VectorDi
   leftIndexInDimension(int const& dimension) const {
     VectorDi result(this->indexValues());
-      result(dimension) -= 1;
+    result(dimension) -= 1;
 
     return result;
   }
 
   Cell*
   leftCellInDimension(int const& dimension) const {
-    return (* _memory)(leftIndexInDimension(dimension));
+    return (*_memory)(leftIndexInDimension(dimension));
   }
 
   VectorDi
   rightIndexInDimension(int const& dimension) const {
     VectorDi result(this->indexValues());
-      result(dimension) += 1;
+    result(dimension) += 1;
 
     return result;
   }
 
   Cell*
   rightCellInDimension(int const& dimension) const {
-    return (* _memory)(rightIndexInDimension(dimension));
+    return (*_memory)(rightIndexInDimension(dimension));
   }
 
   VectorDi
   leftRightIndexInDimensions(int const& dimension,
                              int const& dimension2) const {
     VectorDi result(this->indexValues());
-      result(dimension)  -= 1;
-      result(dimension2) += 1;
+    result(dimension)  -= 1;
+    result(dimension2) += 1;
 
     return result;
   }
@@ -132,8 +132,8 @@ public:
   Cell*
   leftRightCellInDimensions(int const& dimension,
                             int const& dimension2) const {
-    return (* _memory)(leftRightIndexInDimensions(dimension,
-                                                  dimension2));
+    return (*_memory)(leftRightIndexInDimensions(dimension,
+                                                 dimension2));
   }
 
 protected:
@@ -164,7 +164,7 @@ public:
   VectorDi
   leftIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) -= 1;
+    result(0) -= 1;
 
     return result;
   }
@@ -177,7 +177,7 @@ public:
   VectorDi
   rightIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) += 1;
+    result(0) += 1;
 
     return result;
   }
@@ -200,7 +200,7 @@ public:
   VectorDi
   bottomIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(1) -= 1;
+    result(1) -= 1;
 
     return result;
   }
@@ -213,7 +213,7 @@ public:
   VectorDi
   topIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(1) += 1;
+    result(1) += 1;
 
     return result;
   }
@@ -226,8 +226,8 @@ public:
   VectorDi
   leftBottomIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) -= 1;
-      result(1) -= 1;
+    result(0) -= 1;
+    result(1) -= 1;
 
     return result;
   }
@@ -240,8 +240,8 @@ public:
   VectorDi
   leftTopIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) -= 1;
-      result(1) += 1;
+    result(0) -= 1;
+    result(1) += 1;
 
     return result;
   }
@@ -254,8 +254,8 @@ public:
   VectorDi
   rightBottomIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) += 1;
-      result(1) -= 1;
+    result(0) += 1;
+    result(1) -= 1;
 
     return result;
   }
@@ -268,8 +268,8 @@ public:
   VectorDi
   rightTopIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) += 1;
-      result(1) += 1;
+    result(0) += 1;
+    result(1) += 1;
 
     return result;
   }
@@ -292,7 +292,7 @@ public:
   VectorDi
   backIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(2) -= 1;
+    result(2) -= 1;
 
     return result;
   }
@@ -305,7 +305,7 @@ public:
   VectorDi
   frontIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(2) -= 1;
+    result(2) -= 1;
 
     return result;
   }
@@ -318,8 +318,8 @@ public:
   VectorDi
   leftBackIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) -= 1;
-      result(2) -= 1;
+    result(0) -= 1;
+    result(2) -= 1;
 
     return result;
   }
@@ -332,8 +332,8 @@ public:
   VectorDi
   leftFrontIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) -= 1;
-      result(2) += 1;
+    result(0) -= 1;
+    result(2) += 1;
 
     return result;
   }
@@ -346,8 +346,8 @@ public:
   VectorDi
   rightBackIndex() const {
     VectorDi result(cast<Derived>(this).indexValues());
-      result(0) += 1;
-      result(2) -= 1;
+    result(0) += 1;
+    result(2) -= 1;
 
     return result;
   }
@@ -463,6 +463,11 @@ class Accessor<TMultiIndex, TMemory, 1>
   : public CommonAccessor<TMultiIndex, TMemory, 1>,
     public CommonAccessor1D<CommonAccessor<TMultiIndex, TMemory, 1>, 1> {
 public:
+
+  enum {
+    Dimensions = 1
+  };
+
   typedef CommonAccessor<TMultiIndex, TMemory, 1> Base;
   typedef typename Base::VectorDi                 VectorDi;
   typedef typename Base::Memory                   Memory;
@@ -493,6 +498,11 @@ class Accessor<TMultiIndex, TMemory, 2>
     public CommonAccessor1D<CommonAccessor<TMultiIndex, TMemory, 2>, 2>,
     public CommonAccessor2D<CommonAccessor<TMultiIndex, TMemory, 2>, 2> {
 public:
+
+  enum {
+    Dimensions = 2
+  };
+
   typedef CommonAccessor<TMultiIndex, TMemory, 2> Base;
   typedef typename Base::VectorDi                 VectorDi;
   typedef typename Base::Memory                   Memory;
@@ -524,10 +534,16 @@ class Accessor<TMultiIndex, TMemory, 3>
     public CommonAccessor2D<CommonAccessor<TMultiIndex, TMemory, 3>, 3>,
     public CommonAccessor3D<CommonAccessor<TMultiIndex, TMemory, 3>, 3> {
 public:
+
+  enum {
+    Dimensions = 3
+  };
+
   typedef CommonAccessor<TMultiIndex, TMemory, 3> Base;
-  typedef typename Base::VectorDi                 VectorDi;
-  typedef typename Base::Memory                   Memory;
-  typedef typename Base::Cell                     Cell;
+
+  typedef typename Base::VectorDi VectorDi;
+  typedef typename Base::Memory   Memory;
+  typedef typename Base::Cell     Cell;
 
 public:
   Accessor(VectorDi const& i,

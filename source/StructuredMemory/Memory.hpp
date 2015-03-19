@@ -98,12 +98,20 @@ public:
   typedef typename Base::VectorDi            VectorDi;
   typedef typename Base::SpecializedPointers SpecializedPointers;
 
+  struct MultiIndexTraits {
+    using Type = Uni::StructuredGrid::Basic::MultiIndex<MultiIndexTraits>;
+
+    enum {
+      Dimensions = TD
+    };
+  };
+
   typedef
-    Accessor<Uni::StructuredGrid::Basic::MultiIndex<TD>, Base, TD>
+    Accessor<Uni::StructuredGrid::Basic::MultiIndex<MultiIndexTraits>, Base, TD>
     SpecializedAccessor;
 
   typedef
-    Uni::StructuredGrid::Basic::Grid<SpecializedAccessor, TD>
+    Uni::StructuredGrid::Basic::Grid<SpecializedAccessor>
     Grid;
   typedef typename Grid::Iterator Iterator;
   typedef typename Grid::Factory  AccessorFactory;
