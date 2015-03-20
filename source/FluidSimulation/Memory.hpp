@@ -81,8 +81,7 @@ public:
       _parallelDistribution.localCellSize + 2 * VectorDiType::Ones());
 
     typename GridType::FactoryType cell_accessor_factory =
-      [&] (BaseGridType const* grid,
-           VectorDiType const& index) {
+      [ = ] (BaseGridType const* grid, VectorDiType const& index) {
         return CellAccessorType(this, grid, index);
       };
 
@@ -91,6 +90,7 @@ public:
 
     _velocity.reset(new VectorDsType[_grid.size().prod()]);
     _pressure.reset(new ScalarType[_grid.size().prod()]);
+    _position.reset(new int[_grid.size().prod()]);
     _fgh.reset(new VectorDsType[_grid.size().prod()]);
     _convection.reset(new VectorDsType[_grid.size().prod()]);
 

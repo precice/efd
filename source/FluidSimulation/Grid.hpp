@@ -30,8 +30,7 @@ public:
 
   using VectorDiType = typename BaseType::VectorDi;
 
-  using FactoryType = std::function
-                      <CellAccessorType(BaseType const*, VectorDiType const&)>;
+  using FactoryType = typename BaseType::Factory;
 
   using IteratorType = typename BaseType::Iterator;
 
@@ -50,15 +49,10 @@ public:
              FactoryType const&  factory) {
     _factory = factory;
 
-    typename BaseType::Factory cell_accessor_factory(
-      [&] (VectorDiType const& index) {
-        return _factory(this, index);
-      });
-
     this->BaseType::initialize(size,
                                VectorDiType::Zero(),
                                VectorDiType::Zero(),
-                               cell_accessor_factory);
+                               _factory);
 
     VectorDiType indent(VectorDiType::Ones());
 
@@ -68,52 +62,32 @@ public:
       VectorDiType rightIndent(VectorDiType::Zero());
       rightIndent(i) = size(i) - 1;
 
-      typename BaseType::Factory cell_accessor_factory_1(
-        [&] (VectorDiType const& index) {
-          return _factory(&boundaries[i][0], index);
-        });
       boundaries[i][0].initialize(size,
                                   leftIndent,
                                   rightIndent,
-                                  cell_accessor_factory_1);
+                                  _factory);
 
-      typename BaseType::Factory cell_accessor_factory_2(
-        [&] (VectorDiType const& index) {
-          return _factory(&boundaries[i][1], index);
-        });
       boundaries[i][1].initialize(size,
                                   rightIndent,
                                   leftIndent,
-                                  cell_accessor_factory_2);
+                                  _factory);
       leftIndent     = indent;
       leftIndent(i)  = 0;
       rightIndent    = indent;
       rightIndent(i) = size(i) - rightIndent(i);
 
-      typename BaseType::Factory cell_accessor_factory_3(
-        [&] (VectorDiType const& index) {
-          return _factory(&indentedBoundaries[i][1], index);
-        });
       indentedBoundaries[i][0].initialize(size,
                                           leftIndent,
                                           rightIndent,
-                                          cell_accessor_factory_3);
+                                          _factory);
 
-      typename BaseType::Factory cell_accessor_factory_4(
-        [&] (VectorDiType const& index) {
-          return _factory(&indentedBoundaries[i][1], index);
-        });
       indentedBoundaries[i][1].initialize(size,
                                           rightIndent,
                                           leftIndent,
-                                          cell_accessor_factory_4);
+                                          _factory);
     }
 
-    typename BaseType::Factory cell_accessor_factory_5(
-      [&] (VectorDiType const& index) {
-        return _factory(&innerGrid, index);
-      });
-    innerGrid.initialize(size, indent, indent, cell_accessor_factory_5);
+    innerGrid.initialize(size, indent, indent, _factory);
   }
 
 public:

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Uni/Logging/macros>
+
 #include <precice/Constants.hpp>
 #include <precice/SolverInterface.hpp>
 

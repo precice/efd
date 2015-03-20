@@ -105,10 +105,6 @@ public:
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
 
-    if (_memory.parallelDistribution()->rank == 0) {
-      logInfo("{1}", "sdfdsf");
-    }
-
     ImmersedBoundary::compute_position_in_respect_to_geometry(_memory.grid(),
                                                               _preciceInterface);
 
@@ -132,11 +128,6 @@ public:
       }
     }
 
-
-    if (_memory.parallelDistribution()->rank == 0) {
-      logInfo("{1}", "sdfdsf");
-    }
-
     for (auto& accessor : * _memory.grid()) {
       accessor.velocity() = VectorDsType::Zero();
       accessor.fgh()      = VectorDsType::Zero();
@@ -152,18 +143,9 @@ public:
     _memory.time()            = 0.0;
     _memory.iterationNumber() = 0;
 
-
-    if (_memory.parallelDistribution()->rank == 0) {
-      logInfo("{1}", "sdfdsf");
-    }
     if (_plotInterval >= 0) {
       _resultWriter.writeGeometry();
       _resultWriter.writeAttributes();
-    }
-
-
-    if (_memory.parallelDistribution()->rank == 0) {
-      logInfo("{1}", "sdfdsf");
     }
   }
 
@@ -211,7 +193,7 @@ public:
 
     int index = 0;
 
-    for (auto& accessor : _memory.grid()->innerGrid) {
+    for (auto const& accessor : _memory.grid()->innerGrid) {
       auto convection = ConvectionProcessing<TD>::compute(
         accessor,
         _memory.parameters());
