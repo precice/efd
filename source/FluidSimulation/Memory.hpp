@@ -340,7 +340,7 @@ public:
 private:
   ScalarType&
   _attribute(std::size_t const& index,
-             short const&       attribute_index,
+             int const&       attribute_index,
              int const&         dimension) const {
     switch (attribute_index) {
     case 0:

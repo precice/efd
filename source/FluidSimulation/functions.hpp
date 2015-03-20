@@ -503,15 +503,15 @@ public:
 
       result(d1) = computeDiffusion2D(
         accessor.velocity(d1),
-        accessor.relativeVelocity(d1, -1, d1),
-        accessor.relativeVelocity(d1, +1, d1),
-        accessor.relativeVelocity(d2, -1, d1),
-        accessor.relativeVelocity(d2, - 1, d1),
+        accessor.velocity(d1, -1, d1),
+        accessor.velocity(d1, +1, d1),
+        accessor.velocity(d2, -1, d1),
+        accessor.velocity(d2, +1, d1),
         accessor.width(d1),
         accessor.width(d2),
-        accessor.relativeWidth(d1, +1, d1),
-        accessor.relativeWidth(d2, -1, d2),
-        accessor.relativeWidth(d2, +1, d2));
+        accessor.width(d1, +1, d1),
+        accessor.width(d2, -1, d2),
+        accessor.width(d2, +1, d2));
     }
 
     return result;
@@ -543,20 +543,20 @@ public:
 
       result(d1) = computeDiffusion3D(
         accessor.velocity(d1),
-        accessor.relativeVelocity(d1, -1, d1),
-        accessor.relativeVelocity(d1, +1, d1),
-        accessor.relativeVelocity(d2, -1, d1),
-        accessor.relativeVelocity(d2, +1, d1),
-        accessor.relativeVelocity(d3, -1, d1),
-        accessor.relativeVelocity(d3, +1, d1),
+        accessor.velocity(d1, -1, d1),
+        accessor.velocity(d1, +1, d1),
+        accessor.velocity(d2, -1, d1),
+        accessor.velocity(d2, +1, d1),
+        accessor.velocity(d3, -1, d1),
+        accessor.velocity(d3, +1, d1),
         accessor.width(d1),
         accessor.width(d2),
         accessor.width(d3),
-        accessor.relativeWidth(d1, +1, d1),
-        accessor.relativeWidth(d2, -1, d2),
-        accessor.relativeWidth(d2, +1, d2),
-        accessor.relativeWidth(d3, -1, d3),
-        accessor.relativeWidth(d3, +1, d3));
+        accessor.width(d1, +1, d1),
+        accessor.width(d2, -1, d2),
+        accessor.width(d2, +1, d2),
+        accessor.width(d3, -1, d3),
+        accessor.width(d3, +1, d3));
     }
 
     return result;
@@ -593,19 +593,19 @@ public:
       result(d1) = computeConvection2D(
         accessor.velocity(d1),
         accessor.velocity(d2),
-        accessor.relativeVelocity(d1, -1, d1),
-        accessor.relativeVelocity(d1, +1, d1),
-        accessor.relativeVelocity(d1, +1, d2),
-        accessor.relativeVelocity(d2, -1, d1),
-        accessor.relativeVelocity(d2, -1, d2),
-        accessor.relativeVelocity(d2, +1, d1),
-        accessor.relativeVelocity(d2, -1, d1, +1, d2),
+        accessor.velocity(d1, -1, d1),
+        accessor.velocity(d1, +1, d1),
+        accessor.velocity(d1, +1, d2),
+        accessor.velocity(d2, -1, d1),
+        accessor.velocity(d2, -1, d2),
+        accessor.velocity(d2, +1, d1),
+        accessor.velocity(d2, -1, d1, +1, d2),
         accessor.width(d1),
         accessor.width(d2),
-        accessor.relativeWidth(d1, -1, d1),
-        accessor.relativeWidth(d1, +1, d1),
-        accessor.relativeWidth(d2, -1, d2),
-        accessor.relativeWidth(d2, +1, d2),
+        accessor.width(d1, -1, d1),
+        accessor.width(d1, +1, d1),
+        accessor.width(d2, -1, d2),
+        accessor.width(d2, +1, d2),
         simulationParameters->gamma());
     }
 
@@ -640,27 +640,27 @@ public:
         accessor.velocity(d1),
         accessor.velocity(d2),
         accessor.velocity(d3),
-        accessor.relativeVelocity(d1, -1, d1),
-        accessor.relativeVelocity(d1, +1, d1),
-        accessor.relativeVelocity(d1, +1, d2),
-        accessor.relativeVelocity(d1, +1, d3),
-        accessor.relativeVelocity(d2, -1, d1),
-        accessor.relativeVelocity(d2, -1, d2),
-        accessor.relativeVelocity(d2, +1, d1),
-        accessor.relativeVelocity(d3, -1, d1),
-        accessor.relativeVelocity(d3, -1, d3),
-        accessor.relativeVelocity(d3, +1, d1),
-        accessor.relativeVelocity(d2, -1, d1, +1, d2),
-        accessor.relativeVelocity(d3, -1, d1, +1, d3),
+        accessor.velocity(d1, -1, d1),
+        accessor.velocity(d1, +1, d1),
+        accessor.velocity(d1, +1, d2),
+        accessor.velocity(d1, +1, d3),
+        accessor.velocity(d2, -1, d1),
+        accessor.velocity(d2, -1, d2),
+        accessor.velocity(d2, +1, d1),
+        accessor.velocity(d3, -1, d1),
+        accessor.velocity(d3, -1, d3),
+        accessor.velocity(d3, +1, d1),
+        accessor.velocity(d2, -1, d1, +1, d2),
+        accessor.velocity(d3, -1, d1, +1, d3),
         accessor.width(d1),
         accessor.width(d2),
         accessor.width(d3),
-        accessor.leftWidthInDimension(d1, -1, d1),
-        accessor.rightWidthInDimension(d1, +1, d1),
-        accessor.leftWidthInDimension(d2, -1, d2),
-        accessor.rightWidthInDimension(d2, +1, d2),
-        accessor.leftWidthInDimension(d3, -1, d3),
-        accessor.rightWidthInDimension(d3, +1, d3),
+        accessor.width(d1, -1, d1),
+        accessor.width(d1, +1, d1),
+        accessor.width(d2, -1, d2),
+        accessor.width(d2, +1, d2),
+        accessor.width(d3, -1, d3),
+        accessor.width(d3, +1, d3),
         simulationParameters->gamma());
     }
 
@@ -782,9 +782,9 @@ computePressureGradient(TCellAccessor const& accessor) {
 
   for (int d = 0; d < result.size(); ++d) {
     result(d)
-      = (0.5 * (accessor.relativeWidth(d, +1, d)
+      = (0.5 * (accessor.width(d, +1, d)
                 + accessor.width() (d)))
-        * (accessor.relativePressure(d, +1) -
+        * (accessor.pressure(d, +1) -
            accessor.pressure());
   }
 
@@ -851,10 +851,10 @@ public:
     for (int d = 0; d < Dimensions; ++d) {
       meanWidths(2 * d) = 0.5 *
                           (accessor.width(d) +
-                           accessor.relativeWidth(d, -1, d));
+                           accessor.width(d, -1, d));
       meanWidths(2 * d + 1) = 0.5 *
                               (accessor.width(d) +
-                               accessor.relativeWidth(d, +1, d));
+                               accessor.width(d, +1, d));
 
       auto leftIndex = accessor.relativeIndex(d, -1);
       leftIndex += corner;
@@ -977,10 +977,10 @@ public:
     for (int d = 0; d < Dimensions; ++d) {
       meanWidths(2 * d) = 0.5 *
                           (accessor.width() (d) +
-                           accessor.relativeWidth(d, -1, d));
+                           accessor.width(d, -1, d));
       meanWidths(2 * d + 1) = 0.5 *
                               (accessor.width() (d) +
-                               accessor.relativeWidth(d, +1, d));
+                               accessor.width(d, +1, d));
 
       auto leftIndex = accessor.relativeIndex(d, -1);
       leftIndex += corner;
@@ -1041,7 +1041,7 @@ public:
     ScalarType result = 0.0;
 
     for (int d = 0; d < CellAccessorType::Dimensions; ++d) {
-      result += (accessor.fgh(d) - accessor.relativeFgh(d, -1, d))
+      result += (accessor.fgh(d) - accessor.fgh(d, -1, d))
                 / accessor.width(d);
     }
 

@@ -154,7 +154,6 @@ public:
     }
 
     for (auto const& attribute : * _memory->attributes()) {
-      logInfo("{1}", attribute.name);
       _attributes.emplace_back();
       _attributes.back().name = attribute.name;
 

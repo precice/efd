@@ -107,8 +107,6 @@ private:
     H5Pset_chunk(plist_id,
                  1,
                  &block_size);
-    // logInfo("{1} {2}", attribute_name,
-    // _memory->parallelDistribution()->rank);
     hid_t dataset_id = H5Dcreate(file_id,
                                  (std::string("/") + attribute_name).c_str(),
                                  H5T_NATIVE_FLOAT,
@@ -184,10 +182,7 @@ private:
     // H5Pset_chunk(plist_id,
     // Dimensions,
     // block_size.data());
-    // logInfo("{1} {2}\n{3}\n{4}", attribute_name,
-    // _memory->parallelDistribution()->rank,
-    // size.transpose(),
-    // block_size.transpose());
+    //
     hid_t dataset_id = H5Dcreate(file_id,
                                  (std::string("/") + attribute_name).c_str(),
                                  H5T_NATIVE_FLOAT,

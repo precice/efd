@@ -111,6 +111,9 @@ public:
     auto fluidMeshId = _preciceInterface->getMeshID("FluidMesh");
 
     for (auto const& accessor : _memory.grid()->innerGrid) {
+      // logInfo("{1} {2}", accessor.index().transpose(),
+      //         accessor.globalIndex());
+
       int distance
         = ImmersedBoundary::compute_cell_layer_along_geometry_interface(
         accessor, 2);
@@ -215,7 +218,7 @@ public:
       VectorDsType velocity;
 
       for (int d = 0; d < TD; ++d) {
-        velocity(d) = 0.5 * (accessor.relativeVelocity(d, -1, d) +
+        velocity(d) = 0.5 * (accessor.velocity(d, -1, d) +
                              accessor.velocity(d));
       }
 
@@ -272,9 +275,9 @@ public:
         accessor.velocity(d)
           = accessor.fgh(d)
             - _memory.timeStepSize() /
-            (0.5 * (accessor.relativeWidth(d, +1, d)
+            (0.5 * (accessor.width(d, +1, d)
                     + accessor.width() (d)))
-            * (accessor.relativePressure(d, +1)
+            * (accessor.pressure(d, +1)
                - accessor.pressure());
       }
       computeMaxVelocity<CellAccessorType, TScalar, TD>

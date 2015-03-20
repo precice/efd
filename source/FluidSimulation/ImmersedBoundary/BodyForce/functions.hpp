@@ -60,8 +60,8 @@ computeCellForce(TCellAccessor const&                      accessor,
   //     matrix(d, d2) = dudx(
   //       accessor.relativeCell(d2, 0)->velocity(d),
   //       accessor.relativeCell(d2, 1)->velocity(d),
-  //       accessor.relativeWidth(d2, 0) (d),
-  //       accessor.relativeWidth(d2, 1) (d));
+  //       accessor.width(d2, 0) (d),
+  //       accessor.width(d2, 1) (d));
   //   }
   // }
 

@@ -165,7 +165,7 @@ public:
             neighbor.velocity(d);
         } else {
           neighbor.velocity(d) =
-            neighbor.relativeVelocity(d, -1, d);
+            neighbor.velocity(d, -1, d);
         }
       } else {
         current.velocity(d) =

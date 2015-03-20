@@ -18,10 +18,9 @@ template <typename TCellAccessor,
           typename TVelocity>
 inline
 typename TCellAccessor::ScalarType
-computeParabolicInputVelocity(
-  TCellAccessor const& accessor,
-  TVelocity const&     initialVelocity,
-  int const&           d) {
+computeParabolicInputVelocity(TCellAccessor const& accessor,
+                              TVelocity const&     initialVelocity,
+                              int const&           d) {
   typedef TCellAccessor                           CellAccessorType;
   typedef typename CellAccessorType::VectorDiType VectorDiType;
   typedef typename CellAccessorType::ScalarType   ScalarType;

@@ -61,7 +61,7 @@ computeVelocity(
   int const&                                  d2) {
   TScalar const width =
     0.5 * accessor.width() (d)
-    + 0.5 * accessor.relativeWidth(d, d2) (d);
+    + 0.5 * accessor.width(d, d2) (d);
   TScalar const b1 = accessor.distances(d);
   TScalar const b2 = accessor.relativeCell(d, d2)->distances(d);
   TScalar const a1 = width * b1 / (b2 + b1);
@@ -74,7 +74,7 @@ computeVelocity(
   }
   TScalar const width2 =
     0.5 * accessor.width() (d)
-    + 0.5 * accessor.relativeWidth(d, !d2) (d);
+    + 0.5 * accessor.width(d, !d2) (d);
   accessor.velocity(d)
   // = boundaryVelocity(d);
     = (a1 * boundaryVelocity(d)
