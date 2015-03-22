@@ -8,13 +8,18 @@ class SolverInterface;
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-class Solver {
+class SimulationController {
 public:
   typedef boost::filesystem::path Path;
 
 public:
-  virtual
-  ~Solver() {}
+  virtual ~SimulationController() {}
+
+  virtual long double const&
+  time() const = 0;
+
+  virtual unsigned long long const&
+  iterationNumber() const = 0;
 
   virtual void
   initialize(precice::SolverInterface* preciceInteface,

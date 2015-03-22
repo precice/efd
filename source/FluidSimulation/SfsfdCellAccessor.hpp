@@ -17,7 +17,7 @@ struct MultiIndexTraits {
 };
 }
 template <typename TSolverTraits>
-class BasicCellAccessor
+class SfsfdCellAccessor
   : public Uni::StructuredGrid::Basic::GlobalMultiIndex
     < Private::MultiIndexTraits < TSolverTraits >> {
 public:
@@ -41,25 +41,25 @@ public:
   using ScalarType = typename TSolverTraits::ScalarType;
 
 public:
-  BasicCellAccessor(MemoryType*         memory,
+  SfsfdCellAccessor(MemoryType*         memory,
                     BaseGridType const* grid)
     : BaseType(grid),
     _memory(memory) {}
 
-  BasicCellAccessor(MemoryType*         memory,
+  SfsfdCellAccessor(MemoryType*         memory,
                     BaseGridType const* grid,
                     VectorDiType const& index)
     : BaseType(grid, index),
     _memory(memory) {}
 
-  BasicCellAccessor(BasicCellAccessor const& other)
+  SfsfdCellAccessor(SfsfdCellAccessor const& other)
     : BaseType(other),
     _memory(other._memory) {}
 
-  ~BasicCellAccessor() {}
+  ~SfsfdCellAccessor() {}
 
-  BasicCellAccessor&
-  operator=(BasicCellAccessor const& other) {
+  SfsfdCellAccessor&
+  operator=(SfsfdCellAccessor const& other) {
     this->BaseType::operator=(other);
     _memory = other._memory;
 
@@ -112,7 +112,7 @@ public:
   ScalarType
   width(int const& dimension) const {
     return _memory->gridGeometry()->cellWidth(
-      this->indexValues() - _memory->grid()->leftIndent())(dimension);
+      this->index() - _memory->grid()->leftIndent())(dimension);
   }
 
   ScalarType
@@ -182,7 +182,7 @@ public:
   ScalarType
   position(int const& dimension) const {
     return _memory->gridGeometry()->cellPosition(
-      this->indexValues() - _memory->grid()->leftIndent())(dimension);
+      this->index() - _memory->grid()->leftIndent())(dimension);
   }
 
   ScalarType
@@ -360,7 +360,7 @@ public:
 
   VectorDsType&
   velocity() const {
-    return _memory->velocity(this->indexValue(Dimensions));
+    return _memory->velocity(this->globalIndex());
   }
 
   VectorDsType&
@@ -418,7 +418,7 @@ public:
 
   ScalarType&
   pressure() const {
-    return _memory->pressure(this->indexValue(Dimensions));
+    return _memory->pressure(this->globalIndex());
   }
 
   ScalarType&
@@ -443,11 +443,11 @@ public:
 
   int&
   positionInRespectToGeometry() const {
-    return _memory->position(this->indexValue(Dimensions));
+    return _memory->position(this->globalIndex());
   }
 
   int&
-  relativePositionInRespectToGeometry(int const& dimension,
+  positionInRespectToGeometry(int const& dimension,
                                       int const& offset) const {
     return _memory->position(
       this->relativeGlobalIndex(dimension, offset));
@@ -470,7 +470,7 @@ public:
 
   VectorDsType&
   fgh() const {
-    return _memory->fgh(this->indexValue(Dimensions));
+    return _memory->fgh(this->globalIndex());
   }
 
   VectorDsType&
@@ -526,12 +526,12 @@ public:
 
   VectorDsType&
   convection() const {
-    return _memory->convection(this->indexValue(Dimensions));
+    return _memory->convection(this->globalIndex());
   }
 
   ScalarType&
   convection(int const& dimension) const {
-    return _memory->convection(this->indexValue(Dimensions), dimension);
+    return _memory->convection(this->globalIndex(), dimension);
   }
 
   VectorDsType

@@ -5,6 +5,10 @@
 #include "Private/petscgenerics.hpp"
 #include "StructuredMemory/Pointers.hpp"
 #include "functions.hpp"
+
+#include "GhostLayer/PetscExchangeHandler.hpp"
+#include "GhostLayer/PressureStencilHanler.hpp"
+
 #include <petscdm.h>
 #include <petscdmda.h>
 #include <petscksp.h>

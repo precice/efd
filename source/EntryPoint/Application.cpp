@@ -1,7 +1,7 @@
 #include "Application.hpp"
 
-#include "FluidSimulation/Solver.hpp"
-#include "SolverFactory.hpp"
+#include "FluidSimulation/SimulationController.hpp"
+#include "FluidSimulation/facade.hpp"
 #include "XmlConfigurationParser.hpp"
 
 #include "Utility/executablepath.hpp"
@@ -10,6 +10,7 @@
 #include <precice/SolverInterface.hpp>
 
 #include <Uni/Firewall/Interface>
+#include <Uni/Logging/macros>
 
 #include <boost/program_options.hpp>
 
@@ -20,13 +21,14 @@
 using FsiSimulation::EntryPoint::Application;
 
 class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
-  typedef precice::SolverInterface                 PreciceInterface;
+  typedef precice::SolverInterface PreciceInterface;
 
-  typedef std::unique_ptr<PreciceInterface>        UniquePreciceInterface;
+  typedef std::unique_ptr<PreciceInterface> UniquePreciceInterface;
 
-  typedef std::unique_ptr<FluidSimulation::Solver> UniqueSolver;
+  typedef std::unique_ptr<FluidSimulation::SimulationController>
+    UniqueSimulationController;
 
-  typedef boost::filesystem::path                  Path;
+  typedef boost::filesystem::path Path;
 
   ApplicationPrivateImplementation(
     Application* in,
@@ -77,8 +79,8 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
 
   std::unique_ptr<FluidSimulation::Configuration> parameters;
 
-  UniquePreciceInterface preciceInterface;
-  UniqueSolver           mySimulation;
+  UniquePreciceInterface     preciceInterface;
+  UniqueSimulationController mySimulation;
 
   bool
   isMaster() {
@@ -168,12 +170,12 @@ initialize() {
   // logInfo("Simulation configuration path:\n{1}",
   // _im->simulationConfigurationPath.string());
 
-  auto petscConfigurationPath =
-    Utility::convertUtfPathToAnsi(
-      boost::filesystem::make_relative(
-        _im->petscConfigurationPath).string(),
-      _im->globalLocale,
-      _im->ansiLocale);
+  auto petscConfigurationPath
+    = Utility::convertUtfPathToAnsi(
+    boost::filesystem::make_relative(
+      _im->petscConfigurationPath).string(),
+    _im->globalLocale,
+    _im->ansiLocale);
 
   PetscInitialize(&_im->argc, &_im->argv,
                   petscConfigurationPath.c_str(),
@@ -190,33 +192,9 @@ initialize() {
 
   initializePrecice();
 
-  if (_im->parameters->dim == 3) {
-    if (_im->parameters->solver
-        == FluidSimulation::SolverEnum::Ifsfd) {
-      _im->mySimulation
-        = Implementation::UniqueSolver(
-        SolverFactory::createFractionalStepDouble3D(_im->parameters.get()));
-    } else {
-      _im->mySimulation
-        = Implementation::UniqueSolver(
-        SolverFactory::createSimpleFdDouble3D(_im->parameters.get()));
-    }
-  } else if (_im->parameters->dim == 2) {
-    if (_im->parameters->solver
-        == FluidSimulation::SolverEnum::Ifsfd) {
-      _im->mySimulation
-        = Implementation::UniqueSolver(
-        SolverFactory::createFractionalStepFdDouble2D(
-          _im->parameters.get()));
-    } else {
-      _im->mySimulation
-        = Implementation::UniqueSolver(
-        SolverFactory::createSimpleFdDouble2D(_im->parameters.get()));
-    }
-  } else {
-    throwException("Dimension {1} is not supported",
-                   _im->parameters->dim);
-  }
+  _im->mySimulation
+    = FluidSimulation::create_simulation_controller(_im->parameters.get());
+
   _im->mySimulation->initialize(_im->preciceInterface.get(),
                                 _im->vtkOutputDirectoryPath,
                                 _im->vtkFilePrefix);
@@ -225,7 +203,13 @@ initialize() {
 void
 Application::
 run() {
-  while (_im->mySimulation->iterate()) {}
+  while (_im->mySimulation->iterate()) {
+    if (_im->rank == 0) {
+      logInfo("N = {1}; t = {2}",
+              _im->mySimulation->iterationNumber(),
+              _im->mySimulation->time());
+    }
+  }
 }
 
 void
@@ -237,8 +221,8 @@ release() {
 void
 Application::
 parseSimulationConfiguration() {
-  _im->parameters =
-    XmlConfigurationParser::parse(_im->simulationConfigurationPath);
+  _im->parameters
+    = XmlConfigurationParser::parse(_im->simulationConfigurationPath);
 }
 
 void
@@ -254,8 +238,9 @@ createOutputDirectory() {
   outputDirectoryPath = outputDirectoryPath.parent_path();
   boost::filesystem::create_directories(outputDirectoryPath);
   _im->vtkOutputDirectoryPath = outputDirectoryPath;
-  outputDirectoryPath         =
-    boost::filesystem::make_relative(outputDirectoryPath) / outputFileName;
+  outputDirectoryPath
+    = boost::filesystem::make_relative(
+    outputDirectoryPath) / outputFileName;
   _im->parameters->filename = outputDirectoryPath.string();
   _im->vtkFilePrefix        = outputFileName.string();
 }
@@ -271,12 +256,12 @@ initializePrecice() {
                                          _im->processCount)
     );
 
-  auto preciceConfigurationPath =
-    Utility::convertUtfPathToAnsi(
-      boost::filesystem::make_relative(
-        _im->preciceConfigurationPath).string(),
-      _im->globalLocale,
-      _im->ansiLocale);
+  auto preciceConfigurationPath
+    = Utility::convertUtfPathToAnsi(
+    boost::filesystem::make_relative(
+      _im->preciceConfigurationPath).string(),
+    _im->globalLocale,
+    _im->ansiLocale);
 
   _im->preciceInterface->configure(preciceConfigurationPath);
 }

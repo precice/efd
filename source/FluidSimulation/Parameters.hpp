@@ -11,8 +11,7 @@ public:
   typedef Eigen::Matrix<TScalar, TD, 1> VectorDs;
 
 public:
-  Parameters()
-    : _immersedBoundaryMethod(-1) {}
+  Parameters() {}
 
   Parameters(Parameters const& other) = delete;
 
@@ -21,19 +20,14 @@ public:
   Parameters&
   operator=(Parameters const& other) = delete;
 
-  TScalar&
-  re() {
-    return _re;
-  }
-
   TScalar const&
   re() const {
     return _re;
   }
 
   TScalar&
-  gamma() {
-    return _gamma;
+  re() {
+    return _re;
   }
 
   TScalar const&
@@ -42,8 +36,8 @@ public:
   }
 
   TScalar&
-  tau() {
-    return _tau;
+  gamma() {
+    return _gamma;
   }
 
   TScalar const&
@@ -52,8 +46,8 @@ public:
   }
 
   TScalar&
-  alpha() {
-    return _alpha;
+  tau() {
+    return _tau;
   }
 
   TScalar const&
@@ -61,19 +55,29 @@ public:
     return _alpha;
   }
 
-  int&
-  immersedBoundaryMethod() {
-    return _immersedBoundaryMethod;
+  TScalar&
+  alpha() {
+    return _alpha;
   }
 
   int const&
-  immersedBoundaryMethod() const {
-    return _immersedBoundaryMethod;
+  outerLayerSize() const {
+    return _outerLayerSize;
   }
 
-  VectorDs&
-  g() {
-    return _g;
+  int&
+  outerLayerSize() {
+    return _outerLayerSize;
+  }
+
+  int const&
+  innerLayerSize() const{
+    return _innerLayerSize;
+  }
+
+  int&
+  innerLayerSize() {
+    return _innerLayerSize;
   }
 
   VectorDs const&
@@ -81,9 +85,9 @@ public:
     return _g;
   }
 
-  TScalar&
-  g(int const& i) {
-    return _g(i);
+  VectorDs&
+  g() {
+    return _g;
   }
 
   TScalar const&
@@ -91,14 +95,18 @@ public:
     return _g(i);
   }
 
-  static int const FeedbackForcingMethod = 0;
+  TScalar&
+  g(int const& i) {
+    return _g(i);
+  }
 
 private:
   TScalar  _re;
   TScalar  _gamma;
   TScalar  _tau;
   TScalar  _alpha;
-  int      _immersedBoundaryMethod;
+  int      _outerLayerSize;
+  int      _innerLayerSize;
   VectorDs _g;
 };
 }

@@ -48,7 +48,7 @@ public:
   operator=(SfsfdHandlers const& other) = delete;
 
   void
-  executeFghMpiExchange() {
+  executeFghMpiExchange() const {
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         mpiFghExchangeStack[d][d2]();
@@ -57,7 +57,7 @@ public:
   }
 
   void
-  executePressureMpiExchange() {
+  executePressureMpiExchange() const {
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         mpiPressureExchangeStack[d][d2]();
@@ -66,7 +66,7 @@ public:
   }
 
   void
-  executeVelocityMpiExchange() {
+  executeVelocityMpiExchange() const {
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         mpiVelocityExchangeStack[d][d2]();
@@ -75,7 +75,16 @@ public:
   }
 
   void
-  executeVelocityInitialization() {
+  executeFghInitialization() const {
+    for (int d = 0; d < Dimensions; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        fghInitialization[d][d2]();
+      }
+    }
+  }
+
+  void
+  executeVelocityInitialization() const {
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         velocityInitialization[d][d2]();

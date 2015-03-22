@@ -1,8 +1,7 @@
-#ifndef FsiSimulation_FluidSimulation_XdmfHdf5Output_XdmfHdf5Writer_hpp
-#define FsiSimulation_FluidSimulation_XdmfHdf5Output_XdmfHdf5Writer_hpp
+#pragma once
 
-#include "Hdf5Writer.hpp"
-#include "XdmfWriter.hpp"
+#include "Private/Hdf5Writer.hpp"
+#include "Private/XdmfWriter.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -14,19 +13,19 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace XdmfHdf5Output {
 template <typename TMemory>
-class XdmfHdf5Writer {
+class Writer {
 public:
   using MemoryType = TMemory;
 
-  using Hdf5WriterType = Hdf5Writer<MemoryType>;
+  using Hdf5WriterType = Private::Hdf5Writer<MemoryType>;
 
-  using XdmfWriterType = XdmfWriter<MemoryType>;
+  using XdmfWriterType = Private::XdmfWriter<MemoryType>;
 
   using UniqueXdmfWriterType = std::unique_ptr<XdmfWriterType>;
 
   using Path = boost::filesystem::path;
 
-  XdmfHdf5Writer() {}
+  Writer() {}
 
   void
   initialize(MemoryType const* memory,
@@ -99,5 +98,3 @@ private:
 }
 }
 }
-
-#endif

@@ -15,14 +15,16 @@ public:
   };
 
   IfsfdHandlers() : BaseType() {
-    for (int d = 0; d < Dimensions; ++d) {
-      for (int i = 0; i < Dimensions; ++i) {
-        vpeStencilGeneratorStack[i][d][d2] =
-          LsStencilGenerator::getEmptyFunctor<Dimensions>();
-        vpeRhsGeneratorStack[i][d][d2] =
-          PetscExchange::getEmptyFunctor<Dimensions>();
-        vpeRhsAcquiererStack[i][d][d2] =
-          PetscExchange::getEmptyFunctor<Dimensions>();
+    for (int i = 0; i < Dimensions; ++i) {
+      for (int d = 0; d < Dimensions; ++d) {
+        for (int d2 = 0; d2 < 2; ++d2) {
+          vpeStencilGeneratorStack[i][d][d2] =
+            LsStencilGenerator::getEmptyFunctor<Dimensions>();
+          vpeRhsGeneratorStack[i][d][d2] =
+            PetscExchange::getEmptyFunctor<Dimensions>();
+          vpeRhsAcquiererStack[i][d][d2] =
+            PetscExchange::getEmptyFunctor<Dimensions>();
+        }
       }
     }
   }
@@ -34,14 +36,15 @@ public:
   IfsfdHandlers&
   operator=(IfsfdHandlers const& other) = delete;
 
-  std::array<LsStencilGenerator::FunctorStack<Dimensions>,
-             Dimensions> vpeStencilGeneratorStack;
-  std::array<PetscExchange::FunctorStack<Dimensions>,
-             Dimensions> vpeRhsGeneratorStack;
-  std::array<PetscExchange::FunctorStack<Dimensions>,
-             Dimensions> vpeRhsAcquiererStack;
+  std::array<LsStencilGenerator::FunctorStack<Dimensions>, Dimensions>
+  vpeStencilGeneratorStack;
+
+  std::array<PetscExchange::FunctorStack<Dimensions>, Dimensions>
+  vpeRhsGeneratorStack;
+
+  std::array<PetscExchange::FunctorStack<Dimensions>, Dimensions>
+  vpeRhsAcquiererStack;
 };
-}
 }
 }
 }

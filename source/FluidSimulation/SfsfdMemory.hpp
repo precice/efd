@@ -33,7 +33,7 @@ public:
 }
 
 template <typename TSolverTraits>
-class Memory {
+class SfsfdMemory {
 public:
   enum {
     Dimensions = TSolverTraits::Dimensions
@@ -52,6 +52,8 @@ public:
 
   using CellAccessorType = typename TSolverTraits::CellAccessorType;
 
+  using MemoryType = typename TSolverTraits::MemoryType;
+
   using VectorDsType = typename TSolverTraits::VectorDsType;
 
   using VectorDiType = typename TSolverTraits::VectorDiType;
@@ -63,15 +65,13 @@ public:
   using AttributesType = std::array<Private::Attribute, 2>;
 
 public:
-  Memory() {}
+  SfsfdMemory() {}
 
   void
-  initialize(int const&          rank,
-             VectorDiType const& processor_size,
+  initialize(VectorDiType const& processor_size,
              VectorDiType const& global_cell_size,
              VectorDsType const& geometry_width) {
-    _parallelDistribution.initialize(rank,
-                                     processor_size,
+    _parallelDistribution.initialize(processor_size,
                                      global_cell_size);
     _gridGeometry.initialize(geometry_width,
                              _parallelDistribution.globalCellSize,
@@ -82,7 +82,9 @@ public:
 
     typename GridType::FactoryType cell_accessor_factory =
       [ = ] (BaseGridType const* grid, VectorDiType const& index) {
-        return CellAccessorType(this, grid, index);
+        return CellAccessorType(static_cast<MemoryType*>(this),
+                                 grid,
+                                 index);
       };
 
     _grid.initialize(computational_local_size,
@@ -337,7 +339,7 @@ public:
     return _convection.get()[index].data()[dimension];
   }
 
-private:
+protected:
   ScalarType&
   _attribute(std::size_t const& index,
              int const&       attribute_index,

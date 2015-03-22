@@ -47,6 +47,7 @@
 !/source/FluidSimulation/Private
 !/source/FluidSimulation/VtkOutput
 !/source/FluidSimulation/XdmfHdf5Output
+!/source/FluidSimulation/XdmfHdf5Output/Private
 !/source/StructuredMemory
 !/source/Utility
 !/source/**/*.c

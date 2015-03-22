@@ -54,6 +54,7 @@ find_package(Boost 1.57 # Versions 1.54, 1.55 have failed
   locale
   filesystem
   program_options
+  regex
   system
   thread # Required for precice
   REQUIRED)
@@ -72,9 +73,17 @@ find_library(XDMF_LIBRARIES
 
 # Compilers {{{
 # ==============================================================================
-if (CMAKE_COMPILER_IS_GNUCXX)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(COMPILER_IS_G++ TRUE)
   set(LINKER_IS_LD    TRUE)
+else()
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(COMPILER_IS_G++ TRUE)
+  set(LINKER_IS_LD    TRUE)
+else()
+  set(COMPILER_IS_G++ TRUE)
+  set(LINKER_IS_LD    TRUE)
+endif ()
 endif ()
 # ==============================================================================
 # }}} Compilers
@@ -100,7 +109,7 @@ if (COMPILER_IS_G++)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
 
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -fno-inline")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+  #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 endif ()
 # ------------------------------------------------------------------------------
 if (LINKER_IS_LD)
@@ -136,14 +145,8 @@ endif ()
 # Targets {{{
 # ==============================================================================
 file(GLOB_RECURSE CPP_FILES
-  "${PROJECT_DIR}/source/EntryPoint/*.cpp"
-  "${PROJECT_DIR}/source/EntryPoint/*.hpp"
-  "${PROJECT_DIR}/source/FluidSimulation/*.cpp"
-  "${PROJECT_DIR}/source/FluidSimulation/*.hpp"
-  "${PROJECT_DIR}/source/StructureMemory/*.cpp"
-  "${PROJECT_DIR}/source/StructureMemory/*.hpp"
-  "${PROJECT_DIR}/source/Utility/*.cpp"
-  "${PROJECT_DIR}/source/Utility/*.hpp"
+  "${PROJECT_DIR}/source/**/*.cpp"
+  "${PROJECT_DIR}/source/**/*.hpp"
   )
 
 add_executable(Simulation ${CPP_FILES})

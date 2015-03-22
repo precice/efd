@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_ParallelDistribution_hpp
-#define FsiSimulation_FluidSimulation_ParallelDistribution_hpp
+#pragma once
 
 #include <Uni/ExecutionControl/exception>
 #include <Uni/Logging/format>
@@ -43,10 +42,10 @@ public:
   operator=(ParallelDistribution const& other) = delete;
 
   void
-  initialize(int const&      rank_,
-             VectorDi const& processorSize_,
+  initialize(VectorDi const& processorSize_,
              VectorDi const& globalSize_) {
     int processCount;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
     MPI_Comm_size(PETSC_COMM_WORLD, &processCount);
 
     if (processCount != processorSize_.prod()) {
@@ -57,7 +56,6 @@ public:
                      processorSize_.transpose());
     }
 
-    rank                 = rank_;
     processorSize        = processorSize_;
     uniformLocalCellSize = globalSize_.cwiseQuotient(processorSize);
     localCellSize        = uniformLocalCellSize;
@@ -155,5 +153,3 @@ logParallelTopologyInfo(ParallelDistribution<TDimensions> const& topology) {
 }
 }
 }
-
-#endif

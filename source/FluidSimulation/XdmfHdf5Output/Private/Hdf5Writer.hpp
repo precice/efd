@@ -17,6 +17,7 @@
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace XdmfHdf5Output {
+namespace Private {
 template <typename TMemory>
 class Hdf5Writer {
 public:
@@ -344,6 +345,7 @@ private:
   VectorDsize       _localSize;
   Path              _filePath;
 };
+}
 }
 }
 }

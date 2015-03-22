@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_functions_hpp
-#define FsiSimulation_FluidSimulation_functions_hpp
+#pragma once
 
 #include "Private/mpigenerics.hpp"
 
@@ -16,11 +15,11 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TCellAccessor, typename TScalar, int TD>
 void
-computeMaxVelocity(TCellAccessor const& accessor,
-                   typename TCellAccessor::VectorDsType&      maxVelocity) {
-  maxVelocity =
-    accessor.velocity().cwiseAbs().cwiseQuotient(
-      accessor.width()).cwiseMax(maxVelocity);
+computeMaxVelocity(TCellAccessor const&                  accessor,
+                   typename TCellAccessor::VectorDsType& maxVelocity) {
+  maxVelocity
+    = accessor.velocity().cwiseAbs().cwiseQuotient(
+    accessor.width()).cwiseMax(maxVelocity);
 }
 
 template <typename TScalar, int TD>
@@ -117,13 +116,14 @@ duvdy(TScalar const& currentU,
   TScalar const xCurrent = 0.5 * currentX;
   TScalar const xRight   = 0.5 * (currentX + rightX);
 
-  TScalar const secondOrder =
-    (((xRight - xCurrent) / xRight * currentV + xCurrent / xRight * rightV) *
-     ((yTop - yCurrent) / yTop * currentU + yCurrent / yTop * topU) -
-     ((xRight - xCurrent) / xRight * bottomV + xCurrent / xRight *
-      rightBottomV) *
-     ((yBottom - yCurrent) / yBottom * currentU + yCurrent / yBottom * bottomU)
-    ) / (2.0 * yCurrent);
+  TScalar const secondOrder
+    = (((xRight - xCurrent) / xRight * currentV + xCurrent / xRight * rightV) *
+       ((yTop - yCurrent) / yTop * currentU + yCurrent / yTop * topU) -
+       ((xRight - xCurrent) / xRight * bottomV + xCurrent / xRight *
+        rightBottomV) *
+       ((yBottom - yCurrent) / yBottom * currentU + yCurrent / yBottom *
+        bottomU)
+       ) / (2.0 * yCurrent);
 
   TScalar const kr = (xRight - xCurrent) / xRight * currentV +
                      xCurrent / xRight * rightV;
@@ -153,11 +153,11 @@ du2dx(TScalar const& currentU,
   TScalar const dxLong0 = 0.5 * (leftX + currentX);
   TScalar const dxLong1 = 0.5 * (currentX + rightX);
 
-  TScalar const kr =
-    (dxLong1 - dxShort) / dxLong1 * currentU + dxShort / dxLong1 * rightU;
+  TScalar const kr
+    = (dxLong1 - dxShort) / dxLong1 * currentU + dxShort / dxLong1 * rightU;
 
-  TScalar const kl =
-    (dxLong0 - dxShort) / dxLong0 * currentU + dxShort / dxLong0 * leftU;
+  TScalar const kl
+    = (dxLong0 - dxShort) / dxLong0 * currentU + dxShort / dxLong0 * leftU;
 
   TScalar const secondOrder = (kr * kr - kl * kl) / (2.0 * dxShort);
 
@@ -333,148 +333,6 @@ computeConvection3D(TScalar const& currentU,
                  frontZ,
                  rightX,
                  gamma);
-}
-
-template <typename TScalar>
-inline TScalar
-computeFGH2D(TScalar const& currentU,
-             TScalar const& currentV,
-             TScalar const& leftU,
-             TScalar const& rightU,
-             TScalar const& rightV,
-             TScalar const& bottomU,
-             TScalar const& bottomV,
-             TScalar const& topU,
-             TScalar const& rightBottomV,
-             TScalar const& currentX,
-             TScalar const& currentY,
-             TScalar const& leftX,
-             TScalar const& rightX,
-             TScalar const& bottomY,
-             TScalar const& topY,
-             TScalar const& re,
-             TScalar const& gamma,
-             TScalar const& gx,
-             TScalar const& dt) {
-  return currentU
-         + dt * (1.0 / re *
-                 (d2udx2(currentU,
-                         leftU,
-                         rightU,
-                         currentX,
-                         rightX)
-                  + d2udy2(currentU,
-                           bottomU,
-                           topU,
-                           currentY,
-                           bottomY,
-                           topY))
-                 - du2dx(currentU,
-                         leftU,
-                         rightU,
-                         currentX,
-                         leftX,
-                         rightX,
-                         gamma)
-                 - duvdy(currentU,
-                         currentV,
-                         bottomU,
-                         bottomV,
-                         rightBottomV,
-                         rightV,
-                         topU,
-                         currentY,
-                         currentX,
-                         bottomY,
-                         topY,
-                         rightX,
-                         gamma)
-                 + gx);
-}
-
-template <typename TScalar>
-inline TScalar
-computeFGH3D(TScalar const& currentU,
-             TScalar const& currentV,
-             TScalar const& currentW,
-             TScalar const& leftU,
-             TScalar const& rightU,
-             TScalar const& rightV,
-             TScalar const& rightW,
-             TScalar const& bottomU,
-             TScalar const& bottomV,
-             TScalar const& topU,
-             TScalar const& backU,
-             TScalar const& backW,
-             TScalar const& frontU,
-             TScalar const& rightBottomV,
-             TScalar const& rightBackW,
-             TScalar const& currentX,
-             TScalar const& currentY,
-             TScalar const& currentZ,
-             TScalar const& leftX,
-             TScalar const& rightX,
-             TScalar const& bottomY,
-             TScalar const& topY,
-             TScalar const& backZ,
-             TScalar const& frontZ,
-             TScalar const& re,
-             TScalar const& gamma,
-             TScalar const& gx,
-             TScalar const& dt) {
-  return currentU
-         + dt * (1.0 / re *
-                 (d2udx2(currentU,
-                         leftU,
-                         rightU,
-                         currentX,
-                         rightX) +
-                  d2udy2(currentU,
-                         bottomU,
-                         topU,
-                         currentY,
-                         bottomY,
-                         topY) +
-                  d2udy2(currentU, // d2udz2
-                         backU,
-                         frontU,
-                         currentZ,
-                         backZ,
-                         frontZ)) -
-                 du2dx(currentU,
-                       leftU,
-                       rightU,
-                       currentX,
-                       leftX,
-                       rightX,
-                       gamma) -
-                 duvdy(currentU,
-                       currentV,
-                       bottomU,
-                       bottomV,
-                       rightBottomV,
-                       rightV,
-                       topU,
-                       currentY,
-                       currentX,
-                       bottomY,
-                       topY,
-                       rightX,
-                       gamma) -
-                 duvdy(currentU, // duwdz
-                       currentW,
-                       backU,
-                       backW,
-                       rightBackW,
-                       rightW,
-                       frontU,
-                       currentZ,
-                       currentX,
-                       backZ,
-                       frontZ,
-                       rightX,
-                       gamma) +
-                 gx);
 }
 
 template <int TD>
@@ -668,146 +526,57 @@ public:
   }
 };
 
-template <int TD>
-class FghProcessing {
-  template <typename TCellAccessor,
-            typename TSimulationParameters,
-            typename TScalar>
-  static inline void
-  compute(TCellAccessor const&         accessor,
-          TSimulationParameters const& simulationParameters,
-          TScalar const&               dt) {}
-};
+template <int TSolverType>
+struct PressureProcessing {};
 
 template <>
-class FghProcessing<2> {
-public:
-  template <typename TCellAccessor,
-            typename TSimulationParameters,
-            typename TScalar>
-  static inline void
-  compute(TCellAccessor const&         accessor,
-          TSimulationParameters const& simulationParameters,
-          TScalar const&               dt) {
-    for (int d1 = 0; d1 < 2; ++d1) {
-      int d2 = d1 + 1;
+struct PressureProcessing<0> {
+  template <typename TCellAccessor>
+  static inline typename TCellAccessor::VectorDsType
+  grad(TCellAccessor const& accessor) {
+    typedef typename TCellAccessor::VectorDsType Vector;
+    Vector result;
 
-      if (d1 == 1) {
-        d2 = 0;
-      }
-      accessor.fgh(d1) = computeFGH2D(
-        accessor.velocity(d1),
-        accessor.velocity(d2),
-        accessor.leftCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d2),
-        accessor.leftCellInDimension(d2)->velocity(d1),
-        accessor.leftCellInDimension(d2)->velocity(d2),
-        accessor.rightCellInDimension(d2)->velocity(d1),
-        accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
-        accessor.width() (d1),
-        accessor.width() (d2),
-        accessor.leftWidthInDimension(d1)(d1),
-        accessor.rightWidthInDimension(d1)(d1),
-        accessor.leftWidthInDimension(d2)(d2),
-        accessor.rightWidthInDimension(d2)(d2),
-        simulationParameters.re(),
-        simulationParameters.gamma(),
-        simulationParameters.g(d1),
-        dt);
+    for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
+      result(d)
+        = (accessor.pressure(d, +1) - accessor.pressure())
+          / (0.5 * (accessor.width(d, +1, d) + accessor.width(d)));
     }
+
+    return result;
+  }
+
+  template <typename TCellAccessor, typename TScalar>
+  static void
+  initialize(TCellAccessor const& accessor, TScalar const& value) {
+    accessor.pressure() = value;
   }
 };
 
 template <>
-class FghProcessing<3> {
-public:
-  template <typename TCellAccessor,
-            typename TSimulationParameters,
-            typename TScalar>
-  static inline void
-  compute(TCellAccessor const&         accessor,
-          TSimulationParameters const& simulationParameters,
-          TScalar const&               dt) {
-    for (int d1 = 0; d1 < 3; ++d1) {
-      int d2 = d1 + 1;
-      int d3 = d2 + 1;
+struct PressureProcessing<1> {
+  template <typename TCellAccessor>
+  static inline typename TCellAccessor::VectorDsType
+  grad(TCellAccessor const& accessor) {
+    typedef typename TCellAccessor::VectorDsType Vector;
+    Vector result;
 
-      if (d1 == 1) {
-        d2 = 0;
-        d3 = 2;
-      } else if (d1 == 2) {
-        d2 = 0;
-        d3 = 1;
-      }
-      accessor.fgh(d1) = computeFGH3D(
-        accessor.velocity(d1),
-        accessor.velocity(d2),
-        accessor.velocity(d3),
-        accessor.leftCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d1),
-        accessor.rightCellInDimension(d1)->velocity(d2),
-        accessor.rightCellInDimension(d1)->velocity(d3),
-        accessor.leftCellInDimension(d2)->velocity(d1),
-        accessor.leftCellInDimension(d2)->velocity(d2),
-        accessor.rightCellInDimension(d2)->velocity(d1),
-        accessor.leftCellInDimension(d3)->velocity(d1),
-        accessor.leftCellInDimension(d3)->velocity(d3),
-        accessor.rightCellInDimension(d3)->velocity(d1),
-        accessor.leftRightCellInDimensions(d2, d1)->velocity(d2),
-        accessor.leftRightCellInDimensions(d3, d1)->velocity(d3),
-        accessor.width() (d1),
-        accessor.width() (d2),
-        accessor.width() (d3),
-        accessor.leftWidthInDimension(d1)(d1),
-        accessor.rightWidthInDimension(d1)(d1),
-        accessor.leftWidthInDimension(d2)(d2),
-        accessor.rightWidthInDimension(d2)(d2),
-        accessor.leftWidthInDimension(d3)(d3),
-        accessor.rightWidthInDimension(d3)(d3),
-        simulationParameters.re(),
-        simulationParameters.gamma(),
-        simulationParameters.g(d1),
-        dt);
+    for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
+      result(d)
+        = (accessor.projectionTerm(d, +1) - accessor.projectionTerm())
+          / (0.5 * (accessor.width(d, +1, d) + accessor.width(d)));
     }
+
+    return result;
+  }
+
+  template <typename TCellAccessor, typename TScalar>
+  static void
+  initialize(TCellAccessor const& accessor, TScalar const& value) {
+    accessor.pressure()       = value;
+    accessor.projectionTerm() = value;
   }
 };
-
-template <typename TCellAccessor>
-inline
-typename TCellAccessor::VectorDsType
-computePressureGradient(TCellAccessor const& accessor) {
-  typedef typename TCellAccessor::VectorDsType Vector;
-  Vector result;
-
-  for (int d = 0; d < result.size(); ++d) {
-    result(d)
-      = (0.5 * (accessor.width(d, +1, d)
-                + accessor.width() (d)))
-        * (accessor.pressure(d, +1) -
-           accessor.pressure());
-  }
-
-  return result;
-}
-
-template <typename TCellAccessor>
-inline
-typename TCellAccessor::VectorDsType
-computeProjectionPressureGradient(TCellAccessor const& accessor) {
-  typedef typename TCellAccessor::VectorDsType Vector;
-  Vector result;
-
-  for (int d = 0; d < result.size(); ++d) {
-    result(d)
-      = (0.5 * (accessor.rightWidthInDimension(d)(d)
-                + accessor.width() (d)))
-        * (accessor.rightCellInDimension(d)->pressureProjection() -
-           accessor.pressureProjection());
-  }
-
-  return result;
-}
 
 template <typename TCellAccessor,
           typename TParallelDistribution,
@@ -896,8 +665,7 @@ public:
       ScalarType diagonalCoeff
         = -2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
 
-      diagonalCoeff = coeff * diagonalCoeff;
-      // diagonalCoeff            = 2.0 * (1.0 - diagonalCoeff);
+      diagonalCoeff            = coeff * diagonalCoeff;
       stencil[2 * Dimensions] += diagonalCoeff;
     }
     // logInfo("{1} {2} {3} {4} {5} {6}",
@@ -935,7 +703,7 @@ class VpeResultAcquirer {
 public:
   template <typename TCellAccessor>
   inline void
-  set(TCellAccessor const&                                        accessor,
+  set(TCellAccessor const&                      accessor,
       typename TCellAccessor::ScalarType const& value) const {
     accessor.fgh(TDimension) = value;
   }
@@ -976,10 +744,10 @@ public:
 
     for (int d = 0; d < Dimensions; ++d) {
       meanWidths(2 * d) = 0.5 *
-                          (accessor.width() (d) +
+                          (accessor.width(d) +
                            accessor.width(d, -1, d));
       meanWidths(2 * d + 1) = 0.5 *
-                              (accessor.width() (d) +
+                              (accessor.width(d) +
                                accessor.width(d, +1, d));
 
       auto leftIndex = accessor.relativeIndex(d, -1);
@@ -1011,10 +779,10 @@ public:
 
     for (int d = 0; d < Dimensions; ++d) {
       auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);
-      stencil[2 * d] =
-        2.0 / (meanWidths(2 * d) * meanLeftAndRightWidth);
-      stencil[2 * d + 1] =
-        2.0 / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
+      stencil[2 * d]
+        = 2.0 / (meanWidths(2 * d) * meanLeftAndRightWidth);
+      stencil[2 * d + 1]
+        = 2.0 / (meanWidths(2 * d + 1) * meanLeftAndRightWidth);
       stencil[2 * Dimensions]
         -= 2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
     }
@@ -1029,7 +797,7 @@ class PpeRhsGenerator {
 public:
   using CellAccessorType = TCellAccessor;
 
-  using ScalarType       = typename CellAccessorType::ScalarType;
+  using ScalarType = typename CellAccessorType::ScalarType;
 
   PpeRhsGenerator() {}
 
@@ -1045,7 +813,7 @@ public:
                 / accessor.width(d);
     }
 
-    result = 1.0 / (*_dt) * result;
+    result = result / (*_dt);
 
     return result;
   }
@@ -1082,12 +850,8 @@ public:
   inline void
   set(CellAccessorType const& accessor,
       ScalarType const&       value) const {
-    accessor.pressure()
-      =  accessor.pressureProjection()
-        + value;
-    // + (1.0 / (*_dt)) * value;
-
-    accessor.pressureProjection() = value;
+    // accessor.pressure()       =  accessor.projectionTerm() + value;
+    accessor.projectionTerm() = value;
   }
 
 private:
@@ -1095,5 +859,3 @@ private:
 };
 }
 }
-
-#endif

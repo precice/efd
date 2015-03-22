@@ -1,8 +1,5 @@
 #pragma once
 
-#include "FluidSimulation/BasicCell.hpp"
-#include "FluidSimulation/ParallelDistribution.hpp"
-
 #include <Uni/Logging/macros>
 
 #include <Eigen/Core>
@@ -20,9 +17,6 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace XdmfHdf5Output {
 namespace Private {
-template <int TDimensions>
-struct XdmfWriterStaticData {};
-}
 template <typename TMemory>
 class XdmfWriter {
 public:
@@ -258,6 +252,7 @@ template <typename TMemory>
 std::string const XdmfWriter<TMemory>::name = "Grid";
 template <typename TMemory>
 std::string const XdmfWriter<TMemory>::gridType = "Uniform";
+}
 }
 }
 }

@@ -14,6 +14,17 @@ enum class SolverEnum {
   Ifsfd,
 };
 
+enum class ScalarEnum {
+  Float,
+  Double,
+  LongDouble
+};
+
+enum class OutputEnum {
+  Vtk,
+  Xdmf
+};
+
 enum class WallEnum {
   Input,
   ParabolicInput,
@@ -149,9 +160,12 @@ public:
     plotInterval(0),
     tau(0),
     gamma(0),
-    dim(0),
-    immersedBoundaryMethod(-1),
-    solver(SolverEnum::Sfsfd) {
+    dimensions(2),
+    solverType(SolverEnum::Sfsfd),
+    scalarType(ScalarEnum::Double),
+    outputType(OutputEnum::Vtk),
+    outerLayerSize(1),
+    innerLayerSize(0) {
     for (int d = 0; d < 3; ++d) {
       walls[d][0] = UniqueWallType(new Input());
       walls[d][1] = UniqueWallType(new Input());
@@ -164,18 +178,19 @@ public:
   int          iterationLimit;
   ScalarType   tau;
   ScalarType   gamma;
-  int          dim;
+  int          dimensions;
   VectorDsType width;
   VectorDiType size;
   VectorDiType parallelizationSize;
   VectorDsType environment;
   WallTypes    walls;
   std::string  filename;
-  int          immersedBoundaryMethod;
   float        alpha;
-  SolverEnum   solver;
-
-  static int const FeedbackForcingMethod;
+  SolverEnum   solverType;
+  ScalarEnum   scalarType;
+  OutputEnum   outputType;
+  int          outerLayerSize;
+  int          innerLayerSize;
 };
 }
 }

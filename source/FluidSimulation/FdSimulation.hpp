@@ -51,14 +51,6 @@ public:
   using GhostHandlersType
           = typename GhostLayer::Handlers<Dimensions>;
 
-  typedef PpeStencilGenerator<CellAccessorType, ParallelDistributionType>
-    PpeStencilGeneratorType;
-  typedef PpeRhsGenerator<CellAccessorType>
-    PpeRhsGeneratorType;
-  typedef PpeResultAcquirer1<CellAccessorType>
-    PpeResultAcquirer1Type;
-  typedef PpeResultAcquirer2<CellAccessorType>
-    PpeResultAcquirer2Type;
 
   typedef VpeStencilGenerator
     <CellAccessorType, ParallelDistributionType, ParametersType>

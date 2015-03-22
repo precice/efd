@@ -76,7 +76,7 @@ public:
     TCellAccessor const& accessor) {
     typedef TCellAccessor                           CellAccessorType;
     typedef typename CellAccessorType::VectorDiType VectorDiType;
-    typedef typename CellAccessorType::ScalarType           ScalarType;
+    typedef typename CellAccessorType::ScalarType   ScalarType;
 
     enum {
       Dimensions = CellAccessorType::Dimensions
@@ -165,7 +165,7 @@ public:
   }
 };
 
-class PpeRhsAcquiererAction {
+class PpeRhsAcquiererAction1 {
 public:
   template <typename TCellAccessor>
   inline void
@@ -174,10 +174,29 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const& accessor) {
-    typedef TCellAccessor                       CellAccessorType;
+    typedef TCellAccessor CellAccessorType;
     typedef StructuredMemory::Pointers
       <PetscScalar, CellAccessorType::Dimensions> Pointers;
     accessor.pressure() = Pointers::dereference(array, index);
+  }
+};
+
+class PpeRhsAcquiererAction2 {
+public:
+  template <typename TCellAccessor>
+  inline void
+  exchange(
+    typename StructuredMemory::Pointers
+    <PetscScalar, TCellAccessor::Dimensions>::Type array,
+    typename TCellAccessor::VectorDiType const& index,
+    TCellAccessor const& accessor) {
+    typedef TCellAccessor CellAccessorType;
+    typedef StructuredMemory::Pointers
+      <PetscScalar, CellAccessorType::Dimensions> Pointers;
+    auto const& value =  Pointers::dereference(array, index);
+
+    // accessor.pressure()       =  accessor.projectionTerm() + value;
+    accessor.projectionTerm() = value;
   }
 };
 }

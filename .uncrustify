@@ -2114,7 +2114,7 @@ pos_arith = ignore
 #            trail_force
 #          }
 # @default ignore
-pos_assign = ignore
+pos_assign = lead
 # ------------------------------------------------------------------------------
 #   @brief The position of boolean operators in wrapped expressions.
 #    @type enumeration {
@@ -2128,7 +2128,7 @@ pos_assign = ignore
 #            trail_force
 #          }
 # @default ignore
-pos_bool = ignore
+pos_bool = lead
 # ------------------------------------------------------------------------------
 #   @brief The position of comparison operators in wrapped expressions.
 #    @type enumeration {
@@ -2142,7 +2142,7 @@ pos_bool = ignore
 #            trail_force
 #          }
 # @default ignore
-pos_compare = ignore
+pos_compare = lead
 # ------------------------------------------------------------------------------
 #   @brief The position of ternary conditional operators in wrapped expressions.
 #    @type enumeration {
@@ -2156,7 +2156,7 @@ pos_compare = ignore
 #            trail_force
 #          }
 # @default ignore
-pos_conditional = ignore
+pos_conditional = lead
 # ------------------------------------------------------------------------------
 #   @brief The position of the comma in wrapped expressions.
 #    @type enumeration {
@@ -2198,7 +2198,7 @@ pos_class_comma = trail
 #            trail_force
 #          }
 # @default ignore
-pos_class_colon = lead
+pos_class_colon = trail
 # ------------------------------------------------------------------------------
 # }}} Positioning
 

@@ -4,27 +4,27 @@
 <scenario
   Re = "30"
   timeLimit = "1.0"
-  iterationLimit = "30"
-  plotInterval = "0.00"
+  iterationLimit = "300"
+  plotInterval = "0.001"
   tau = "0.5"
   gamma = "0.5"
   dim = "2"
   width = "2.2,0.41"
-  size = "220,85"
+  size = "220,82"
   parallelizationSize = "1,1,1"
   environment = "0,0"
   filename = "Channel2D"
   solver = "Simple Fractional Step Finite Difference"
   >
+  <!-- scalar = "double|float|long double" -->
   <!-- solver = "Improved Fractional Step Finite Difference" -->
   <!-- solver = "Simple Fractional Step Finite Difference" -->
+  <!-- output = "vtk|xdmf" -->
   <walls>
     <left type = "ParabolicInput" velocity = "0.3,0.0" />
     <right type = "Output" />
     <bottom type = "Input" velocity = "0.0,0.0" />
     <top type = "Input" velocity = "0.0,0.0" />
   </walls>
-  <immersed-boundary
-    method = "FeedbackForcing"
-    alpha = "-1.0"/>
+  <immersed-boundary outerLayerSize="2" innerLayerSize="2"/>
 </scenario>

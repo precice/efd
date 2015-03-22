@@ -60,7 +60,7 @@ public:
 
   void
   dirichletRight(Mat& A) {
-    genericHandler<Handler::dirichletStencilRight>(A);
+    genericHandler<Handler::dirichletStencilLeft>(A);
   }
 
   void
@@ -75,7 +75,7 @@ public:
 
   void
   neumannRight(Mat& A) {
-    genericHandler<Handler::neumannStencilRight>(A);
+    genericHandler<Handler::neumannStencilLeft>(A);
   }
 
   void

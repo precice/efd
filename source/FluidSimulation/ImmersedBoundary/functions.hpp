@@ -88,26 +88,6 @@ compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
   return -1;
 }
 
-template <typename TGrid>
-inline void
-compute_position_in_respect_to_geometry(
-  TGrid const*              grid,
-  precice::SolverInterface* preciceInterface) {
-  using GridType = TGrid;
-
-  using CellAccessorType = typename GridType::CellAccessorType;
-
-  for (auto const& accessor : grid->innerGrid) {
-    auto position = (accessor.position()
-                     + 0.5 * accessor.width()).eval().template cast<double>();
-
-    accessor.positionInRespectToGeometry()
-      = preciceInterface->inquirePosition(
-      position.data(),
-      std::set<int>({ preciceInterface->getMeshID("Body") }));
-  }
-}
-
 template <typename TCellAccessor>
 inline bool
 validate_layer_number(TCellAccessor const& accessor,
