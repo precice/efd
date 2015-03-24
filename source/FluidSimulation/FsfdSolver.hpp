@@ -81,8 +81,6 @@ public:
     _peSolver.initialize(&_memory,
                          &_ghostHandlers);
 
-    _memory.maxVelocity() = VectorDsType::Zero();
-
     for (auto& accessor : _memory.grid()->innerGrid) {
       _ibController.computePositionInRespectToGeometry(accessor);
       accessor.velocity() = VectorDsType::Zero();
@@ -104,6 +102,7 @@ public:
       accessor.convection() = convection;
     }
 
+    _memory.maxVelocity() = VectorDsType::Zero();
     _memory.timeStepSize()    = 1.0;
     _memory.time()            = 0.0;
     _memory.iterationNumber() = 0;
@@ -184,7 +183,7 @@ public:
       _ibController.readFluidForce(it, force);
 
       // _memory.fgh()[it->first] += _memory.timeStepsize() * force;
-      // _memory.fgh()[it->first] += force;
+      _memory.fgh()[it->first] += force;
     }
 
     _peSolver.executeVpe();

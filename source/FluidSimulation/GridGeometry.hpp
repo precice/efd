@@ -42,6 +42,11 @@ public:
     return _size;
   }
 
+  Scalar const&
+  size(int const& index) const {
+    return _size(index);
+  }
+
   VectorDs const&
   cellWidth(VectorDi const& i) const {
     ((void)i);

@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_GhostLayer_Initialization_Actions_hpp
-#define FsiSimulation_FluidSimulation_GhostLayer_Initialization_Actions_hpp
+#pragma once
 
 #include "Private/utilities.hpp"
 
@@ -11,270 +10,378 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
 namespace Initialization {
-template <typename TGrid,
-          typename TScalar,
-          int TD,
+template <typename TSolverTraits,
           int TDimension,
           int TDirection>
 class MovingWallVelocityAction {
 public:
-  typedef typename TGrid::CellAccessor::VectorDsType Velocity;
+  using SolverTraitsType = TSolverTraits;
+
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
 
   MovingWallVelocityAction(Configuration* parameters,
-                           Velocity*      maxVelocity)
+                           VectorDsType*  maxVelocity)
     : _configuration(parameters),
     _maxVelocity(maxVelocity) {}
 
   void
-  setValue(typename TGrid::CellAccessor const& current,
-           typename TGrid::CellAccessor const& neighbor) {
-    for (int d = 0; d < TD; ++d) {
+  setValue(CellAccessorType const& current,
+           CellAccessorType const& neighbor) {
+    for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
         if (TDirection == 0) {
-          current.velocity(d) =
-            _configuration->walls[TDimension][TDirection]->velocity() (d);
+          current.velocity(d)
+            = _configuration->walls[TDimension][TDirection]->velocity() (d);
         } else {
-          neighbor.velocity(d) =
-            _configuration->walls[TDimension][TDirection]->velocity() (d);
+          neighbor.velocity(d)
+            = _configuration->walls[TDimension][TDirection]->velocity() (d);
         }
       } else {
-        current.velocity(d) =
-          2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
-          - neighbor.velocity(d);
+        current.velocity(d)
+          = 2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
+            - neighbor.velocity(d);
       }
     }
-    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
+    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
       (current,  *_maxVelocity);
-    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
+    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
       (neighbor, *_maxVelocity);
   }
 
   Configuration* _configuration;
-  Velocity*      _maxVelocity;
+  VectorDsType*  _maxVelocity;
 };
 
-template <typename TGrid,
-          typename TScalar,
-          int TD,
+template <typename TSolverTraits,
           int TDimension,
           int TDirection>
 class InputVelocityAction {
 public:
-  typedef typename TGrid::CellAccessor::VectorDsType Velocity;
+  using SolverTraitsType = TSolverTraits;
+
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
 
   InputVelocityAction(Configuration* parameters,
-                      Velocity*      maxVelocity)
+                      VectorDsType*  maxVelocity)
     : _configuration(parameters),
     _maxVelocity(maxVelocity) {}
 
   void
-  setValue(typename TGrid::CellAccessor const& current,
-           typename TGrid::CellAccessor const& neighbor) {
-    for (int d = 0; d < TD; ++d) {
+  setValue(CellAccessorType const& current,
+           CellAccessorType const& neighbor) {
+    for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
         if (TDirection == 0) {
-          current.velocity(d) =
-            _configuration->walls[TDimension][TDirection]->velocity() (d);
+          current.velocity(d)
+            = _configuration->walls[TDimension][TDirection]->velocity() (d);
         } else {
-          neighbor.velocity(d) =
-            _configuration->walls[TDimension][TDirection]->velocity() (d);
+          neighbor.velocity(d)
+            = _configuration->walls[TDimension][TDirection]->velocity() (d);
         }
       } else {
-        current.velocity(d) =
-          2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
-          - neighbor.velocity(d);
+        current.velocity(d)
+          = 2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
+            - neighbor.velocity(d);
       }
     }
-    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
+    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
       (current,  *_maxVelocity);
-    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
+    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
       (neighbor, *_maxVelocity);
   }
 
   Configuration* _configuration;
-  Velocity*      _maxVelocity;
+  VectorDsType   _;
+  VectorDsType*  _maxVelocity;
 };
 
-template <typename TGrid,
-          typename TScalar,
-          int TD,
+template <typename TSolverTraits,
           int TDimension,
           int TDirection>
 class ParabolicInputVelocityAction {
 public:
-  typedef typename TGrid::CellAccessor::VectorDsType Velocity;
+  using SolverTraitsType = TSolverTraits;
+
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
 
   ParabolicInputVelocityAction(Configuration* parameters,
-                               Velocity*      maxVelocity)
+                               VectorDsType*  maxVelocity)
     : _configuration(parameters),
     _maxVelocity(maxVelocity) {}
 
   void
-  setValue(typename TGrid::CellAccessor const& current,
-           typename TGrid::CellAccessor const& neighbor) {
-    for (int d = 0; d < TD; ++d) {
+  setValue(CellAccessorType const& current,
+           CellAccessorType const& neighbor) {
+    ScalarType result;
+
+    for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
+        result
+          = _configuration->walls[TDimension][TDirection]->velocity()(
+          TDimension);
+
         if (TDirection == 0) {
-          current.velocity(d) =
-            computeParabolicInputVelocity(
-              current,
-              _configuration->walls[TDimension][TDirection]->velocity(),
-              TDimension);
+          compute_parabolic_input_velocity(current, TDimension, result);
+          current.velocity(TDimension) = result;
         } else {
-          neighbor.velocity(d) =
-            computeParabolicInputVelocity(
-              neighbor,
-              _configuration->walls[TDimension][TDirection]->velocity(),
-              TDimension);
+          compute_parabolic_input_velocity(neighbor, TDimension, result);
+          neighbor.velocity(TDimension) = result;
         }
       } else {
-        current.velocity(d) =
-          2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
-          - neighbor.velocity(d);
+        current.velocity(d)
+          = 2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
+            - neighbor.velocity(d);
       }
     }
-    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
+    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
       (current,  *_maxVelocity);
-    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
+    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
       (neighbor, *_maxVelocity);
   }
 
   Configuration* _configuration;
-  Velocity*      _maxVelocity;
+  VectorDsType*  _maxVelocity;
 };
 
-template <typename TGrid,
-          typename TScalar,
-          int TD,
+template <typename TSolverTraits,
           int TDimension,
           int TDirection>
 class OutputVelocityAction {
 public:
- typedef typename TGrid::CellAccessor::VectorDsType Velocity;
+  using SolverTraitsType = TSolverTraits;
 
-  OutputVelocityAction(Velocity* maxVelocity)
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+
+  OutputVelocityAction(VectorDsType* maxVelocity)
     : _maxVelocity(maxVelocity) {}
 
   void
-  setValue(typename TGrid::CellAccessor const& current,
-           typename TGrid::CellAccessor const& neighbor) {
-    for (int d = 0; d < TD; ++d) {
+  setValue(CellAccessorType const& current,
+           CellAccessorType const& neighbor) {
+    for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
         if (TDirection == 0) {
-          current.velocity(d) =
-            neighbor.velocity(d);
+          current.velocity(d)
+            = neighbor.velocity(d);
         } else {
-          neighbor.velocity(d) =
-            neighbor.velocity(d, -1, d);
+          neighbor.velocity(d)
+            = neighbor.velocity(d, -1, d);
         }
       } else {
-        current.velocity(d) =
-          neighbor.velocity(d);
+        current.velocity(d)
+          = neighbor.velocity(d);
       }
     }
-    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
+    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
       (current,  *_maxVelocity);
-    computeMaxVelocity<typename TGrid::CellAccessor, TScalar, TD>
+    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
       (neighbor, *_maxVelocity);
   }
 
-  Velocity* _maxVelocity;
+  VectorDsType* _maxVelocity;
 };
 
-template <typename TGrid,
-          typename TScalar,
-          int TD,
+template <typename TSolverTraits,
           int TDimension,
           int TDirection>
 class MovingWallFghAction {
 public:
+  using SolverTraitsType = TSolverTraits;
+
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+
+public:
   MovingWallFghAction(Configuration* parameters) : _configuration(parameters) {}
 
   void
-  setValue(typename TGrid::CellAccessor const& current,
-           typename TGrid::CellAccessor const& neighbor) {
+  setValue(CellAccessorType const& current,
+           CellAccessorType const& neighbor) {
     if (TDirection == 0) {
-      current.fgh(TDimension) =
-        _configuration->walls[TDimension][TDirection]->velocity() (TDimension);
+      current.fgh(TDimension)
+        = _configuration->walls[TDimension][TDirection]->velocity() (
+        TDimension);
     } else {
-      neighbor.fgh(TDimension) =
-        _configuration->walls[TDimension][TDirection]->velocity() (TDimension);
+      neighbor.fgh(TDimension)
+        = _configuration->walls[TDimension][TDirection]->velocity() (
+        TDimension);
     }
   }
 
   Configuration* _configuration;
 };
 
-template <typename TGrid,
-          typename TScalar,
-          int TD,
+template <typename TSolverTraits,
           int TDimension,
           int TDirection>
 class InputFghAction {
 public:
+  using SolverTraitsType = TSolverTraits;
+
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+
   InputFghAction(Configuration* parameters) : _configuration(parameters) {}
 
   void
-  setValue(typename TGrid::CellAccessor const& current,
-           typename TGrid::CellAccessor const& neighbor) {
+  setValue(CellAccessorType const& current,
+           CellAccessorType const& neighbor) {
     if (TDirection == 0) {
-      current.fgh(TDimension) =
-        _configuration->walls[TDimension][TDirection]->velocity() (TDimension);
+      current.fgh(TDimension)
+        = _configuration->walls[TDimension][TDirection]->velocity() (
+        TDimension);
     } else {
-      neighbor.fgh(TDimension) =
-        _configuration->walls[TDimension][TDirection]->velocity() (TDimension);
+      neighbor.fgh(TDimension)
+        = _configuration->walls[TDimension][TDirection]->velocity() (
+        TDimension);
     }
   }
 
   Configuration* _configuration;
 };
 
-template <typename TGrid,
-          typename TScalar,
-          int TD,
+template <typename TSolverTraits,
           int TDimension,
           int TDirection>
 class ParabolicInputFghAction {
 public:
+  using SolverTraitsType = TSolverTraits;
+
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+
   ParabolicInputFghAction(Configuration* parameters)
     : _configuration(parameters) {}
 
   void
-  setValue(typename TGrid::CellAccessor const& current,
-           typename TGrid::CellAccessor const& neighbor) {
+  setValue(CellAccessorType const& current,
+           CellAccessorType const& neighbor) {
+    ScalarType result;
+    result
+      = _configuration->walls[TDimension][TDirection]->velocity()(TDimension);
+
     if (TDirection == 0) {
-      current.fgh(TDimension) =
-        computeParabolicInputVelocity(
-          current,
-          _configuration->walls[TDimension][TDirection]->velocity(),
-          TDimension);
+      compute_parabolic_input_velocity(current, TDimension, result);
+      current.fgh(TDimension) = result;
     } else {
-      neighbor.fgh(TDimension) =
-        computeParabolicInputVelocity(
-          neighbor,
-          _configuration->walls[TDimension][TDirection]->velocity(),
-          TDimension);
+      compute_parabolic_input_velocity(neighbor, TDimension, result);
+      neighbor.fgh(TDimension) = result;
     }
   }
 
   Configuration* _configuration;
 };
 
-template <typename TGrid,
-          typename TScalar,
-          int TD,
+template <typename TSolverTraits,
           int TDimension,
           int TDirection>
 class OutputFghAction {
 public:
+  using SolverTraitsType = TSolverTraits;
+
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+
+public:
   OutputFghAction() {}
 
   void
-  setValue(typename TGrid::CellAccessor const& current,
-           typename TGrid::CellAccessor const& neighbor) {
+  setValue(CellAccessorType const& current,
+           CellAccessorType const& neighbor) {
     if (TDirection == 0) {
-      current.fgh(TDimension) =
-        neighbor.fgh(TDimension);
+      current.fgh(TDimension) = neighbor.fgh(TDimension);
     } else {
       // neighbor.fgh(d) =
       // neighbor.leftCellInDimension(d)->fgh(d);
@@ -285,5 +392,3 @@ public:
 }
 }
 }
-
-#endif

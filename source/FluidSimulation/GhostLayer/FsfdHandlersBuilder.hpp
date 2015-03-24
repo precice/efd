@@ -66,9 +66,7 @@ public:
 
   typedef
     Initialization::MovingWallFghAction
-    <typename GridType::BaseType,
-     ScalarType,
-     Dimensions,
+    <SolverTraitsType,
      Dimension,
      Direction>
     MovingWallFghInitializationAction;
@@ -82,9 +80,7 @@ public:
     MovingWallFghInitialization;
   typedef
     Initialization::InputFghAction
-    <typename GridType::BaseType,
-     ScalarType,
-     Dimensions,
+    <SolverTraitsType,
      Dimension,
      Direction>
     InputFghInitializationAction;
@@ -98,9 +94,7 @@ public:
     InputFghInitialization;
   typedef
     Initialization::ParabolicInputFghAction
-    <typename GridType::BaseType,
-     ScalarType,
-     Dimensions,
+    <SolverTraitsType,
      Dimension,
      Direction>
     ParabolicInputFghInitializationAction;
@@ -114,9 +108,7 @@ public:
     ParabolicInputFghInitialization;
   typedef
     Initialization::OutputFghAction
-    <typename GridType::BaseType,
-     ScalarType,
-     Dimensions,
+    <SolverTraitsType,
      Dimension,
      Direction>
     OutputFghInitializationAction;
@@ -152,19 +144,8 @@ public:
     PpeRhsAcquiererHandler;
 
   typedef
-    Initialization::MovingWallVelocityAction
-    <typename GridType::BaseType, ScalarType, Dimensions, Dimension,
-     Direction>
-    MovingWallVelocityInitializationAction;
-  typedef
-    Initialization::Handler
-    <typename GridType::BaseType, MovingWallVelocityInitializationAction,
-     Dimensions,
-     Dimension, Direction>
-    MovingWallVelocityInitialization;
-  typedef
     Initialization::InputVelocityAction
-    <typename GridType::BaseType, ScalarType, Dimensions, Dimension,
+    <SolverTraitsType, Dimension,
      Direction>
     InputVelocityInitializationAction;
   typedef
@@ -174,7 +155,7 @@ public:
     InputVelocityInitialization;
   typedef
     Initialization::ParabolicInputVelocityAction
-    <typename GridType::BaseType, ScalarType, Dimensions, Dimension,
+    <SolverTraitsType, Dimension,
      Direction>
     ParabolicInputVelocityInitializationAction;
   typedef
@@ -185,7 +166,7 @@ public:
     ParabolicInputVelocityInitialization;
   typedef
     Initialization::OutputVelocityAction
-    <typename GridType::BaseType, ScalarType, Dimensions, Dimension,
+    <SolverTraitsType, Dimension,
      Direction>
     OutputVelocityInitializationAction;
   typedef
@@ -199,7 +180,8 @@ public:
   FsfdHandlersBuilder(Configuration* configuration,
                       SolverType*    simulation)
     : _configuration(configuration),
-    _solver(simulation) {}
+    _solver(simulation) {
+  }
 
   inline void
   setAsInput() {
@@ -217,10 +199,10 @@ public:
       _solver->memory()->grid(),
       _solver->memory()->parallelDistribution());
     _solver->ghostHandlers()->ppeRhsGeneratorStack[Dimension][Direction]
-      = PpeRhsGenerationHandler::getHandler(_solver->memory()->grid(),
-                                            _solver->memory()->
-                                            parallelDistribution(),
-                                            new PpeRhsGenerationAction(0.0));
+      = PpeRhsGenerationHandler::getHandler(
+      _solver->memory()->grid(),
+      _solver->memory()->parallelDistribution(),
+      new PpeRhsGenerationAction(0.0));
 
     if (Direction == 1) {
       _solver->ghostHandlers()->ppeRhsAcquiererStack[Dimension][Direction]

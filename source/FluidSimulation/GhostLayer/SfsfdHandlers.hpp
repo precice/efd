@@ -18,26 +18,27 @@ public:
   SfsfdHandlers() {
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        mpiFghExchangeStack[d][d2] =
-          MpiExchange::getEmptyFunctor<Dimensions>();
-        mpiPressureExchangeStack[d][d2] =
-          MpiExchange::getEmptyFunctor<Dimensions>();
-        mpiVelocityExchangeStack[d][d2] =
-          MpiExchange::getEmptyFunctor<Dimensions>();
-        fghInitialization[d][d2] =
-          Initialization::getEmptyFunctor<Dimensions>();
+        mpiFghExchangeStack[d][d2]
+          = MpiExchange::getEmptyFunctor<Dimensions>();
+        mpiPressureExchangeStack[d][d2]
+          = MpiExchange::getEmptyFunctor<Dimensions>();
+        mpiVelocityExchangeStack[d][d2]
+          = MpiExchange::getEmptyFunctor<Dimensions>();
+        fghInitialization[d][d2]
+          = Initialization::getEmptyFunctor<Dimensions>();
 
-        ppeStencilGeneratorStack[d][d2] =
-          LsStencilGenerator::getEmptyFunctor<Dimensions>();
-        ppeRhsGeneratorStack[d][d2] =
-          PetscExchange::getEmptyFunctor<Dimensions>();
-        ppeRhsAcquiererStack[d][d2] =
-          PetscExchange::getEmptyFunctor<Dimensions>();
+        ppeStencilGeneratorStack[d][d2]
+          = LsStencilGenerator::getEmptyFunctor<Dimensions>();
+        ppeRhsGeneratorStack[d][d2]
+          = PetscExchange::getEmptyFunctor<Dimensions>();
+        ppeRhsAcquiererStack[d][d2]
+          = PetscExchange::getEmptyFunctor<Dimensions>();
 
-        velocityInitialization[d][d2] =
-          Initialization::getEmptyFunctor<Dimensions>();
+        velocityInitialization[d][d2]
+          = Initialization::getEmptyFunctor<Dimensions>();
       }
     }
+    cornersHandler = [] () {};
   }
 
   SfsfdHandlers(SfsfdHandlers const& other) = delete;
@@ -86,10 +87,14 @@ public:
   void
   executeVelocityInitialization() const {
     for (int d = 0; d < Dimensions; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        velocityInitialization[d][d2]();
-      }
+      velocityInitialization[d][1]();
     }
+
+    for (int d = 0; d < Dimensions; ++d) {
+      velocityInitialization[d][0]();
+    }
+
+    cornersHandler();
   }
 
   MpiExchange::FunctorStack<Dimensions> mpiFghExchangeStack;
@@ -103,6 +108,8 @@ public:
   PetscExchange::FunctorStack<Dimensions>      ppeRhsAcquiererStack;
 
   Initialization::FunctorStack<Dimensions> velocityInitialization;
+
+  std::function<void()> cornersHandler;
 };
 }
 }

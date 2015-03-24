@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Configuration.hpp"
+#include "GhostLayer/CornerVelocityHandler.hpp"
+
+#include <functional>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
@@ -80,8 +83,8 @@ public:
     _solver->memory()->parameters()->g(1) = configuration->environment(1);
 
     if (Dimensions == 3) {
-      _solver->memory()->parameters()->g(2) =
-        configuration->environment(2);
+      _solver->memory()->parameters()->g(2)
+        = configuration->environment(2);
     }
 
     _solver->memory()->initialize(processor_size,
@@ -94,6 +97,17 @@ public:
     setTopWallAs(configuration->walls[1][1]->type());
     setBackWallAs(configuration->walls[2][0]->type());
     setFrontWallAs(configuration->walls[2][1]->type());
+
+    auto handlers
+      = std::make_shared
+        < GhostLayer::CornerVelocityHandlers < SolverTraitsType >> (
+      _solver->memory(),
+      configuration);
+
+    _solver->ghostHandlers()->cornersHandler
+      = std::bind(
+      &GhostLayer::CornerVelocityHandlers<SolverTraitsType>::execute,
+      handlers);
   }
 
   void

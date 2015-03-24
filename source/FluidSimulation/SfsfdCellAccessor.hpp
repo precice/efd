@@ -17,9 +17,9 @@ struct MultiIndexTraits {
 };
 }
 template <typename TSolverTraits>
-class SfsfdCellAccessor
-  : public Uni::StructuredGrid::Basic::GlobalMultiIndex
-    < Private::MultiIndexTraits < TSolverTraits >> {
+class SfsfdCellAccessor :
+  public Uni::StructuredGrid::Basic::GlobalMultiIndex
+  < Private::MultiIndexTraits < TSolverTraits >> {
 public:
   using BaseType = Uni::StructuredGrid::Basic::GlobalMultiIndex
                    < Private::MultiIndexTraits < TSolverTraits >>;
@@ -80,14 +80,14 @@ public:
   VectorDsType
   width() const {
     return _memory->gridGeometry()->cellWidth(
-      this->index() - _memory->grid()->leftIndent());
+      this->index() - _memory->grid()->innerGrid.leftIndent());
   }
 
   VectorDsType
   width(int const& dimension, int const& offset) const {
     return _memory->gridGeometry()->cellWidth(
       this->relativeIndex(dimension, offset)
-      - _memory->grid()->leftIndent());
+      - _memory->grid()->innerGrid.leftIndent());
   }
 
   VectorDsType
@@ -100,19 +100,19 @@ public:
                           offset,
                           dimension2,
                           offset2)
-      - _memory->grid()->leftIndent());
+      - _memory->grid()->innerGrid.leftIndent());
   }
 
   VectorDsType
   width(VectorDiType const& index) const {
     return _memory->gridGeometry()->cellWidth(
-      this->relativeIndex(index) - _memory->grid()->leftIndent());
+      this->relativeIndex(index) - _memory->grid()->innerGrid.leftIndent());
   }
 
   ScalarType
   width(int const& dimension) const {
     return _memory->gridGeometry()->cellWidth(
-      this->index() - _memory->grid()->leftIndent())(dimension);
+      this->index() - _memory->grid()->innerGrid.leftIndent())(dimension);
   }
 
   ScalarType
@@ -120,8 +120,8 @@ public:
         int const& offset,
         int const& width_dimension) const {
     return _memory->gridGeometry()->cellWidth(
-      this->relativeIndex(dimension, offset) - _memory->grid()->leftIndent())
-             (width_dimension);
+      this->relativeIndex(dimension, offset)
+      - _memory->grid()->innerGrid.leftIndent()) (width_dimension);
   }
 
   ScalarType
@@ -135,28 +135,28 @@ public:
                           offset,
                           dimension2,
                           offset2)
-      - _memory->grid()->leftIndent())
-             (width_dimension);
+      - _memory->grid()->innerGrid.leftIndent()) (width_dimension);
   }
 
   VectorDsType
   width(VectorDiType const& index,
         int const&          width_dimension) const {
     return _memory->gridGeometry()->cellWidth(
-      this->relativeIndex(index) - _memory->grid()->leftIndent())
+      this->relativeIndex(index) - _memory->grid()->innerGrid.leftIndent())
              (width_dimension);
   }
 
   VectorDsType
   position() const {
     return _memory->gridGeometry()->cellPosition(
-      this->index() - _memory->grid()->leftIndent());
+      this->index() - _memory->grid()->innerGrid.leftIndent());
   }
 
   VectorDsType
   position(int const& dimension, int const& offset) const {
     return _memory->gridGeometry()->cellPosition(
-      this->relativeIndex(dimension, offset) - _memory->grid()->leftIndent());
+      this->relativeIndex(dimension, offset)
+      - _memory->grid()->innerGrid.leftIndent());
   }
 
   VectorDsType
@@ -169,20 +169,20 @@ public:
                           offset,
                           dimension2,
                           offset2)
-      - _memory->grid()->leftIndent());
+      - _memory->grid()->innerGrid.leftIndent());
   }
 
   VectorDsType
   position(VectorDiType const& index) const {
     return _memory->gridGeometry()->cellPosition(
       this->relativeIndex(index)
-      - _memory->grid()->leftIndent());
+      - _memory->grid()->innerGrid.leftIndent());
   }
 
   ScalarType
   position(int const& dimension) const {
     return _memory->gridGeometry()->cellPosition(
-      this->index() - _memory->grid()->leftIndent())(dimension);
+      this->index() - _memory->grid()->innerGrid.leftIndent())(dimension);
   }
 
   ScalarType
@@ -190,8 +190,8 @@ public:
            int const& offset,
            int const& position_dimension) const {
     return _memory->gridGeometry()->cellPosition(
-      this->relativeIndex(dimension, offset) - _memory->grid()->leftIndent())
-             (position_dimension);
+      this->relativeIndex(dimension, offset)
+      - _memory->grid()->innerGrid.leftIndent()) (position_dimension);
   }
 
   ScalarType
@@ -205,7 +205,7 @@ public:
                           offset,
                           dimension2,
                           offset2)
-      - _memory->grid()->leftIndent())
+      - _memory->grid()->innerGrid.leftIndent())
              (position_dimension);
   }
 
@@ -213,7 +213,7 @@ public:
   position(VectorDiType const& index,
            int const&          position_dimension) const {
     return _memory->gridGeometry()->cellPosition(
-      this->relativeIndex(index) - _memory->grid()->leftIndent());
+      this->relativeIndex(index) - _memory->grid()->innerGrid.leftIndent());
   }
 
   VectorDsType
@@ -448,7 +448,7 @@ public:
 
   int&
   positionInRespectToGeometry(int const& dimension,
-                                      int const& offset) const {
+                              int const& offset) const {
     return _memory->position(
       this->relativeGlobalIndex(dimension, offset));
   }
@@ -608,7 +608,7 @@ protected:
     VectorDsType width = _memory->gridGeometry()->cellWidth(index);
     VectorDsType result
       = _memory->gridGeometry()->cellPosition(
-      index - _memory->grid()->leftIndent());
+      index - _memory->grid()->innerGrid.leftIndent());
 
     for (int d = 0; d < Dimensions; ++d) {
       if (d == velocity_dimension) {
@@ -629,7 +629,7 @@ protected:
                          (position_dimension);
     ScalarType result
       = _memory->gridGeometry()->cellPosition(
-      index - _memory->grid()->leftIndent())
+      index - _memory->grid()->innerGrid.leftIndent())
           (position_dimension);
 
     if (position_dimension == velocity_dimension) {
@@ -645,7 +645,7 @@ protected:
   _pressurePosition(VectorDiType const& index) const {
     VectorDsType result
       = _memory->gridGeometry()->cellPosition(
-      index - _memory->grid()->leftIndent())
+      index - _memory->grid()->innerGrid.leftIndent())
         + 0.5 * _memory->gridGeometry()->cellWidth(index);
 
     return result;
@@ -656,7 +656,7 @@ protected:
                     int const&          position_dimension) const {
     ScalarType result
       = _memory->gridGeometry()->cellPosition(
-      index - _memory->grid()->leftIndent())
+      index - _memory->grid()->innerGrid.leftIndent())
           (position_dimension)
         + 0.5 * _memory->gridGeometry()->cellWidth(index)(position_dimension);
 

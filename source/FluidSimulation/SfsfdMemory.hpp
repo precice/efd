@@ -201,16 +201,16 @@ public:
   }
 
   ScalarType const&
-  attribute(std::size_t const& index,
+  attribute(int const& index,
             short const&       attribute_index,
-            unsigned const&    dimension = 0) const {
+            int const&    dimension = 0) const {
     return _attribute(index, attribute_index, dimension);
   }
 
   ScalarType&
-  attribute(std::size_t const& index,
+  attribute(int const& index,
             short const&       attribute_index,
-            unsigned const&    dimension = 0) {
+            int const&    dimension = 0) {
     return _attribute(index, attribute_index, dimension);
   }
 
@@ -225,23 +225,23 @@ public:
   }
 
   VectorDsType const&
-  velocity(std::size_t const& index) const {
+  velocity(int const& index) const {
     return _velocity.get()[index];
   }
 
   VectorDsType&
-  velocity(std::size_t const& index) {
+  velocity(int const& index) {
     return _velocity.get()[index];
   }
 
   ScalarType const&
-  velocity(std::size_t const& index, unsigned const& dimension) const {
-    return _velocity.get()[index].data()[dimension];
+  velocity(int const& index, int const& dimension) const {
+    return _velocity.get()[index](dimension);
   }
 
   ScalarType&
-  velocity(std::size_t const& index, unsigned const& dimension) {
-    return _velocity.get()[index].data()[dimension];
+  velocity(int const& index, int const& dimension) {
+    return _velocity.get()[index](dimension);
   }
 
   ScalarType const*
@@ -255,12 +255,12 @@ public:
   }
 
   ScalarType const&
-  pressure(std::size_t const& index) const {
+  pressure(int const& index) const {
     return _pressure.get()[index];
   }
 
   ScalarType&
-  pressure(std::size_t const& index) {
+  pressure(int const& index) {
     return _pressure.get()[index];
   }
 
@@ -275,12 +275,12 @@ public:
   }
 
   int const&
-  position(std::size_t const& index) const {
+  position(int const& index) const {
     return _position.get()[index];
   }
 
   int&
-  position(std::size_t const& index) {
+  position(int const& index) {
     return _position.get()[index];
   }
 
@@ -295,22 +295,22 @@ public:
   }
 
   VectorDsType const&
-  fgh(std::size_t const& index) const {
+  fgh(int const& index) const {
     return _fgh.get()[index];
   }
 
   VectorDsType&
-  fgh(std::size_t const& index) {
+  fgh(int const& index) {
     return _fgh.get()[index];
   }
 
   ScalarType const&
-  fgh(std::size_t const& index, unsigned const& dimension) const {
+  fgh(int const& index, int const& dimension) const {
     return _fgh.get()[index].data()[dimension];
   }
 
   ScalarType&
-  fgh(std::size_t const& index, unsigned const& dimension) {
+  fgh(int const& index, int const& dimension) {
     return _fgh.get()[index].data()[dimension];
   }
 
@@ -320,28 +320,28 @@ public:
   }
 
   VectorDsType const&
-  convection(std::size_t const& index) const {
+  convection(int const& index) const {
     return _convection.get()[index];
   }
 
   VectorDsType&
-  convection(std::size_t const& index) {
+  convection(int const& index) {
     return _convection.get()[index];
   }
 
   ScalarType const&
-  convection(std::size_t const& index, unsigned const& dimension) const {
+  convection(int const& index, int const& dimension) const {
     return _convection.get()[index].data()[dimension];
   }
 
   ScalarType&
-  convection(std::size_t const& index, unsigned const& dimension) {
+  convection(int const& index, int const& dimension) {
     return _convection.get()[index].data()[dimension];
   }
 
 protected:
   ScalarType&
-  _attribute(std::size_t const& index,
+  _attribute(int const& index,
              int const&       attribute_index,
              int const&         dimension) const {
     switch (attribute_index) {
