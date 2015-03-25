@@ -103,7 +103,6 @@ public:
     }
 
     Pointers::dereference(array, tempIndex) = temp;
-    // logInfo("{1}", temp);
   }
 
 private:
@@ -135,9 +134,9 @@ public:
   exchange(typename Pointers::Type array,
            VectorDiType const&     index,
            CellAccessorType const& accessor) {
-    auto temp = index;
-    temp(TDimension)                  -= _offset;
-    Pointers::dereference(array, temp) = _value;
+    // auto temp = index;
+    // temp(TDimension)                  -= _offset;
+    Pointers::dereference(array, index) = _value;
   }
 
 private:

@@ -87,14 +87,12 @@ public:
   void
   executeVelocityInitialization() const {
     for (int d = 0; d < Dimensions; ++d) {
-      velocityInitialization[d][1]();
+      for (int d2 = 0; d2 < 2; ++d2) {
+        velocityInitialization[d][d2]();
+      }
     }
 
-    for (int d = 0; d < Dimensions; ++d) {
-      velocityInitialization[d][0]();
-    }
-
-    cornersHandler();
+    // cornersHandler();
   }
 
   MpiExchange::FunctorStack<Dimensions> mpiFghExchangeStack;

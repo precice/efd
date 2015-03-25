@@ -13,60 +13,6 @@ namespace Initialization {
 template <typename TSolverTraits,
           int TDimension,
           int TDirection>
-class MovingWallVelocityAction {
-public:
-  using SolverTraitsType = TSolverTraits;
-
-  enum {
-    Dimensions = SolverTraitsType::Dimensions
-  };
-
-  using GridType = typename SolverTraitsType::GridType;
-
-  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
-
-  using VectorDsType = typename SolverTraitsType::VectorDsType;
-
-  using VectorDiType = typename SolverTraitsType::VectorDiType;
-
-  using ScalarType = typename SolverTraitsType::ScalarType;
-
-  MovingWallVelocityAction(Configuration* parameters,
-                           VectorDsType*  maxVelocity)
-    : _configuration(parameters),
-    _maxVelocity(maxVelocity) {}
-
-  void
-  setValue(CellAccessorType const& current,
-           CellAccessorType const& neighbor) {
-    for (int d = 0; d < Dimensions; ++d) {
-      if (d == TDimension) {
-        if (TDirection == 0) {
-          current.velocity(d)
-            = _configuration->walls[TDimension][TDirection]->velocity() (d);
-        } else {
-          neighbor.velocity(d)
-            = _configuration->walls[TDimension][TDirection]->velocity() (d);
-        }
-      } else {
-        current.velocity(d)
-          = 2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
-            - neighbor.velocity(d);
-      }
-    }
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (current,  *_maxVelocity);
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (neighbor, *_maxVelocity);
-  }
-
-  Configuration* _configuration;
-  VectorDsType*  _maxVelocity;
-};
-
-template <typename TSolverTraits,
-          int TDimension,
-          int TDirection>
 class InputVelocityAction {
 public:
   using SolverTraitsType = TSolverTraits;
@@ -91,27 +37,28 @@ public:
     _maxVelocity(maxVelocity) {}
 
   void
-  setValue(CellAccessorType const& current,
-           CellAccessorType const& neighbor) {
+  setValue(CellAccessorType const& accessor) {
     for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
         if (TDirection == 0) {
-          current.velocity(d)
-            = _configuration->walls[TDimension][TDirection]->velocity() (d);
+          accessor.velocity(TDimension)
+            = _configuration->walls[TDimension][TDirection]->velocity()
+                (TDimension);
         } else {
-          neighbor.velocity(d)
-            = _configuration->walls[TDimension][TDirection]->velocity() (d);
+          accessor.velocity(TDimension, -1, TDimension)
+            = _configuration->walls[TDimension][TDirection]->velocity()
+                (TDimension);
         }
       } else {
-        current.velocity(d)
+        accessor.velocity(d)
           = 2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
-            - neighbor.velocity(d);
+            - accessor.velocity(d);
       }
     }
     computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (current,  *_maxVelocity);
+      (accessor, *_maxVelocity);
     computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (neighbor, *_maxVelocity);
+      (accessor, *_maxVelocity);
   }
 
   Configuration* _configuration;
@@ -146,33 +93,35 @@ public:
     _maxVelocity(maxVelocity) {}
 
   void
-  setValue(CellAccessorType const& current,
-           CellAccessorType const& neighbor) {
+  setValue(CellAccessorType const& accessor) {
     ScalarType result;
 
     for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
         result
-          = _configuration->walls[TDimension][TDirection]->velocity()(
-          TDimension);
+          = _configuration->walls[TDimension][TDirection]->velocity()
+              (TDimension);
 
         if (TDirection == 0) {
-          compute_parabolic_input_velocity(current, TDimension, result);
-          current.velocity(TDimension) = result;
+          compute_parabolic_input_velocity(accessor, TDimension, result);
+          accessor.velocity(TDimension) = result;
         } else {
-          compute_parabolic_input_velocity(neighbor, TDimension, result);
-          neighbor.velocity(TDimension) = result;
+          compute_parabolic_input_velocity(
+            accessor.relative(TDimension, -1),
+            TDimension,
+            result);
+          accessor.velocity(TDimension, -1, TDimension) = result;
         }
       } else {
-        current.velocity(d)
+        accessor.velocity(d)
           = 2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
-            - neighbor.velocity(d);
+            - accessor.velocity(d);
       }
     }
     computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (current,  *_maxVelocity);
+      (accessor, *_maxVelocity);
     computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (neighbor, *_maxVelocity);
+      (accessor, *_maxVelocity);
   }
 
   Configuration* _configuration;
@@ -204,70 +153,27 @@ public:
     : _maxVelocity(maxVelocity) {}
 
   void
-  setValue(CellAccessorType const& current,
-           CellAccessorType const& neighbor) {
+  setValue(CellAccessorType const& accessor) {
     for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
         if (TDirection == 0) {
-          current.velocity(d)
-            = neighbor.velocity(d);
+          accessor.velocity(TDimension) = accessor.velocity(TDimension);
         } else {
-          neighbor.velocity(d)
-            = neighbor.velocity(d, -1, d);
+          accessor.velocity(TDimension, -1, TDimension)
+            = accessor.velocity(TDimension, -2, TDimension);
         }
       } else {
-        current.velocity(d)
-          = neighbor.velocity(d);
+        accessor.velocity(d)
+          = accessor.velocity(d);
       }
     }
     computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (current,  *_maxVelocity);
+      (accessor, *_maxVelocity);
     computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (neighbor, *_maxVelocity);
+      (accessor, *_maxVelocity);
   }
 
   VectorDsType* _maxVelocity;
-};
-
-template <typename TSolverTraits,
-          int TDimension,
-          int TDirection>
-class MovingWallFghAction {
-public:
-  using SolverTraitsType = TSolverTraits;
-
-  enum {
-    Dimensions = SolverTraitsType::Dimensions
-  };
-
-  using GridType = typename SolverTraitsType::GridType;
-
-  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
-
-  using VectorDsType = typename SolverTraitsType::VectorDsType;
-
-  using VectorDiType = typename SolverTraitsType::VectorDiType;
-
-  using ScalarType = typename SolverTraitsType::ScalarType;
-
-public:
-  MovingWallFghAction(Configuration* parameters) : _configuration(parameters) {}
-
-  void
-  setValue(CellAccessorType const& current,
-           CellAccessorType const& neighbor) {
-    if (TDirection == 0) {
-      current.fgh(TDimension)
-        = _configuration->walls[TDimension][TDirection]->velocity() (
-        TDimension);
-    } else {
-      neighbor.fgh(TDimension)
-        = _configuration->walls[TDimension][TDirection]->velocity() (
-        TDimension);
-    }
-  }
-
-  Configuration* _configuration;
 };
 
 template <typename TSolverTraits,
@@ -294,16 +200,15 @@ public:
   InputFghAction(Configuration* parameters) : _configuration(parameters) {}
 
   void
-  setValue(CellAccessorType const& current,
-           CellAccessorType const& neighbor) {
+  setValue(CellAccessorType const& accessor) {
     if (TDirection == 0) {
-      current.fgh(TDimension)
-        = _configuration->walls[TDimension][TDirection]->velocity() (
-        TDimension);
+      accessor.fgh(TDimension)
+        = _configuration->walls[TDimension][TDirection]->velocity()
+            (TDimension);
     } else {
-      neighbor.fgh(TDimension)
-        = _configuration->walls[TDimension][TDirection]->velocity() (
-        TDimension);
+      accessor.fgh(TDimension, -1, TDimension)
+        = _configuration->walls[TDimension][TDirection]->velocity()
+            (TDimension);
     }
   }
 
@@ -335,18 +240,20 @@ public:
     : _configuration(parameters) {}
 
   void
-  setValue(CellAccessorType const& current,
-           CellAccessorType const& neighbor) {
+  setValue(CellAccessorType const& accessor) {
     ScalarType result;
     result
       = _configuration->walls[TDimension][TDirection]->velocity()(TDimension);
 
     if (TDirection == 0) {
-      compute_parabolic_input_velocity(current, TDimension, result);
-      current.fgh(TDimension) = result;
+      compute_parabolic_input_velocity(accessor, TDimension, result);
+      accessor.fgh(TDimension) = result;
     } else {
-      compute_parabolic_input_velocity(neighbor, TDimension, result);
-      neighbor.fgh(TDimension) = result;
+      compute_parabolic_input_velocity(
+        accessor.relative(TDimension, -1),
+        TDimension,
+        result);
+      accessor.fgh(TDimension, -1, TDimension) = result;
     }
   }
 
@@ -378,13 +285,12 @@ public:
   OutputFghAction() {}
 
   void
-  setValue(CellAccessorType const& current,
-           CellAccessorType const& neighbor) {
+  setValue(CellAccessorType const& accessor) {
     if (TDirection == 0) {
-      current.fgh(TDimension) = neighbor.fgh(TDimension);
+      accessor.fgh(TDimension) = accessor.velocity(TDimension);
     } else {
-      // neighbor.fgh(d) =
-      // neighbor.leftCellInDimension(d)->fgh(d);
+      accessor.fgh(TDimension, -1, TDimension)
+        = accessor.velocity(TDimension, -1, TDimension);
     }
   }
 };

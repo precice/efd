@@ -50,7 +50,6 @@ public:
     _offset(offset) {}
 
   ~Handler() {
-    logInfo("GhostPeStencilGeneratorHanlers destroyed");
   }
 
   void
@@ -207,10 +206,10 @@ public:
       MatStencil  columns[2];
       MatStencil  row;
 
+      TStencil(stencil);
       for (auto const
            & accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
         computeGhostIndexes(accessor, columns, &row);
-        TStencil(stencil);
 
         MatSetValuesStencil(A, 1, &row, 2, columns, stencil, INSERT_VALUES);
       }

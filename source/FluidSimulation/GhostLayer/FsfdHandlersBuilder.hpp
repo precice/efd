@@ -65,20 +65,6 @@ public:
     VelocityMpiExchangeHandler;
 
   typedef
-    Initialization::MovingWallFghAction
-    <SolverTraitsType,
-     Dimension,
-     Direction>
-    MovingWallFghInitializationAction;
-  typedef
-    Initialization::Handler
-    <typename GridType::BaseType,
-     MovingWallFghInitializationAction,
-     Dimensions,
-     Dimension,
-     Direction>
-    MovingWallFghInitialization;
-  typedef
     Initialization::InputFghAction
     <SolverTraitsType,
      Dimension,
@@ -145,8 +131,7 @@ public:
 
   typedef
     Initialization::InputVelocityAction
-    <SolverTraitsType, Dimension,
-     Direction>
+    <SolverTraitsType, Dimension, Direction>
     InputVelocityInitializationAction;
   typedef
     Initialization::Handler
@@ -180,19 +165,16 @@ public:
   FsfdHandlersBuilder(Configuration* configuration,
                       SolverType*    simulation)
     : _configuration(configuration),
-    _solver(simulation) {
-  }
+    _solver(simulation) {}
 
   inline void
   setAsInput() {
-    if (Direction == 0) {
-      _solver->ghostHandlers()->fghInitialization[Dimension][Direction]
-        = InputFghInitialization::getHandler(
-        &_solver->memory()->grid()->indentedBoundaries[Dimension][
-          Direction],
-        _solver->memory()->parallelDistribution(),
-        new InputFghInitializationAction(_configuration));
-    }
+    _solver->ghostHandlers()->fghInitialization[Dimension][Direction]
+      = InputFghInitialization::getHandler(
+      &_solver->memory()->grid()
+      ->indentedBoundaries[Dimension][Direction],
+      _solver->memory()->parallelDistribution(),
+      new InputFghInitializationAction(_configuration));
 
     _solver->ghostHandlers()->ppeStencilGeneratorStack[Dimension][Direction]
       = PpeStencilGenerationHandler::getNeumannMiddle(
@@ -223,14 +205,12 @@ public:
 
   inline void
   setAsParabolicInput() {
-    if (Direction == 0) {
-      _solver->ghostHandlers()->fghInitialization[Dimension][Direction]
-        = ParabolicInputFghInitialization::getHandler(
-        &_solver->memory()->grid()
-        ->indentedBoundaries[Dimension][Direction],
-        _solver->memory()->parallelDistribution(),
-        new ParabolicInputFghInitializationAction(_configuration));
-    }
+    _solver->ghostHandlers()->fghInitialization[Dimension][Direction]
+      = ParabolicInputFghInitialization::getHandler(
+      &_solver->memory()->grid()
+      ->indentedBoundaries[Dimension][Direction],
+      _solver->memory()->parallelDistribution(),
+      new ParabolicInputFghInitializationAction(_configuration));
 
     _solver->ghostHandlers()->ppeStencilGeneratorStack[Dimension][Direction]
       = PpeStencilGenerationHandler::getNeumannMiddle(
@@ -261,14 +241,12 @@ public:
 
   inline void
   setAsOutput() {
-    if (Direction == 0) {
-      _solver->ghostHandlers()->fghInitialization[Dimension][Direction]
-        = OutputFghInitialization::getHandler(
-        &_solver->memory()->grid()
-        ->indentedBoundaries[Dimension][Direction],
-        _solver->memory()->parallelDistribution(),
-        new OutputFghInitializationAction());
-    }
+    _solver->ghostHandlers()->fghInitialization[Dimension][Direction]
+      = OutputFghInitialization::getHandler(
+      &_solver->memory()->grid()
+      ->indentedBoundaries[Dimension][Direction],
+      _solver->memory()->parallelDistribution(),
+      new OutputFghInitializationAction());
 
     _solver->ghostHandlers()->ppeStencilGeneratorStack[Dimension][Direction]
       = PpeStencilGenerationHandler::getDirichletMiddle(

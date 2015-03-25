@@ -102,7 +102,7 @@ public:
       accessor.convection() = convection;
     }
 
-    _memory.maxVelocity() = VectorDsType::Zero();
+    _memory.maxVelocity()     = VectorDsType::Zero();
     _memory.timeStepSize()    = 1.0;
     _memory.time()            = 0.0;
     _memory.iterationNumber() = 0;
@@ -151,7 +151,8 @@ public:
           = accessor.velocity()
             + _memory.timeStepSize() * (diffusion
                                         - convection
-                                        + _memory.parameters()->g());
+                                        + _memory.parameters()->g()
+                                        );
       } else {
         accessor.fgh()
           = accessor.velocity()
@@ -178,13 +179,17 @@ public:
 
     _ibController.mapData(_memory.timeStepSize());
 
+    VectorDsType total_force = VectorDsType::Zero();
+
     for (auto it = _ibController.begin(); it != _ibController.end(); ++it) {
       VectorDsType force;
       _ibController.readFluidForce(it, force);
 
       // _memory.fgh()[it->first] += _memory.timeStepsize() * force;
       _memory.fgh()[it->first] += force;
+      total_force              += force;
     }
+    logInfo("{1}", total_force.transpose());
 
     _peSolver.executeVpe();
     _ghostHandlers.executeFghMpiExchange();

@@ -56,8 +56,7 @@ public:
   initialize() {
     for (auto const& accessor :* _grid) {
       auto newAccessor = accessor;
-      newAccessor.initialize(accessor.relativeIndex(TDimension, !TDirection));
-      _action->setValue(accessor, newAccessor);
+      _action->setValue(accessor);
     }
   }
 

@@ -153,7 +153,7 @@ public:
                                    TDirection1,
                                    position,
                                    accessor);
-    corner_velocity /= 2;
+    corner_velocity /= 2.0;
     accessor.velocity(TDimension1, _offset(TDimension1), TDimension1)
       = corner_velocity(TDimension1);
     accessor.velocity(TDimension2, _offset(TDimension2), TDimension2)
@@ -233,7 +233,7 @@ private:
       _offset2(dimension) = +1;
     } else if (direction == 1) {
       _index(dimension)
-                           = _memory->grid()->size(dimension) - 1;
+                           = _memory->grid()->innerLimit(dimension) - 1;
       _offset(dimension)   = -1;
       _offset2(dimension)  = -1;
       _position(dimension) = _memory->gridGeometry()->size(dimension);
@@ -264,20 +264,17 @@ struct CornerVelocityHandlers<TSolverTraits, 2> {
   CornerVelocityHandlers(MemoryType const*    memory,
                          Configuration const* configuration) :
     _rb(memory, configuration),
-    _lt(memory, configuration),
-    _rt(memory, configuration) {}
+    _lt(memory, configuration) {}
 
   void
   execute() const {
     _rb.computeCornerVelocity();
     _lt.computeCornerVelocity();
-    _rt.computeCornerVelocity();
   }
 
 private:
   CornerVelocityHandler<TSolverTraits, 0, 1, 1, 0> _rb;
   CornerVelocityHandler<TSolverTraits, 0, 0, 1, 1> _lt;
-  CornerVelocityHandler<TSolverTraits, 0, 1, 1, 1> _rt;
 };
 
 template <typename TSolverTraits>

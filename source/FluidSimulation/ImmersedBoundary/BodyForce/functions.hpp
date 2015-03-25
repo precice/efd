@@ -33,9 +33,9 @@ computeCellForce(TCellAccessor const&                      accessor,
   }
 
   auto const layer_size
-    = compute_cell_layer_along_geometry_interface(accessor, 1);
+    = compute_cell_layer_along_geometry_interface(accessor, 2);
 
-  if (layer_size == -1) {
+  if (layer_size != 2) {
     return false;
   }
 
@@ -51,30 +51,34 @@ computeCellForce(TCellAccessor const&                      accessor,
     }
   }
 
-  matrix = 1.0 / re * (matrix + matrix.transpose());
+  matrix = (matrix + matrix.transpose()) / re ;
 
   matrix -= accessor.pressure() * Matrix::Identity();
 
   for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      int shift = -1;
+      int normal_direction = +1;
+      int offset           = -2;
 
       if (d2 == 1) {
-        shift = 1;
+        normal_direction = -1;
+        offset           = +2;
       }
 
-      if (accessor.positionInRespectToGeometry(d, shift)
+      if (accessor.positionInRespectToGeometry(d, offset)
           != precice::constants::positionOutsideOfGeometry()) {
         Vector normal = Vector::Zero();
 
-        normal(d) = shift;
+        normal(d) = normal_direction;
 
+        Vector width = Vector::Zero();
         for (int d4 = 0; d4 < TCellAccessor::Dimensions; ++d4) {
           if (d4 != d) {
-            normal(d) *= accessor.width(d4);
+            width(d4) = accessor.width(d4);
           }
         }
-        force += matrix * normal;
+        normal = matrix * normal;
+        force += normal.cwiseProduct(width);
         // logInfo("Got it {1} {2} {3}", matrix, normal, force);
         break;
       }

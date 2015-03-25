@@ -36,8 +36,14 @@ struct TimeStepProcessing {
 
     factor = minCellWidth.cwiseProduct(minCellWidth).cwiseInverse().sum();
 
-    localMin = std::min((TScalar)(re / (2.0 * factor)),
-                        maxVelocity.cwiseInverse().minCoeff());
+    localMin = (TScalar)(re / (2.0 * factor));
+
+    for (int d = 0; d < TD; ++d) {
+      if (maxVelocity(d) > std::numeric_limits<TScalar>::epsilon()) {
+        localMin = std::min(localMin,
+                            1.0 / maxVelocity(d));
+      }
+    }
 
     globalMin = std::numeric_limits<TScalar>::max();
     Private::mpiAllReduce<TScalar>(&localMin,
@@ -811,6 +817,10 @@ public:
     for (int d = 0; d < CellAccessorType::Dimensions; ++d) {
       result += (accessor.fgh(d) - accessor.fgh(d, -1, d))
                 / accessor.width(d);
+      // if (accessor.fgh(d) != 0.0) {
+      //   logInfo("{1} | {2} | {3}", accessor.index().transpose(),
+      //           accessor.fgh(d), accessor.fgh(d, -1, d));
+      // }
     }
 
     result = result / (*_dt);

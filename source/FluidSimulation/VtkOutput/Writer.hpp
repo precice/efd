@@ -106,8 +106,10 @@ public:
     fileStream << "\nVECTORS velocity float" << std::endl;
 
     for (auto const& accessor : _memory->grid()->innerGrid) {
-      velocityStream << accessor.velocity(0) << " "
-                     << accessor.velocity(1);
+      velocityStream
+        << (accessor.velocity(0) + accessor.velocity(0, -1, 0)) / 2.0
+        << " "
+        << (accessor.velocity(1) + accessor.velocity(1, -1, 1)) / 2.0;
 
       if (Dimensions == 3) {
         velocityStream << " " << accessor.velocity(2);
