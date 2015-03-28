@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Handler_hpp
-#define FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Handler_hpp
+#pragma once
 
 #include "FluidSimulation/ParallelDistribution.hpp"
 
@@ -75,8 +74,7 @@ public:
 
   void
   initialize(typename Pointers::Type array) {
-    for (auto& accessor :
-         _grid->indentedBoundaries[TDimension][TDirection]) {
+    for (auto& accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
       auto corner = _parallelDistribution->corner;
 
       auto index = accessor.indexValues();
@@ -95,5 +93,3 @@ private:
 }
 }
 }
-
-#endif

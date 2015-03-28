@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Actions_hpp
-#define FsiSimulation_FluidSimulation_GhostLayer_PetscExchange_Actions_hpp
+#pragma once
 
 #include "Private/utilities.hpp"
 
@@ -32,9 +31,11 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const& accessor) {
-    typedef TCellAccessor                           CellAccessorType;
-    typedef typename CellAccessorType::VectorDiType VectorDiType;
-    typedef typename CellAccessorType::ScalarType   ScalarType;
+    using CellAccessorType = TCellAccessor;
+
+    using VectorDiType = typename CellAccessorType::VectorDiType;
+
+    using ScalarType = typename CellAccessorType::ScalarType;
 
     enum {
       Dimensions = CellAccessorType::Dimensions
@@ -74,15 +75,18 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const& accessor) {
-    typedef TCellAccessor                           CellAccessorType;
-    typedef typename CellAccessorType::VectorDiType VectorDiType;
-    typedef typename CellAccessorType::ScalarType   ScalarType;
+    using CellAccessorType = TCellAccessor;
+
+    using VectorDiType = typename CellAccessorType::VectorDiType;
+
+    using ScalarType = typename CellAccessorType::ScalarType;
 
     enum {
       Dimensions = CellAccessorType::Dimensions
     };
 
-    typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
+    using Pointers = StructuredMemory::Pointers
+                     <PetscScalar, CellAccessorType::Dimensions>;
 
     ScalarType temp;
     auto       tempIndex = index;
@@ -108,42 +112,66 @@ private:
   Configuration* _configuration;
 };
 
-template <typename TCellAccessor,
-          int TDimension>
-class ConstantRhsGenerationAction {
+template <typename TScalar,
+          int TSolverDimension,
+          int TDimension,
+          int TDirection>
+class VpeConstantRhsGenerationAction {
 public:
-  typedef TCellAccessor                           CellAccessorType;
-  typedef typename CellAccessorType::VectorDiType VectorDiType;
-  typedef typename CellAccessorType::ScalarType   ScalarType;
+  VpeConstantRhsGenerationAction(TScalar const& value)
+    : _value(value) {}
 
-  enum {
-    Dimensions = CellAccessorType::Dimensions
-  };
+  template <typename TCellAccessor>
+  inline void
+  exchange(
+    typename StructuredMemory::Pointers
+    <PetscScalar, TCellAccessor::Dimensions>::Type array,
+    typename TCellAccessor::VectorDiType const& index,
+    TCellAccessor const&                        accessor) {
+    using Pointers = StructuredMemory::Pointers
+                     <PetscScalar, TCellAccessor::Dimensions>;
+
+    auto temp = index;
+
+    if (TDimension == TSolverDimension) {
+      if (TDirection == 1) {
+        temp(TDimension) -= 1;
+      }
+    }
+
+    Pointers::dereference(array, temp) = _value;
+  }
 
 private:
-  typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
+  TScalar _value;
+};
 
+template <typename TScalar>
+class PpeConstantRhsGenerationAction {
 public:
-  ConstantRhsGenerationAction(ScalarType const& value,
-                              int const&        offset = 0)
-    : _value(value),
-    _offset(offset) {}
+  PpeConstantRhsGenerationAction(TScalar const& value)
+    : _value(value) {}
 
+  template <typename TCellAccessor>
   inline void
-  exchange(typename Pointers::Type array,
-           VectorDiType const&     index,
-           CellAccessorType const& accessor) {
-    // auto temp = index;
-    // temp(TDimension)                  -= _offset;
+  exchange(
+    typename StructuredMemory::Pointers
+    <PetscScalar, TCellAccessor::Dimensions>::Type array,
+    typename TCellAccessor::VectorDiType const& index,
+    TCellAccessor const&                        accessor) {
+    using Pointers = StructuredMemory::Pointers
+                     <PetscScalar, TCellAccessor::Dimensions>;
+
     Pointers::dereference(array, index) = _value;
   }
 
 private:
-  ScalarType _value;
-  int const  _offset;
+  TScalar _value;
 };
 
-template <int TSolverDimension>
+template <int TSolverDimension,
+          int TDimension,
+          int TDirection>
 class VpeRhsAcquiererAction {
 public:
   template <typename TCellAccessor>
@@ -153,10 +181,18 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const& accessor) {
-    typedef TCellAccessor CellAccessorType;
+    using  CellAccessorType = TCellAccessor;
 
-    typedef StructuredMemory::Pointers
-      <PetscScalar, CellAccessorType::Dimensions> Pointers;
+    using Pointers = StructuredMemory::Pointers
+                     <PetscScalar, CellAccessorType::Dimensions>;
+
+    auto temp = index;
+
+    if (TDimension == TSolverDimension) {
+      if (TDirection == 1) {
+        temp(TDimension) -= 1;
+      }
+    }
 
     accessor.fgh(TSolverDimension)
       = Pointers::dereference(array, index);
@@ -172,9 +208,11 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const& accessor) {
-    typedef TCellAccessor CellAccessorType;
-    typedef StructuredMemory::Pointers
-      <PetscScalar, CellAccessorType::Dimensions> Pointers;
+    using CellAccessorType = TCellAccessor;
+
+    using Pointers = StructuredMemory::Pointers
+                     <PetscScalar, CellAccessorType::Dimensions>;
+
     accessor.pressure() = Pointers::dereference(array, index);
   }
 };
@@ -188,12 +226,12 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const& accessor) {
-    typedef TCellAccessor CellAccessorType;
-    typedef StructuredMemory::Pointers
-      <PetscScalar, CellAccessorType::Dimensions> Pointers;
-    auto const& value =  Pointers::dereference(array, index);
+    using CellAccessorType = TCellAccessor;
 
-    // accessor.pressure()       =  accessor.projectionTerm() + value;
+    using Pointers = StructuredMemory::Pointers
+                     <PetscScalar, CellAccessorType::Dimensions>;
+
+    auto const& value =  Pointers::dereference(array, index);
     accessor.projectionTerm() = value;
   }
 };
@@ -201,5 +239,3 @@ public:
 }
 }
 }
-
-#endif

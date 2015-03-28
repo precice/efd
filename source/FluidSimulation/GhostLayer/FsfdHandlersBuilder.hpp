@@ -112,10 +112,8 @@ public:
     <GridType, Dimension, Direction>
     PpeStencilGenerationHandler;
 
-  typedef
-    PetscExchange::ConstantRhsGenerationAction
-    <CellAccessorType, Dimension>
-    PpeRhsGenerationAction;
+  using PpeRhsGenerationAction
+          = PetscExchange::PpeConstantRhsGenerationAction<ScalarType>;
   typedef
     PetscExchange::Handler
     <GridType, PpeRhsGenerationAction, Dimension, Direction>

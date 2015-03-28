@@ -235,66 +235,72 @@ public:
 
   static Functor
   getNeumannLeft(TGrid const*                    grid,
-                 ParallelDistributionType const* parallelTopology) {
+                 ParallelDistributionType const* parallelTopology,
+                 int const& offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology));
+                     (new Handler(grid, parallelTopology, offset));
 
     return Functor(std::bind(&Handler::neumannLeft, pointer, _1));
   }
 
   static Functor
   getNeumannRight(TGrid const*                    grid,
-                  ParallelDistributionType const* parallelTopology) {
+                  ParallelDistributionType const* parallelTopology,
+                  int const& offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology, 1));
+                     (new Handler(grid, parallelTopology, offset));
 
     return Functor(std::bind(&Handler::neumannLeft, pointer, _1));
   }
 
   static Functor
   getNeumannMiddle(TGrid const*                    grid,
-                   ParallelDistributionType const* parallelTopology) {
+                   ParallelDistributionType const* parallelTopology,
+                   int const& offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology));
+                     (new Handler(grid, parallelTopology, offset));
 
     return Functor(std::bind(&Handler::neumannMiddle, pointer, _1));
   }
 
   static Functor
   getDirichletLeft(TGrid const*                    grid,
-                   ParallelDistributionType const* parallelTopology) {
+                   ParallelDistributionType const* parallelTopology,
+                   int const& offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology));
+                     (new Handler(grid, parallelTopology, offset));
 
     return Functor(std::bind(&Handler::dirichletLeft, pointer, _1));
   }
 
   static Functor
   getDirichletRight(TGrid const*                    grid,
-                    ParallelDistributionType const* parallelTopology) {
+                    ParallelDistributionType const* parallelTopology,
+                    int const& offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology, 1));
+                     (new Handler(grid, parallelTopology, offset));
 
     return Functor(std::bind(&Handler::dirichletLeft, pointer, _1));
   }
 
   static Functor
   getDirichletMiddle(TGrid const*                    grid,
-                     ParallelDistributionType const* parallelTopology) {
+                     ParallelDistributionType const* parallelTopology,
+                     int const& offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
-                     (new Handler(grid, parallelTopology));
+                     (new Handler(grid, parallelTopology, offset));
 
     return Functor(std::bind(&Handler::dirichletMiddle, pointer, _1));
   }

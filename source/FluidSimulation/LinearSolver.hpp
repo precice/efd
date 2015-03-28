@@ -187,17 +187,17 @@ private:
   computeMatrix(KSP ksp, Mat A, Mat pc, MatStructure * matStructure,
                 void* ctx) {
 #endif
-    auto solver = static_cast<LinearSolver*>(ctx);
+    auto this_solver = static_cast<LinearSolver*>(ctx);
 
     PetscScalar stencil[2 * Dimensions + 1];
     MatStencil  row;
     MatStencil  columns[2 * Dimensions + 1];
 
-    for (auto const& accessor : solver->_grid->innerGrid) {
-      solver->_stencilGenerator->get(accessor,
-                                     stencil,
-                                     row,
-                                     columns);
+    for (auto const& accessor : this_solver->_grid->innerGrid) {
+      this_solver->_stencilGenerator->get(accessor,
+                                          stencil,
+                                          row,
+                                          columns);
 
       MatSetValuesStencil(A, 1, &row, 2 * Dimensions + 1, columns, stencil,
                           INSERT_VALUES);
@@ -205,7 +205,7 @@ private:
 
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        (*solver->_ghostStencilGenerator)[d][d2](A);
+        (*this_solver->_ghostStencilGenerator)[d][d2](A);
       }
     }
 
@@ -222,7 +222,7 @@ private:
 
   static PetscErrorCode
   computeRHS(KSP ksp, Vec b, void* ctx) {
-    auto solver = static_cast<LinearSolver*>(ctx);
+    auto this_solver = static_cast<LinearSolver*>(ctx);
     typedef StructuredMemory::Pointers<PetscScalar, Dimensions> Pointers;
     typename Pointers::Type array;
 
@@ -230,10 +230,10 @@ private:
     KSPGetDM(ksp, &da);
     DMDAVecGetArray(da, b, &array);
 
-    auto corner = solver->_parallelDistribution->corner;
+    auto corner = this_solver->_parallelDistribution->corner;
 
-    for (auto const& accessor : solver->_grid->innerGrid) {
-      auto value = solver->_rhsGenerator->get(accessor);
+    for (auto const& accessor : this_solver->_grid->innerGrid) {
+      auto value = this_solver->_rhsGenerator->get(accessor);
 
       auto index = accessor.indexValues();
       index                              += corner;
@@ -242,7 +242,7 @@ private:
 
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
-        (*solver->_ghostRhsGenerator)[d][d2](array);
+        (*this_solver->_ghostRhsGenerator)[d][d2](array);
       }
     }
 

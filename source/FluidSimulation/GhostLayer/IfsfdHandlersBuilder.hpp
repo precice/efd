@@ -43,9 +43,9 @@ struct IfsfdHandlersBuilderTraits {
 template <typename TSolverTraits,
           int TDimension,
           int TDirection>
-class IfsfdHandlersBuilder
-  : public FsfdHandlersBuilder
-    < IfsfdHandlersBuilderTraits < TSolverTraits, TDimension, TDirection >> {
+class IfsfdHandlersBuilder :
+  public FsfdHandlersBuilder
+  < IfsfdHandlersBuilderTraits < TSolverTraits, TDimension, TDirection >> {
 public:
   using HandlersBuilderTraitsType
           = IfsfdHandlersBuilderTraits<TSolverTraits, TDimension, TDirection>;
@@ -84,13 +84,13 @@ public:
     VpeStencilGenerationHandler;
 
   typedef
-    PetscExchange::ConstantRhsGenerationAction
-    <CellAccessorType, TDimension>
-    VpeConstantRhsGenerationAction;
+    PetscExchange::VpeConstantRhsGenerationAction
+    <ScalarType, 0, TDimension, TDirection>
+    VxpeConstantRhsGenerationAction;
   typedef
     PetscExchange::Handler
-    <GridType, VpeConstantRhsGenerationAction, TDimension, TDirection>
-    VpeConstantRhsGenerationHandler;
+    <GridType, VxpeConstantRhsGenerationAction, TDimension, TDirection>
+    VxpeConstantRhsGenerationHandler;
 
   typedef
     PetscExchange::VpeInputRhsGenerationAction
@@ -111,13 +111,22 @@ public:
     <GridType, VxpeParabolicInputRhsGenerationAction, TDimension, TDirection>
     VxpeParabolicInputRhsGenerationHandler;
 
-  typedef
-    PetscExchange::VpeRhsAcquiererAction<0>
-    VxpeRhsAcquiererAction;
+  using VxpeRhsAcquiererAction
+          = PetscExchange::VpeRhsAcquiererAction<0, TDimension, TDirection>;
+
   typedef
     PetscExchange::Handler
     <GridType, VxpeRhsAcquiererAction, TDimension, TDirection>
     VxpeRhsAcquiererHandler;
+
+  typedef
+    PetscExchange::VpeConstantRhsGenerationAction
+    <ScalarType, 1, TDimension, TDirection>
+    VypeConstantRhsGenerationAction;
+  typedef
+    PetscExchange::Handler
+    <GridType, VypeConstantRhsGenerationAction, TDimension, TDirection>
+    VypeConstantRhsGenerationHandler;
 
   typedef
     PetscExchange::VpeInputRhsGenerationAction
@@ -138,13 +147,21 @@ public:
     <GridType, VypeParabolicInputRhsGenerationAction, TDimension, TDirection>
     VypeParabolicInputRhsGenerationHandler;
 
-  typedef
-    PetscExchange::VpeRhsAcquiererAction<1>
-    VypeRhsAcquiererAction;
+  using VypeRhsAcquiererAction
+          = PetscExchange::VpeRhsAcquiererAction<1, TDimension, TDirection>;
   typedef
     PetscExchange::Handler
     <GridType, VypeRhsAcquiererAction, TDimension, TDirection>
     VypeRhsAcquiererHandler;
+
+  typedef
+    PetscExchange::VpeConstantRhsGenerationAction
+    <ScalarType, 2, TDimension, TDirection>
+    VzpeConstantRhsGenerationAction;
+  typedef
+    PetscExchange::Handler
+    <GridType, VzpeConstantRhsGenerationAction, TDimension, TDirection>
+    VzpeConstantRhsGenerationHandler;
 
   typedef
     PetscExchange::VpeInputRhsGenerationAction
@@ -164,9 +181,8 @@ public:
     <GridType, VzpeParabolicInputRhsGenerationAction, TDimension, TDirection>
     VzpeParabolicInputRhsGenerationHandler;
 
-  typedef
-    PetscExchange::VpeRhsAcquiererAction<2>
-    VzpeRhsAcquiererAction;
+  using VzpeRhsAcquiererAction
+          = PetscExchange::VpeRhsAcquiererAction<2, TDimension, TDirection>;
   typedef
     PetscExchange::Handler
     <GridType, VzpeRhsAcquiererAction, TDimension, TDirection>
@@ -194,7 +210,8 @@ public:
           ->vpeStencilGeneratorStack[d][TDimension][TDirection]
             = VpeStencilGenerationHandler::getDirichletRight(
             this->_solver->memory()->grid(),
-            this->_solver->memory()->parallelDistribution());
+            this->_solver->memory()->parallelDistribution(),
+            1);
         }
       } else {
         this->_solver->ghostHandlers()
@@ -224,11 +241,11 @@ public:
       this->_solver->memory()->parallelDistribution(),
       new VypeInputRhsGenerationAction(this->_configuration));
     this->_solver->ghostHandlers()
-    ->vpeRhsAcquiererStack[1][TDimension][TDirection] =
-      VypeRhsAcquiererHandler::getHandler(
-        this->_solver->memory()->grid(),
-        this->_solver->memory()->parallelDistribution(),
-        new VypeRhsAcquiererAction());
+    ->vpeRhsAcquiererStack[1][TDimension][TDirection]
+      = VypeRhsAcquiererHandler::getHandler(
+      this->_solver->memory()->grid(),
+      this->_solver->memory()->parallelDistribution(),
+      new VypeRhsAcquiererAction());
 
     if (Dimensions > 2) {
       this->_solver->ghostHandlers()
@@ -263,7 +280,8 @@ public:
           ->vpeStencilGeneratorStack[d][TDimension][TDirection]
             = VpeStencilGenerationHandler::getDirichletRight(
             this->_solver->memory()->grid(),
-            this->_solver->memory()->parallelDistribution());
+            this->_solver->memory()->parallelDistribution(),
+            1);
         }
       } else {
         this->_solver->ghostHandlers()
@@ -274,17 +292,17 @@ public:
       }
     }
     this->_solver->ghostHandlers()->vpeRhsGeneratorStack[0][TDimension][
-      TDirection] =
-      VxpeParabolicInputRhsGenerationHandler::getHandler(
-        this->_solver->memory()->grid(),
-        this->_solver->memory()->parallelDistribution(),
-        new VxpeParabolicInputRhsGenerationAction(this->_configuration));
-    this->_solver->ghostHandlers()->vpeRhsAcquiererStack[0][TDimension][
-      TDirection] =
-      VxpeRhsAcquiererHandler::getHandler(
-        this->_solver->memory()->grid(),
-        this->_solver->memory()->parallelDistribution(),
-        new VxpeRhsAcquiererAction());
+      TDirection]
+      = VxpeParabolicInputRhsGenerationHandler::getHandler(
+      this->_solver->memory()->grid(),
+      this->_solver->memory()->parallelDistribution(),
+      new VxpeParabolicInputRhsGenerationAction(this->_configuration));
+    this->_solver->ghostHandlers()
+    ->vpeRhsAcquiererStack[0][TDimension][TDirection]
+      = VxpeRhsAcquiererHandler::getHandler(
+      this->_solver->memory()->grid(),
+      this->_solver->memory()->parallelDistribution(),
+      new VxpeRhsAcquiererAction());
 
     this->_solver->ghostHandlers()
     ->vpeRhsGeneratorStack[1][TDimension][TDirection]
@@ -292,20 +310,20 @@ public:
       this->_solver->memory()->grid(),
       this->_solver->memory()->parallelDistribution(),
       new VypeParabolicInputRhsGenerationAction(this->_configuration));
-    this->_solver->ghostHandlers()->vpeRhsAcquiererStack[1][TDimension][
-      TDirection] =
-      VypeRhsAcquiererHandler::getHandler(
-        this->_solver->memory()->grid(),
-        this->_solver->memory()->parallelDistribution(),
-        new VypeRhsAcquiererAction());
+    this->_solver->ghostHandlers()
+    ->vpeRhsAcquiererStack[1][TDimension][TDirection]
+      = VypeRhsAcquiererHandler::getHandler(
+      this->_solver->memory()->grid(),
+      this->_solver->memory()->parallelDistribution(),
+      new VypeRhsAcquiererAction());
 
     if (Dimensions > 2) {
       this->_solver->ghostHandlers()
-      ->vpeRhsGeneratorStack[2][TDimension][TDirection] =
-        VzpeParabolicInputRhsGenerationHandler::getHandler(
-          this->_solver->memory()->grid(),
-          this->_solver->memory()->parallelDistribution(),
-          new VzpeParabolicInputRhsGenerationAction(this->_configuration));
+      ->vpeRhsGeneratorStack[2][TDimension][TDirection]
+        = VzpeParabolicInputRhsGenerationHandler::getHandler(
+        this->_solver->memory()->grid(),
+        this->_solver->memory()->parallelDistribution(),
+        new VzpeParabolicInputRhsGenerationAction(this->_configuration));
       this->_solver->ghostHandlers()
       ->vpeRhsAcquiererStack[2][TDimension][TDirection]
         = VzpeRhsAcquiererHandler::getHandler(
@@ -332,7 +350,8 @@ public:
           ->vpeStencilGeneratorStack[d][TDimension][TDirection]
             = VpeStencilGenerationHandler::getNeumannRight(
             this->_solver->memory()->grid(),
-            this->_solver->memory()->parallelDistribution());
+            this->_solver->memory()->parallelDistribution(),
+            1);
         }
       } else {
         this->_solver->ghostHandlers()
@@ -343,19 +362,12 @@ public:
       }
     }
 
-    int offset = 0;
-
-    if (TDimension == 0) {
-      if (TDirection == 1) {
-        offset = 1;
-      }
-    }
     this->_solver->ghostHandlers()
     ->vpeRhsGeneratorStack[0][TDimension][TDirection]
-      = VpeConstantRhsGenerationHandler::getHandler(
+      = VxpeConstantRhsGenerationHandler::getHandler(
       this->_solver->memory()->grid(),
       this->_solver->memory()->parallelDistribution(),
-      new VpeConstantRhsGenerationAction(0.0, offset));
+      new VxpeConstantRhsGenerationAction(0.0));
     this->_solver->ghostHandlers()
     ->vpeRhsAcquiererStack[0][TDimension][TDirection]
       = VxpeRhsAcquiererHandler::getHandler(
@@ -363,20 +375,12 @@ public:
       this->_solver->memory()->parallelDistribution(),
       new VxpeRhsAcquiererAction());
 
-    offset = 0;
-
-    if (TDimension == 1) {
-      if (TDirection == 1) {
-        offset = 1;
-      }
-    }
-
     this->_solver->ghostHandlers()
     ->vpeRhsGeneratorStack[1][TDimension][TDirection]
-      = VpeConstantRhsGenerationHandler::getHandler(
+      = VypeConstantRhsGenerationHandler::getHandler(
       this->_solver->memory()->grid(),
       this->_solver->memory()->parallelDistribution(),
-      new VpeConstantRhsGenerationAction(0.0, offset));
+      new VypeConstantRhsGenerationAction(0.0));
     this->_solver->ghostHandlers()
     ->vpeRhsAcquiererStack[1][TDimension][TDirection]
       = VypeRhsAcquiererHandler::getHandler(
@@ -385,19 +389,12 @@ public:
       new VypeRhsAcquiererAction());
 
     if (Dimensions > 2) {
-      offset = 0;
-
-      if (TDimension == 2) {
-        if (TDirection == 1) {
-          offset = 1;
-        }
-      }
       this->_solver->ghostHandlers()
       ->vpeRhsGeneratorStack[2][TDimension][TDirection]
-        = VpeConstantRhsGenerationHandler::getHandler(
+        = VzpeConstantRhsGenerationHandler::getHandler(
         this->_solver->memory()->grid(),
         this->_solver->memory()->parallelDistribution(),
-        new VpeConstantRhsGenerationAction(0.0, offset));
+        new VzpeConstantRhsGenerationAction(0.0));
       this->_solver->ghostHandlers()
       ->vpeRhsAcquiererStack[2][TDimension][TDirection]
         = VzpeRhsAcquiererHandler::getHandler(
