@@ -197,8 +197,8 @@ public:
   SolverEnum   solverType;
   ScalarEnum   scalarType;
   OutputEnum   outputType;
-  int          outerLayerSize;
-  int          innerLayerSize;
+  unsigned     outerLayerSize;
+  unsigned     innerLayerSize;
   bool         doImmersedBoundary;
   bool         doDebug;
 };

@@ -318,7 +318,7 @@ public:
             data[data_index]
              = static_cast<float>(accessor.centralizedAttribute(attribute_index, j));
           } else {
-            data[data_index] = 0.0;
+            data[data_index] = 0.0f;
           }
           ++data_index;
         }

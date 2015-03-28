@@ -114,10 +114,11 @@ public:
     _time            = 0.0;
     _iterationNumber = 0;
 
-    _attributes[0].name = "velocity";
-    _attributes[0].type = AttributeType::Type::Vector;
-    _attributes[1].name = "pressure";
-    _attributes[1].type = AttributeType::Type::Scalar;
+    _attributes[0].name         = "velocity";
+    _attributes[0].type         = AttributeType::Type::Vector;
+    _attributes[0].doCentralize = true;
+    _attributes[1].name         = "pressure";
+    _attributes[1].type         = AttributeType::Type::Scalar;
 
     // logGridInitializationInfo(_grid);
     logParallelTopologyInfo(_parallelDistribution);
@@ -212,6 +213,9 @@ public:
   iterationNumber() {
     return _iterationNumber;
   }
+
+  void
+  setDiffusionAt(int const&, VectorDsType const&) {}
 
   void
   setForceAt(int const&, VectorDsType const&) {}

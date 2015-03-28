@@ -72,11 +72,11 @@ public:
 
     _solver->memory()->parameters()->alpha() = configuration->alpha;
 
-    _solver->memory()->parameters()->outerLayerSize()
-      = configuration->outerLayerSize;
+    _solver->immersedBoundaryController()
+    ->outerLayerSize(configuration->outerLayerSize);
 
-    _solver->memory()->parameters()->innerLayerSize()
-      = configuration->innerLayerSize;
+    _solver->immersedBoundaryController()
+    ->innerLayerSize(configuration->innerLayerSize);
 
     _solver->memory()->parameters()->g(0) = configuration->environment(0);
 

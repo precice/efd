@@ -7,7 +7,7 @@ namespace FluidSimulation {
 template <typename TSolverTraits>
 struct FsfdDebugMemoryTraits {
   enum {
-    AdditionalAttributeSize = 3
+    AdditionalAttributeSize = 5
   };
 };
 
@@ -20,7 +20,7 @@ public:
 
   enum {
     Dimensions    = TSolverTraits::Dimensions,
-    AttributeSize = Base::AttributeSize + 3
+    AttributeSize = Base::AttributeSize + 5
   };
 
   using VectorDsType = typename TSolverTraits::VectorDsType;
@@ -39,30 +39,45 @@ public:
     this->Base::initialize(processor_size,
                            global_cell_size,
                            geometry_width);
+    _diffusion.reset(new VectorDsType[this->_grid.size().prod()]);
     _force.reset(new VectorDsType[this->_grid.size().prod()]);
     _bodyForce.reset(new VectorDsType[this->_grid.size().prod()]);
+
     this->_attributes[Base::AttributeSize + 0].name
-      = "force";
+      = "convection";
     this->_attributes[Base::AttributeSize + 0].type
       = Attribute::Type::Vector;
     this->_attributes[Base::AttributeSize + 1].name
-      = "body-force";
+      = "diffusion";
     this->_attributes[Base::AttributeSize + 1].type
       = Attribute::Type::Vector;
     this->_attributes[Base::AttributeSize + 2].name
-      = "position-in-respect-to-geometry";
+      = "force";
     this->_attributes[Base::AttributeSize + 2].type
+      = Attribute::Type::Vector;
+    this->_attributes[Base::AttributeSize + 3].name
+      = "body-force";
+    this->_attributes[Base::AttributeSize + 3].type
+      = Attribute::Type::Vector;
+    this->_attributes[Base::AttributeSize + 4].name
+      = "position-in-respect-to-geometry";
+    this->_attributes[Base::AttributeSize + 4].type
       = Attribute::Type::Scalar;
   }
 
   void
-  setForceAt(int const& index, VectorDsType const& force) {
-    _force.get()[index] = force;
+  setDiffusionAt(int const& index, VectorDsType const& value) {
+    _diffusion.get()[index] = value;
   }
 
   void
-  setBodyForceAt(int const& index, VectorDsType const& force) {
-    _bodyForce.get()[index] = force;
+  setForceAt(int const& index, VectorDsType const& value) {
+    _force.get()[index] = value;
+  }
+
+  void
+  setBodyForceAt(int const& index, VectorDsType const& value) {
+    _bodyForce.get()[index] = value;
   }
 
 protected:
@@ -73,13 +88,21 @@ protected:
     switch (attribute_index) {
     case Base::AttributeSize + 0:
 
-      return _force.get()[index].data()[dimension];
+      return this->_convection.get()[index].data()[dimension];
 
     case Base::AttributeSize + 1:
 
-      return _bodyForce.get()[index].data()[dimension];
+      return this->_diffusion.get()[index].data()[dimension];
 
     case Base::AttributeSize + 2:
+
+      return _force.get()[index].data()[dimension];
+
+    case Base::AttributeSize + 3:
+
+      return _bodyForce.get()[index].data()[dimension];
+
+    case Base::AttributeSize + 4:
 
       return this->_position.get()[index];
 
@@ -91,6 +114,7 @@ protected:
     }
   }
 
+  std::unique_ptr<VectorDsType> _diffusion;
   std::unique_ptr<VectorDsType> _force;
   std::unique_ptr<VectorDsType> _bodyForce;
 };

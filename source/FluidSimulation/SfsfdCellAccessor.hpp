@@ -72,6 +72,11 @@ public:
   }
 
   void
+  setDiffusion(VectorDsType const& value) const {
+    _memory->setDiffusionAt(this->globalIndex(), value);
+  }
+
+  void
   setForce(VectorDsType const& value) const {
     _memory->setForceAt(this->globalIndex(), value);
   }
@@ -94,7 +99,7 @@ public:
       return (_attribute(this->globalIndex(),
                          attribute_index,
                          dimension)
-              - _attribute(this->relativeGlobalIndex(dimension, -1),
+              + _attribute(this->relativeGlobalIndex(dimension, -1),
                            attribute_index,
                            dimension)) / 2.0;
     }

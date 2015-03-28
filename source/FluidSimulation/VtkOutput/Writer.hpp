@@ -103,7 +103,6 @@ public:
     int index = 0;
 
     for (auto const& attribute : * _memory->attributes()) {
-      logInfo("{1}", attribute.name);
       std::stringstream string_stream;
 
       if (attribute.type == Attribute::Type::Vector) {

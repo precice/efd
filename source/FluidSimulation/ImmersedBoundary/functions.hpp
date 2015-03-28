@@ -31,8 +31,7 @@ is_the_same_position(int const& position0,
   auto const& result0 = is_outside(position0);
   auto const& result1 = is_outside(position1);
 
-  if ((result0 == -1)
-      || (result1 == -1)) {
+  if ((result0 == -1) || (result1 == -1)) {
     return -1;
   }
 
@@ -46,13 +45,11 @@ is_the_same_position(int const& position0,
 template <typename TCellAccessor>
 inline int
 compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
-                                            int const&           distance) {
+                                            unsigned const&           max_distance) {
   int position = accessor.positionInRespectToGeometry();
 
-  bool result = true;
-
   for (int currentDistance = 1;
-       currentDistance <= distance;
+       currentDistance <= max_distance;
        ++currentDistance) {
     for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
@@ -75,11 +72,8 @@ compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
           = accessor.absolutePositionInRespectToGeometry(index);
 
         if (is_the_same_position(position, position1) == 0) {
-          result = false;
 
           return currentDistance;
-        } else {
-          result = true;
         }
       }
     }
@@ -91,34 +85,16 @@ compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
 template <typename TCellAccessor>
 inline bool
 validate_layer_number(TCellAccessor const& accessor,
-                      int const&           distance,
-                      int const&           outside_width,
-                      int const&           inside_width) {
-  ((void)outside_width);
-  ((void)inside_width);
-
-  Eigen::Vector4i pattern({ 1, 1, 1, 1 });
-
-  if (distance != -1) {
-    for (int i = 0; i < 4; ++i) {
-      auto const& position = pattern(i);
-
-      if (!((i == distance)
-            && (position == 1))) {
-        continue;
-      }
-
-      if (i < 2) {
-        if (is_outside(accessor.positionInRespectToGeometry()) == 1) {
-          return true;
-        }
-      } else {
-        if (is_outside(accessor.positionInRespectToGeometry()) == 0) {
-          return true;
-        }
-      }
-
-      return false;
+                      int const&      distance,
+                      unsigned const&      outer_layer_size,
+                      unsigned const&      inner_layer_size) {
+  if (is_outside(accessor.positionInRespectToGeometry()) == 1) {
+    if (outer_layer_size >= distance) {
+      return true;
+    }
+  } else if (is_outside(accessor.positionInRespectToGeometry()) == 0) {
+    if (inner_layer_size >= distance) {
+      return true;
     }
   }
 

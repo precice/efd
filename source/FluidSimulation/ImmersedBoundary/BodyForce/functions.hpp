@@ -28,7 +28,7 @@ computeCellForce(TCellAccessor const&                      accessor,
   bool isCurrentOutside  = true;
   bool isNeighborsInside = false;
 
-  if (is_outside(accessor.positionInRespectToGeometry()) == 1) {
+  if (is_outside(accessor.positionInRespectToGeometry()) != 1) {
     return false;
   }
 

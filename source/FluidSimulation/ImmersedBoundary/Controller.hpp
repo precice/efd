@@ -52,6 +52,36 @@ public:
   BasicController&
   operator=(BasicController const& other) = delete;
 
+  unsigned const&
+  outerLayerSize() const {
+    static unsigned value = 0;
+
+    return value;
+  }
+
+  unsigned&
+  outerLayerSize(unsigned const& i) {
+    ((void)i);
+    static unsigned value = 0;
+
+    return value;
+  }
+
+  unsigned const&
+  innerLayerSize() const {
+    static unsigned value = 0;
+
+    return value;
+  }
+
+  unsigned&
+  innerLayerSize(unsigned const& i) {
+    ((void)i);
+    static unsigned value = 0;
+
+    return value;
+  }
+
   typename VertexIdMap::const_iterator
   begin() const {
     return _vertexIds.begin();
@@ -141,7 +171,10 @@ public:
   using VertexIdMap = std::map<int, int>;
 
 public:
-  Controller() {}
+  Controller() :
+    _maxLayerSize(0),
+    _outerLayerSize(0),
+    _innerLayerSize(0) {}
 
   Controller(Controller const&) = delete;
 
@@ -149,6 +182,30 @@ public:
 
   Controller&
   operator=(Controller const& other) = delete;
+
+  unsigned const&
+  outerLayerSize() const {
+    return _outerLayerSize;
+  }
+
+  unsigned&
+  outerLayerSize(unsigned const& i) {
+    _maxLayerSize = std::max(_maxLayerSize, i);
+
+    return _outerLayerSize = i;
+  }
+
+  unsigned const&
+  innerLayerSize() const {
+    return _innerLayerSize;
+  }
+
+  unsigned&
+  innerLayerSize(unsigned const& i) {
+    _maxLayerSize = std::max(_maxLayerSize, i);
+
+    return _innerLayerSize = i;
+  }
 
   typename VertexIdMap::const_iterator
   begin() const {
@@ -201,9 +258,13 @@ public:
   createFluidMeshVertex(CellAccessorType const& accessor) {
     int distance
       = compute_cell_layer_along_geometry_interface(
-      accessor, 2);
+      accessor,
+      _maxLayerSize);
 
-    bool doAdd = validate_layer_number(accessor, distance, 2, 2);
+    bool doAdd = validate_layer_number(accessor,
+                                       distance,
+                                       outerLayerSize(),
+                                       innerLayerSize());
 
     if (doAdd) {
       VectorDsType position = accessor.pressurePosition();
@@ -273,6 +334,9 @@ public:
 
 private:
   precice::SolverInterface* _preciceInterface;
+  unsigned                  _maxLayerSize;
+  unsigned                  _outerLayerSize;
+  unsigned                  _innerLayerSize;
 
   int _fluidMeshId;
   int _fluidVertexSize;

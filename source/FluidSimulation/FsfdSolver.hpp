@@ -66,6 +66,16 @@ public:
     return &_memory;
   }
 
+  ImmersedBoundaryControllerType const*
+  immersedBoundaryController() const {
+    return &_ibController;
+  }
+
+  ImmersedBoundaryControllerType*
+  immersedBoundaryController() {
+    return &_ibController;
+  }
+
   GhostHandlersType const*
   ghostHandlers() const {
     return &_ghostHandlers;
@@ -80,12 +90,14 @@ public:
   initialize(precice::SolverInterface* preciceInteface) {
     _ibController.initialize(preciceInteface);
 
-    _peSolver.initialize(&_memory,
-                         &_ghostHandlers);
+    _peSolver.initialize(&_memory, &_ghostHandlers);
 
     for (auto& accessor : _memory.grid()->innerGrid) {
       _ibController.computePositionInRespectToGeometry(accessor);
       accessor.velocity() = VectorDsType::Zero();
+      accessor.setDiffusion(VectorDsType::Zero());
+      accessor.setForce(VectorDsType::Zero());
+      accessor.setBodyForce(VectorDsType::Zero());
       PressureProcessing<TSolverType>::initialize(accessor, 0.0);
       computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
         (accessor, _memory.maxVelocity());
@@ -137,6 +149,8 @@ public:
       accessor.convection() = convection;
 
       auto diffusion = DiffusionProcessing<Dimensions>::compute(accessor);
+
+      accessor.setDiffusion(diffusion);
 
       diffusion = diffusion / _memory.parameters()->re();
 
@@ -192,7 +206,7 @@ public:
       // _memory.fgh()[it->first] += _memory.timeStepsize() * force;
       _memory.fgh()[it->first] += force;
       _memory.setForceAt(it->first, force);
-      total_force              += force;
+      total_force += force;
     }
     logInfo("{1}", total_force.transpose());
 

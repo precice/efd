@@ -60,26 +60,6 @@ public:
     return _alpha;
   }
 
-  int const&
-  outerLayerSize() const {
-    return _outerLayerSize;
-  }
-
-  int&
-  outerLayerSize() {
-    return _outerLayerSize;
-  }
-
-  int const&
-  innerLayerSize() const{
-    return _innerLayerSize;
-  }
-
-  int&
-  innerLayerSize() {
-    return _innerLayerSize;
-  }
-
   VectorDs const&
   g() const {
     return _g;
@@ -105,8 +85,6 @@ private:
   TScalar  _gamma;
   TScalar  _tau;
   TScalar  _alpha;
-  int      _outerLayerSize;
-  int      _innerLayerSize;
   VectorDs _g;
 };
 }
