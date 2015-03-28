@@ -817,10 +817,6 @@ public:
     for (int d = 0; d < CellAccessorType::Dimensions; ++d) {
       result += (accessor.fgh(d) - accessor.fgh(d, -1, d))
                 / accessor.width(d);
-      // if (accessor.fgh(d) != 0.0) {
-      // logInfo("{1} | {2} | {3}", accessor.index().transpose(),
-      // accessor.fgh(d), accessor.fgh(d, -1, d));
-      // }
     }
 
     result = result / (*_dt);
@@ -860,7 +856,7 @@ public:
   inline void
   set(CellAccessorType const& accessor,
       ScalarType const&       value) const {
-    accessor.pressure()       =  accessor.projectionTerm() + value;
+    accessor.pressure()      += value;
     accessor.projectionTerm() = value;
   }
 
