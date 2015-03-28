@@ -36,7 +36,8 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     char**       argv_) : _in(in),
     argc(argc_),
     argv(argv_),
-    masterRank(0) {
+    masterRank(0),
+    fluidConfiguration(new FluidSimulation::Configuration()) {
     namespace fs          = boost::filesystem;
     using LocaleGenerator = boost::locale::generator;
     globalLocale          = LocaleGenerator().generate("");
@@ -54,8 +55,8 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     petscConfigurationPath.append("FluidPetsc/Basic.conf");
     preciceConfigurationPath = applicationPath;
     preciceConfigurationPath.append("Precice/SketchOfGeometryModeInFluid.xml");
-    simulationConfigurationPath = applicationPath;
-    simulationConfigurationPath.append("FluidSimulation/Channel.xml");
+    fluidConfigurationPath = applicationPath;
+    fluidConfigurationPath.append("FluidSimulation/Channel.xml");
   }
 
   Uni_Firewall_INTERFACE_LINK(Application)
@@ -69,7 +70,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   Path        outputDirectoryPath;
   Path        vtkOutputDirectoryPath;
   Path        preciceConfigurationPath;
-  Path        simulationConfigurationPath;
+  Path        fluidConfigurationPath;
   Path        petscConfigurationPath;
   std::string vtkFilePrefix;
 
@@ -77,7 +78,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   int rank;
   int processCount;
 
-  std::unique_ptr<FluidSimulation::Configuration> parameters;
+  std::unique_ptr<FluidSimulation::Configuration> fluidConfiguration;
 
   UniquePreciceInterface     preciceInterface;
   UniqueSimulationController mySimulation;
@@ -110,6 +111,8 @@ parseArguments() {
     ("output-directory,o",
     po::value<std::string>(),
     "Set output directory path")
+    ("no-immersed-boundary,n",
+    "Do not compute immersed-boundary, disable PreCiCe usage")
     ("precice,p",
     po::value<std::string>(),
     "Set PreCiCe configuration path")
@@ -118,7 +121,9 @@ parseArguments() {
     "Set fluid simulation configuration path")
     ("petsc,e",
     po::value<std::string>(),
-    "Set PETSc configuration path");
+    "Set PETSc configuration path")
+    ("debug,d",
+    "Provide additional debug output from the fluid solver");
 
   po::variables_map options;
   po::store(po::parse_command_line(_im->argc, _im->argv, optionDescription),
@@ -143,14 +148,26 @@ parseArguments() {
       options["petsc"].as<std::string>());
   }
 
+  if (options.count("no-immersed-boundary")) {
+    _im->fluidConfiguration->doImmersedBoundary = false;
+  } else {
+    _im->fluidConfiguration->doImmersedBoundary = true;
+  }
+
   if (options.count("precice")) {
     _im->preciceConfigurationPath = boost::filesystem::canonical(
       options["precice"].as<std::string>());
   }
 
   if (options.count("simulation")) {
-    _im->simulationConfigurationPath = boost::filesystem::canonical(
+    _im->fluidConfigurationPath = boost::filesystem::canonical(
       options["simulation"].as<std::string>());
+  }
+
+  if (options.count("debug")) {
+    _im->fluidConfiguration->doDebug = true;
+  } else {
+    _im->fluidConfiguration->doDebug = false;
   }
 
   return 0;
@@ -168,7 +185,7 @@ initialize() {
   // logInfo("PreCICE configuration path:\n{1}",
   // _im->preciceConfigurationPath.string());
   // logInfo("Simulation configuration path:\n{1}",
-  // _im->simulationConfigurationPath.string());
+  // _im->fluidConfigurationPath.string());
 
   auto petscConfigurationPath
     = Utility::convertUtfPathToAnsi(
@@ -193,7 +210,8 @@ initialize() {
   initializePrecice();
 
   _im->mySimulation
-    = FluidSimulation::create_simulation_controller(_im->parameters.get());
+    = FluidSimulation::create_simulation_controller(
+    _im->fluidConfiguration.get());
 
   _im->mySimulation->initialize(_im->preciceInterface.get(),
                                 _im->vtkOutputDirectoryPath,
@@ -216,19 +234,20 @@ void
 Application::
 release() {
   PetscFinalize();
+  _im->fluidConfiguration->reset();
 }
 
 void
 Application::
 parseSimulationConfiguration() {
-  _im->parameters
-    = XmlConfigurationParser::parse(_im->simulationConfigurationPath);
+  XmlConfigurationParser::parse(_im->fluidConfiguration,
+                                _im->fluidConfigurationPath);
 }
 
 void
 Application::
 createOutputDirectory() {
-  Implementation::Path outputDirectoryPath(_im->parameters->filename);
+  Implementation::Path outputDirectoryPath(_im->fluidConfiguration->filename);
 
   if (outputDirectoryPath.is_relative()) {
     outputDirectoryPath = (_im->outputDirectoryPath / outputDirectoryPath);
@@ -241,8 +260,8 @@ createOutputDirectory() {
   outputDirectoryPath
     = boost::filesystem::make_relative(
     outputDirectoryPath) / outputFileName;
-  _im->parameters->filename = outputDirectoryPath.string();
-  _im->vtkFilePrefix        = outputFileName.string();
+  _im->fluidConfiguration->filename = outputDirectoryPath.string();
+  _im->vtkFilePrefix                = outputFileName.string();
 }
 
 void

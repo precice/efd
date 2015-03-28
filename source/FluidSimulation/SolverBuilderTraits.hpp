@@ -3,20 +3,31 @@
 #include "GridGeometry.hpp"
 #include "SolverTraits.hpp"
 
-#include "GhostLayer/SfsfdHandlersBuilder.hpp"
 #include "GhostLayer/IfsfdHandlersBuilder.hpp"
+#include "GhostLayer/SfsfdHandlersBuilder.hpp"
 
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TScalar,
           int TDimensions,
-          int TSolverType>
+          int TSolverType,
+          int TImmersedBoudnaryType,
+          int TDebug>
 struct SolverBuilderTraits {};
 
-template <typename TScalar, int TDimensions>
-struct SolverBuilderTraits<TScalar, TDimensions, 0> {
+template <typename TScalar,
+          int TDimensions,
+          int TImmersedBoudnaryType,
+          int TDebug>
+struct SolverBuilderTraits<TScalar,
+                           TDimensions,
+                           0,
+                           TImmersedBoudnaryType,
+                           TDebug> {
   using SolverTraitsType = SfsfdSolverTraits
                            <UniformGridGeometry<TScalar, TDimensions>,
+                            TImmersedBoudnaryType,
+                            TDebug,
                             TScalar,
                             TDimensions>;
 
@@ -26,10 +37,19 @@ struct SolverBuilderTraits<TScalar, TDimensions, 0> {
             <SolverTraitsType, TDimension, TDirection>;
 };
 
-template <typename TScalar, int TDimensions>
-struct SolverBuilderTraits<TScalar, TDimensions, 1> {
+template <typename TScalar,
+          int TDimensions,
+          int TImmersedBoudnaryType,
+          int TDebug>
+struct SolverBuilderTraits<TScalar,
+                           TDimensions,
+                           1,
+                           TImmersedBoudnaryType,
+                           TDebug> {
   using SolverTraitsType = IfsfdSolverTraits
                            <UniformGridGeometry<TScalar, TDimensions>,
+                            TImmersedBoudnaryType,
+                            TDebug,
                             TScalar,
                             TDimensions>;
 

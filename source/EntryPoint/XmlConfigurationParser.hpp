@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_EntryPoint_XmlConfigurationParser_hpp
-#define FsiSimulation_EntryPoint_XmlConfigurationParser_hpp
+#pragma once
 
 #include "FluidSimulation/Configuration.hpp"
 
@@ -12,9 +11,9 @@ namespace FsiSimulation {
 namespace EntryPoint {
 class XmlConfigurationParser {
 public:
-  static
-  std::unique_ptr<FluidSimulation::Configuration>
-  parse(boost::filesystem::path const& filePath);
+  static void
+  parse(std::unique_ptr<FluidSimulation::Configuration> const& configuration,
+        boost::filesystem::path const&                         filePath);
 
 private:
   XmlConfigurationParser() {}
@@ -28,5 +27,3 @@ private:
 };
 }
 }
-
-#endif

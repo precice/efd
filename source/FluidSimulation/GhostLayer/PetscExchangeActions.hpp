@@ -87,19 +87,18 @@ public:
     ScalarType temp;
     auto       tempIndex = index;
 
+    temp = _configuration->walls[TDimension][TDirection]
+           ->velocity()(TSolverDimension);
+
     if (TSolverDimension == TDimension) {
-      temp = computeParabolicInputVelocity(
+      compute_parabolic_input_velocity(
         accessor,
-        _configuration->walls[TDimension][TDirection]
-        ->velocity(),
-        TSolverDimension);
+        TSolverDimension,
+        temp);
 
       if (TDirection == 1) {
         tempIndex(TSolverDimension) -= 1;
       }
-    } else {
-      temp = _configuration->walls[TDimension][TDirection]
-             ->velocity() (TSolverDimension);
     }
 
     Pointers::dereference(array, tempIndex) = temp;

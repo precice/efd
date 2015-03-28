@@ -35,6 +35,7 @@ endif ()
 # Modules {{{
 # ==============================================================================
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
+include(cotire)
 # ==============================================================================
 # }}} Modules
 
@@ -85,6 +86,8 @@ else()
   set(LINKER_IS_LD    TRUE)
 endif ()
 endif ()
+SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 # ==============================================================================
 # }}} Compilers
 
@@ -105,8 +108,11 @@ if (COMPILER_IS_G++)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
+  string(REPLACE "-O3" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O0")
+
+  #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
+  #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
 
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -fno-inline")
   #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
@@ -135,9 +141,9 @@ if (LINKER_IS_LD)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static")
   endif ()
 
-  set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,-O5")
+  #set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,-O5")
   # ----------------------------------------------------------------------------
-  set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "${CMAKE_STATIC_LINKER_FLAGS_RELEASE} -Wl,-O5")
+  #set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "${CMAKE_STATIC_LINKER_FLAGS_RELEASE} -Wl,-O5")
 endif ()
 # ==============================================================================
 # }}} General-purpose flags
@@ -178,6 +184,7 @@ target_link_libraries(Simulation PRIVATE
   ${XDMF_HDF5_LIBRARIES}
   ${XDMF_ZLIB_LIBRARIES}
   )
+
 # ==============================================================================
 # }}} Targets
 
@@ -186,6 +193,7 @@ target_link_libraries(Simulation PRIVATE
 target_compile_definitions(Simulation PRIVATE
   ${PETSC_DEFINITIONS}
   ${LIBXML2_DEFINITIONS})
+cotire(Simulation)
 # ==============================================================================
 # }}} Targets' definitions
 

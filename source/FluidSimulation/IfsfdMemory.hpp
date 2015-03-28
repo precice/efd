@@ -1,16 +1,26 @@
 #pragma once
 
-#include "SfsfdMemory.hpp"
+#include "FsfdDebugMemory.hpp"
+#include "FsfdMemory.hpp"
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TSolverTraits>
-class IfsfdMemory : public SfsfdMemory<TSolverTraits> {
+template <typename TSolverTraits, typename TBaseMemoryTraits>
+struct BaseIfsfdMemoryTraits {
+  enum {
+    AdditionalAttributeSize
+      = TBaseMemoryTraits::AdditionalAttributeSize + 0
+  };
+};
+
+template <typename TSolverTraits, typename TBaseMemory>
+class BaseIfsfdMemory : public TBaseMemory {
 public:
-  using BaseType = SfsfdMemory<TSolverTraits>;
+  using BaseType = TBaseMemory;
 
   enum {
-    Dimensions = TSolverTraits::Dimensions
+    Dimensions = TSolverTraits::Dimensions,
+    AttributeSize = TBaseMemory::AttributeSize + 0
   };
 
   using GridGeometryType = typename TSolverTraits::GridGeometryType;
@@ -33,7 +43,7 @@ public:
   using ScalarType = typename TSolverTraits::ScalarType;
 
 public:
-  IfsfdMemory() {}
+  BaseIfsfdMemory() {}
 
   void
   initialize(VectorDiType const& processor_size,
@@ -68,6 +78,56 @@ public:
 
 private:
   std::unique_ptr<ScalarType> _projectionTerm;
+};
+
+template <typename TSolverTraits>
+class IfsfdMemory;
+
+template <typename TSolverTraits>
+class IfsfdDebugMemory;
+
+template <typename TSolverTraits>
+struct IfsfdMemoryTraits {
+  using Type = IfsfdMemory<TSolverTraits>;
+
+  enum {
+    AdditionalAttributeSize
+      = BaseIfsfdMemoryTraits
+        < TSolverTraits,
+    FsfdMemoryTraits < TSolverTraits >> ::AdditionalAttributeSize + 0
+  };
+};
+
+template <typename TSolverTraits>
+struct IfsfdDebugMemoryTraits {
+  using Type = IfsfdDebugMemory<TSolverTraits>;
+
+  enum {
+    AdditionalAttributeSize
+      = BaseIfsfdMemoryTraits
+        < TSolverTraits,
+    FsfdDebugMemoryTraits < TSolverTraits >> ::AdditionalAttributeSize + 0
+  };
+};
+
+template <typename TSolverTraits>
+class IfsfdMemory :
+  public BaseIfsfdMemory
+  < TSolverTraits,
+         FsfdMemory < TSolverTraits,
+         IfsfdMemoryTraits<TSolverTraits >>> {
+  friend class FsfdMemory < TSolverTraits,
+    IfsfdMemoryTraits < TSolverTraits >>;
+};
+
+template <typename TSolverTraits>
+class IfsfdDebugMemory :
+  public BaseIfsfdMemory
+  < TSolverTraits,
+         FsfdDebugMemory < TSolverTraits,
+         IfsfdDebugMemoryTraits<TSolverTraits >>> {
+  friend class FsfdMemory < TSolverTraits,
+    IfsfdDebugMemoryTraits < TSolverTraits >>;
 };
 }
 }

@@ -134,7 +134,8 @@ parseWallsChildren(xmlNodePtr     node,
       configuration->walls[0][0] = parseWall(currentNode);
     } else if (xmlStrcasecmp(currentNode->name, (xmlChar* const)"right") == 0) {
       configuration->walls[0][1] = parseWall(currentNode);
-    } else if (xmlStrcasecmp(currentNode->name, (xmlChar* const)"bottom") == 0) {
+    } else if (xmlStrcasecmp(currentNode->name, (xmlChar* const)"bottom")
+               == 0) {
       configuration->walls[1][0] = parseWall(currentNode);
     } else if (xmlStrcasecmp(currentNode->name, (xmlChar* const)"top") == 0) {
       configuration->walls[1][1] = parseWall(currentNode);
@@ -157,9 +158,11 @@ parseImmersedBoundary(xmlNodePtr     node,
 
   while (attr) {
     if (xmlStrcasecmp(attr->name, outerLayerSize) == 0) {
-      configuration->outerLayerSize = parseNumber<unsigned>(attr->children->content);
+      configuration->outerLayerSize = parseNumber<unsigned>(
+        attr->children->content);
     } else if (xmlStrcasecmp(attr->name, innerLayerSize) == 0) {
-      configuration->innerLayerSize = parseNumber<unsigned>(attr->children->content);
+      configuration->innerLayerSize = parseNumber<unsigned>(
+        attr->children->content);
     }
     attr = attr->next;
   }
@@ -174,7 +177,7 @@ parseScenarioChildren(xmlNodePtr     node,
     if (xmlStrcasecmp(currentNode->name, (xmlChar* const)"walls") == 0) {
       parseWallsChildren(currentNode, configuration);
     } else if (xmlStrcasecmp(currentNode->name,
-                           (xmlChar* const)"immersed-boundary") == 0) {
+                             (xmlChar* const)"immersed-boundary") == 0) {
       parseImmersedBoundary(currentNode, configuration);
     }
     currentNode = currentNode->next;
@@ -272,7 +275,7 @@ parseScenarioParameters(xmlNodePtr     node,
       configuration->size = parseVector<int>(attr->children->content);
     } else if (xmlStrcasecmp(attr->name, parallelizationSize) == 0) {
       configuration->parallelizationSize
-          = parseVector<int>(attr->children->content);
+        = parseVector<int>(attr->children->content);
     } else if (xmlStrcasecmp(attr->name, environment) == 0) {
       configuration->environment = parseVector<Scalar>(attr->children->content);
     } else if (xmlStrcasecmp(attr->name, filename) == 0) {
@@ -288,9 +291,10 @@ parseScenarioParameters(xmlNodePtr     node,
   }
 }
 
-std::unique_ptr<Configuration>
+void
 XmlConfigurationParser::
-parse(boost::filesystem::path const& filePath) {
+parse(std::unique_ptr<Configuration> const& configuration,
+      boost::filesystem::path const&        filePath) {
   boost::filesystem::ifstream fileStream(filePath, std::ios_base::binary);
 
   std::filebuf* fileBuf = fileStream.rdbuf();
@@ -320,8 +324,6 @@ parse(boost::filesystem::path const& filePath) {
     throwException("Failed to find root element");
   }
 
-  std::unique_ptr<Configuration> configuration(new Configuration());
-
   parseScenarioParameters(root, configuration.get());
 
   parseScenarioChildren(root->children, configuration.get());
@@ -329,6 +331,4 @@ parse(boost::filesystem::path const& filePath) {
   xmlFreeDoc(doc);
 
   xmlCleanupParser();
-
-  return configuration;
 }

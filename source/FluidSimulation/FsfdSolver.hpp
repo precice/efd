@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ImmersedBoundary/BodyForce/functions.hpp"
 #include "ImmersedBoundary/Controller.hpp"
 #include "LinearSolver.hpp"
 #include "Private/mpigenerics.hpp"
@@ -37,6 +36,9 @@ public:
   using VectorDiType = typename SolverTraitsType::VectorDiType;
 
   using ScalarType = typename SolverTraitsType::ScalarType;
+
+  using ImmersedBoundaryControllerType
+          = typename SolverTraitsType::ImmersedBoundaryControllerType;
 
   using GhostHandlersType
           = typename SolverTraitsType::GhostHandlersType;
@@ -120,6 +122,8 @@ public:
     _memory.maxVelocity() = VectorDsType::Zero();
 
     for (auto const& accessor : _memory.grid()->innerGrid) {
+      _memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
+
       auto convection = ConvectionProcessing<Dimensions>::compute(
         accessor,
         _memory.parameters());
@@ -187,6 +191,7 @@ public:
 
       // _memory.fgh()[it->first] += _memory.timeStepsize() * force;
       _memory.fgh()[it->first] += force;
+      _memory.setForceAt(it->first, force);
       total_force              += force;
     }
     logInfo("{1}", total_force.transpose());
@@ -213,37 +218,17 @@ public:
 
     _ghostHandlers.executeVelocityMpiExchange();
 
-    VectorDsType force = VectorDsType::Zero();
-
-    for (auto& accessor : _memory.grid()->innerGrid) {
-      ImmersedBoundary::BodyForce::
-      template computeCellForce<CellAccessorType>(
-        accessor,
-        _memory.parameters()->re(),
-        force);
-    }
-
-    Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
-                                      force.data(),
-                                      Dimensions,
-                                      MPI_SUM,
-                                      PETSC_COMM_WORLD);
-
-    // force *= 2 / (0.3 * 0.3 * 0.1);
-
-    if (_memory.parallelDistribution()->rank == 0) {
-      logInfo("{1}", force.transpose());
-    }
+    _ibController.computeBodyForce(&_memory);
 
     _memory.time() += _memory.timeStepSize();
     ++_memory.iterationNumber();
   }
 
 private:
-  MemoryType                                     _memory;
-  PeSolverType                                   _peSolver;
-  GhostHandlersType                              _ghostHandlers;
-  ImmersedBoundary::Controller<SolverTraitsType> _ibController;
+  MemoryType                     _memory;
+  PeSolverType                   _peSolver;
+  GhostHandlersType              _ghostHandlers;
+  ImmersedBoundaryControllerType _ibController;
 };
 }
 }

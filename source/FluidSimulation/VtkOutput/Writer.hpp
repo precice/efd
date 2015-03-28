@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FluidSimulation/functions.hpp"
+#include "FluidSimulation/FsfdMemory.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -96,37 +96,51 @@ public:
     }
     fileStream << pointsStream.str() << std::endl;
 
-    std::stringstream pressureStream;
-    std::stringstream velocityStream;
-
-    fileStream << "\nCELL_DATA " <<
-      _memory->grid()->innerGrid.innerSize().prod()
+    fileStream << "\nCELL_DATA "
+               << _memory->grid()->innerGrid.innerSize().prod()
                << std::endl;
 
-    fileStream << "\nVECTORS velocity float" << std::endl;
+    int index = 0;
 
-    for (auto const& accessor : _memory->grid()->innerGrid) {
-      velocityStream
-        << (accessor.velocity(0) + accessor.velocity(0, -1, 0)) / 2.0
-        << " "
-        << (accessor.velocity(1) + accessor.velocity(1, -1, 1)) / 2.0;
+    for (auto const& attribute : * _memory->attributes()) {
+      logInfo("{1}", attribute.name);
+      std::stringstream string_stream;
 
-      if (Dimensions == 3) {
-        velocityStream << " " << accessor.velocity(2);
-      } else if (Dimensions == 2) {
-        velocityStream << " " << 0.0;
+      if (attribute.type == Attribute::Type::Vector) {
+        fileStream << "\nVECTORS "
+                   << attribute.name
+                   << " float" << std::endl;
+
+        for (auto const& accessor : _memory->grid()->innerGrid) {
+          for (int d = 0; d < 3; ++d) {
+            if (d != 0) {
+              string_stream << " ";
+            }
+
+            if (d < Dimensions) {
+              string_stream
+                << static_cast<float>(accessor.centralizedAttribute(index, d));
+            } else {
+              string_stream << 0.0;
+            }
+          }
+          string_stream << std::endl;
+        }
+      } else {
+        string_stream << "\nSCALARS "
+                      << attribute.name
+                      << " float 1" << std::endl
+                      << "LOOKUP_TABLE default" << std::endl;
+
+        for (auto const& accessor : _memory->grid()->innerGrid) {
+          string_stream
+            << static_cast<float>(accessor.centralizedAttribute(index));
+          string_stream << std::endl;
+        }
       }
-      velocityStream << std::endl;
+      fileStream << string_stream.str() << std::endl;
+      ++index;
     }
-    fileStream << velocityStream.str() << std::endl;
-
-    fileStream << "\nSCALARS pressure float 1" << std::endl
-               << "LOOKUP_TABLE default" << std::endl;
-
-    for (auto const& accessor : _memory->grid()->innerGrid) {
-      pressureStream << accessor.pressure() << std::endl;
-    }
-    fileStream << pressureStream.str() << std::endl;
 
     fileStream.close();
   }

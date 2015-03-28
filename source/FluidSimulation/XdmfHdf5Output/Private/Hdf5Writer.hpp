@@ -316,7 +316,7 @@ public:
         for (int j = 0; j < attribute_size; ++j) {
           if (j < Dimensions) {
             data[data_index]
-             = static_cast<float>(accessor.attribute(attribute_index, j));
+             = static_cast<float>(accessor.centralizedAttribute(attribute_index, j));
           } else {
             data[data_index] = 0.0;
           }

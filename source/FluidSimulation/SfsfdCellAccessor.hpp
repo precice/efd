@@ -71,10 +71,35 @@ public:
     return _memory;
   }
 
-  ScalarType&
+  void
+  setForce(VectorDsType const& value) const {
+    _memory->setForceAt(this->globalIndex(), value);
+  }
+
+  void
+  setBodyForce(VectorDsType const& value) const {
+    return _memory->setBodyForceAt(this->globalIndex(), value);
+  }
+
+  ScalarType
   attribute(int const& attribute_index,
             int const& dimension = 0) const {
-    return _attribute(this->globalIndex(), attribute_index, dimension);
+    _attribute(this->globalIndex(), attribute_index, dimension);
+  }
+
+  ScalarType
+  centralizedAttribute(int const& attribute_index,
+                       int const& dimension = 0) const {
+    if (_memory->attributes()->at(attribute_index).doCentralize) {
+      return (_attribute(this->globalIndex(),
+                         attribute_index,
+                         dimension)
+              - _attribute(this->relativeGlobalIndex(dimension, -1),
+                           attribute_index,
+                           dimension)) / 2.0;
+    }
+
+    return attribute(attribute_index, dimension);
   }
 
   VectorDsType
@@ -663,7 +688,7 @@ protected:
     return result;
   }
 
-  ScalarType&
+  ScalarType
   _attribute(int const& global_index,
              int const& attribute_index,
              int const& dimension) const {

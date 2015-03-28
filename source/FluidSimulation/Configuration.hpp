@@ -154,21 +154,29 @@ public:
   typedef std::array<std::array<UniqueWallType, 2>, 3> WallTypes;
 
 public:
-  Configuration()
-    : re(0),
-    timeLimit(0),
-    plotInterval(0),
-    tau(0),
-    gamma(0),
-    dimensions(2),
-    solverType(SolverEnum::Sfsfd),
-    scalarType(ScalarEnum::Double),
-    outputType(OutputEnum::Vtk),
-    outerLayerSize(1),
-    innerLayerSize(0) {
+  Configuration() {
+    reset();
+  }
+
+  void
+  reset() {
+    re                 = 0;
+    timeLimit          = 0;
+    plotInterval       = 0;
+    tau                = 0;
+    gamma              = 0;
+    dimensions         = 2;
+    solverType         = SolverEnum::Sfsfd;
+    scalarType         = ScalarEnum::Double;
+    outputType         = OutputEnum::Vtk;
+    outerLayerSize     = 1;
+    innerLayerSize     = 0;
+    doImmersedBoundary = true;
+    doDebug            = false;
+
     for (int d = 0; d < 3; ++d) {
-      walls[d][0] = UniqueWallType(new Input());
-      walls[d][1] = UniqueWallType(new Input());
+      walls[d][0].reset(new Input());
+      walls[d][1].reset(new Input());
     }
   }
 
@@ -191,6 +199,8 @@ public:
   OutputEnum   outputType;
   int          outerLayerSize;
   int          innerLayerSize;
+  bool         doImmersedBoundary;
+  bool         doDebug;
 };
 }
 }

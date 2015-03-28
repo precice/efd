@@ -41,12 +41,20 @@ _create_simulation_controller(FluidSimulation::Configuration* configuration) {
   return std::unique_ptr<SimulationController>(controller.release());
 }
 
-template <int TDimensions, typename TScalar, int TSolverType>
+template <int TDimensions,
+          typename TScalar,
+          int TSolverType,
+          int TImmersedBoudnaryType,
+          int TDebug>
 inline std::unique_ptr<SimulationController>
-_create_simulation_controller_nd_scalar_solver_type(
+_create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug(
   FluidSimulation::Configuration* configuration) {
   using SolverBuilderTraitsType
-          = SolverBuilderTraits<TScalar, TDimensions, TSolverType>;
+          = SolverBuilderTraits<TScalar,
+                                TDimensions,
+                                TSolverType,
+                                TImmersedBoudnaryType,
+                                TDebug>;
 
   using SolverTraitsType
           = typename SolverBuilderTraitsType::SolverTraitsType;
@@ -75,6 +83,47 @@ _create_simulation_controller_nd_scalar_solver_type(
     "Failed to crate simulation controller for the provided output type");
 }
 
+template <int TDimensions,
+          typename TScalar,
+          int TSolverType,
+          int TImmersedBoudnaryType>
+inline std::unique_ptr<SimulationController>
+_create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type(
+  FluidSimulation::Configuration* configuration) {
+  if (configuration->doDebug) {
+    return
+      _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
+      <TDimensions,
+       TScalar,
+       TSolverType,
+       TImmersedBoudnaryType,
+       1>(configuration);
+  }
+
+  return
+    _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
+    <TDimensions,
+     TScalar,
+     TSolverType,
+     TImmersedBoudnaryType,
+     0>(configuration);
+}
+
+template <int TDimensions, typename TScalar, int TSolverType>
+inline std::unique_ptr<SimulationController>
+_create_simulation_controller_nd_scalar_solver_type(
+  FluidSimulation::Configuration* configuration) {
+  if (configuration->doImmersedBoundary) {
+    return
+      _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type
+      <TDimensions, TScalar, TSolverType, 1>(configuration);
+  }
+
+  return
+    _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type
+    <TDimensions, TScalar, TSolverType, 0>(configuration);
+}
+
 template <int TDimensions, typename TScalar>
 inline std::unique_ptr<SimulationController>
 _create_simulation_controller_nd_scalar(
@@ -84,7 +133,7 @@ _create_simulation_controller_nd_scalar(
            <TDimensions, TScalar, 0>(configuration);
   } else if (configuration->solverType == SolverEnum::Ifsfd) {
     return _create_simulation_controller_nd_scalar_solver_type
-           <TDimensions, TScalar, 0>(configuration);
+           <TDimensions, TScalar, 1>(configuration);
   }
   throwException(
     "Failed to crate simulation controller for the provided solver type");

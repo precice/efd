@@ -1,6 +1,9 @@
 #pragma once
 
+#include "BodyForce/functions.hpp"
 #include "functions.hpp"
+
+#include "FluidSimulation/Private/mpigenerics.hpp"
 
 #include <precice/SolverInterface.hpp>
 
@@ -10,7 +13,105 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace ImmersedBoundary {
 template <typename TSolverTraits>
-class Controller {
+class BasicController {
+public:
+  using SolverTraitsType = TSolverTraits;
+
+  enum {
+    Dimensions = SolverTraitsType::Dimensions
+  };
+
+  using GridGeometryType = typename SolverTraitsType::GridGeometryType;
+
+  using ParametersType = typename SolverTraitsType::ParametersType;
+
+  using ParallelDistributionType
+          = typename SolverTraitsType::ParallelDistributionType;
+
+  using MemoryType = typename SolverTraitsType::MemoryType;
+
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using GridType = typename SolverTraitsType::GridType;
+
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+
+  using VertexIdMap = std::map<int, int>;
+
+public:
+  BasicController() {}
+
+  BasicController(BasicController const&) = delete;
+
+  ~BasicController() {}
+
+  BasicController&
+  operator=(BasicController const& other) = delete;
+
+  typename VertexIdMap::const_iterator
+  begin() const {
+    return _vertexIds.begin();
+  }
+
+  typename VertexIdMap::const_iterator
+  end() const {
+    return _vertexIds.end();
+  }
+
+  void
+  initialize(precice::SolverInterface* preciceInterface) {
+    ((void)preciceInterface);
+  }
+
+  void
+  computePositionInRespectToGeometry(CellAccessorType const& accessor) const {
+    ((void)accessor);
+  }
+
+  void
+  createFluidMeshVertex(CellAccessorType const& accessor) {
+    ((void)accessor);
+  }
+
+  std::pair<typename VertexIdMap::const_iterator, bool>
+  doesVertexExist(CellAccessorType const& accessor) const {
+    return std::make_pair(end(), false);
+  }
+
+  void
+  writeFluidVelocity(typename VertexIdMap::const_iterator const& it,
+                     VectorDsType const&                         velocity) {
+    ((void)it);
+    ((void)velocity);
+  }
+
+  void
+  mapData(ScalarType const& time_step_size) {
+    ((void)time_step_size);
+  }
+
+  void
+  readFluidForce(typename VertexIdMap::const_iterator const& it,
+                 VectorDsType&                               force) {
+    ((void)it);
+    ((void)force);
+  }
+
+  void
+  computeBodyForce(MemoryType const* memory) {
+    ((void)memory);
+  }
+
+protected:
+  VertexIdMap _vertexIds;
+};
+
+template <typename TSolverTraits>
+class Controller : public BasicController<TSolverTraits> {
 public:
   using SolverTraitsType = TSolverTraits;
 
@@ -51,12 +152,12 @@ public:
 
   typename VertexIdMap::const_iterator
   begin() const {
-    return _vertexIds.begin();
+    return this->_vertexIds.begin();
   }
 
   typename VertexIdMap::const_iterator
   end() const {
-    return _vertexIds.end();
+    return this->_vertexIds.end();
   }
 
   void
@@ -109,15 +210,15 @@ public:
       auto         vertexId
         = _preciceInterface->setMeshVertex(_fluidMeshId, position.data());
 
-      _vertexIds.insert(std::make_pair(accessor.globalIndex(), vertexId));
+      this->_vertexIds.insert(std::make_pair(accessor.globalIndex(), vertexId));
     }
   }
 
   std::pair<typename VertexIdMap::const_iterator, bool>
   doesVertexExist(CellAccessorType const& accessor) const {
-    auto find_it = _vertexIds.find(accessor.globalIndex());
+    auto find_it = this->_vertexIds.find(accessor.globalIndex());
 
-    if (find_it == _vertexIds.end()) {
+    if (find_it == this->_vertexIds.end()) {
       return std::make_pair(find_it, false);
     } else {
       return std::make_pair(find_it, true);
@@ -140,17 +241,37 @@ public:
   void
   readFluidForce(typename VertexIdMap::const_iterator const& it,
                  VectorDsType&                               force) {
-    // double data[Dimensions];
     _preciceInterface->readVectorData(_fluidMeshForcesId, it->second,
                                       force.data());
+  }
 
-    // force
-    //   = Eigen::Matrix<double, Dimensions, 1>(data).template cast<ScalarType>();
+  void
+  computeBodyForce(MemoryType const* memory) {
+    VectorDsType total_force = VectorDsType::Zero();
+
+    for (auto const& accessor : memory->grid()->innerGrid) {
+      VectorDsType force = VectorDsType::Zero();
+      BodyForce::computeCellForce(accessor,
+                                  memory->parameters()->re(),
+                                  force);
+      accessor.setBodyForce(force);
+      total_force += force;
+    }
+
+    Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
+                                      total_force.data(),
+                                      Dimensions,
+                                      MPI_SUM,
+                                      PETSC_COMM_WORLD);
+
+    // force *= 2 / (0.3 * 0.3 * 0.1);
+
+    if (memory->parallelDistribution()->rank == 0) {
+      logInfo("BodyForce: {1}", total_force.transpose());
+    }
   }
 
 private:
-  VertexIdMap _vertexIds;
-
   precice::SolverInterface* _preciceInterface;
 
   int _fluidMeshId;

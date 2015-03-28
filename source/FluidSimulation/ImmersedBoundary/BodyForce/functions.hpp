@@ -74,11 +74,10 @@ computeCellForce(TCellAccessor const&                      accessor,
         Vector width = Vector::Zero();
         for (int d4 = 0; d4 < TCellAccessor::Dimensions; ++d4) {
           if (d4 != d) {
-            width(d4) = accessor.width(d4);
+            width(d4) = normal(d) * accessor.width(d4);
           }
         }
-        normal = matrix * normal;
-        force += normal.cwiseProduct(width);
+        force = matrix * normal;
         // logInfo("Got it {1} {2} {3}", matrix, normal, force);
         break;
       }

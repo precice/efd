@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_GhostLayer_Private_utilities_hpp
-#define FsiSimulation_FluidSimulation_GhostLayer_Private_utilities_hpp
+#pragma once
 
 #include "FluidSimulation/Configuration.hpp"
 
@@ -63,5 +62,3 @@ compute_parabolic_input_velocity(TCellAccessor const&                accessor,
 }
 }
 }
-
-#endif
