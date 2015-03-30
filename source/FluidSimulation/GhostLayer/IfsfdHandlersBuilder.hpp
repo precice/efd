@@ -31,6 +31,7 @@ struct IfsfdHandlersBuilderTraits {
     PressureMpiExchangeHandler
       = MpiExchange::Handler
         <ScalarType,
+         1,
          typename GridType::BaseType,
          IfsfdHandlersBuilderTraits::projectionTermAccessor,
          TDimension,

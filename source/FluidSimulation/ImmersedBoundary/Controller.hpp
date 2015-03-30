@@ -128,7 +128,7 @@ public:
   readFluidForce(typename VertexIdMap::const_iterator const& it,
                  VectorDsType&                               force) {
     ((void)it);
-    ((void)force);
+    force = VectorDsType::Zero();
   }
 
   void

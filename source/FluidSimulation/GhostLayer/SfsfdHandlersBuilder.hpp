@@ -30,7 +30,8 @@ struct SfsfdHandlersBuilderTraits {
 
   using PressureMpiExchangeHandler
           = MpiExchange::Handler
-          <ScalarType,
+            <ScalarType,
+             1,
              typename GridType::BaseType,
              SfsfdHandlersBuilderTraits::pressureAccessor,
              TDimension,

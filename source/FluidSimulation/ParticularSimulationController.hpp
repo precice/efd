@@ -121,6 +121,7 @@ public:
     _resultWriter.initialize(_solver.memory(), outputDirectory, fileNamePrefix);
 
     _lastPlotTimeStamp = 0.0;
+    _lastTime = -1.0;
 
     if (_plotInterval >= 0) {
       _resultWriter.writeGeometry();
@@ -130,6 +131,11 @@ public:
 
   bool
   iterate() {
+    if (std::abs(_lastTime - _solver.memory()->time())
+        <= std::numeric_limits<long double>::epsilon()) {
+      return false;
+    }
+
     if (_timeLimit > 0
         && _solver.memory()->time() >= _timeLimit) {
       return false;
@@ -139,6 +145,7 @@ public:
         && _solver.memory()->iterationNumber() >= _iterationLimit) {
       return false;
     }
+    _lastTime = _solver.memory()->time();
 
     _solver.iterate();
 
@@ -156,6 +163,7 @@ public:
 private:
   SolverType _solver;
 
+  long double        _lastTime;
   long double        _timeLimit;
   long double        _lastPlotTimeStamp;
   ScalarType         _plotInterval;

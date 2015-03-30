@@ -471,6 +471,12 @@ public:
         accessor.width(d2, -1, d2),
         accessor.width(d2, +1, d2),
         simulationParameters->gamma());
+
+      if (result(d1) != result(d1)) {
+        logInfo("{1} {2}",
+                accessor.index().transpose(),
+                d1);
+      }
     }
 
     return result;
@@ -856,7 +862,9 @@ public:
   inline void
   set(CellAccessorType const& accessor,
       ScalarType const&       value) const {
-    accessor.pressure()      += value;
+    accessor.pressure()
+      = accessor.projectionTerm() + value;
+
     accessor.projectionTerm() = value;
   }
 

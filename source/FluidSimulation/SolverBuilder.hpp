@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Configuration.hpp"
+
 #include "GhostLayer/CornerVelocityHandler.hpp"
 
 #include <functional>
@@ -70,8 +71,6 @@ public:
 
     _solver->memory()->parameters()->tau() = configuration->tau;
 
-    _solver->memory()->parameters()->alpha() = configuration->alpha;
-
     _solver->immersedBoundaryController()
     ->outerLayerSize(configuration->outerLayerSize);
 
@@ -98,16 +97,14 @@ public:
     setBackWallAs(configuration->walls[2][0]->type());
     setFrontWallAs(configuration->walls[2][1]->type());
 
-    auto handlers
-      = std::make_shared
-        < GhostLayer::CornerVelocityHandlers < SolverTraitsType >> (
-      _solver->memory(),
-      configuration);
-
     _solver->ghostHandlers()->cornersHandler
       = std::bind(
       &GhostLayer::CornerVelocityHandlers<SolverTraitsType>::execute,
-      handlers);
+      std::make_shared
+      < GhostLayer::CornerVelocityHandlers < SolverTraitsType >>
+      (&_solver->memory()->grid()->innerGrid,
+       _solver->memory()->parallelDistribution())
+      );
   }
 
   void

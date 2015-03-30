@@ -23,8 +23,8 @@ using VectorDi = Eigen::Matrix<int, TD, 1>;
 
 typedef std::unique_ptr<PetscInt const[]> UniqueConstPetscIntArray;
 template <int TD>
-using VectorDConstPetscIntPointer =
-        Eigen::Matrix<UniqueConstPetscIntArray, TD, 1>;
+using VectorDConstPetscIntPointer
+        = Eigen::Matrix<UniqueConstPetscIntArray, TD, 1>;
 
 template <int TD>
 DMBoundaryTypeVector<TD>
@@ -52,57 +52,6 @@ compute_petsc_operator_indexes(
   MatStencil*          columns,
   MatStencil*          row) {
   //
-}
-
-inline void
-setupCustomOptions(KSP& context,
-                   PC&  preconditioner) {
-  KSPSetType(context, KSPFGMRES);
-
-  int comm_size;
-  MPI_Comm_size(PETSC_COMM_WORLD, &comm_size);
-
-  if (comm_size == 1) {
-    // if serial
-    PCSetType(preconditioner, PCILU);
-    PCFactorSetLevels(preconditioner, 1);
-    KSPSetPC(context, preconditioner);
-  } else {
-    // if parallel
-    PCSetType(preconditioner, PCASM);
-    KSPSetPC(context, preconditioner);
-  }
-
-  KSPSetFromOptions(context);
-  KSPSetInitialGuessNonzero(context, PETSC_TRUE);
-  KSPSetUp(context);
-
-  // from here we can change sub_ksp if necessary
-  // that has to be done after setup. The other solvers above
-  // can be changed before setup with KSPSetFromOptions
-
-  if (comm_size > 1) {
-    KSP* subksp;
-    PC   subpc;
-
-    PCASMGetSubKSP(preconditioner, NULL, NULL, &subksp);
-    KSPGetPC(subksp[0], &subpc);
-
-    PetscBool has_fl;
-    PetscBool has_sub_type;
-    PetscOptionsHasName(NULL, "-sub_pc_factor_levels", &has_fl);
-    PetscOptionsHasName(NULL, "-sub_pc_type",          &has_sub_type);
-
-    if (!(has_sub_type)) {
-      PCSetType(subpc, PCILU);
-    }
-
-    if (!(has_fl)) {
-      PCFactorSetLevels(subpc, 1);
-    }
-
-    KSPSetUp(context);
-  }
 }
 
 template <int TD>

@@ -14,7 +14,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "petscsys.h"
+#include <petscsys.h>
 
 //
 
@@ -53,8 +53,6 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     outputDirectoryPath    = fs::current_path();
     petscConfigurationPath = applicationPath;
     petscConfigurationPath.append("FluidPetsc/Basic.conf");
-    preciceConfigurationPath = applicationPath;
-    preciceConfigurationPath.append("Precice/SketchOfGeometryModeInFluid.xml");
     fluidConfigurationPath = applicationPath;
     fluidConfigurationPath.append("FluidSimulation/Channel.xml");
   }
@@ -155,8 +153,11 @@ parseArguments() {
   }
 
   if (options.count("precice")) {
-    _im->preciceConfigurationPath = boost::filesystem::canonical(
+    _im->fluidConfiguration->doImmersedBoundary = true;
+    _im->preciceConfigurationPath               = boost::filesystem::canonical(
       options["precice"].as<std::string>());
+  } else {
+    _im->fluidConfiguration->doImmersedBoundary = false;
   }
 
   if (options.count("simulation")) {
@@ -274,6 +275,10 @@ initializePrecice() {
                                          _im->rank,
                                          _im->processCount)
     );
+
+  if (!_im->fluidConfiguration->doImmersedBoundary) {
+    return;
+  }
 
   auto preciceConfigurationPath
     = Utility::convertUtfPathToAnsi(

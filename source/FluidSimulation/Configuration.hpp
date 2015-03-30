@@ -166,12 +166,13 @@ public:
     tau                = 0;
     gamma              = 0;
     dimensions         = 2;
+    environment        = VectorDsType::Zero();
     solverType         = SolverEnum::Sfsfd;
     scalarType         = ScalarEnum::Double;
     outputType         = OutputEnum::Vtk;
     outerLayerSize     = 1;
     innerLayerSize     = 0;
-    doImmersedBoundary = true;
+    doImmersedBoundary = false;
     doDebug            = false;
 
     for (int d = 0; d < 3; ++d) {
@@ -193,7 +194,6 @@ public:
   VectorDsType environment;
   WallTypes    walls;
   std::string  filename;
-  float        alpha;
   SolverEnum   solverType;
   ScalarEnum   scalarType;
   OutputEnum   outputType;

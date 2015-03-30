@@ -99,7 +99,7 @@ public:
   }
 
   int
-  getRank(VectorDi const& index_) {
+  getRank(VectorDi const& index_) const {
     auto result   = 0;
     int  tempSize = 1;
 

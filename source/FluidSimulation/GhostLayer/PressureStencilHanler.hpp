@@ -207,8 +207,7 @@ public:
       MatStencil  row;
 
       TStencil(stencil);
-      for (auto const
-           & accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
+      for (auto const& accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
         computeGhostIndexes(accessor, columns, &row);
 
         MatSetValuesStencil(A, 1, &row, 2, columns, stencil, INSERT_VALUES);

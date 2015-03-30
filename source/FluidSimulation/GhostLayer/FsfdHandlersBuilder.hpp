@@ -39,14 +39,15 @@ public:
     return &accessor.fgh(TDimension2);
   }
 
-  static VectorDsType*
+  static ScalarType*
   velocityAccessor(CellAccessorType const& accessor) {
-    return &accessor.velocity();
+    return accessor.velocity().data();
   }
 
   typedef
     MpiExchange::Handler
     <ScalarType,
+     1,
      typename GridType::BaseType,
      FsfdHandlersBuilder::template fghAccessor<Dimension>,
      Dimension,
@@ -57,7 +58,8 @@ public:
     PressureMpiExchangeHandler;
   typedef
     MpiExchange::Handler
-    <VectorDsType,
+    <ScalarType,
+     Dimensions,
      typename GridType::BaseType,
      FsfdHandlersBuilder::velocityAccessor,
      Dimension,
@@ -194,7 +196,8 @@ public:
 
     _solver->ghostHandlers()->velocityInitialization[Dimension][Direction]
       = InputVelocityInitialization::getHandler(
-      &_solver->memory()->grid()->boundaries[Dimension][Direction],
+      &_solver->memory()->grid()
+      ->indentedBoundaries[Dimension][Direction],
       _solver->memory()->parallelDistribution(),
       new InputVelocityInitializationAction(
         _configuration,
@@ -230,7 +233,8 @@ public:
 
     _solver->ghostHandlers()->velocityInitialization[Dimension][Direction]
       = ParabolicInputVelocityInitialization::getHandler(
-      &_solver->memory()->grid()->boundaries[Dimension][Direction],
+      &_solver->memory()->grid()
+      ->indentedBoundaries[Dimension][Direction],
       _solver->memory()->parallelDistribution(),
       new ParabolicInputVelocityInitializationAction(
         _configuration,
@@ -266,7 +270,8 @@ public:
 
     _solver->ghostHandlers()->velocityInitialization[Dimension][Direction]
       = OutputVelocityInitialization::getHandler(
-      &_solver->memory()->grid()->boundaries[Dimension][Direction],
+      &_solver->memory()->grid()
+      ->indentedBoundaries[Dimension][Direction],
       _solver->memory()->parallelDistribution(),
       new OutputVelocityInitializationAction(
         &_solver->memory()->maxVelocity()));
@@ -274,57 +279,32 @@ public:
 
   void
   setAsMpiExchange() {
-    auto leftIndent  = _solver->memory()->grid()->innerGrid.leftIndent();
-    auto rightIndent = _solver->memory()->grid()->innerGrid.rightIndent();
-
     if (Direction == 0) {
       _solver->ghostHandlers()->mpiFghExchangeStack[Dimension][Direction]
         = FghMpiExchangeHandler::getReceiveHandler(
-        _solver->memory()->grid(),
-        _solver->memory()->parallelDistribution(),
-        leftIndent,
-        rightIndent);
+        &_solver->memory()->grid()->innerGrid,
+        _solver->memory()->parallelDistribution());
 
       _solver->ghostHandlers()->mpiPressureExchangeStack[Dimension][Direction]
         = PressureMpiExchangeHandler::getSendHandler(
-        _solver->memory()->grid(),
-        _solver->memory()->parallelDistribution(),
-        leftIndent,
-        rightIndent);
-
-      for (int d = 0; d < Dimensions; ++d) {
-        if (d != Dimension) {
-          rightIndent(d) = 0;
-        }
-      }
+        &_solver->memory()->grid()->innerGrid,
+        _solver->memory()->parallelDistribution());
     } else {
       _solver->ghostHandlers()->mpiFghExchangeStack[Dimension][Direction]
         = FghMpiExchangeHandler::getSendHandler(
-        _solver->memory()->grid(),
-        _solver->memory()->parallelDistribution(),
-        leftIndent,
-        rightIndent);
+        &_solver->memory()->grid()->innerGrid,
+        _solver->memory()->parallelDistribution());
 
       _solver->ghostHandlers()->mpiPressureExchangeStack[Dimension][Direction]
         = PressureMpiExchangeHandler::getReceiveHandler(
-        _solver->memory()->grid(),
-        _solver->memory()->parallelDistribution(),
-        leftIndent,
-        rightIndent);
-
-      for (int d = 0; d < Dimensions; ++d) {
-        if (d != Dimension) {
-          leftIndent(d) = 0;
-        }
-      }
+        &_solver->memory()->grid()->innerGrid,
+        _solver->memory()->parallelDistribution());
     }
 
     _solver->ghostHandlers()->mpiVelocityExchangeStack[Dimension][Direction]
       = VelocityMpiExchangeHandler::getExchangeHandler(
-      _solver->memory()->grid(),
-      _solver->memory()->parallelDistribution(),
-      leftIndent,
-      rightIndent);
+      &_solver->memory()->grid()->innerGrid,
+      _solver->memory()->parallelDistribution());
   }
 
 protected:

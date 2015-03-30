@@ -1,5 +1,4 @@
-#ifndef FsiSimulation_FluidSimulation_Solvers_LinearSolver_hpp
-#define FsiSimulation_FluidSimulation_Solvers_LinearSolver_hpp
+#pragma once
 
 #include "ParallelDistribution.hpp"
 #include "Private/petscgenerics.hpp"
@@ -104,50 +103,14 @@ public:
     DMCreateGlobalVector(_da, &_x);
     KSPSetDM(_context, _da);
 
-    KSPSetComputeOperators(_context, computeMatrix, this);
-
-    setupCustomOptions(_context, _preconditioner);
-    // DMDALocalInfo petscInfo;
-    // DMDAGetLocalInfo(_da, &petscInfo);
-    // logInfo("dim {1} dof {2} sw {3} \n"
-    // "global number of grid points in each direction {4} {5} {6} \n"
-    // "starting point of this processor, excluding ghosts {7} {8} {9} \n"
-    // "number of grid points on this processor, excluding ghosts {10} {11} {12}
-    // \n"
-    // "starting point of this processor including ghosts {13} {14} {15} \n"
-    // "number of grid points on this processor including ghosts {16} {17} {18}
-    // \n",
-    // petscInfo.dim, petscInfo.dof, petscInfo.sw,
-    // petscInfo.mx, petscInfo.my, petscInfo.mz,
-    // petscInfo.xs, petscInfo.ys, petscInfo.zs,
-    // petscInfo.xm, petscInfo.ym, petscInfo.zm,
-    // petscInfo.gxs, petscInfo.gys, petscInfo.gzs,
-    // petscInfo.gxm, petscInfo.gym, petscInfo.gzm);
-
-    // int _firstX;
-    // int _firstY;
-    // int _firstZ;
-    // int _lengthX;
-    // int _lengthY;
-    // int _lengthZ;
-    // DMDAGetCorners(_da,
-    // &_firstX,
-    // &_firstY,
-    // &_firstZ,
-    // &_lengthX,
-    // &_lengthY,
-    // &_lengthZ);
-
-    // logInfo("Corner beginning {1} {2} {3}\n"
-    // "Corener end      {4} {5} {6}\n",
-    // _firstX, _firstY, _firstZ,
-    // _firstX + _lengthX, _firstY + _lengthY, _firstZ + _lengthZ);
+    this->update();
   }
 
   void
   update() {
     KSPSetComputeOperators(_context, computeMatrix, this);
-    setupCustomOptions(_context, _preconditioner);
+    KSPSetFromOptions(_context);
+    KSPSetUp(_context);
   }
 
   void
@@ -269,5 +232,3 @@ private:
 };
 }
 }
-
-#endif

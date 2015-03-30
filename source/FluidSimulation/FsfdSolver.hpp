@@ -103,9 +103,9 @@ public:
         (accessor, _memory.maxVelocity());
     }
 
+    _ghostHandlers.executeVelocityInitialization();
     _ghostHandlers.executeVelocityMpiExchange();
     _ghostHandlers.executePressureMpiExchange();
-    _ghostHandlers.executeVelocityInitialization();
 
     for (auto const& accessor : _memory.grid()->innerGrid) {
       _ibController.createFluidMeshVertex(accessor);
@@ -203,7 +203,6 @@ public:
       VectorDsType force;
       _ibController.readFluidForce(it, force);
 
-      // _memory.fgh()[it->first] += _memory.timeStepsize() * force;
       _memory.fgh()[it->first] += force;
       _memory.setForceAt(it->first, force);
       total_force += force;
@@ -229,7 +228,6 @@ public:
     }
 
     _ghostHandlers.executeVelocityInitialization();
-
     _ghostHandlers.executeVelocityMpiExchange();
 
     _ibController.computeBodyForce(&_memory);

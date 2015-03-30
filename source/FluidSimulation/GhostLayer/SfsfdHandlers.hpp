@@ -73,6 +73,7 @@ public:
         mpiVelocityExchangeStack[d][d2]();
       }
     }
+    cornersHandler();
   }
 
   void
@@ -91,8 +92,6 @@ public:
         velocityInitialization[d][d2]();
       }
     }
-
-    // cornersHandler();
   }
 
   MpiExchange::FunctorStack<Dimensions> mpiFghExchangeStack;

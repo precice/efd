@@ -1,0 +1,24 @@
+<?xml version = "1.0" encoding = "utf-8"?>
+<scenario
+  Re = "500"
+  timeLimit = "0.0"
+  iterationLimit = "100"
+  plotInterval = "0.0"
+  tau = "0.5"
+  gamma = "0.5"
+  dim = "2"
+  width = "1.0,1.0"
+  size = "50,50"
+  parallelizationSize = "2,2"
+  environment = "0,0"
+  filename = "Cavity2D"
+  solver = "Improved Fractional Step Finite Difference"
+  output = "Xdmf"
+  >
+  <walls>
+    <left type = "Input" velocity = "0.0,0.0" />
+    <right type = "Input" velocity = "0.0,0.0" />
+    <bottom type = "Input" velocity = "0.0,0.0" />
+    <top type = "Input" velocity = "1.0,0.0" />
+  </walls>
+</scenario>

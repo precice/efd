@@ -3,6 +3,7 @@
 #include "Private/utilities.hpp"
 
 #include "FluidSimulation/Configuration.hpp"
+#include "FluidSimulation/Private/mpigenerics.hpp"
 
 #include <Uni/ExecutionControl/exception>
 #include <Uni/Logging/macros>
@@ -12,13 +13,9 @@
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
-/**
- * direction --- direction (0 or 1) per dimension,
- *               describe the corner location.
- * index --- index of the root cell of that offset is made.
- * offset --- offset to make from the root cell index.
- */
-template <typename TSolverTraits,
+template <typename TDataElement,
+          unsigned TDataElementSize,
+          typename TSolverTraits,
           int TDimension1,
           int TDirection1,
           int TDimension2,
@@ -35,7 +32,12 @@ public:
 
   using GridType = typename SolverTraitsType::GridType;
 
+  using BaseGridType = typename SolverTraitsType::BaseGridType;
+
   using CellAccessorType = typename SolverTraitsType::CellAccessorType;
+
+  using ParallelDistributionType
+          = typename SolverTraitsType::ParallelDistributionType;
 
   using VectorDsType = typename SolverTraitsType::VectorDsType;
 
@@ -44,211 +46,132 @@ public:
   using ScalarType = typename SolverTraitsType::ScalarType;
 
 public:
-  CornerVelocityHandler(MemoryType const*    memory,
-                        Configuration const* configuration) :
-    _memory(memory),
-    _configuration(configuration),
-    _dimension(-1),
-    _position(VectorDsType::Zero()) {
+  CornerVelocityHandler(
+    BaseGridType const*             grid,
+    ParallelDistributionType const* parallel_distribution)
+    : _grid(grid),
+    _parallelDistribution(parallel_distribution),
+    _dimension(-1) {
+    int size = 1;
+    int i    = 0;
+
     for (int d = 0; d < Dimensions; ++d) {
       if (d != TDimension1
           && d != TDimension2) {
+        size      *= _grid->innerSize(d);
         _dimension = d;
-        break;
+        ++i;
       }
     }
-    composeIndexAndOffset(TDimension1, TDirection1);
-    composeIndexAndOffset(TDimension2, TDirection2);
-  }
 
-  VectorDsType
-  getVelocity(int const&              dimension,
-              int const&              direction,
-              int const&              dimension2,
-              int const&              direction2,
-              VectorDsType const&     position,
-              CellAccessorType const& accessor) const {
-    auto result = VectorDsType::Zero().eval();
+    _rowMemorySize = size * TDataElementSize
+                     * _grid->indent(TDirection1)(TDimension1);
+    _rowMemory.reset(new ScalarType[_rowMemorySize]);
 
-    if ((_configuration->walls[dimension][direction]->type()
-         == WallEnum::Input)) {
-      result(dimension)
-        = 2 * _configuration->walls[dimension][direction]
-          ->velocity()(dimension);
+    VectorDiType communication_index
+      = _parallelDistribution->index;
+    composeIndexAndOffset(TDimension1, TDirection1, communication_index);
+    composeIndexAndOffset(TDimension2, TDirection2, communication_index);
+    _communicationRank = _parallelDistribution->getRank(communication_index);
 
-      result(dimension2)
-        = 2 * _configuration->walls[dimension][direction]
-          ->velocity()(dimension2);
-    } else if ((_configuration->walls[dimension][direction]->type()
-                == WallEnum::ParabolicInput)) {
-      result(dimension)
-        =  _configuration->walls[dimension][direction]->velocity()(dimension);
-      compute_parabolic_input(
-        position,
-        _memory->gridGeometry()->size(),
-        dimension,
-        result(dimension));
-        result(dimension) = 2 * result(dimension);
-
-        result(dimension2)
-        = 2 * _configuration->walls[dimension][direction]
-          ->velocity()(dimension2);
-
-      return result;
-    } else if ((_configuration->walls[dimension][direction]->type()
-                == WallEnum::Output)) {
-      result(dimension)
-        = accessor.velocity(dimension,
-                            _offset(dimension) + _offset2(dimension),
-                            dimension);
-      result(dimension)
-        += accessor.velocity(dimension,
-                             _offset(dimension) + _offset2(dimension),
-                             dimension2,
-                             _offset2(dimension2),
-                             dimension);
-      result(dimension2)
-        = accessor.velocity(dimension2,
-                            _offset(dimension2),
-                            dimension,
-                            _offset2(dimension),
-                            dimension2);
-      result(dimension2)
-        = accessor.velocity(dimension2,
-                            _offset(dimension2),
-                            dimension,
-                            2 * _offset2(dimension),
-                            dimension2);
+    if (_communicationRank < 0) {
+      return;
     }
-    result(dimension)
-      -= accessor.velocity(dimension,
-                           _offset(dimension),
-                           dimension2,
-                           _offset2(dimension2),
-                           dimension);
-    result(dimension2)
-      -= accessor.velocity(dimension2,
-                           _offset(dimension2),
-                           dimension,
-                           _offset2(dimension),
-                           dimension2);
-
-    return result;
-  }
-
-  void
-  computeCornerVelocity(CellAccessorType const& accessor,
-                        VectorDsType const&     position) const {
-    VectorDsType corner_velocity;
-
-    corner_velocity = getVelocity(TDimension1,
-                                  TDirection1,
-                                  TDimension2,
-                                  TDirection2,
-                                  position,
-                                  accessor);
-    corner_velocity += getVelocity(TDimension2,
-                                   TDirection2,
-                                   TDimension1,
-                                   TDirection1,
-                                   position,
-                                   accessor);
-    corner_velocity /= 2.0;
-    accessor.velocity(TDimension1, _offset(TDimension1), TDimension1)
-      = corner_velocity(TDimension1);
-    accessor.velocity(TDimension2, _offset(TDimension2), TDimension2)
-      = corner_velocity(TDimension2);
+    logInfo("{1} | {2} | {3} | {4} | {5}",
+            _parallelDistribution->rank,
+            _communicationRank,
+            _ghostIndex.transpose(),
+            _boundaryIndex.transpose(),
+            _rowMemorySize);
   }
 
   void
   computeCornerVelocity() const {
-    auto it = _memory->grid()->innerGrid.at(_index);
+    if (_communicationRank < 0) {
+      return;
+    }
+
+    auto it    = _grid->at(_boundaryIndex);
+    int  index = 0;
 
     if (_dimension == -1) {
-      computeCornerVelocity(*it, _position);
+      for (int i = 0; i < TDataElementSize; ++i) {
+        _rowMemory.get()[index] = it->velocity(i);
+        ++index;
+      }
     } else {
-      auto position = _position;
-
       for (; it->indexValue(_dimension)
-           < _memory->grid()->innerGrid.end()->indexValue(_dimension);
+           < _grid->end()->indexValue(_dimension);
            it->index(_dimension) += 1) {
-        position(_dimension) = it->position(_dimension);
-        computeCornerVelocity(*it, position);
+        for (int i = 0; i < TDataElementSize; ++i) {
+          _rowMemory.get()[index] = it->velocity(i);
+          ++index;
+        }
+      }
+    }
+
+    MPI_Status mpi_status;
+    MPI_Sendrecv_replace(
+      _rowMemory.get(),
+      _rowMemorySize,
+      Private::getMpiScalarType<TDataElement>(),
+      _communicationRank,
+      1003,
+      _communicationRank,
+      1003,
+      _parallelDistribution->mpiCommunicator,
+      &mpi_status);
+
+    it    = _grid->at(_ghostIndex);
+    index = 0;
+
+    if (_dimension == -1) {
+      for (int i = 0; i < TDataElementSize; ++i) {
+        it->velocity(i) = _rowMemory.get()[index];
+        ++index;
+      }
+    } else {
+      for (; it->indexValue(_dimension)
+           < _grid->end()->indexValue(_dimension);
+           it->index(_dimension) += 1) {
+        for (int i = 0; i < TDataElementSize; ++i) {
+          it->velocity(i) = _rowMemory.get()[index];
+          ++index;
+        }
       }
     }
   }
 
 private:
   void
-  _computeAverageVelocity(CellAccessorType const& accessor) {
-    auto result = VectorDsType::Zero();
-    auto offset = VectorDiType::Zero();
-    int  d      = 0;
-
-    while (true) {
-      if (offset(d) == 0) {
-        ++offset(d);
-      } else {
-        ++d;
-
-        if (d == Dimensions) {
-          break;
-        }
-
-        for (int i = 0; i < d; ++i) {
-          offset(i) = 0;
-        }
-        continue;
-      }
-
-      auto result2 = VectorDsType::Zero();
-
-      for (int d = 0; d < Dimensions; ++d) {
-        result2(d) = accessor.velocity(offset, d);
-        auto offset2 = offset;
-        offset2(d) -= 1;
-        result2(d) += accessor.velocity(offset2, d);
-        result2(d) *= 0.5;
-      }
-      result += result2;
-    }
-
-    if (Dimensions == 2) {
-      result = result / 4.0;
-    } else if (Dimensions == 3) {
-      result = result / 8.0;
-    }
-
-    return result;
-  }
-
-  void
-  composeIndexAndOffset(int const& dimension,
-                        int const& direction) {
+  composeIndexAndOffset(int const&    dimension,
+                        int const&    direction,
+                        VectorDiType& communication_index) {
     if (direction == 0) {
-      _index(dimension)
-        = _memory->grid()->innerGrid.leftIndent(dimension) -
-          1;
-      _offset(dimension)  = 0;
-      _offset2(dimension) = +1;
+      _ghostIndex(dimension)          = 0;
+      _boundaryIndex(dimension)       = _grid->leftIndent(dimension);
+      communication_index(dimension) -= 1;
     } else if (direction == 1) {
-      _index(dimension)
-                           = _memory->grid()->innerLimit(dimension) - 1;
-      _offset(dimension)   = -1;
-      _offset2(dimension)  = -1;
-      _position(dimension) = _memory->gridGeometry()->size(dimension);
+      _ghostIndex(dimension) = _grid->size(dimension)
+                               - _grid->rightIndent(dimension);
+      _boundaryIndex(dimension)
+        = _grid->size(dimension)
+          - _grid->rightIndent(dimension)
+          - _grid->leftIndent(dimension);
+      communication_index(dimension) += 1;
     } else {
       throwException("Unknown direction value");
     }
   }
-  MemoryType const*    _memory;
-  Configuration const* _configuration;
-  int                  _dimension;
 
-  VectorDiType _index;
-  VectorDiType _offset;
-  VectorDiType _offset2;
-  VectorDsType _position;
+  BaseGridType const*             _grid;
+  ParallelDistributionType const* _parallelDistribution;
+  int                             _dimension;
+  int                             _communicationRank;
+  std::unique_ptr<ScalarType>     _rowMemory;
+  unsigned long long              _rowMemorySize;
+  VectorDiType                    _ghostIndex;
+  VectorDiType                    _boundaryIndex;
 };
 
 template <typename TSolverTraits,
@@ -261,10 +184,16 @@ struct CornerVelocityHandlers<TSolverTraits, 2> {
 
   using MemoryType = typename SolverTraitsType::MemoryType;
 
-  CornerVelocityHandlers(MemoryType const*    memory,
-                         Configuration const* configuration) :
-    _rb(memory, configuration),
-    _lt(memory, configuration) {}
+  using BaseGridType = typename SolverTraitsType::BaseGridType;
+
+  using ParallelDistributionType
+          = typename SolverTraitsType::ParallelDistributionType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+  CornerVelocityHandlers(BaseGridType const*             grid,
+                         ParallelDistributionType const* parallel_distribution)
+    : _rb(grid, parallel_distribution),
+    _lt(grid, parallel_distribution) {}
 
   void
   execute() const {
@@ -273,12 +202,56 @@ struct CornerVelocityHandlers<TSolverTraits, 2> {
   }
 
 private:
-  CornerVelocityHandler<TSolverTraits, 0, 1, 1, 0> _rb;
-  CornerVelocityHandler<TSolverTraits, 0, 0, 1, 1> _lt;
+  CornerVelocityHandler<ScalarType, 2, TSolverTraits, 0, 1, 1, 0> _rb;
+  CornerVelocityHandler<ScalarType, 2, TSolverTraits, 0, 0, 1, 1> _lt;
 };
 
 template <typename TSolverTraits>
-struct CornerVelocityHandlers<TSolverTraits, 3> {};
+struct CornerVelocityHandlers<TSolverTraits, 3> {
+  using SolverTraitsType = TSolverTraits;
+
+  using MemoryType = typename SolverTraitsType::MemoryType;
+
+  using BaseGridType = typename SolverTraitsType::BaseGridType;
+
+  using ParallelDistributionType
+          = typename SolverTraitsType::ParallelDistributionType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+
+  CornerVelocityHandlers(BaseGridType const*             grid,
+                         ParallelDistributionType const* parallel_distribution)
+    : _rightBottom(grid, parallel_distribution),
+    _rightBack(grid, parallel_distribution),
+    _topLeft(grid, parallel_distribution),
+    _topBack(grid, parallel_distribution),
+    _frontLeft(grid, parallel_distribution),
+    _frontBottom(grid, parallel_distribution) {}
+
+  void
+  execute() const {
+    _rightBottom.computeCornerVelocity();
+    _rightBack.computeCornerVelocity();
+    _topLeft.computeCornerVelocity();
+    _topBack.computeCornerVelocity();
+    _frontLeft.computeCornerVelocity();
+    _frontBottom.computeCornerVelocity();
+  }
+
+private:
+  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 0, 1, 1, 0>
+  _rightBottom;
+  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 0, 1, 2, 0>
+  _rightBack;
+  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 1, 1, 0, 0>
+  _topLeft;
+  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 1, 1, 2, 0>
+  _topBack;
+  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 2, 1, 0, 0>
+  _frontLeft;
+  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 2, 1, 1, 0>
+  _frontBottom;
+};
 }
 }
 }

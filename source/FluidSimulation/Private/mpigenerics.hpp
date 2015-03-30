@@ -18,15 +18,13 @@ getMpiScalarType() {
 
 template <>
 MPI_Datatype
-getMpiScalarType<float
-                 >() {
+getMpiScalarType<float>() {
   return MPI_FLOAT;
 }
 
 template <>
 MPI_Datatype
-getMpiScalarType<double
-                 >() {
+getMpiScalarType<double>() {
   return MPI_DOUBLE;
 }
 
