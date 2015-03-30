@@ -33,7 +33,7 @@ template <typename TGrid,
 class Handler {
 public:
   typedef TGrid                               GridType;
-  typedef typename GridType::CellAccessorType     CellAccessorType;
+  typedef typename GridType::CellAccessorType CellAccessorType;
 
   enum {
     Dimensions = CellAccessorType::Dimensions
@@ -49,8 +49,7 @@ public:
     _parallelDistribution(parallelTopology),
     _offset(offset) {}
 
-  ~Handler() {
-  }
+  ~Handler() {}
 
   void
   dirichletLeft(Mat& A) {
@@ -188,9 +187,12 @@ public:
       stencil[currentOffset + 1] = 0.0;
     }
     auto currentIndex = (accessor.index() + corner).eval();
-    currentIndex(TDimension) -= _offset;
-    columns[0].i              = currentIndex(0);
-    columns[0].j              = currentIndex(1);
+
+    if (TDirection == 1) {
+      currentIndex(TDimension) -= _offset;
+    }
+    columns[0].i = currentIndex(0);
+    columns[0].j = currentIndex(1);
 
     if (Dimensions == 3) {
       columns[0].k = currentIndex(2);
@@ -207,12 +209,19 @@ public:
       MatStencil  row;
 
       TStencil(stencil);
-      for (auto const& accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
+
+      for (auto const& accessor :
+           _grid->indentedBoundaries[TDimension][TDirection]) {
         computeGhostIndexes(accessor, columns, &row);
 
         MatSetValuesStencil(A, 1, &row, 2, columns, stencil, INSERT_VALUES);
       }
     } else {
+      auto corner = _parallelDistribution->corner;
+
+      PetscScalar const_stencil = 1.0;
+      MatStencil  const_column;
+
       PetscScalar stencil[2 * Dimensions + 1];
       MatStencil  columns[2 * Dimensions + 1];
       MatStencil  row;
@@ -221,12 +230,24 @@ public:
            & accessor : _grid->indentedBoundaries[TDimension][TDirection]) {
         computeInnerIndexes(accessor, columns, &row, stencil);
         TStencil(stencil);
-
         MatSetValuesStencil(A, 1,
                             &row,
                             2 * Dimensions + 1,
                             columns,
                             stencil,
+                            INSERT_VALUES);
+
+        const_column.i = accessor.indexValue(0) + corner(0);
+        const_column.j = accessor.indexValue(1) + corner(1);
+
+        if (Dimensions == 3) {
+          const_column.k = accessor.indexValue(2) + corner(2);
+        }
+        MatSetValuesStencil(A, 1,
+                            &const_column,
+                            1,
+                            &const_column,
+                            &const_stencil,
                             INSERT_VALUES);
       }
     }
@@ -235,7 +256,7 @@ public:
   static Functor
   getNeumannLeft(TGrid const*                    grid,
                  ParallelDistributionType const* parallelTopology,
-                 int const& offset = 0) {
+                 int const&                      offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -247,7 +268,7 @@ public:
   static Functor
   getNeumannRight(TGrid const*                    grid,
                   ParallelDistributionType const* parallelTopology,
-                  int const& offset = 0) {
+                  int const&                      offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -259,7 +280,7 @@ public:
   static Functor
   getNeumannMiddle(TGrid const*                    grid,
                    ParallelDistributionType const* parallelTopology,
-                   int const& offset = 0) {
+                   int const&                      offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -271,7 +292,7 @@ public:
   static Functor
   getDirichletLeft(TGrid const*                    grid,
                    ParallelDistributionType const* parallelTopology,
-                   int const& offset = 0) {
+                   int const&                      offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -283,7 +304,7 @@ public:
   static Functor
   getDirichletRight(TGrid const*                    grid,
                     ParallelDistributionType const* parallelTopology,
-                    int const& offset = 0) {
+                    int const&                      offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>
@@ -295,7 +316,7 @@ public:
   static Functor
   getDirichletMiddle(TGrid const*                    grid,
                      ParallelDistributionType const* parallelTopology,
-                     int const& offset = 0) {
+                     int const&                      offset = 0) {
     using std::placeholders::_1;
 
     auto pointer = std::shared_ptr<Handler>

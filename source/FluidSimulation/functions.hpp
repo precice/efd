@@ -103,6 +103,50 @@ d2udy2(TScalar const& currentU,
 
 template <typename TScalar>
 inline TScalar
+duvdy_2(TScalar const& currentU,
+        TScalar const& currentV,
+        TScalar const& bottomU,
+        TScalar const& bottomV,
+        TScalar const& rightBottomV,
+        TScalar const& rightV,
+        TScalar const& topU,
+        TScalar const& currentY,
+        TScalar const& currentX,
+        TScalar const& bottomY,
+        TScalar const& topY,
+        TScalar const& rightX,
+        TScalar const& gamma) {
+  TScalar const xCurrent = 0.5 * currentX;
+  TScalar const yCurrent = 0.5 * currentY;
+  TScalar const yBottom  = 0.5 * (currentY + bottomY);
+  TScalar const yTop     = 0.5 * (currentY + topY);
+  TScalar const xRight   = 0.5 * (currentX + rightX);
+
+  TScalar const ar = (xRight - xCurrent) / xRight * currentV
+                     + xCurrent / xRight * rightV;
+  TScalar const al = (xRight - xCurrent) / xRight * bottomV
+                     + xCurrent / xRight * rightBottomV;
+
+  TScalar const br = (yTop - yCurrent) / yTop * currentU
+                     + yCurrent / yTop * topU;
+  TScalar const bl = (yBottom - yCurrent) / yBottom * currentU
+                     + yCurrent / yBottom * bottomU;
+
+  TScalar const cr = (yTop - yCurrent) / yTop * currentU
+                     - yCurrent / yTop * topU;
+  TScalar const cl = yCurrent / yBottom * bottomU
+                     - (yBottom - yCurrent) / yBottom * currentU;
+
+  TScalar const result
+    = ((ar * br - al * bl)
+       + gamma * (std::abs(ar) * cr - std::abs(al) * cl))
+      / (2.0 * yCurrent);
+
+  return result;
+}
+
+template <typename TScalar>
+inline TScalar
 duvdy(TScalar const& currentU,
       TScalar const& currentV,
       TScalar const& bottomU,
@@ -122,24 +166,22 @@ duvdy(TScalar const& currentU,
   TScalar const xCurrent = 0.5 * currentX;
   TScalar const xRight   = 0.5 * (currentX + rightX);
 
+  TScalar const kr = (xRight - xCurrent) / xRight * currentV
+                     + xCurrent / xRight * rightV;
+  TScalar const kl = (xRight - xCurrent) / xRight * bottomV
+                     + xCurrent / xRight * rightBottomV;
+
   TScalar const secondOrder
-    = (((xRight - xCurrent) / xRight * currentV + xCurrent / xRight * rightV) *
-       ((yTop - yCurrent) / yTop * currentU + yCurrent / yTop * topU) -
-       ((xRight - xCurrent) / xRight * bottomV + xCurrent / xRight *
-        rightBottomV) *
-       ((yBottom - yCurrent) / yBottom * currentU + yCurrent / yBottom *
-        bottomU)
+    = (kr * ((yTop - yCurrent) / yTop * currentU
+             + yCurrent / yTop * topU)
+       - kl * ((yBottom - yCurrent) / yBottom * currentU
+               + yCurrent / yBottom * bottomU)
        ) / (2.0 * yCurrent);
 
-  TScalar const kr = (xRight - xCurrent) / xRight * currentV +
-                     xCurrent / xRight * rightV;
-  TScalar const kl = (xRight - xCurrent) / xRight * bottomV +
-                     xCurrent / xRight * rightBottomV;
-
-  TScalar const firstOrder = 1.0 / (4.0 * yCurrent) * (
-    kr * (currentU + topU) - kl * (bottomU + currentU) +
-    std::fabs(kr) * (currentU - topU) -
-    std::fabs(kl) * (bottomU - currentU));
+  TScalar const firstOrder
+    = (kr * (currentU + topU) - kl * (bottomU + currentU)
+       + std::fabs(kr) * (currentU - topU)
+       - std::fabs(kl) * (bottomU - currentU)) / (4.0 * yCurrent);
 
   TScalar const result = (1.0 - gamma) * secondOrder + gamma * firstOrder;
 
@@ -167,11 +209,11 @@ du2dx(TScalar const& currentU,
 
   TScalar const secondOrder = (kr * kr - kl * kl) / (2.0 * dxShort);
 
-  TScalar const firstOrder = 1.0 / (4.0 * dxShort) *
-                             (kr * (currentU + rightU) -
-                              kl * (leftU + currentU) +
-                              std::fabs(kr) * (currentU - rightU) -
-                              std::fabs(kl) * (leftU - currentU));
+  TScalar const firstOrder
+    = (kr * (currentU + rightU) -
+       kl * (leftU + currentU) +
+       std::fabs(kr) * (currentU - rightU) -
+       std::fabs(kl) * (leftU - currentU)) / (4.0 * dxShort);
 
   TScalar const result = (1.0 - gamma) * secondOrder + gamma * firstOrder;
 
@@ -429,21 +471,19 @@ public:
 
 template <int TD>
 class ConvectionProcessing {
-  template <typename TCellAccessor,
-            typename TSimulationParameters>
+  template <typename TCellAccessor>
   static inline typename TCellAccessor::VectorDsType
-  compute(TCellAccessor const&         accessor,
-          TSimulationParameters const& simulationParameters) {}
+  compute(TCellAccessor const&                      accessor,
+          typename TCellAccessor::ScalarType const& gamma) {}
 };
 
 template <>
 class ConvectionProcessing<2> {
 public:
-  template <typename TCellAccessor,
-            typename TSimulationParameters>
+  template <typename TCellAccessor>
   static inline typename TCellAccessor::VectorDsType
-  compute(TCellAccessor const&         accessor,
-          TSimulationParameters const* simulationParameters) {
+  compute(TCellAccessor const&                      accessor,
+          typename TCellAccessor::ScalarType const& gamma) {
     typedef typename TCellAccessor::VectorDsType Vector;
 
     Vector result;
@@ -470,13 +510,7 @@ public:
         accessor.width(d1, +1, d1),
         accessor.width(d2, -1, d2),
         accessor.width(d2, +1, d2),
-        simulationParameters->gamma());
-
-      if (result(d1) != result(d1)) {
-        logInfo("{1} {2}",
-                accessor.index().transpose(),
-                d1);
-      }
+        gamma);
     }
 
     return result;
@@ -486,11 +520,10 @@ public:
 template <>
 class ConvectionProcessing<3> {
 public:
-  template <typename TCellAccessor,
-            typename TSimulationParameters>
+  template <typename TCellAccessor>
   static inline typename TCellAccessor::VectorDsType
-  compute(TCellAccessor const&         accessor,
-          TSimulationParameters const* simulationParameters) {
+  compute(TCellAccessor const&                      accessor,
+          typename TCellAccessor::ScalarType const& gamma) {
     typedef typename TCellAccessor::VectorDsType Vector;
     Vector result;
 
@@ -531,7 +564,7 @@ public:
         accessor.width(d2, +1, d2),
         accessor.width(d3, -1, d3),
         accessor.width(d3, +1, d3),
-        simulationParameters->gamma());
+        gamma);
     }
 
     return result;
@@ -637,10 +670,8 @@ public:
                               (accessor.width(d) +
                                accessor.width(d, +1, d));
 
-      auto leftIndex = accessor.relativeIndex(d, -1);
-      leftIndex += corner;
-      auto rightIndex = accessor.relativeIndex(d, +1);
-      rightIndex += corner;
+      auto leftIndex  = (accessor.relativeIndex(d, -1) + corner).eval();
+      auto rightIndex = (accessor.relativeIndex(d, +1) + corner).eval();
 
       columns[2 * d].i     = leftIndex(0);
       columns[2 * d].j     = leftIndex(1);
@@ -652,14 +683,16 @@ public:
         columns[2 * d + 1].k = rightIndex(2);
       }
     }
-    auto currentIndex = accessor.index();
-    currentIndex             += corner;
+
+    auto currentIndex = (accessor.index() + corner).eval();
+
     columns[2 * Dimensions].i = currentIndex(0);
     columns[2 * Dimensions].j = currentIndex(1);
 
     if (Dimensions == 3) {
       columns[2 * Dimensions].k = currentIndex(2);
     }
+
     row = columns[2 * Dimensions];
 
     stencil[2 * Dimensions] = 1.0;
@@ -677,8 +710,7 @@ public:
       ScalarType diagonalCoeff
         = -2.0 / (meanWidths(2 * d) * meanWidths(2 * d + 1));
 
-      diagonalCoeff            = coeff * diagonalCoeff;
-      stencil[2 * Dimensions] += diagonalCoeff;
+      stencil[2 * Dimensions] += coeff * diagonalCoeff;
     }
     // logInfo("{1} {2} {3} {4} {5} {6}",
     // stencil[0],
@@ -762,10 +794,8 @@ public:
                               (accessor.width(d) +
                                accessor.width(d, +1, d));
 
-      auto leftIndex = accessor.relativeIndex(d, -1);
-      leftIndex += corner;
-      auto rightIndex = accessor.relativeIndex(d, +1);
-      rightIndex += corner;
+      auto leftIndex  = (accessor.relativeIndex(d, -1) + corner).eval();
+      auto rightIndex = (accessor.relativeIndex(d, +1) + corner).eval();
 
       columns[2 * d].i     = leftIndex(0);
       columns[2 * d].j     = leftIndex(1);
@@ -777,14 +807,15 @@ public:
         columns[2 * d + 1].k = rightIndex(2);
       }
     }
-    auto currentIndex = accessor.index();
-    currentIndex             += corner;
+
+    auto currentIndex = (accessor.index() + corner).eval();
     columns[2 * Dimensions].i = currentIndex(0);
     columns[2 * Dimensions].j = currentIndex(1);
 
     if (Dimensions == 3) {
       columns[2 * Dimensions].k = currentIndex(2);
     }
+
     row = columns[2 * Dimensions];
 
     stencil[2 * Dimensions] = 0;
@@ -862,9 +893,7 @@ public:
   inline void
   set(CellAccessorType const& accessor,
       ScalarType const&       value) const {
-    accessor.pressure()
-      = accessor.projectionTerm() + value;
-
+    accessor.pressure() += value;
     accessor.projectionTerm() = value;
   }
 

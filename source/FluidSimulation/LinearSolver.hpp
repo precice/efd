@@ -102,14 +102,44 @@ public:
 
     DMCreateGlobalVector(_da, &_x);
     KSPSetDM(_context, _da);
+    KSPSetFromOptions(_context);
 
-    this->update();
+    KSPGetTolerances(_context,
+                     &_rtol,
+                     &_atol,
+                     &_dtol,
+                     &_maxits);
+  }
+
+  PetscReal const&
+  absoluteTolerance() const {
+    return _atol;
+  }
+
+  void
+  absoluteTolerance(PetscReal const& tolerance) {
+    _atol = tolerance;
+  }
+
+
+  PetscReal const&
+  relativeTolerance() const {
+    return _rtol;
+  }
+
+  void
+  relativeTolerance(PetscReal const& tolerance) {
+    _rtol = tolerance;
   }
 
   void
   update() {
+    KSPSetTolerances(_context,
+                     _rtol,
+                     _atol,
+                     _dtol,
+                     _maxits);
     KSPSetComputeOperators(_context, computeMatrix, this);
-    KSPSetFromOptions(_context);
     KSPSetUp(_context);
   }
 
@@ -140,6 +170,11 @@ public:
     }
 
     DMDAVecRestoreArray(_da, _x, &array);
+  }
+
+  void
+  release() {
+    KSPDestroy(&_context);
   }
 
 private:
@@ -229,6 +264,10 @@ private:
   DM  _da;
   KSP _context;
   PC  _preconditioner;
+  PetscReal _atol;
+  PetscReal _rtol;
+  PetscReal _dtol;
+  PetscInt _maxits;
 };
 }
 }

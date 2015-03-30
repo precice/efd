@@ -112,7 +112,7 @@ public:
 
       auto convection
         = ConvectionProcessing<Dimensions>::compute(accessor,
-                                                    _memory.parameters());
+                                                    _memory.parameters()->gamma());
       accessor.convection() = convection;
     }
 
@@ -138,7 +138,7 @@ public:
 
       auto convection = ConvectionProcessing<Dimensions>::compute(
         accessor,
-        _memory.parameters());
+        _memory.parameters()->gamma());
 
       auto previousConvection = accessor.convection();
 
@@ -161,8 +161,13 @@ public:
                              accessor.velocity(d));
       }
 
-      VectorDsType grad_pressure
-        = PressureProcessing<TSolverType>::grad(accessor);
+      VectorDsType grad_pressure;
+
+      for (int d = 0; d < Dimensions; ++d) {
+        grad_pressure(d)
+          = (accessor.pressure(d, +1) - accessor.pressure())
+            / (0.5 * (accessor.width(d, +1, d) + accessor.width(d)));
+      }
 
       if (TSolverType == 0) {
         accessor.fgh()

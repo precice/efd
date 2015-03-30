@@ -77,12 +77,6 @@ public:
     if (_communicationRank < 0) {
       return;
     }
-    logInfo("{1} | {2} | {3} | {4} | {5}",
-            _parallelDistribution->rank,
-            _communicationRank,
-            _ghostIndex.transpose(),
-            _boundaryIndex.transpose(),
-            _rowMemorySize);
   }
 
   void

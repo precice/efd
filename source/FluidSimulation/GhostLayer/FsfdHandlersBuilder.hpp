@@ -33,15 +33,31 @@ public:
 
   using VectorDsType = typename SolverTraitsType::VectorDsType;
 
-  template <int TDimension2>
+  template <int TDimension>
   static ScalarType*
-  fghAccessor(CellAccessorType const& accessor) {
-    return &accessor.fgh(TDimension2);
+  getFgh(CellAccessorType const& accessor) {
+    return &accessor.fgh(TDimension);
+  }
+
+  template <int TDimension>
+  static void
+  setFgh(CellAccessorType const& accessor,
+         int const&              index,
+         ScalarType const&       value) {
+    ((void)index);
+    accessor.fgh(TDimension) = value;
   }
 
   static ScalarType*
-  velocityAccessor(CellAccessorType const& accessor) {
+  getVelocity(CellAccessorType const& accessor) {
     return accessor.velocity().data();
+  }
+
+  static void
+  setVelocity(CellAccessorType const& accessor,
+              int const&              index,
+              ScalarType const&       value) {
+    accessor.velocity(index) = value;
   }
 
   typedef
@@ -49,7 +65,8 @@ public:
     <ScalarType,
      1,
      typename GridType::BaseType,
-     FsfdHandlersBuilder::template fghAccessor<Dimension>,
+     FsfdHandlersBuilder::template getFgh<Dimension>,
+     FsfdHandlersBuilder::template setFgh<Dimension>,
      Dimension,
      Direction>
     FghMpiExchangeHandler;
@@ -61,7 +78,8 @@ public:
     <ScalarType,
      Dimensions,
      typename GridType::BaseType,
-     FsfdHandlersBuilder::velocityAccessor,
+     FsfdHandlersBuilder::getVelocity,
+     FsfdHandlersBuilder::setVelocity,
      Dimension,
      Direction>
     VelocityMpiExchangeHandler;

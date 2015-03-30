@@ -62,15 +62,15 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
   using MemoryType
           = typename SolverTraitsType::MemoryType;
 
-  if (configuration->outputType == OutputEnum::Vtk) {
-    using SimulationControllerType
-            = ParticularSimulationController
-              < SolverTraitsType, VtkOutput::Writer < MemoryType >>;
+  // if (configuration->outputType == OutputEnum::Vtk) {
+  //   using SimulationControllerType
+  //           = ParticularSimulationController
+  //             < SolverTraitsType, VtkOutput::Writer < MemoryType >>;
 
-    return _create_simulation_controller<SolverBuilderTraitsType,
-                                         SimulationControllerType>
-             (configuration);
-  } else if (configuration->outputType == OutputEnum::Xdmf) {
+  //   return _create_simulation_controller<SolverBuilderTraitsType,
+  //                                        SimulationControllerType>
+  //            (configuration);
+  // } else if (configuration->outputType == OutputEnum::Xdmf) {
     using SimulationControllerType
             = ParticularSimulationController
               < SolverTraitsType, XdmfHdf5Output::Writer < MemoryType >>;
@@ -78,7 +78,7 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
     return _create_simulation_controller<SolverBuilderTraitsType,
                                          SimulationControllerType>
              (configuration);
-  }
+  // }
   throwException(
     "Failed to crate simulation controller for the provided output type");
 }
@@ -106,7 +106,7 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type(
      TScalar,
      TSolverType,
      TImmersedBoudnaryType,
-     0>(configuration);
+     1>(configuration);
 }
 
 template <int TDimensions, typename TScalar, int TSolverType>
@@ -116,7 +116,7 @@ _create_simulation_controller_nd_scalar_solver_type(
   if (configuration->doImmersedBoundary) {
     return
       _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type
-      <TDimensions, TScalar, TSolverType, 1>(configuration);
+      <TDimensions, TScalar, TSolverType, 0>(configuration);
   }
 
   return
@@ -130,7 +130,7 @@ _create_simulation_controller_nd_scalar(
   FluidSimulation::Configuration* configuration) {
   if (configuration->solverType == SolverEnum::Sfsfd) {
     return _create_simulation_controller_nd_scalar_solver_type
-           <TDimensions, TScalar, 0>(configuration);
+           <TDimensions, TScalar, 1>(configuration);
   } else if (configuration->solverType == SolverEnum::Ifsfd) {
     return _create_simulation_controller_nd_scalar_solver_type
            <TDimensions, TScalar, 1>(configuration);

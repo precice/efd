@@ -50,6 +50,7 @@ public:
                           &ghost_handlers->ppeStencilGeneratorStack,
                           &ghost_handlers->ppeRhsGeneratorStack,
                           &ghost_handlers->ppeRhsAcquiererStack);
+    _ppeSolver.update();
   }
 
   void
@@ -146,6 +147,7 @@ public:
   initialize(MemoryType const*              memory,
              GhostHandlersType const*       ghost_handlers,
              VpeStencilGeneratorType const* stencil_generator) {
+    _memory = memory;
     _vzpeSolver.initialize(memory->grid(),
                            memory->parallelDistribution(),
                            stencil_generator,
@@ -154,15 +156,20 @@ public:
                            &ghost_handlers->vpeStencilGeneratorStack[2],
                            &ghost_handlers->vpeRhsGeneratorStack[2],
                            &ghost_handlers->vpeRhsAcquiererStack[2]);
+    _vzpeAbsoluteTolerance = _vzpeSolver.absoluteTolerance();
   }
 
   void
   executeVpe() {
+    _vzpeSolver.absoluteTolerance(
+      _memory->timeStepSize() * _vzpeAbsoluteTolerance / 1000.0);
     _vzpeSolver.update();
     _vzpeSolver.solve();
   }
 
 private:
+  MemoryType             _memory;
+  PetscReal              _vzpeAbsoluteTolerance;
   VzpeRhsGeneratorType   _vzpeRhsGenerator;
   VzpeResultAcquirerType _vzpeResultGenerator;
   VzpeSolverType         _vzpeSolver;
@@ -235,14 +242,26 @@ public:
   void
   initialize(MemoryType const*        memory,
              GhostHandlersType const* ghost_handlers) {
-    _vpeStencilGenerator.initialize(memory->parallelDistribution(),
-                                    memory->parameters(),
-                                    &memory->timeStepSize());
+    _memory = memory;
 
     _ppeStencilGenerator.initialize(memory->parallelDistribution());
 
     _ppeRhsGenerator.initialize(&memory->timeStepSize());
     _ppeResultAcquierer.initialize(&memory->timeStepSize());
+
+    _vpeStencilGenerator.initialize(memory->parallelDistribution(),
+                                    memory->parameters(),
+                                    &memory->timeStepSize());
+
+    _ppeSolver.initialize(memory->grid(),
+                          memory->parallelDistribution(),
+                          &_ppeStencilGenerator,
+                          &_ppeRhsGenerator,
+                          &_ppeResultAcquierer,
+                          &ghost_handlers->ppeStencilGeneratorStack,
+                          &ghost_handlers->ppeRhsGeneratorStack,
+                          &ghost_handlers->ppeRhsAcquiererStack);
+    _ppeSolver.update();
 
     _vxpeSolver.initialize(memory->grid(),
                            memory->parallelDistribution(),
@@ -262,24 +281,29 @@ public:
                            &ghost_handlers->vpeRhsGeneratorStack[1],
                            &ghost_handlers->vpeRhsAcquiererStack[1]);
 
-    _ppeSolver.initialize(memory->grid(),
-                          memory->parallelDistribution(),
-                          &_ppeStencilGenerator,
-                          &_ppeRhsGenerator,
-                          &_ppeResultAcquierer,
-                          &ghost_handlers->ppeStencilGeneratorStack,
-                          &ghost_handlers->ppeRhsGeneratorStack,
-                          &ghost_handlers->ppeRhsAcquiererStack);
-
     _vzpeSolver.initialize(memory,
                            ghost_handlers,
                            &_vpeStencilGenerator);
+
+    _vxpeAbsoluteTolerance = _vxpeSolver.absoluteTolerance();
+    _vxpeRelativeTolerance = _vxpeSolver.relativeTolerance();
+    _vypeAbsoluteTolerance = _vypeSolver.absoluteTolerance();
+    _vypeRelativeTolerance = _vypeSolver.relativeTolerance();
   }
 
   void
   executeVpe() {
+    _vxpeSolver.absoluteTolerance(
+      _memory->timeStepSize() * _vxpeAbsoluteTolerance / 1000.0);
+    _vxpeSolver.relativeTolerance(
+      _memory->timeStepSize() * _vxpeRelativeTolerance / 1000.0);
     _vxpeSolver.update();
     _vxpeSolver.solve();
+
+    _vypeSolver.absoluteTolerance(
+      _memory->timeStepSize() * _vypeAbsoluteTolerance / 1000.0);
+    _vypeSolver.relativeTolerance(
+      _memory->timeStepSize() * _vypeRelativeTolerance / 1000.0);
     _vypeSolver.update();
     _vypeSolver.solve();
     _vzpeSolver.executeVpe();
@@ -291,12 +315,18 @@ public:
   }
 
 private:
+  MemoryType const* _memory;
+
   VpeStencilGeneratorType _vpeStencilGenerator;
 
+  PetscReal              _vxpeAbsoluteTolerance;
+  PetscReal              _vxpeRelativeTolerance;
   VxpeRhsGeneratorType   _vxpeRhsGenerator;
   VxpeResultAcquirerType _vxpeResultGenerator;
   VxpeSolverType         _vxpeSolver;
 
+  PetscReal              _vypeAbsoluteTolerance;
+  PetscReal              _vypeRelativeTolerance;
   VypeRhsGeneratorType   _vypeRhsGenerator;
   VypeResultAcquirerType _vypeResultGenerator;
   VypeSolverType         _vypeSolver;

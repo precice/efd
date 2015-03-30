@@ -23,17 +23,26 @@ struct IfsfdHandlersBuilderTraits {
   using ScalarType = typename SolverTraitsType::ScalarType;
 
   static ScalarType*
-  projectionTermAccessor(CellAccessorType const& accessor) {
+  getProjectionTerm(CellAccessorType const& accessor) {
     return &accessor.projectionTerm();
   }
 
-  using
-    PressureMpiExchangeHandler
+  static void
+  setProjectionTerm(CellAccessorType const& accessor,
+                    int const& index,
+                    ScalarType const& value) {
+    ((void)index);
+    accessor.pressure() += value;
+    accessor.projectionTerm() = value;
+  }
+
+  using PressureMpiExchangeHandler
       = MpiExchange::Handler
         <ScalarType,
          1,
          typename GridType::BaseType,
-         IfsfdHandlersBuilderTraits::projectionTermAccessor,
+         IfsfdHandlersBuilderTraits::getProjectionTerm,
+         IfsfdHandlersBuilderTraits::setProjectionTerm,
          TDimension,
          TDirection>;
 
@@ -292,8 +301,8 @@ public:
           this->_solver->memory()->parallelDistribution());
       }
     }
-    this->_solver->ghostHandlers()->vpeRhsGeneratorStack[0][TDimension][
-      TDirection]
+    this->_solver->ghostHandlers()
+    ->vpeRhsGeneratorStack[0][TDimension][TDirection]
       = VxpeParabolicInputRhsGenerationHandler::getHandler(
       this->_solver->memory()->grid(),
       this->_solver->memory()->parallelDistribution(),

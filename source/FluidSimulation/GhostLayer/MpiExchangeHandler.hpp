@@ -24,15 +24,24 @@ getEmptyFunctor() {
   return Functor([] () {});
 }
 
-template <typename TGrid>
+template <typename TGrid,
+          typename TDataElement>
 using GetValueFunction
-        = typename TGrid::CellAccessor::ScalarType * (*)
+        = TDataElement * (*)
             (typename TGrid::CellAccessor const &);
+
+template <typename TGrid,
+          typename TDataElement>
+using SetValueFunction
+        = void (*)(typename TGrid::CellAccessor const&,
+                   int const&,
+                   TDataElement const&);
 
 template <typename TDataElement,
           unsigned TDataElementSize,
           typename TGrid,
-          GetValueFunction<TGrid> TgetValue,
+          GetValueFunction<TGrid, TDataElement> TgetValue,
+          SetValueFunction<TGrid, TDataElement> TsetValue,
           int TDimension,
           int TDirection>
 class Handler {
@@ -184,7 +193,7 @@ public:
 
     for (auto const& accessor : _ghostGrid) {
       for (int i = 0; i < TDataElementSize; ++i) {
-        TgetValue(accessor)[i] = _rowMemory.get()[index];
+        TsetValue(accessor, i, _rowMemory.get()[index]);
         ++index;
       }
     }
@@ -197,7 +206,6 @@ public:
     for (auto const& accessor : _boundaryGrid) {
       for (int i = 0; i < TDataElementSize; ++i) {
         _rowMemory.get()[index] = TgetValue(accessor)[i];
-        //TgetValue(accessor)[i] = _parallelDistribution->rank + 1; //_rowMemory.get()[index];
         ++index;
       }
     }
@@ -217,7 +225,7 @@ public:
 
     for (auto const& accessor : _ghostGrid) {
       for (int i = 0; i < TDataElementSize; ++i) {
-        TgetValue(accessor)[i] = _rowMemory.get()[index];
+        TsetValue(accessor, i, _rowMemory.get()[index]);
         ++index;
       }
     }

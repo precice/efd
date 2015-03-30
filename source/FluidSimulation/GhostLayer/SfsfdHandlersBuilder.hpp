@@ -24,8 +24,16 @@ struct SfsfdHandlersBuilderTraits {
   using ScalarType = typename SolverTraitsType::ScalarType;
 
   static ScalarType*
-  pressureAccessor(CellAccessorType const& accessor) {
+  getPressure(CellAccessorType const& accessor) {
     return &accessor.pressure();
+  }
+
+  static void
+  setPressure(CellAccessorType const& accessor,
+              int const&              index,
+              ScalarType const&       value) {
+    ((void)index);
+    accessor.pressure() = value;
   }
 
   using PressureMpiExchangeHandler
@@ -33,7 +41,8 @@ struct SfsfdHandlersBuilderTraits {
             <ScalarType,
              1,
              typename GridType::BaseType,
-             SfsfdHandlersBuilderTraits::pressureAccessor,
+             SfsfdHandlersBuilderTraits::getPressure,
+             SfsfdHandlersBuilderTraits::setPressure,
              TDimension,
              TDirection>;
 
@@ -70,12 +79,6 @@ public:
   using ScalarType = typename SolverTraitsType::ScalarType;
 
   using VectorDsType = typename SolverTraitsType::VectorDsType;
-
-  using PressureMpiExchangeHandler
-          = typename HandlersBuilderTraitsType::PressureMpiExchangeHandler;
-
-  using PpeRhsAcquiererAction
-          = typename HandlersBuilderTraitsType::PpeRhsAcquiererAction;
 
 public:
   SfsfdHandlersBuilder(Configuration* configuration,

@@ -48,6 +48,8 @@ public:
     if (TSolverDimension == TDirection) {
       if (TDirection == 1) {
         tempIndex(TSolverDimension) -= 1;
+      } else {
+        Pointers::dereference(array, index) = 0.0;
       }
     }
 
@@ -102,6 +104,8 @@ public:
 
       if (TDirection == 1) {
         tempIndex(TSolverDimension) -= 1;
+      } else {
+        Pointers::dereference(array, index) = 0.0;
       }
     }
 
@@ -136,6 +140,8 @@ public:
     if (TDimension == TSolverDimension) {
       if (TDirection == 1) {
         temp(TDimension) -= 1;
+      } else {
+        Pointers::dereference(array, index) = 0.0;
       }
     }
 
@@ -232,6 +238,8 @@ public:
                      <PetscScalar, CellAccessorType::Dimensions>;
 
     auto const& value =  Pointers::dereference(array, index);
+
+    accessor.pressure() += value;
     accessor.projectionTerm() = value;
   }
 };
