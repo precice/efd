@@ -210,9 +210,11 @@ public:
 
       _memory.fgh()[it->first] += force;
       _memory.setForceAt(it->first, force);
+
       total_force += force;
     }
-    logInfo("{1}", total_force.transpose());
+
+    logInfo("Forces: {1}", total_force.transpose());
 
     _peSolver.executeVpe();
     _ghostHandlers.executeFghMpiExchange();

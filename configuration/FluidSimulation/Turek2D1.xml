@@ -11,7 +11,8 @@
   size = "220,41"
   parallelizationSize = "1,1"
   environment = "0,0"
-  filename = "Channel2D"
+  filename = "Turek2D1"
+  scalar = "double"
   solver = "Improved Fractional Step Finite Difference"
   output = "Xdmf"
   >
