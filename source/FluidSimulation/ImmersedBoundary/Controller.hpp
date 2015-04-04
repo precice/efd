@@ -12,6 +12,10 @@
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace ImmersedBoundary {
+/**
+ * TODO:
+ *      1. Change vertexId from global index to unique id
+ */
 template <typename TSolverTraits>
 class BasicController {
 public:
@@ -302,21 +306,43 @@ public:
   void
   readFluidForce(typename VertexIdMap::const_iterator const& it,
                  VectorDsType&                               force) {
-    _preciceInterface->readVectorData(_fluidMeshForcesId, it->second,
+    _preciceInterface->readVectorData(_fluidMeshForcesId,
+                                      it->second,
                                       force.data());
+  }
+
+  VectorDsType
+  computeBodyForceAt(unsigned            global_index,
+                     VectorDsType const& force,
+                     MemoryType*         memory) {
+    VectorDsType body_force = VectorDsType::Zero();
+
+    auto accessor = *memory->grid()->at(global_index);
+
+    body_force += accessor.width().prod() * (-force) / memory->timeStepSize();
+
+    memory->setForceAt(global_index, body_force);
+
+    return body_force;
   }
 
   void
   computeBodyForce(MemoryType const* memory) {
-    VectorDsType total_force = VectorDsType::Zero();
+    VectorDsType total_force       = VectorDsType::Zero();
+    VectorDsType total_force_turek = VectorDsType::Zero();
 
     for (auto const& accessor : memory->grid()->innerGrid) {
-      VectorDsType force = VectorDsType::Zero();
-      BodyForce::computeCellForce(accessor,
-                                  memory->parameters()->re(),
-                                  force);
+      VectorDsType force       = VectorDsType::Zero();
+      VectorDsType force_turek = VectorDsType::Zero();
+      BodyForce::compute_cell_force(accessor,
+                                    memory->parameters()->re(),
+                                    force);
+      BodyForce::compute_cell_force_turek(accessor,
+                                          memory->parameters()->re(),
+                                          force_turek);
       accessor.setBodyForce(force);
-      total_force += force;
+      total_force       += force;
+      total_force_turek += force_turek;
     }
 
     Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
@@ -325,10 +351,15 @@ public:
                                       MPI_SUM,
                                       PETSC_COMM_WORLD);
 
-    // force *= 2 / (0.3 * 0.3 * 0.1);
+    Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
+                                      total_force_turek.data(),
+                                      Dimensions,
+                                      MPI_SUM,
+                                      PETSC_COMM_WORLD);
 
     if (memory->parallelDistribution()->rank == 0) {
-      logInfo("BodyForce: {1}", total_force.transpose());
+      logInfo("BodyForce: {1}",       total_force.transpose());
+      logInfo("BodyForce Turek: {1}", total_force_turek.transpose());
     }
   }
 

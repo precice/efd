@@ -63,11 +63,12 @@ template <typename TScalar>
 inline TScalar
 dudx(TScalar const& leftU,
      TScalar const& rightU,
+     TScalar const& currentX,
      TScalar const& leftX,
      TScalar const& rightX) {
-  TScalar const width = leftX + rightX;
+  TScalar const width = (leftX + rightX) / 2.0;
 
-  return (rightU - leftU) / width;
+  return (rightU - leftU) / (currentX + width);
 }
 
 template <typename TScalar>
