@@ -2,14 +2,14 @@
 # ==============================================================================
 cmake_minimum_required(VERSION 2.8.8)
 # ------------------------------------------------------------------------------
-#set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 
-#if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
-#  message(SEND_ERROR "In-source builds are not allowed.")
-#endif ()
+if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+  message(SEND_ERROR "In-source builds are not allowed.")
+endif ()
 # ------------------------------------------------------------------------------
-project("Fsi Simulation" C CXX)
+project("Fluid-Structure Interations Simulation" C CXX)
 # ------------------------------------------------------------------------------
 set(CMAKE_ERROR_DEPRECATED ON)
 # ------------------------------------------------------------------------------
@@ -150,18 +150,18 @@ endif ()
 
 # Targets {{{
 # ==============================================================================
-file(GLOB_RECURSE CPP_FILES
-  "${PROJECT_DIR}/source/**/*.cpp"
-  "${PROJECT_DIR}/source/**/*.hpp"
+file(GLOB_RECURSE FLUID_CPP_FILES
+  "${PROJECT_DIR}/components/Fluid/*.cpp"
+  "${PROJECT_DIR}/components/Fluid/*.hpp"
   )
 
-add_executable(Simulation ${CPP_FILES})
+add_executable(Fluid ${FLUID_CPP_FILES})
 
-target_include_directories(Simulation PRIVATE
-  "${PROJECT_DIR}/source"
+target_include_directories(Fluid PRIVATE
+  "${PROJECT_DIR}/components/Fluid"
   )
 
-target_include_directories(Simulation SYSTEM PRIVATE
+target_include_directories(Fluid SYSTEM PRIVATE
   ${Precice_INCLUDE_DIRS}
   ${PETSC_INCLUDES}
   ${Eigen_INCLUDE_DIRS}
@@ -172,7 +172,7 @@ target_include_directories(Simulation SYSTEM PRIVATE
   ${XDMF_LIBXML2_INCLUDE}
   ${XDMF_ZLIB_INCLUDE}
   )
-target_link_libraries(Simulation PRIVATE
+target_link_libraries(Fluid PRIVATE
   Uni
   ${Precice_LIBRARIES}
   ${PETSC_LIBRARIES}
@@ -185,28 +185,64 @@ target_link_libraries(Simulation PRIVATE
   ${XDMF_ZLIB_LIBRARIES}
   )
 
+file(GLOB_RECURSE STRUCTURE_CPP_FILES
+  "${PROJECT_DIR}/components/Structure/*.cpp"
+  "${PROJECT_DIR}/components/Structure/*.hpp"
+  )
+
+add_executable(Structure ${STRUCTURE_CPP_FILES})
+
+target_include_directories(Structure PRIVATE
+  "${PROJECT_DIR}/components/Structure"
+  )
+
+target_include_directories(Structure SYSTEM PRIVATE
+  ${Precice_INCLUDE_DIRS}
+  ${Eigen_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${LIBXML2_INCLUDE_DIR}
+  ${PYTHON_INCLUDE_DIRS}
+  ${MPI_CXX_INCLUDE_PATH}
+  )
+target_link_libraries(Structure PRIVATE
+  Uni
+  ${Precice_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${LIBXML2_LIBRARIES}
+  ${PYTHON_LIBRARIES}
+  ${MPI_CXX_LIBRARIES}
+  )
 # ==============================================================================
 # }}} Targets
 
 # Targets' definitions {{{
 # ==============================================================================
-target_compile_definitions(Simulation PRIVATE
+target_compile_definitions(Fluid PRIVATE
+  PETSC_USE_REAL_DOUBLE
   ${PETSC_DEFINITIONS}
   ${LIBXML2_DEFINITIONS})
-cotire(Simulation)
+cotire(Fluid)
+
+target_compile_definitions(Structure PRIVATE
+  ${LIBXML2_DEFINITIONS})
+cotire(Structure)
 # ==============================================================================
 # }}} Targets' definitions
 
 # Targets' flags {{{
 # ==============================================================================
 if(MPI_CXX_COMPILE_FLAGS)
-  set_target_properties(Simulation PROPERTIES
-    COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
+  set_target_properties(Fluid
+    PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
+  set_target_properties(Structure
+    PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
 endif()
 
 if(MPI_CXX_LINK_FLAGS)
-  set_target_properties(Simulation PROPERTIES
-    LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+  set_target_properties(Fluid
+    PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+  set_target_properties(Structure
+    PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 endif()
 # ==============================================================================
 # }}} Targets' flags
@@ -214,25 +250,32 @@ endif()
 # {{{ Installation
 # ==============================================================================
 install(
-  TARGETS Simulation
+  TARGETS Fluid
   ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}
   LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
   RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
   )
 
-install(DIRECTORY "${PROJECT_DIR}/configuration/FluidPetsc"
-  DESTINATION "${INSTALL_BINARY_DIR}"
+install(
+  TARGETS Structure
+  ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}
+  LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
+  RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
+  )
+
+install(DIRECTORY "${PROJECT_DIR}/configuration/Petsc"
+  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
   FILES_MATCHING REGEX "(.*\\.conf)$"
   )
 
 install(DIRECTORY "${PROJECT_DIR}/configuration/Precice"
-  DESTINATION "${INSTALL_BINARY_DIR}"
+  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
   FILES_MATCHING REGEX "(.*\\.(xml|py))$"
   )
 
 
-install(DIRECTORY "${PROJECT_DIR}/configuration/FluidSimulation"
-  DESTINATION "${INSTALL_BINARY_DIR}"
+install(DIRECTORY "${PROJECT_DIR}/configuration/Fluid"
+  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
   FILES_MATCHING REGEX "(.*\\.xml)$"
   )
 # ==============================================================================

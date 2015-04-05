@@ -16,11 +16,13 @@
 !/cmake/modules/*.cmake
 
 !/configuration
-!/configuration/FluidSimulation
-!/configuration/FluidPetsc
+!/configuration/Fluid
+!/configuration/Structure
+!/configuration/Petsc
 !/configuration/Precice
-!/configuration/FluidPetsc/*.conf
-!/configuration/FluidSimulation/*.xml
+!/configuration/Petsc/*.conf
+!/configuration/Fluid/*.xml
+!/configuration/Structure/*.xml
 !/configuration/Precice/*.xml
 !/configuration/Precice/*.py
 
@@ -35,25 +37,25 @@
 !/documentation/user/BuildGuide.md
 !/documentation/user/UsageGuide.md
 
-!/source
-!/source/EntryPoint
-!/source/FluidSimulation
-!/source/FluidSimulation/GhostLayer
-!/source/FluidSimulation/GhostLayer/Private
-!/source/FluidSimulation/ImmersedBoundary
-!/source/FluidSimulation/ImmersedBoundary/BodyForce
-!/source/FluidSimulation/ImmersedBoundary/Fadlun
-!/source/FluidSimulation/ImmersedBoundary/FeedbackForcing
-!/source/FluidSimulation/Private
-!/source/FluidSimulation/VtkOutput
-!/source/FluidSimulation/XdmfHdf5Output
-!/source/FluidSimulation/XdmfHdf5Output/Private
-!/source/StructuredMemory
-!/source/Utility
-!/source/**/*.c
-!/source/**/*.cpp
-!/source/**/*.h
-!/source/**/*.hpp
+!/components
+!/components/Fluid
+!/components/Fluid/EntryPoint
+!/components/Fluid/Simulation
+!/components/Fluid/Simulation/GhostLayer
+!/components/Fluid/Simulation/GhostLayer/Private
+!/components/Fluid/Simulation/ImmersedBoundary
+!/components/Fluid/Simulation/ImmersedBoundary/BodyForce
+!/components/Fluid/Simulation/ImmersedBoundary/Fadlun
+!/components/Fluid/Simulation/ImmersedBoundary/FeedbackForcing
+!/components/Fluid/Simulation/Private
+!/components/Fluid/Simulation/VtkOutput
+!/components/Fluid/Simulation/XdmfHdf5Output
+!/components/Fluid/Simulation/XdmfHdf5Output/Private
+!/components/Structure
+!/components/Fluid/**/*.cpp
+!/components/Fluid/**/*.hpp
+!/components/Structure/**/*.cpp
+!/components/Structure/**/*.hpp
 
 *.*.*
 *.*.*.*

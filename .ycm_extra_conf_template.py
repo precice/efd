@@ -24,6 +24,7 @@ elif _platform == "Linux":
   '-isystem/usr/include',
   '-isystem/usr/include/eigen3',
   '-isystem/usr/include/libxml2',
+  '-isystem/usr/lib/openmpi/include',
   '-isystem/usr/lib/petscdir/3.4.2/linux-gnu-cxx-opt/include',
   '-isystem/opt/Uni/include',
   '-isystem/opt/Precice/src'
@@ -50,7 +51,8 @@ flags = [
 'c++',
 '-march=native',
 '-fPIC',
-'-Isource'
+'-Icomponents/Fluid',
+'-Icomponents/Structure'
 ]
 
 flags.extend(systemDependentFlags)
