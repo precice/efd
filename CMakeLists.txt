@@ -101,12 +101,15 @@ SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if (COMPILER_IS_G++)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe")
-#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic")
- # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Qunused-arguments")
+  endif()
 
   string(REPLACE "-O3" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O0")
@@ -114,8 +117,9 @@ if (COMPILER_IS_G++)
   #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
   #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
 
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -fno-inline")
-  #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-inline")
+  # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=memory")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
 endif ()
 # ------------------------------------------------------------------------------
 if (LINKER_IS_LD)
@@ -125,7 +129,7 @@ if (LINKER_IS_LD)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
   endif ()
 
-  set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-O5")
+  # set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-O5")
   # ----------------------------------------------------------------------------
   if (WIN32)
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libgcc")
@@ -133,7 +137,7 @@ if (LINKER_IS_LD)
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static")
   endif ()
 
-  set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -Wl,-O5")
+  # set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -Wl,-O5")
   # ----------------------------------------------------------------------------
   if (WIN32)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc")
@@ -221,11 +225,14 @@ target_compile_definitions(Fluid PRIVATE
   PETSC_USE_REAL_DOUBLE
   ${PETSC_DEFINITIONS}
   ${LIBXML2_DEFINITIONS})
-cotire(Fluid)
 
 target_compile_definitions(Structure PRIVATE
   ${LIBXML2_DEFINITIONS})
-cotire(Structure)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  cotire(Fluid)
+  cotire(Structure)
+endif()
 # ==============================================================================
 # }}} Targets' definitions
 
@@ -273,10 +280,13 @@ install(DIRECTORY "${PROJECT_DIR}/configuration/Precice"
   FILES_MATCHING REGEX "(.*\\.(xml|py))$"
   )
 
-
 install(DIRECTORY "${PROJECT_DIR}/configuration/Fluid"
   DESTINATION "${INSTALL_BINARY_DIR}/configuration"
   FILES_MATCHING REGEX "(.*\\.xml)$"
+  )
+
+install(DIRECTORY "${PROJECT_DIR}/configuration/Report"
+  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
   )
 # ==============================================================================
 # }}} Installation

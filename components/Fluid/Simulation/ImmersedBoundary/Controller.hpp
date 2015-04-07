@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BodyForce/functions.hpp"
+#include "Simulation/Reporter.hpp"
 #include "functions.hpp"
 
 #include "Simulation/Private/mpigenerics.hpp"
@@ -113,6 +114,7 @@ public:
 
   std::pair<typename VertexIdMap::const_iterator, bool>
   doesVertexExist(CellAccessorType const& accessor) const {
+    ((void)accessor);
     return std::make_pair(end(), false);
   }
 
@@ -135,10 +137,13 @@ public:
     force = VectorDsType::Zero();
   }
 
-  void
-  computeBodyForce(MemoryType const* memory) {
-    ((void)memory);
+  VectorDsType
+  computeBodyForceAt(unsigned, VectorDsType const&, MemoryType*) {
+    return VectorDsType::Zero();
   }
+
+  void
+  computeBodyForce(MemoryType const*, Reporter*) {}
 
 protected:
   VertexIdMap _vertexIds;
@@ -328,7 +333,8 @@ public:
   }
 
   void
-  computeBodyForce(MemoryType const* memory) {
+  computeBodyForce(MemoryType const* memory,
+                   Reporter*         reporter) {
     VectorDsType total_force       = VectorDsType::Zero();
     VectorDsType total_force_turek = VectorDsType::Zero();
 
@@ -358,10 +364,8 @@ public:
                                       MPI_SUM,
                                       PETSC_COMM_WORLD);
 
-    if (memory->parallelDistribution()->rank == 0) {
-      logInfo("BodyForce: {1}",       total_force.transpose());
-      logInfo("BodyForce Turek: {1}", total_force_turek.transpose());
-    }
+    reporter->addAt(4, total_force);
+    reporter->addAt(5, total_force_turek);
   }
 
 private:

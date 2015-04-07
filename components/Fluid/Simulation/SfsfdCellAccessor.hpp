@@ -89,7 +89,7 @@ public:
   ScalarType
   attribute(int const& attribute_index,
             int const& dimension = 0) const {
-    _attribute(this->globalIndex(), attribute_index, dimension);
+    return _attribute(this->globalIndex(), attribute_index, dimension);
   }
 
   ScalarType
@@ -239,11 +239,12 @@ public:
              (position_dimension);
   }
 
-  VectorDsType
+  ScalarType
   position(VectorDiType const& index,
            int const&          position_dimension) const {
     return _memory->gridGeometry()->cellPosition(
-      this->relativeIndex(index) - _memory->grid()->innerGrid.leftIndent());
+      this->relativeIndex(index) - _memory->grid()->innerGrid.leftIndent())
+             (position_dimension);
   }
 
   VectorDsType

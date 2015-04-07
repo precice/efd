@@ -85,13 +85,13 @@ parseWall(xmlNodePtr node) {
 
   xmlAttrPtr attr = node->properties;
   xmlChar*   type;
-  xmlChar*   velocity_string;
+  Configuration::Wall::VectorDs velocity = Configuration::Wall::VectorDs::Zero();
 
   while (attr) {
     if (xmlStrcasecmp(attr->name, _type) == 0) {
       type = attr->children->content;
     } else if (xmlStrcasecmp(attr->name, _velocity) == 0) {
-      velocity_string = attr->children->content;
+      Private::parse_fpv( attr->children->content, velocity);
     }
     attr = attr->next;
   }
@@ -99,15 +99,13 @@ parseWall(xmlNodePtr node) {
   Configuration::UniqueWallType wall;
 
   if (xmlStrcasecmp(type, _typeInput) == 0) {
-    Configuration::Wall::VectorDs velocity;
-    Private::parse_fpv(velocity_string, velocity);
     wall.reset(new Configuration::Input(velocity));
   } else if (xmlStrcasecmp(type, _typeParabolicInput) == 0) {
-    Configuration::Wall::VectorDs velocity;
-    Private::parse_fpv(velocity_string, velocity);
     wall.reset(new Configuration::ParabolicInput(velocity));
   } else if (xmlStrcasecmp(type, _typeOutput) == 0) {
     wall.reset(new Configuration::Output());
+  } else {
+    throwException("Unknown wall type '{1}'", type);
   }
 
   return wall;

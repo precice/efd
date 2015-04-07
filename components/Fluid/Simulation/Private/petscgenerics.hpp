@@ -44,15 +44,15 @@ createDMBoundaries() {
 
 template <int TD>
 void
-DMCreate(MPI_Comm const&                        comm,
-         DMBoundaryTypeVector<TD> const&        boundaryTypes,
-         DMDAStencilType const&                 stencilType,
-         VectorDi<TD> const&                    globalSize,
-         VectorDi<TD> const&                    processorSize,
-         int const&                             dof,
-         int const&                             stencilWidth,
-         VectorDConstPetscIntPointer<TD> const& localSizes,
-         DM*                                    da) {}
+DMCreate(MPI_Comm const&,
+         DMBoundaryTypeVector<TD> const&,
+         DMDAStencilType const&,
+         VectorDi<TD> const&,
+         VectorDi<TD> const&,
+         int const&,
+         int const&,
+         VectorDConstPetscIntPointer<TD> const&,
+         DM*) {}
 
 template <>
 void
@@ -111,51 +111,6 @@ DMCreate<3
                localSizes(2).get(),
                da);
 }
-
-template <int TD>
-class petscgenerics {
-public:
-  petscgenerics() {}
-
-  petscgenerics(petscgenerics const& other) {}
-
-  ~petscgenerics() {}
-
-  petscgenerics&
-  operator=(petscgenerics const& other) {
-    return *this;
-  }
-};
-
-template <>
-class petscgenerics<2> {
-public:
-  petscgenerics() {}
-
-  petscgenerics(petscgenerics const& other) {}
-
-  ~petscgenerics() {}
-
-  petscgenerics&
-  operator=(petscgenerics const& other) {
-    return *this;
-  }
-};
-
-template <>
-class petscgenerics<3> {
-public:
-  petscgenerics() {}
-
-  petscgenerics(petscgenerics const& other) {}
-
-  ~petscgenerics() {}
-
-  petscgenerics&
-  operator=(petscgenerics const& other) {
-    return *this;
-  }
-};
 }
 }
 #endif

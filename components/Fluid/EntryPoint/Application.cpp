@@ -1,5 +1,6 @@
 #include "Application.hpp"
 
+#include "CsvReporter.hpp"
 #include "Simulation/SimulationController.hpp"
 #include "Simulation/facade.hpp"
 #include "XmlConfigurationParser.hpp"
@@ -16,6 +17,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/locale.hpp>
 #include <boost/program_options.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 
 #include <memory>
 
@@ -52,7 +55,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
 
     applicationPath = Path(Uni::getExecutablePath()).parent_path();
 
-    outputDirectoryPath    = fs::current_path();
+    outputDirectoryPath = fs::current_path();
   }
 
   Uni_Firewall_INTERFACE_LINK(Application)
@@ -64,11 +67,10 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   Path        applicationPath;
 
   Path        outputDirectoryPath;
-  Path        vtkOutputDirectoryPath;
   Path        preciceConfigurationPath;
   Path        fluidConfigurationPath;
   Path        petscConfigurationPath;
-  std::string vtkFilePrefix;
+  std::string outputFileNamePrefix;
 
   int masterRank;
   int rank;
@@ -77,11 +79,24 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   std::unique_ptr<FluidSimulation::Configuration> fluidConfiguration;
 
   UniquePreciceInterface     preciceInterface;
-  UniqueSimulationController mySimulation;
+  UniqueSimulationController simulationController;
+
+  std::unique_ptr<FluidSimulation::Reporter> reporter;
 
   bool
   isMaster() {
     return rank == masterRank;
+  }
+
+  void
+  initializeReporter() {
+    if (isMaster()) {
+      reporter.reset(new CsvReporter());
+    } else {
+      reporter.reset(new FluidSimulation::Reporter());
+    }
+    reporter->initialize(outputDirectoryPath,
+                         outputFileNamePrefix);
   }
 };
 
@@ -150,8 +165,9 @@ parseArguments() {
 
   if (options.count("precice")) {
     _im->fluidConfiguration->doImmersedBoundary = true;
-    _im->preciceConfigurationPath               = boost::filesystem::canonical(
-      options["precice"].as<std::string>());
+
+    _im->preciceConfigurationPath
+      = boost::filesystem::canonical(options["precice"].as<std::string>());
   } else {
     _im->fluidConfiguration->doImmersedBoundary = false;
   }
@@ -191,29 +207,54 @@ initialize() {
   parseSimulationConfiguration();
   createOutputDirectory();
 
-  // Change current working directory of the application to overcome a Precice
-  // configuration issue with python modules paths.
-  boost::filesystem::current_path(_im->applicationPath);
-
   initializePrecice();
 
-  _im->mySimulation
+  _im->simulationController
     = FluidSimulation::create_simulation_controller(
     _im->fluidConfiguration.get());
 
-  _im->mySimulation->initialize(_im->preciceInterface.get(),
-                                _im->vtkOutputDirectoryPath,
-                                _im->vtkFilePrefix);
+  _im->initializeReporter();
+
+  _im->simulationController->initialize(_im->preciceInterface.get(),
+                                        _im->reporter.get(),
+                                        _im->outputDirectoryPath,
+                                        _im->outputFileNamePrefix);
 }
 
 void
 Application::
 run() {
-  while (_im->mySimulation->iterate()) {
-    if (_im->rank == 0) {
+  while (_im->simulationController->iterate()) {
+    if (_im->isMaster()) {
       logInfo("N = {1}; t = {2}",
-              _im->mySimulation->iterationNumber(),
-              _im->mySimulation->time());
+              _im->simulationController->iterationNumber(),
+              _im->simulationController->time());
+    }
+    _im->reporter->recordIteration();
+  }
+  _im->reporter->recordInfo();
+  _im->reporter->release();
+
+  auto report_template_path
+    = _im->applicationPath / "configuration" / "Report";
+
+  namespace fs = boost::filesystem;
+
+  fs::copy_file(
+    report_template_path / "Template.html",
+    _im->outputDirectoryPath / (_im->outputFileNamePrefix + ".html"),
+    fs::copy_option::overwrite_if_exists);
+
+  fs::create_directory(_im->outputDirectoryPath / "js");
+  auto it     = fs::recursive_directory_iterator(report_template_path / "js");
+  auto end_it = fs::recursive_directory_iterator();
+
+  for (; it != end_it; ++it) {
+    if (it->status().type() == fs::file_type::regular_file) {
+      fs::copy_file(
+        it->path(),
+        _im->outputDirectoryPath / "js" / it->path().filename(),
+        fs::copy_option::overwrite_if_exists);
     }
   }
 }
@@ -243,14 +284,12 @@ createOutputDirectory() {
   }
 
   auto outputFileName = outputDirectoryPath.filename();
+
   outputDirectoryPath = outputDirectoryPath.parent_path();
   boost::filesystem::create_directories(outputDirectoryPath);
-  _im->vtkOutputDirectoryPath = outputDirectoryPath;
-  outputDirectoryPath
-    = boost::filesystem::make_relative(
-    outputDirectoryPath) / outputFileName;
-  _im->fluidConfiguration->filename = outputDirectoryPath.string();
-  _im->vtkFilePrefix                = outputFileName.string();
+
+  _im->outputDirectoryPath  = outputDirectoryPath;
+  _im->outputFileNamePrefix = outputFileName.string();
 }
 
 void
@@ -261,12 +300,16 @@ initializePrecice() {
   _im->preciceInterface.reset(
     new Implementation::PreciceInterface("Fluid",
                                          _im->rank,
-                                         _im->processCount)
-    );
+                                         _im->processCount));
 
   if (!_im->fluidConfiguration->doImmersedBoundary) {
     return;
   }
+
+  // Change current working directory of the application to overcome a Precice
+  // configuration issue with python modules paths.
+  boost::filesystem::current_path(
+    _im->preciceConfigurationPath.parent_path().parent_path());
 
   auto preciceConfigurationPath
     = Uni::convertUtfPathToAnsi(

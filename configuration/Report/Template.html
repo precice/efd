@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font: 12px Arial;}
+
+    path { 
+        stroke: steelblue;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: grey;
+        stroke-width: 1;
+        shape-rendering: crispEdges;
+    }
+  </style>
+  <title>Fluid-Structure Simulation automatic report</title>
+</head>
+<body>
+  <div id="charts">
+  </div>
+  <script src="js/d3.v3.min.js"></script>
+  <script src="js/main.js"></script>
+  <script id="main">main()</script>
+</body>
+</html>

@@ -157,19 +157,23 @@ public:
                            &ghost_handlers->vpeRhsGeneratorStack[2],
                            &ghost_handlers->vpeRhsAcquiererStack[2]);
     _vzpeAbsoluteTolerance = _vzpeSolver.absoluteTolerance();
+    _vzpeRelativeTolerance = _vzpeSolver.relativeTolerance();
   }
 
   void
   executeVpe() {
     _vzpeSolver.absoluteTolerance(
       _memory->timeStepSize() * _vzpeAbsoluteTolerance / 1000.0);
+    _vzpeSolver.relativeTolerance(
+      _memory->timeStepSize() * _vzpeRelativeTolerance / 1000.0);
     _vzpeSolver.update();
     _vzpeSolver.solve();
   }
 
 private:
-  MemoryType             _memory;
+  MemoryType const*             _memory;
   PetscReal              _vzpeAbsoluteTolerance;
+  PetscReal              _vzpeRelativeTolerance;
   VzpeRhsGeneratorType   _vzpeRhsGenerator;
   VzpeResultAcquirerType _vzpeResultGenerator;
   VzpeSolverType         _vzpeSolver;

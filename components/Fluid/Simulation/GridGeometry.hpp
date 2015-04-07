@@ -1,5 +1,6 @@
-#ifndef FsiSimulation_FluidSimulation_GridGeomtry_hpp
-#define FsiSimulation_FluidSimulation_GridGeomtry_hpp
+#pragma once
+
+#include <Uni/Logging/format>
 
 #include <Eigen/Core>
 
@@ -79,6 +80,21 @@ public:
     return _cellWidth;
   }
 
+  VectorDs const&
+  maxCellWidth() const {
+    return _cellWidth;
+  }
+
+  std::string
+  toString() {
+    return Uni::Logging::format("{1}\n"
+                                "{2}\n"
+                                "{3}\n",
+                                _size.transpose(),
+                                _cellWidth.transpose(),
+                                _corner.transpose());
+  }
+
 private:
   VectorDs _size;
   VectorDs _cellWidth;
@@ -86,4 +102,3 @@ private:
 };
 }
 }
-#endif

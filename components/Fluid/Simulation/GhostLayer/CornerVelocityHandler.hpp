@@ -88,7 +88,7 @@ public:
     int  index = 0;
 
     if (_dimension == -1) {
-      for (int i = 0; i < TDataElementSize; ++i) {
+      for (unsigned i = 0; i < TDataElementSize; ++i) {
         _rowMemory.get()[index] = it->velocity(i);
         ++index;
       }
@@ -96,7 +96,7 @@ public:
       for (; it->indexValue(_dimension)
            < _grid->end()->indexValue(_dimension);
            it->index(_dimension) += 1) {
-        for (int i = 0; i < TDataElementSize; ++i) {
+        for (unsigned i = 0; i < TDataElementSize; ++i) {
           _rowMemory.get()[index] = it->velocity(i);
           ++index;
         }
@@ -119,7 +119,7 @@ public:
     index = 0;
 
     if (_dimension == -1) {
-      for (int i = 0; i < TDataElementSize; ++i) {
+      for (unsigned i = 0; i < TDataElementSize; ++i) {
         it->velocity(i) = _rowMemory.get()[index];
         ++index;
       }
@@ -127,7 +127,7 @@ public:
       for (; it->indexValue(_dimension)
            < _grid->end()->indexValue(_dimension);
            it->index(_dimension) += 1) {
-        for (int i = 0; i < TDataElementSize; ++i) {
+        for (unsigned i = 0; i < TDataElementSize; ++i) {
           it->velocity(i) = _rowMemory.get()[index];
           ++index;
         }
@@ -161,7 +161,7 @@ private:
   ParallelDistributionType const* _parallelDistribution;
   int                             _dimension;
   int                             _communicationRank;
-  std::unique_ptr<ScalarType>     _rowMemory;
+  std::unique_ptr<ScalarType[]>     _rowMemory;
   unsigned long long              _rowMemorySize;
   VectorDiType                    _ghostIndex;
   VectorDiType                    _boundaryIndex;

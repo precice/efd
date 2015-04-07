@@ -276,6 +276,7 @@ public:
                                H5S_ALL,
                                H5P_DEFAULT,
                                data);
+      ((void)status);
 
       delete data;
     }

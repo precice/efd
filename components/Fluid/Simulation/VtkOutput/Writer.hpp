@@ -114,12 +114,13 @@ public:
               string_stream << " ";
             }
 
+            float temp_value = 0.0f;
+
             if (d < Dimensions) {
-              string_stream
-                << static_cast<float>(accessor.centralizedAttribute(index, d));
-            } else {
-              string_stream << 0.0;
+              temp_value
+                = static_cast<float>(accessor.centralizedAttribute(index, d));
             }
+            string_stream << temp_value;
           }
           string_stream << std::endl;
         }

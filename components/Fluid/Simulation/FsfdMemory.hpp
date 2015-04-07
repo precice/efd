@@ -122,6 +122,7 @@ public:
 
     // logGridInitializationInfo(_grid);
     logParallelTopologyInfo(_parallelDistribution);
+    logInfo(_gridGeometry.toString());
   }
 
   ParallelDistributionType const*
@@ -385,6 +386,7 @@ protected:
     default:
       throwException("Invalid attribute index");
     }
+    return 0.0;
   }
 
   ParallelDistributionType _parallelDistribution;
@@ -397,11 +399,11 @@ protected:
   long double              _time;
   unsigned long long       _iterationNumber;
 
-  std::unique_ptr<VectorDsType> _velocity;
-  std::unique_ptr<ScalarType>   _pressure;
-  std::unique_ptr<int>          _position;
-  std::unique_ptr<VectorDsType> _fgh;
-  std::unique_ptr<VectorDsType> _convection;
+  std::unique_ptr<VectorDsType[]> _velocity;
+  std::unique_ptr<ScalarType[]>   _pressure;
+  std::unique_ptr<int[]>          _position;
+  std::unique_ptr<VectorDsType[]> _fgh;
+  std::unique_ptr<VectorDsType[]> _convection;
 };
 }
 }

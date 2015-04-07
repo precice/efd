@@ -33,8 +33,6 @@ compute_parabolic_input(
   typename TVectorDs::Scalar& value) {
   using VectorDsType = TVectorDs;
 
-  using ScalarType = typename VectorDsType::Scalar;
-
   enum {
     Dimensions = VectorDsType::RowsAtCompileTime
   };

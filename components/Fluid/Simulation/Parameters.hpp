@@ -11,7 +11,9 @@ public:
   typedef Eigen::Matrix<TScalar, TD, 1> VectorDs;
 
 public:
-  Parameters() {}
+  Parameters() {
+    _g = VectorDs::Zero();
+  }
 
   Parameters(Parameters const& other) = delete;
 

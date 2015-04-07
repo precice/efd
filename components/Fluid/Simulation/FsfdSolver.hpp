@@ -5,6 +5,8 @@
 #include "Private/mpigenerics.hpp"
 #include "functions.hpp"
 
+#include "Reporter.hpp"
+
 #include <Uni/Logging/macros>
 
 namespace FsiSimulation {
@@ -87,10 +89,17 @@ public:
   }
 
   void
-  initialize(precice::SolverInterface* preciceInteface) {
+  initialize(precice::SolverInterface* preciceInteface,
+             Reporter*                 reporter) {
     _ibController.initialize(preciceInteface);
+    _reporter = reporter;
 
     _peSolver.initialize(&_memory, &_ghostHandlers);
+
+    _memory.maxVelocity()     = VectorDsType::Zero();
+    _memory.timeStepSize()    = 0.0;
+    _memory.time()            = 0.0;
+    _memory.iterationNumber() = 0;
 
     for (auto& accessor : _memory.grid()->innerGrid) {
       _ibController.computePositionInRespectToGeometry(accessor);
@@ -116,10 +125,48 @@ public:
       accessor.convection() = convection;
     }
 
-    _memory.maxVelocity()     = VectorDsType::Zero();
-    _memory.timeStepSize()    = 1.0;
-    _memory.time()            = 0.0;
-    _memory.iterationNumber() = 0;
+    _reporter->setAt(0, "Re",
+                     _memory.parameters()->re());
+    _reporter->setAt(1, "Gamma",
+                     _memory.parameters()->gamma());
+    _reporter->setAt(2, "Tau",
+                     _memory.parameters()->tau());
+    _reporter->setAt(3, "G",
+                     _memory.parameters()->g());
+    _reporter->setAt(4, "OuterLayerSize",
+                     _ibController.outerLayerSize());
+    _reporter->setAt(5, "InnerLayerSize",
+                     _ibController.innerLayerSize());
+    _reporter->setAt(6, "ProcessorSize",
+                     _memory.parallelDistribution()->processorSize);
+    _reporter->setAt(7, "GlobalCellSize",
+                     _memory.parallelDistribution()->globalCellSize);
+    _reporter->setAt(8, "UniformLocalCellSize",
+                     _memory.parallelDistribution()->uniformLocalCellSize);
+    _reporter->setAt(9, "LastLocalCellSize",
+                     _memory.parallelDistribution()->lastLocalCellSize);
+    _reporter->setAt(10, "Width",
+                     _memory.gridGeometry()->size());
+    _reporter->setAt(11, "CellWidth",
+                     _memory.gridGeometry()->minCellWidth());
+
+    _reporter->addAt(0, "IterationNumber");
+    _reporter->addAt(1, "Time");
+    _reporter->addAt(2, "TimeStepSize");
+    _reporter->addAt(3, "Force1");
+    _reporter->addAt(4, "Force2");
+    _reporter->addAt(5, "Force3");
+
+    _reporter->recordIteration();
+
+    _reporter->addAt(0, _memory.iterationNumber());
+    _reporter->addAt(1, _memory.time());
+    _reporter->addAt(2, _memory.timeStepSize());
+    _reporter->addAt(3, VectorDsType::Zero().eval());
+    _reporter->addAt(4, VectorDsType::Zero().eval());
+    _reporter->addAt(5, VectorDsType::Zero().eval());
+
+    _reporter->recordIteration();
   }
 
   void
@@ -131,8 +178,10 @@ public:
       _memory.gridGeometry()->minCellWidth(),
       _memory.maxVelocity());
 
+    logInfo("max | {1}", _memory.maxVelocity().transpose());
     _memory.maxVelocity() = VectorDsType::Zero();
 
+    logInfo("dt | {1}", _memory.timeStepSize());
     for (auto const& accessor : _memory.grid()->innerGrid) {
       _memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
 
@@ -184,6 +233,7 @@ public:
                                         + 0.5 * diffusion
                                         - grad_pressure
                                         + _memory.parameters()->g());
+        // logInfo("Fgh | {1}", accessor.fgh().transpose());
       }
 
       auto status = _ibController.doesVertexExist(accessor);
@@ -218,7 +268,13 @@ public:
       total_force += body_force;
     }
 
-    logInfo("Forces: {1}", total_force.transpose());
+    Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
+                                      total_force.data(),
+                                      Dimensions,
+                                      MPI_SUM,
+                                      PETSC_COMM_WORLD);
+
+    _reporter->addAt(3, total_force);
 
     _peSolver.executeVpe();
     _ghostHandlers.executeFghMpiExchange();
@@ -241,10 +297,14 @@ public:
     _ghostHandlers.executeVelocityInitialization();
     _ghostHandlers.executeVelocityMpiExchange();
 
-    _ibController.computeBodyForce(&_memory);
+    _ibController.computeBodyForce(&_memory, _reporter);
 
     _memory.time() += _memory.timeStepSize();
     ++_memory.iterationNumber();
+
+    _reporter->addAt(0, _memory.iterationNumber());
+    _reporter->addAt(1, _memory.time());
+    _reporter->addAt(2, _memory.timeStepSize());
   }
 
 private:
@@ -252,6 +312,8 @@ private:
   PeSolverType                   _peSolver;
   GhostHandlersType              _ghostHandlers;
   ImmersedBoundaryControllerType _ibController;
+
+  Reporter* _reporter;
 };
 }
 }

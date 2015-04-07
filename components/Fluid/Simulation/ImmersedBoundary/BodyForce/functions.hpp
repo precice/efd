@@ -26,8 +26,6 @@ compute_cell_force(TCellAccessor const&                      accessor,
   using Scalar = typename TCellAccessor::ScalarType;
   using Vector = typename TCellAccessor::VectorDsType;
 
-  bool isCurrentOutside  = true;
-  bool isNeighborsInside = false;
 
   if (is_outside(accessor.positionInRespectToGeometry()) != 1) {
     return false;
@@ -96,15 +94,9 @@ bool
 compute_cell_force_turek(TCellAccessor const&                      accessor,
                          typename TCellAccessor::ScalarType const& re,
                          typename TCellAccessor::VectorDsType&     force) {
-  typedef Eigen::Matrix<typename TCellAccessor::ScalarType,
-                        TCellAccessor::Dimensions,
-                        TCellAccessor::Dimensions> Matrix;
-
   using Scalar = typename TCellAccessor::ScalarType;
   using Vector = typename TCellAccessor::VectorDsType;
 
-  bool isCurrentOutside  = true;
-  bool isNeighborsInside = false;
 
   if (is_outside(accessor.positionInRespectToGeometry()) != 1) {
     return false;

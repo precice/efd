@@ -71,20 +71,19 @@ public:
 
     _solver->memory()->parameters()->tau() = configuration->tau;
 
-    _solver->immersedBoundaryController()
-    ->outerLayerSize(configuration->outerLayerSize);
-
-    _solver->immersedBoundaryController()
-    ->innerLayerSize(configuration->innerLayerSize);
-
     _solver->memory()->parameters()->g(0) = configuration->environment(0);
 
     _solver->memory()->parameters()->g(1) = configuration->environment(1);
 
     if (Dimensions == 3) {
-      _solver->memory()->parameters()->g(2)
-        = configuration->environment(2);
+      _solver->memory()->parameters()->g(2) = configuration->environment(2);
     }
+
+    _solver->immersedBoundaryController()
+    ->outerLayerSize(configuration->outerLayerSize);
+
+    _solver->immersedBoundaryController()
+    ->innerLayerSize(configuration->innerLayerSize);
 
     _solver->memory()->initialize(processor_size,
                                   global_cell_size,

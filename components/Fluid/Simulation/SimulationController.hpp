@@ -8,6 +8,8 @@ class SolverInterface;
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+class Reporter;
+
 class SimulationController {
 public:
   typedef boost::filesystem::path Path;
@@ -23,6 +25,7 @@ public:
 
   virtual void
   initialize(precice::SolverInterface* preciceInteface,
+             Reporter*                 reporter,
              Path const&               outputDirectory,
              std::string const&        fileNamePrefix) = 0;
 

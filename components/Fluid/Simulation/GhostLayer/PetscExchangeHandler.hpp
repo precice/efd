@@ -28,7 +28,7 @@ template <int TD>
 inline Functor<TD>
 getEmptyFunctor() {
   return Functor<TD>(
-    [] (typename Uni::StructuredMemory::Pointers<PetscScalar, TD>::Type array) {});
+    [] (typename Uni::StructuredMemory::Pointers<PetscScalar, TD>::Type) {});
 }
 
 template <typename TGrid,

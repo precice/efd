@@ -114,17 +114,17 @@ parseArguments() {
 void
 Application::
 initialize() {
-  _im->simulation->initialize(_im->preciceInterface.get());
-
   XmlConfigurationParser::parse(
     _im->simulation,
     _im->simulationConfigurationPath);
 
   // Change current working directory of the application to overcome a Precice
   // configuration issue with python modules paths.
-  boost::filesystem::current_path(_im->applicationPath);
+  boost::filesystem::current_path(_im->preciceConfigurationPath.parent_path());
 
   initializePrecice();
+
+  _im->simulation->initialize(_im->preciceInterface.get());
 }
 
 void
@@ -133,6 +133,7 @@ run() {
   while (_im->simulation->iterate()) {
     //
   }
+  _im->preciceInterface->finalize();
 }
 
 void

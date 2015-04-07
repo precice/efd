@@ -183,7 +183,10 @@ private:
 #else
   computeMatrix(KSP ksp, Mat A, Mat pc, MatStructure * matStructure,
                 void* ctx) {
+        ((void)matStructure);
 #endif
+        ((void)ksp);
+        ((void)pc);
     auto this_solver = static_cast<LinearSolver*>(ctx);
 
     PetscScalar stencil[2 * Dimensions + 1];

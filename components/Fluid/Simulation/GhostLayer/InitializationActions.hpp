@@ -38,27 +38,51 @@ public:
 
   void
   setValue(CellAccessorType const& accessor) {
+    int offset = -1;
+
+    if (TDirection == 0) {
+      offset = +1;
+    }
+
     for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
         if (TDirection == 0) {
           accessor.velocity(TDimension)
             = _configuration->walls[TDimension][TDirection]->velocity()
                 (TDimension);
+          compute_max_velocity(accessor.velocity(TDimension),
+                               accessor.width(TDimension),
+                               d,
+                               *_maxVelocity);
         } else {
           accessor.velocity(TDimension, -1, TDimension)
             = _configuration->walls[TDimension][TDirection]->velocity()
                 (TDimension);
+          compute_max_velocity(accessor.velocity(TDimension, -1, TDimension),
+                               accessor.width(TDimension, -1, TDimension),
+                               d,
+                               *_maxVelocity);
         }
       } else {
         accessor.velocity(d)
-          = 2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
-            - accessor.velocity(d);
+          = 2.0 * _configuration->walls[TDimension][TDirection]
+            ->velocity() (d) - accessor.velocity(TDimension, offset, d);
+        compute_max_velocity(accessor.velocity(d),
+                             accessor.width(d),
+                             d,
+                             *_maxVelocity);
       }
     }
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (accessor, *_maxVelocity);
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (accessor, *_maxVelocity);
+
+    // logInfo("{1} {2} {3}", TDimension, TDirection,
+    //         accessor.velocity().transpose());
+
+    // if (accessor.velocity().cwiseAbs().maxCoeff() > 1.e+10) {
+    //   logInfo("Got you {1} {2}",
+    //           accessor.index().transpose(),
+    //           accessor.velocity().transpose(),
+    //           accessor.velocity(TDimension, offset).transpose());
+    // }
   }
 
   Configuration* _configuration;
@@ -94,6 +118,12 @@ public:
 
   void
   setValue(CellAccessorType const& accessor) {
+    int offset = -1;
+
+    if (TDirection == 0) {
+      offset = +1;
+    }
+
     ScalarType result;
 
     for (int d = 0; d < Dimensions; ++d) {
@@ -105,23 +135,31 @@ public:
         if (TDirection == 0) {
           compute_parabolic_input_velocity(accessor, TDimension, result);
           accessor.velocity(TDimension) = result;
+          compute_max_velocity(accessor.velocity(TDimension),
+                               accessor.width(TDimension),
+                               d,
+                               *_maxVelocity);
         } else {
           compute_parabolic_input_velocity(
             accessor.relative(TDimension, -1),
             TDimension,
             result);
           accessor.velocity(TDimension, -1, TDimension) = result;
+          compute_max_velocity(accessor.velocity(TDimension, -1, TDimension),
+                               accessor.width(TDimension, -1, TDimension),
+                               d,
+                               *_maxVelocity);
         }
       } else {
         accessor.velocity(d)
-          = 2.0 * _configuration->walls[TDimension][TDirection]->velocity() (d)
-            - accessor.velocity(d);
+          = 2.0 * _configuration->walls[TDimension][TDirection]
+            ->velocity() (d) - accessor.velocity(TDimension, offset, d);
+        compute_max_velocity(accessor.velocity(d),
+                             accessor.width(d),
+                             d,
+                             *_maxVelocity);
       }
     }
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (accessor, *_maxVelocity);
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (accessor, *_maxVelocity);
   }
 
   Configuration* _configuration;
@@ -154,23 +192,25 @@ public:
 
   void
   setValue(CellAccessorType const& accessor) {
+    int offset = -1;
+
+    if (TDirection == 0) {
+      offset = +1;
+    }
+
     for (int d = 0; d < Dimensions; ++d) {
       if (d == TDimension) {
         if (TDirection == 0) {
-          accessor.velocity(TDimension) = accessor.velocity(TDimension);
+          accessor.velocity(TDimension)
+            = accessor.velocity(TDimension, +1, TDimension);
         } else {
           accessor.velocity(TDimension, -1, TDimension)
             = accessor.velocity(TDimension, -2, TDimension);
         }
       } else {
-        accessor.velocity(d)
-          = accessor.velocity(d);
+        accessor.velocity(d) = accessor.velocity(TDimension, offset, d);
       }
     }
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (accessor, *_maxVelocity);
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (accessor, *_maxVelocity);
   }
 
   VectorDsType* _maxVelocity;
@@ -222,17 +262,9 @@ class ParabolicInputFghAction {
 public:
   using SolverTraitsType = TSolverTraits;
 
-  enum {
-    Dimensions = SolverTraitsType::Dimensions
-  };
-
-  using GridType = typename SolverTraitsType::GridType;
-
   using CellAccessorType = typename SolverTraitsType::CellAccessorType;
 
   using VectorDsType = typename SolverTraitsType::VectorDsType;
-
-  using VectorDiType = typename SolverTraitsType::VectorDiType;
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 

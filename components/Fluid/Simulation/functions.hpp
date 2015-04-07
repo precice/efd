@@ -22,6 +22,25 @@ computeMaxVelocity(TCellAccessor const&                  accessor,
     accessor.width()).cwiseMax(maxVelocity);
 }
 
+template <typename TVector>
+void
+compute_max_velocity(TVector const& velocity,
+                     TVector const& width,
+                     TVector&       maxVelocity) {
+  maxVelocity
+    = velocity.cwiseAbs().cwiseQuotient(width).cwiseMax(maxVelocity);
+}
+
+template <typename TVector, typename TScalar>
+void
+compute_max_velocity(TScalar const&  velocity,
+                     TScalar const&  width,
+                     unsigned const& dimension,
+                     TVector&        maxVelocity) {
+  maxVelocity(dimension)
+    = std::max(std::abs(velocity) / width, maxVelocity(dimension));
+}
+
 template <typename TScalar, int TD>
 struct TimeStepProcessing {
   typedef Eigen::Matrix<TScalar, TD, 1> VectorDs;
@@ -39,7 +58,7 @@ struct TimeStepProcessing {
     localMin = (TScalar)(re / (2.0 * factor));
 
     for (int d = 0; d < TD; ++d) {
-      if (maxVelocity(d) > std::numeric_limits<TScalar>::epsilon()) {
+      if (std::abs(maxVelocity(d)) > std::numeric_limits<TScalar>::epsilon()) {
         localMin = std::min(localMin,
                             1.0 / maxVelocity(d));
       }
@@ -388,7 +407,7 @@ template <int TD>
 class DiffusionProcessing {
   template <typename TCellAccessor>
   static inline typename TCellAccessor::VectorDsType
-  compute(TCellAccessor const& accessor) {}
+  compute(TCellAccessor const&) {}
 };
 
 template <>
@@ -474,8 +493,8 @@ template <int TD>
 class ConvectionProcessing {
   template <typename TCellAccessor>
   static inline typename TCellAccessor::VectorDsType
-  compute(TCellAccessor const&                      accessor,
-          typename TCellAccessor::ScalarType const& gamma) {}
+  compute(TCellAccessor const&,
+          typename TCellAccessor::ScalarType const&) {}
 };
 
 template <>
@@ -859,6 +878,8 @@ public:
 
     result = result / (*_dt);
 
+    // logInfo("Rhs | {1} | {2}", accessor.index().transpose(), result);
+
     return result;
   }
 
@@ -894,7 +915,7 @@ public:
   inline void
   set(CellAccessorType const& accessor,
       ScalarType const&       value) const {
-    accessor.pressure() += value;
+    accessor.pressure()      += value;
     accessor.projectionTerm() = value;
   }
 

@@ -162,7 +162,7 @@ public:
     int index = 0;
 
     for (auto const& accessor : _boundaryGrid) {
-      for (int i = 0; i < TDataElementSize; ++i) {
+      for (unsigned i = 0; i < TDataElementSize; ++i) {
         _rowMemory.get()[index] = TgetValue(accessor)[i];
         ++index;
       }
@@ -192,7 +192,7 @@ public:
     int index = 0;
 
     for (auto const& accessor : _ghostGrid) {
-      for (int i = 0; i < TDataElementSize; ++i) {
+      for (unsigned i = 0; i < TDataElementSize; ++i) {
         TsetValue(accessor, i, _rowMemory.get()[index]);
         ++index;
       }
@@ -204,7 +204,7 @@ public:
     int index = 0;
 
     for (auto const& accessor : _boundaryGrid) {
-      for (int i = 0; i < TDataElementSize; ++i) {
+      for (unsigned i = 0; i < TDataElementSize; ++i) {
         _rowMemory.get()[index] = TgetValue(accessor)[i];
         ++index;
       }
@@ -224,7 +224,7 @@ public:
     index = 0;
 
     for (auto const& accessor : _ghostGrid) {
-      for (int i = 0; i < TDataElementSize; ++i) {
+      for (unsigned i = 0; i < TDataElementSize; ++i) {
         TsetValue(accessor, i, _rowMemory.get()[index]);
         ++index;
       }
@@ -235,7 +235,7 @@ private:
   TGrid                           _ghostGrid;
   TGrid                           _boundaryGrid;
   ParallelDistributionType const* _parallelDistribution;
-  std::unique_ptr<ScalarType>     _rowMemory;
+  std::unique_ptr<ScalarType[]>     _rowMemory;
   unsigned long long              _rowMemorySize;
   MPI_Request                     _mpiRequest;
   MPI_Status                      _mpiStatus;

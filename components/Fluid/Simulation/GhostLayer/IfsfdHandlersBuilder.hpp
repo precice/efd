@@ -81,14 +81,6 @@ public:
   using VectorDsType = typename SolverTraitsType::VectorDsType;
 
   typedef
-    typename HandlersBuilderTraitsType::PressureMpiExchangeHandler
-    PressureMpiExchangeHandler;
-
-  typedef
-    typename HandlersBuilderTraitsType::PpeRhsAcquiererAction
-    PpeRhsAcquiererAction;
-
-  typedef
     LsStencilGenerator::Handler
     <GridType, TDimension, TDirection>
     VpeStencilGenerationHandler;

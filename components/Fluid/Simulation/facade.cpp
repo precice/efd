@@ -63,21 +63,21 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
           = typename SolverTraitsType::MemoryType;
 
   // if (configuration->outputType == OutputEnum::Vtk) {
-  //   using SimulationControllerType
-  //           = ParticularSimulationController
-  //             < SolverTraitsType, VtkOutput::Writer < MemoryType >>;
-
-  //   return _create_simulation_controller<SolverBuilderTraitsType,
-  //                                        SimulationControllerType>
-  //            (configuration);
-  // } else if (configuration->outputType == OutputEnum::Xdmf) {
     using SimulationControllerType
             = ParticularSimulationController
-              < SolverTraitsType, XdmfHdf5Output::Writer < MemoryType >>;
+              < SolverTraitsType, VtkOutput::Writer < MemoryType >>;
 
     return _create_simulation_controller<SolverBuilderTraitsType,
                                          SimulationControllerType>
              (configuration);
+  // } else if (configuration->outputType == OutputEnum::Xdmf) {
+    // using SimulationControllerType
+    //         = ParticularSimulationController
+    //           < SolverTraitsType, XdmfHdf5Output::Writer < MemoryType >>;
+
+    // return _create_simulation_controller<SolverBuilderTraitsType,
+    //                                      SimulationControllerType>
+    //          (configuration);
   // }
   // throwException(
   //   "Failed to crate simulation controller for the provided output type");
@@ -121,7 +121,7 @@ _create_simulation_controller_nd_scalar_solver_type(
 
   return
     _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type
-    <TDimensions, TScalar, TSolverType, 1>(configuration);
+    <TDimensions, TScalar, TSolverType, 0>(configuration);
 }
 
 template <int TDimensions, typename TScalar>
@@ -130,13 +130,14 @@ _create_simulation_controller_nd_scalar(
   FluidSimulation::Configuration* configuration) {
   if (configuration->solverType == SolverEnum::Sfsfd) {
     return _create_simulation_controller_nd_scalar_solver_type
-           <TDimensions, TScalar, 0>(configuration);
+           <TDimensions, TScalar, 1>(configuration);
   } else if (configuration->solverType == SolverEnum::Ifsfd) {
     return _create_simulation_controller_nd_scalar_solver_type
-           <TDimensions, TScalar, 0>(configuration);
+           <TDimensions, TScalar, 1>(configuration);
   }
   throwException(
     "Failed to crate simulation controller for the provided solver type");
+    return std::unique_ptr<SimulationController>();
 }
 
 template <int TDimensions>
@@ -155,6 +156,7 @@ _create_simulation_controller_nd(
   }
   throwException(
     "Failed to create simulation controller for the provided configurations");
+    return std::unique_ptr<SimulationController>();
 }
 }
 
@@ -171,6 +173,7 @@ create_simulation_controller(FluidSimulation::Configuration* configuration) {
     "Failed to create simulation controller for the provided dimension '{1}'"
     ", only 2 and 3 dimension numbers are allowed",
     configuration->dimensions);
+    return std::unique_ptr<SimulationController>();
 }
 }
 }

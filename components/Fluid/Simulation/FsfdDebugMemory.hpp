@@ -114,9 +114,9 @@ protected:
     }
   }
 
-  std::unique_ptr<VectorDsType> _diffusion;
-  std::unique_ptr<VectorDsType> _force;
-  std::unique_ptr<VectorDsType> _bodyForce;
+  std::unique_ptr<VectorDsType[]> _diffusion;
+  std::unique_ptr<VectorDsType[]> _force;
+  std::unique_ptr<VectorDsType[]> _bodyForce;
 };
 }
 }

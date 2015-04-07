@@ -17,14 +17,19 @@
 
 !/configuration
 !/configuration/Fluid
-!/configuration/Structure
 !/configuration/Petsc
 !/configuration/Precice
+!/configuration/Report
+!/configuration/Report/js
+!/configuration/Structure
 !/configuration/Petsc/*.conf
 !/configuration/Fluid/*.xml
-!/configuration/Structure/*.xml
 !/configuration/Precice/*.xml
 !/configuration/Precice/*.py
+!/configuration/Report/*.html
+!/configuration/Report/*.csv
+!/configuration/Report/js/*.js
+!/configuration/Structure/*.xml
 
 !/documentation
 !/documentation/development
@@ -59,5 +64,6 @@
 
 *.*.*
 *.*.*.*
+!d3.v3.min.js
 
 !/.ycm_extra_conf_template.py

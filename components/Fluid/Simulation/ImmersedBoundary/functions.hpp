@@ -48,7 +48,7 @@ compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
                                             unsigned const&           max_distance) {
   int position = accessor.positionInRespectToGeometry();
 
-  for (int currentDistance = 1;
+  for (unsigned currentDistance = 1;
        currentDistance <= max_distance;
        ++currentDistance) {
     for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
@@ -89,11 +89,11 @@ validate_layer_number(TCellAccessor const& accessor,
                       unsigned const&      outer_layer_size,
                       unsigned const&      inner_layer_size) {
   if (is_outside(accessor.positionInRespectToGeometry()) == 1) {
-    if (outer_layer_size >= distance) {
+    if ((int)outer_layer_size >= distance) {
       return true;
     }
   } else if (is_outside(accessor.positionInRespectToGeometry()) == 0) {
-    if (inner_layer_size >= distance) {
+    if ((int)inner_layer_size >= distance) {
       return true;
     }
   }

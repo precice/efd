@@ -30,11 +30,8 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const& accessor) {
+    ((void)accessor);
     using CellAccessorType = TCellAccessor;
-
-    using VectorDiType = typename CellAccessorType::VectorDiType;
-
-    using ScalarType = typename CellAccessorType::ScalarType;
 
     enum {
       Dimensions = CellAccessorType::Dimensions
@@ -44,10 +41,9 @@ public:
 
     auto tempIndex = index;
 
-    if (TSolverDimension == TDirection) {
+    if (TSolverDimension == TDimension) {
       if (TDirection == 1) {
-        tempIndex(TSolverDimension) -= 1;
-      } else {
+        tempIndex(TSolverDimension)        -= 1;
         Pointers::dereference(array, index) = 0.0;
       }
     }
@@ -78,8 +74,6 @@ public:
     TCellAccessor const& accessor) {
     using CellAccessorType = TCellAccessor;
 
-    using VectorDiType = typename CellAccessorType::VectorDiType;
-
     using ScalarType = typename CellAccessorType::ScalarType;
 
     enum {
@@ -96,15 +90,18 @@ public:
            ->velocity()(TSolverDimension);
 
     if (TSolverDimension == TDimension) {
-      compute_parabolic_input_velocity(
-        accessor,
-        TSolverDimension,
-        temp);
-
       if (TDirection == 1) {
-        tempIndex(TSolverDimension) -= 1;
-      } else {
+        tempIndex(TSolverDimension)        -= 1;
         Pointers::dereference(array, index) = 0.0;
+        compute_parabolic_input_velocity(
+          accessor.relative(TSolverDimension, -1),
+          TSolverDimension,
+          temp);
+      } else {
+        compute_parabolic_input_velocity(
+          accessor,
+          TSolverDimension,
+          temp);
       }
     }
 
@@ -131,6 +128,7 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const&                        accessor) {
+    ((void)accessor);
     using Pointers = Uni::StructuredMemory::Pointers
                      <PetscScalar, TCellAccessor::Dimensions>;
 
@@ -138,8 +136,7 @@ public:
 
     if (TDimension == TSolverDimension) {
       if (TDirection == 1) {
-        temp(TDimension) -= 1;
-      } else {
+        temp(TSolverDimension)             -= 1;
         Pointers::dereference(array, index) = 0.0;
       }
     }
@@ -164,6 +161,7 @@ public:
     <PetscScalar, TCellAccessor::Dimensions>::Type array,
     typename TCellAccessor::VectorDiType const& index,
     TCellAccessor const&                        accessor) {
+    ((void)accessor);
     using Pointers = Uni::StructuredMemory::Pointers
                      <PetscScalar, TCellAccessor::Dimensions>;
 
@@ -190,14 +188,6 @@ public:
 
     using Pointers = Uni::StructuredMemory::Pointers
                      <PetscScalar, CellAccessorType::Dimensions>;
-
-    auto temp = index;
-
-    if (TDimension == TSolverDimension) {
-      if (TDirection == 1) {
-        temp(TDimension) -= 1;
-      }
-    }
 
     accessor.fgh(TSolverDimension)
       = Pointers::dereference(array, index);
@@ -238,7 +228,7 @@ public:
 
     auto const& value =  Pointers::dereference(array, index);
 
-    accessor.pressure() += value;
+    accessor.pressure()      += value;
     accessor.projectionTerm() = value;
   }
 };

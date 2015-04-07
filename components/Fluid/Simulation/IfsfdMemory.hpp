@@ -77,7 +77,7 @@ public:
   }
 
 private:
-  std::unique_ptr<ScalarType> _projectionTerm;
+  std::unique_ptr<ScalarType[]> _projectionTerm;
 };
 
 template <typename TSolverTraits>

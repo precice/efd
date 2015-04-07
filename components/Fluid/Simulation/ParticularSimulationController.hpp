@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SimulationController.hpp"
+#include "Reporter.hpp"
 
 #include <Uni/Logging/macros>
 
@@ -114,14 +115,15 @@ public:
 
   void
   initialize(precice::SolverInterface* preciceInteface,
+             Reporter*                 reporter,
              Path const&               outputDirectory,
              std::string const&        fileNamePrefix) {
-    _solver.initialize(preciceInteface);
+    _solver.initialize(preciceInteface, reporter);
 
     _resultWriter.initialize(_solver.memory(), outputDirectory, fileNamePrefix);
 
     _lastPlotTimeStamp = 0.0;
-    _lastTime = -1.0;
+    _lastTime          = -1.0;
 
     if (_plotInterval >= 0) {
       _resultWriter.writeGeometry();
@@ -170,6 +172,7 @@ private:
   unsigned long long _iterationLimit;
 
   ResultWriter _resultWriter;
+  Reporter* _reporter;
 };
 }
 }

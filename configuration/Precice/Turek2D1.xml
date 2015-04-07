@@ -1,68 +1,65 @@
-<?xml version = "1.0"?>
-
+<?xml version="1.0"?>
 <precice-configuration>
-
   <log-filter
-    component = ""
-    target = "info"
-    switch = "on"/>
+    component=""
+    target="info"
+    switch="on"/>
   <log-filter
-    component = "precice"
-    target = "debug"
-    switch = "off"/>
+    component="precice"
+    target="debug"
+    switch="off"/>
 
   <solver-interface
-    dimensions = "2"
-    geometry-mode = "1"
-    restart-mode = "0">
+    dimensions="2"
+    geometry-mode="1"
+    restart-mode="0">
 
-    <data:vector name = "Velocities"/>
-    <data:vector name = "Forces"/>
+    <data:vector name="Velocities"/>
+    <data:vector name="Forces"/>
 
-    <mesh name = "Body" flip-normals = "0">
-      <use-data name = "Velocities"/>
-      <use-data name = "Forces"/>
+    <mesh name="Body" flip-normals="0">
+      <use-data name="Velocities"/>
+      <use-data name="Forces"/>
     </mesh>
 
-    <mesh name = "FluidMesh" flip-normals = "0">
-      <use-data name = "Velocities"/>
-      <use-data name = "Forces"/>
+    <mesh name="FluidMesh" flip-normals="0">
+      <use-data name="Velocities"/>
+      <use-data name="Forces"/>
     </mesh>
 
-    <geometry:builtin-sphere of-mesh = "Body">
-      <discretization-width value = "0.001"/>
-      <radius value = "0.05"/>
-      <offset value = "0.2; 0.2"/>
+    <geometry:builtin-sphere of-mesh="Body">
+      <discretization-width value="0.001"/>
+      <radius value="0.05"/>
+      <offset value="0.2; 0.2"/>
     </geometry:builtin-sphere>
 
-    <participant name = "Fluid">
+    <participant name="Fluid">
+      <mapping:rbf-thin-plate-splines
+        constraint="consistent"
+        direction="write"
+        from="FluidMesh"
+        to="Body"
+        timing="initial"/>
 
       <mapping:rbf-thin-plate-splines
-        constraint = "consistent"
-        direction = "write"
-        from = "FluidMesh"
-        to = "Body"
-        timing = "initial"/>
+        constraint="consistent"
+        direction="read"
+        from="Body"
+        to="FluidMesh"
+        timing="initial"/>
 
-      <mapping:rbf-thin-plate-splines
-        constraint = "consistent"
-        direction = "read"
-        from = "Body"
-        to = "FluidMesh"
-        timing = "initial"/>
+      <write-data mesh="FluidMesh" name="Velocities"/>
+      <write-data mesh="Body" name="Forces"/>
 
-      <write-data mesh = "FluidMesh" name = "Velocities"/>
-      <write-data mesh = "Body" name = "Forces"/>
+      <read-data mesh="FluidMesh" name="Forces"/>
+      <read-data mesh="Body" name="Velocities"/>
 
-      <read-data mesh = "FluidMesh" name = "Forces"/>
-      <read-data mesh = "Body" name = "Velocities"/>
-
-      <use-mesh name = "FluidMesh" provide = "1" offset = "0; 0; 0"/>
-      <use-mesh name = "Body" provide = "0" offset = "0; 0; 0"/>
+      <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
+      <use-mesh name="Body" provide="0" offset="0; 0; 0"/>
 
       <action:python mesh="Body" timing="regular-post">
         <path name="Precice"/>
-        <module name="directForcingAction"/>
+        <module name="GeometryModeDirectForcingAction"/>
         <source-data name="Velocities"/>
         <target-data name="Forces"/>
       </action:python>
