@@ -43,7 +43,7 @@ is_the_same_position(int const& position0,
 }
 
 template <typename TCellAccessor>
-inline int
+inline unsigned
 compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
                                             unsigned const&           max_distance) {
   int position = accessor.positionInRespectToGeometry();
@@ -79,21 +79,21 @@ compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
     }
   }
 
-  return -1;
+  return max_distance + 1;
 }
 
 template <typename TCellAccessor>
 inline bool
 validate_layer_number(TCellAccessor const& accessor,
-                      int const&      distance,
+                      unsigned const&      distance,
                       unsigned const&      outer_layer_size,
                       unsigned const&      inner_layer_size) {
   if (is_outside(accessor.positionInRespectToGeometry()) == 1) {
-    if ((int)outer_layer_size >= distance) {
+    if (outer_layer_size >= distance) {
       return true;
     }
   } else if (is_outside(accessor.positionInRespectToGeometry()) == 0) {
-    if ((int)inner_layer_size >= distance) {
+    if (inner_layer_size >= distance) {
       return true;
     }
   }

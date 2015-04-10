@@ -8,6 +8,8 @@
 
 #include <precice/SolverInterface.hpp>
 
+#include <Uni/ExecutionControl/exception>
+
 #include <map>
 
 namespace FsiSimulation {
@@ -115,6 +117,7 @@ public:
   std::pair<typename VertexIdMap::const_iterator, bool>
   doesVertexExist(CellAccessorType const& accessor) const {
     ((void)accessor);
+
     return std::make_pair(end(), false);
   }
 
@@ -228,31 +231,58 @@ public:
 
   void
   initialize(precice::SolverInterface* preciceInterface) {
+    // logInfo("Controller is being initialized");
+
     _preciceInterface = preciceInterface;
 
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
+
+    if (!_preciceInterface->hasMesh("FluidMesh")) {
+      throwException("Precice configuration does not have 'FluidMesh'");
+    }
+
+    if (!_preciceInterface->hasMesh("BodyMesh")) {
+      throwException("Precice configuration does not have 'BodyMesh'");
+    }
 
     _fluidMeshId
       = _preciceInterface->getMeshID("FluidMesh");
     _fluidVertexSize
       = _preciceInterface->getMeshVertexSize(_fluidMeshId);
     _bodyMeshId
-      = _preciceInterface->getMeshID("Body");
+      = _preciceInterface->getMeshID("BodyMesh");
     _bodyVertexSize
       = _preciceInterface->getMeshVertexSize(_bodyMeshId);
+
+    if (!_preciceInterface->hasData("Velocities", _fluidMeshId)) {
+      throwException("Precice configuration does not have 'Velocities' data"
+                     " related to 'FluidMesh'");
+    }
+
+    if (!_preciceInterface->hasData("Forces", _fluidMeshId)) {
+      throwException("Precice configuration does not have 'Forces' data"
+                     " related to 'FluidMesh'");
+    }
+
+    if (!_preciceInterface->hasData("Velocities", _bodyMeshId)) {
+      throwException("Precice configuration does not have 'Velocities' data"
+                     " related to 'BodyMesh'");
+    }
+
+    if (!_preciceInterface->hasData("Forces", _bodyMeshId)) {
+      throwException("Precice configuration does not have 'Forces' data"
+                     " related to 'BodyMesh'");
+    }
+
     _fluidMeshVelocitiesId
-      = _preciceInterface->getDataID("Velocities",
-                                     _preciceInterface->getMeshID("FluidMesh"));
+      = _preciceInterface->getDataID("Velocities", _fluidMeshId);
     _fluidMeshForcesId
-      = _preciceInterface->getDataID("Forces",
-                                     _preciceInterface->getMeshID("FluidMesh"));
+      = _preciceInterface->getDataID("Forces", _fluidMeshId);
     _bodyMeshVelocitiesId
-      = _preciceInterface->getDataID("Velocities",
-                                     _preciceInterface->getMeshID("Body"));
+      = _preciceInterface->getDataID("Velocities", _bodyMeshId);
     _bodyMeshForcesId
-      = _preciceInterface->getDataID("Forces",
-                                     _preciceInterface->getMeshID("Body"));
+      = _preciceInterface->getDataID("Forces", _bodyMeshId);
   }
 
   void
@@ -261,11 +291,15 @@ public:
       = _preciceInterface->inquirePosition(
       accessor.pressurePosition().data(),
       std::set<int>({ _bodyMeshId }));
+
+    // if (!is_outside(accessor.positionInRespectToGeometry())) {
+    //   logInfo("{1}", accessor.pressurePosition().transpose());
+    // }
   }
 
   void
   createFluidMeshVertex(CellAccessorType const& accessor) {
-    int distance
+    unsigned distance
       = compute_cell_layer_along_geometry_interface(
       accessor,
       _maxLayerSize);
@@ -276,6 +310,7 @@ public:
                                        innerLayerSize());
 
     if (doAdd) {
+      // logInfo("{1} | d = {2}", accessor.index().transpose(), distance);
       VectorDsType position = accessor.pressurePosition();
       auto         vertexId
         = _preciceInterface->setMeshVertex(_fluidMeshId, position.data());

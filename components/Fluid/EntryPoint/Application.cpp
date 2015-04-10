@@ -318,5 +318,6 @@ initializePrecice() {
     _im->globalLocale,
     _im->ansiLocale);
 
+  logInfo("PreCiCe is being configured");
   _im->preciceInterface->configure(preciceConfigurationPath);
 }

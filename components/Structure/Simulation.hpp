@@ -28,10 +28,11 @@ public:
   initialize(precice::SolverInterface* precice_interface) {
     // _type = type;
     _preciceInterface = precice_interface;
-//    double dt = _preciceInterface->initialize();
+    _dt               = _preciceInterface->initialize();
 
-    _meshId   = _preciceInterface->getMeshID("BodyMesh");
-    _mesh.reset(new precice::MeshHandle(_preciceInterface->getMeshHandle("BodyMesh")));
+    _meshId = _preciceInterface->getMeshID("BodyMesh");
+    _mesh.reset(new precice::MeshHandle(_preciceInterface->getMeshHandle(
+                                          "BodyMesh")));
     _forcesID = _preciceInterface->getDataID("Forces", _meshId);
   }
 
@@ -40,6 +41,16 @@ public:
     if (!_preciceInterface->isCouplingOngoing()) {
       return false;
     }
+
+    if (_preciceInterface->isActionRequired(
+          precice::constants::actionWriteIterationCheckpoint())) {
+      _preciceInterface->fulfilledAction(
+        precice::constants::actionWriteIterationCheckpoint());
+    }
+
+    _preciceInterface->resetMesh(_meshId);
+    _preciceInterface->setMeshVertices(_meshId, size, *positions, *ids);
+    _preciceInterface->setMeshEdge(_meshId, firstId, secondId);
 
     static VectorDd velocity = VectorDd::Zero();
 
@@ -53,7 +64,7 @@ public:
                                          velocity.data());
     }
 
-//    double dt = _preciceInterface->advance(0.0);
+    _dt = _preciceInterface->advance(_dt);
 
     return true;
   }
@@ -62,6 +73,7 @@ public:
   Uni_PublicProperty(VectorDs, velocity)
 
 private:
+  double                               _dt;
   precice::SolverInterface*            _preciceInterface;
   std::unique_ptr<precice::MeshHandle> _mesh;
   VectorDs                             _shift;

@@ -58,8 +58,8 @@ endif()
 
 set(_Precice_build_type "release")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # set(_Precice_build_type "debug")
-  set(_Precice_build_type "release")
+  set(_Precice_build_type "debug")
+  # set(_Precice_build_type "release")
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 if (PRECICE_DIR)

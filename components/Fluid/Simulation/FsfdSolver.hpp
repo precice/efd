@@ -178,10 +178,8 @@ public:
       _memory.gridGeometry()->minCellWidth(),
       _memory.maxVelocity());
 
-    logInfo("max | {1}", _memory.maxVelocity().transpose());
     _memory.maxVelocity() = VectorDsType::Zero();
 
-    logInfo("dt | {1}", _memory.timeStepSize());
     for (auto const& accessor : _memory.grid()->innerGrid) {
       _memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
 
@@ -233,7 +231,7 @@ public:
                                         + 0.5 * diffusion
                                         - grad_pressure
                                         + _memory.parameters()->g());
-        // logInfo("Fgh | {1}", accessor.fgh().transpose());
+        // logInfo("Fgh | {1}", accessor.index().transpose());
       }
 
       auto status = _ibController.doesVertexExist(accessor);
@@ -250,8 +248,10 @@ public:
       }
     }
 
+    // logInfo("Map data");
     _ibController.mapData(_memory.timeStepSize());
 
+    // logInfo("Read data");
     VectorDsType total_force = VectorDsType::Zero();
 
     for (auto it = _ibController.begin(); it != _ibController.end(); ++it) {
@@ -276,9 +276,11 @@ public:
 
     _reporter->addAt(3, total_force);
 
+    // logInfo("Vpe");
     _peSolver.executeVpe();
     _ghostHandlers.executeFghMpiExchange();
 
+    // logInfo("Ppe");
     _peSolver.executePpe();
     _ghostHandlers.executePressureMpiExchange();
 

@@ -17,7 +17,7 @@
     <data:vector name="Velocities"/>
     <data:vector name="Forces"/>
 
-    <mesh name="Body" flip-normals="0">
+    <mesh name="BodyMesh" flip-normals="0">
       <use-data name="Velocities"/>
       <use-data name="Forces"/>
     </mesh>
@@ -27,7 +27,7 @@
       <use-data name="Forces"/>
     </mesh>
 
-    <geometry:builtin-sphere of-mesh="Body">
+    <geometry:builtin-sphere of-mesh="BodyMesh">
       <discretization-width value="0.001"/>
       <radius value="0.05"/>
       <offset value="0.2; 0.2"/>
@@ -38,26 +38,26 @@
         constraint="consistent"
         direction="write"
         from="FluidMesh"
-        to="Body"
+        to="BodyMesh"
         timing="initial"/>
 
       <mapping:rbf-thin-plate-splines
         constraint="consistent"
         direction="read"
-        from="Body"
+        from="BodyMesh"
         to="FluidMesh"
         timing="initial"/>
 
       <write-data mesh="FluidMesh" name="Velocities"/>
-      <write-data mesh="Body" name="Forces"/>
+      <write-data mesh="BodyMesh" name="Forces"/>
 
       <read-data mesh="FluidMesh" name="Forces"/>
-      <read-data mesh="Body" name="Velocities"/>
+      <read-data mesh="BodyMesh" name="Velocities"/>
 
       <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
-      <use-mesh name="Body" provide="0" offset="0; 0; 0"/>
+      <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
 
-      <action:python mesh="Body" timing="regular-post">
+      <action:python mesh="BodyMesh" timing="regular-post">
         <path name="Precice"/>
         <module name="GeometryModeDirectForcingAction"/>
         <source-data name="Velocities"/>

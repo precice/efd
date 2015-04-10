@@ -205,6 +205,8 @@ public:
       "Walls[1][1].velocity = {15}\n"
       "Walls[2][0].velocity = {16}\n"
       "Walls[2][1].velocity = {17}\n",
+      "OuterLayerSize = {18}\n",
+      "InnerLayerSize = {19}\n",
       re,
       timeLimit,
       iterationLimit,
@@ -221,7 +223,9 @@ public:
       walls[1][0]->velocity().transpose(),
       walls[1][1]->velocity().transpose(),
       walls[2][0]->velocity().transpose(),
-      walls[2][1]->velocity().transpose());
+      walls[2][1]->velocity().transpose(),
+      outerLayerSize,
+      innerLayerSize);
   }
 
   ScalarType   re;
