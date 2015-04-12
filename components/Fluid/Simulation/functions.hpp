@@ -12,42 +12,35 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TScalar, int TD>
-struct TimeStepProcessing {
-  typedef Eigen::Matrix<TScalar, TD, 1> VectorDs;
+template <typename TScalar, typename TVector>
+inline TScalar
+compute_time_step_size(TScalar const& re,
+                       TScalar const& tau,
+                       TVector const& minCellWidth,
+                       TVector const& maxVelocity) {
+  TScalar factor = minCellWidth.cwiseProduct(minCellWidth).cwiseInverse().sum();
 
-  static inline TScalar
-  compute(TScalar const&  re,
-          TScalar const&  tau,
-          VectorDs const& minCellWidth,
-          VectorDs const& maxVelocity) {
-    TScalar localMin, globalMin;
-    TScalar factor;
+  TScalar localMin = (TScalar)(re / (2.0 * factor));
 
-    factor = minCellWidth.cwiseProduct(minCellWidth).cwiseInverse().sum();
-
-    localMin = (TScalar)(re / (2.0 * factor));
-
-    for (int d = 0; d < TD; ++d) {
-      if (std::abs(maxVelocity(d)) > std::numeric_limits<TScalar>::epsilon()) {
-        localMin = std::min(localMin,
-                            1.0 / maxVelocity(d));
-      }
+  for (unsigned d = 0; d < TVector::RowsAtCompileTime; ++d) {
+    if (std::abs(maxVelocity(d)) > std::numeric_limits<TScalar>::epsilon()) {
+      localMin = std::min(localMin,
+                          1.0 / maxVelocity(d));
     }
-
-    globalMin = std::numeric_limits<TScalar>::max();
-    Private::mpiAllReduce<TScalar>(&localMin,
-                                   &globalMin,
-                                   1,
-                                   MPI_MIN,
-                                   PETSC_COMM_WORLD);
-
-    factor  = globalMin;
-    factor *= tau;
-
-    return factor;
   }
-};
+
+  TScalar globalMin = std::numeric_limits<TScalar>::max();
+  Private::mpiAllReduce<TScalar>(&localMin,
+                                 &globalMin,
+                                 1,
+                                 MPI_MIN,
+                                 PETSC_COMM_WORLD);
+
+  factor  = globalMin;
+  factor *= tau;
+
+  return factor;
+}
 
 template <typename TScalar>
 inline TScalar

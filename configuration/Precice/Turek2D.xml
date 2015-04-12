@@ -49,10 +49,7 @@
         timing="initial"/>
 
       <write-data mesh="FluidMesh" name="Velocities"/>
-      <write-data mesh="BodyMesh" name="Forces"/>
-
       <read-data mesh="FluidMesh" name="Forces"/>
-      <read-data mesh="BodyMesh" name="Velocities"/>
 
       <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>

@@ -63,14 +63,9 @@ public:
   }
 
   void
-  setAt(unsigned const&    column,
-        std::string const& column_name,
+  setAt(std::string const& column_name,
         std::string const& value) {
-    if (_info.size() <= column) {
-      _info.resize(column + 1);
-    }
-
-    _info[column] = std::make_pair(column_name, value);
+    _info.push_back(std::make_pair(column_name, value));
   }
 
   void
@@ -178,7 +173,12 @@ private:
     MappedRegion region(_file,
                         boost::interprocess::read_write,
                         _regionOffset);
+
     _region = std::move(region);
+
+    std::memset(static_cast<char*>(_region.get_address()) + _position,
+                0,
+                _region.get_size() - _position);
   }
 
   inline std::string
@@ -209,7 +209,7 @@ private:
       result2 += row[i].second;
     }
 
-    return (result1 + '\n' + result2);
+    return result1 + '\n' + result2;
   }
 
   bool _isInitialized;

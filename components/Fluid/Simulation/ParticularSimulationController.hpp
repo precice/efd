@@ -124,8 +124,15 @@ public:
              Reporter*                 reporter,
              Path const&               outputDirectory,
              std::string const&        fileNamePrefix) {
+    // logInfo("Enter Initialize");
+    _reporter = reporter;
+
+    _reporter->setAt("Name", fileNamePrefix);
+
+    // logInfo("Solver is being initialized");
     _solver.initialize(preciceInteface, reporter);
 
+    // logInfo("Result Writer is being set its destination");
     _resultWriter->setDestination(outputDirectory, fileNamePrefix);
 
     _lastPlotTimeStamp = 0.0;

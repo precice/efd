@@ -27,26 +27,22 @@ public:
 
   template <typename T, int D>
   void
-  setAt(unsigned const& column,
-        std::string const& column_name,
+  setAt(std::string const& column_name,
         Eigen::Matrix<T, D, 1> const& value,
         unsigned const& length = 0) {
-    this->setAt(column, column_name, toString(value, length));
+    this->setAt(column_name, toString(value, length));
   }
 
   template <typename T>
   void
-  setAt(unsigned const&    column,
-        std::string const& column_name,
+  setAt(std::string const& column_name,
         T const&           value) {
-    this->setAt(column, column_name, toString(value));
+    this->setAt(column_name, toString(value));
   }
 
   virtual void
-  setAt(unsigned const&    column,
-        std::string const& column_name,
+  setAt(std::string const& column_name,
         std::string const& value) {
-    ((void)column);
     ((void)column_name);
     ((void)value);
   }

@@ -206,7 +206,6 @@ initialize() {
 
   parseSimulationConfiguration();
   createOutputDirectory();
-
   initializePrecice();
 
   _im->simulationController
@@ -214,6 +213,46 @@ initialize() {
     _im->fluidConfiguration.get());
 
   _im->initializeReporter();
+
+  auto sendWallToReporter
+    = [&] (unsigned t, unsigned u) {
+        auto wallEnumToInt
+          = [&] (FluidSimulation::WallEnum en) {
+              return en
+                     == FluidSimulation::WallEnum::Input ? 0 : en
+                     == FluidSimulation::WallEnum::ParabolicInput ? 1 : en
+                     == FluidSimulation::WallEnum::Output ? 2
+                     : -1;
+            };
+
+        std::string prefix = std::to_string(t) + std::to_string(u);
+
+        _im->reporter->setAt(
+          prefix + "WallType",
+          wallEnumToInt(_im->fluidConfiguration->walls[t][u]->type()));
+
+        if (_im->fluidConfiguration->dimensions == 2) {
+          Eigen::Matrix<double, 2, 1> velocity;
+          velocity << _im->fluidConfiguration->walls[t][u]
+            ->velocity().cast<double>().head<2>();
+          _im->reporter->setAt(prefix + "WallVelocity", velocity);
+        } else {
+          Eigen::Matrix<double, 3, 1> velocity;
+          velocity << _im->fluidConfiguration->walls[t][u]
+            ->velocity().cast<double>().head<3>();
+          _im->reporter->setAt(prefix + "WallVelocity", velocity);
+        }
+      };
+
+  sendWallToReporter(0, 0);
+  sendWallToReporter(0, 1);
+  sendWallToReporter(1, 0);
+  sendWallToReporter(1, 1);
+
+  if (_im->fluidConfiguration->dimensions == 3) {
+    sendWallToReporter(2, 0);
+    sendWallToReporter(2, 1);
+  }
 
   _im->simulationController->initialize(_im->preciceInterface.get(),
                                         _im->reporter.get(),
@@ -224,16 +263,7 @@ initialize() {
 void
 Application::
 run() {
-  while (_im->simulationController->iterate()) {
-    if (_im->isMaster()) {
-      logInfo("N = {1}; t = {2}",
-              _im->simulationController->iterationNumber(),
-              _im->simulationController->time());
-    }
-    _im->reporter->recordIteration();
-  }
   _im->reporter->recordInfo();
-  _im->reporter->release();
 
   auto report_template_path
     = _im->applicationPath / "configuration" / "Report";
@@ -257,6 +287,16 @@ run() {
         fs::copy_option::overwrite_if_exists);
     }
   }
+
+  while (_im->simulationController->iterate()) {
+    if (_im->isMaster()) {
+      logInfo("N = {1}; t = {2}",
+              _im->simulationController->iterationNumber(),
+              _im->simulationController->time());
+    }
+    _im->reporter->recordIteration();
+  }
+  _im->reporter->release();
 }
 
 void

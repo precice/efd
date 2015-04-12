@@ -1,14 +1,14 @@
 #include "FsfdSolver.hpp"
 
+#include "Private/mpigenerics.hpp"
 #include "Reporter.hpp"
 #include "computemaxvelocity.hpp"
 #include "functions.hpp"
-#include "Private/mpigenerics.hpp"
 
+#include "Grid.hpp"
 #include "GridGeometry.hpp"
 #include "IfsfdCellAccessor.hpp"
 #include "SfsfdCellAccessor.hpp"
-#include "Grid.hpp"
 
 #include <precice/SolverInterface.hpp>
 
@@ -36,8 +36,7 @@ initialize(precice::SolverInterface* preciceInteface,
     accessor.setForce(VectorDsType::Zero());
     accessor.setBodyForce(VectorDsType::Zero());
     PressureProcessing<SolverId>::initialize(accessor, 0.0);
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (accessor, _memory.maxVelocity());
+    compute_max_velocity(accessor, _memory.maxVelocity());
   }
 
   _ghostHandlers.executeVelocityInitialization();
@@ -53,30 +52,31 @@ initialize(precice::SolverInterface* preciceInteface,
     accessor.convection() = convection;
   }
 
-  _reporter->setAt(0, "Re",
+  _reporter->setAt("Re",
                    _memory.parameters()->re());
-  _reporter->setAt(1, "Gamma",
+  _reporter->setAt("Gamma",
                    _memory.parameters()->gamma());
-  _reporter->setAt(2, "Tau",
+  _reporter->setAt("Tau",
                    _memory.parameters()->tau());
-  _reporter->setAt(3, "G",
+  _reporter->setAt("G",
                    _memory.parameters()->g());
-  _reporter->setAt(4, "OuterLayerSize",
+  _reporter->setAt("OuterLayerSize",
                    _ibController.outerLayerSize());
-  _reporter->setAt(5, "InnerLayerSize",
+  _reporter->setAt("InnerLayerSize",
                    _ibController.innerLayerSize());
-  _reporter->setAt(6, "ProcessorSize",
+  _reporter->setAt("ProcessorSize",
                    _memory.parallelDistribution()->processorSize);
-  _reporter->setAt(7, "GlobalCellSize",
+  _reporter->setAt("GlobalCellSize",
                    _memory.parallelDistribution()->globalCellSize);
-  _reporter->setAt(8, "UniformLocalCellSize",
+  _reporter->setAt("UniformLocalCellSize",
                    _memory.parallelDistribution()->uniformLocalCellSize);
-  _reporter->setAt(9, "LastLocalCellSize",
+  _reporter->setAt("LastLocalCellSize",
                    _memory.parallelDistribution()->lastLocalCellSize);
-  _reporter->setAt(10, "Width",
+  _reporter->setAt("Width",
                    _memory.gridGeometry()->size());
-  _reporter->setAt(11, "CellWidth",
+  _reporter->setAt("CellWidth",
                    _memory.gridGeometry()->minCellWidth());
+  _reporter->setAt("SolverId", SolverId);
 
   _reporter->addAt(0, "IterationNumber");
   _reporter->addAt(1, "Time");
@@ -102,13 +102,16 @@ void
 FsfdSolver<T>::
 iterate() {
   _memory.timeStepSize()
-    = TimeStepProcessing<ScalarType, Dimensions>::compute(
-    _memory.parameters()->re(),
-    _memory.parameters()->tau(),
-    _memory.gridGeometry()->minCellWidth(),
-    _memory.maxVelocity());
+    = compute_time_step_size(_memory.parameters()->re(),
+                             _memory.parameters()->tau(),
+                             _memory.gridGeometry()->minCellWidth(),
+                             _memory.maxVelocity());
 
-  _memory.maxVelocity() = VectorDsType::Zero();
+  logInfo("dt = {1}", _memory.timeStepSize());
+  logInfo("maxv = {1}",
+          _memory.maxVelocity().cwiseProduct(_memory.gridGeometry()->minCellWidth()).transpose());
+  _memory.maxVelocity()
+    = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
 
   for (auto const& accessor : _memory.grid()->innerGrid) {
     _memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
@@ -222,8 +225,7 @@ iterate() {
       = accessor.fgh()
         - _memory.timeStepSize() * grad_pressure;
 
-    computeMaxVelocity<CellAccessorType, ScalarType, Dimensions>
-      (accessor, _memory.maxVelocity());
+    compute_max_velocity(accessor, _memory.maxVelocity());
   }
 
   _ghostHandlers.executeVelocityInitialization();

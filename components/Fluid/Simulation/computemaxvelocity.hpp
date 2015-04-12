@@ -4,9 +4,9 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TCellAccessor, typename TScalar, int TD>
+template <typename TCellAccessor>
 void
-computeMaxVelocity(TCellAccessor const&                  accessor,
+compute_max_velocity(TCellAccessor const&                  accessor,
                    typename TCellAccessor::VectorDsType& maxVelocity) {
   maxVelocity
     = accessor.velocity().cwiseAbs().cwiseQuotient(

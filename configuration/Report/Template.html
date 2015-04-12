@@ -3,11 +3,27 @@
 <head>
   <meta charset="UTF-8"/>
   <style>
-    body { font: 12px Arial;}
+    body {
+      font-family: DejaVu\ Sans,Verdana,Arial,Sans-Serif;
+      font-size:11px;
+      font: 12px Arial;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    div.main-container {
+      text-align: center;
+    }
+
+    svg.svg-graph {
+      margin-left: auto;
+      margin-right: auto;
+    }
 
     path { 
         stroke: steelblue;
-        stroke-width: 2;
+        stroke-width: 1;
         fill: none;
     }
 
@@ -18,12 +34,30 @@
         stroke-width: 1;
         shape-rendering: crispEdges;
     }
+    .legend {
+        font-size: 12px;
+        font-weight: bold;
+        text-anchor: middle;
+    }
+    table {
+      width: 80%;
+      border-collapse: collapse;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    td {
+      padding: 1px;
+    }
+    table, td, th {
+      border: 1px solid black;
+    }
   </style>
   <title>Fluid-Structure Simulation automatic report</title>
 </head>
 <body>
-  <div id="charts">
-  </div>
+  <div class="main-container" id="info-table"></div>
+  <div class="main-container" id="charts"></div>
+  <div class="main-container" id="iterations-table"></div>
   <script src="js/d3.v3.min.js"></script>
   <script src="js/main.js"></script>
   <script id="main">main()</script>
