@@ -36,6 +36,7 @@ endif ()
 # ==============================================================================
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
 include(cotire)
+include(pch)
 # ==============================================================================
 # }}} Modules
 
@@ -86,8 +87,8 @@ else()
   set(LINKER_IS_LD    TRUE)
 endif ()
 endif ()
-SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+# SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+# SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 # ==============================================================================
 # }}} Compilers
 
@@ -154,18 +155,16 @@ endif ()
 
 # Targets {{{
 # ==============================================================================
+
 file(GLOB_RECURSE FLUID_CPP_FILES
   "${PROJECT_DIR}/components/Fluid/*.cpp"
-  "${PROJECT_DIR}/components/Fluid/*.hpp"
   )
 
-add_executable(Fluid ${FLUID_CPP_FILES})
-
-target_include_directories(Fluid PRIVATE
+set(Fluid_Private_INCLUDES
   "${PROJECT_DIR}/components/Fluid"
   )
 
-target_include_directories(Fluid SYSTEM PRIVATE
+set(Fluid_INCLUDES
   ${Precice_INCLUDE_DIRS}
   ${PETSC_INCLUDES}
   ${Eigen_INCLUDE_DIRS}
@@ -176,6 +175,44 @@ target_include_directories(Fluid SYSTEM PRIVATE
   ${XDMF_LIBXML2_INCLUDE}
   ${XDMF_ZLIB_INCLUDE}
   )
+set(Fluid_DEFINITIONS
+  -DPETSC_USE_REAL_DOUBLE
+  ${PETSC_DEFINITIONS}
+  ${LIBXML2_DEFINITIONS}
+  )
+set(Fluid_COMPILE_FLAGS
+  ${MPI_CXX_COMPILE_FLAGS}
+  )
+
+# set(Fluid_PRECOMPILED_HEADERS
+  # "${PROJECT_DIR}/components/Fluid/Simulation/SfsfdMemory.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/IfsfdMemory.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/Grid.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/functions.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/SfsfdCellAccessor.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/IfsfdCellAccessor.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/LinearSolver.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/GhostLayer/SfsfdHandlersBuilder.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/GhostLayer/IfsfdHandlersBuilder.hpp"
+  # "${PROJECT_DIR}/components/Fluid/Simulation/IfsfdMemory.hpp"
+  # )
+
+add_executable(Fluid ${FLUID_CPP_FILES})
+
+# precompile_headers(
+#   Fluid
+#   "${Fluid_Private_INCLUDES}"
+#   "${Fluid_INCLUDES};${Uni_INCLUDE_DIRS}"
+#   "${Fluid_DEFINITIONS}"
+#   "${Fluid_COMPILE_FLAGS}"
+#   "${Fluid_PRECOMPILED_HEADERS}"
+#   "${PROJECT_DIR}/components/Fluid"
+#   )
+
+target_include_directories(Fluid PRIVATE ${Fluid_Private_INCLUDES})
+
+target_include_directories(Fluid SYSTEM PRIVATE ${Fluid_INCLUDES})
+
 target_link_libraries(Fluid PRIVATE
   Uni
   ${Precice_LIBRARIES}
@@ -221,17 +258,12 @@ target_link_libraries(Structure PRIVATE
 
 # Targets' definitions {{{
 # ==============================================================================
-target_compile_definitions(Fluid PRIVATE
-  PETSC_USE_REAL_DOUBLE
-  ${PETSC_DEFINITIONS}
-  ${LIBXML2_DEFINITIONS})
-
-target_compile_definitions(Structure PRIVATE
-  ${LIBXML2_DEFINITIONS})
+target_compile_definitions(Fluid PRIVATE ${Fluid_DEFINITIONS})
+target_compile_definitions(Structure PRIVATE ${LIBXML2_DEFINITIONS})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  cotire(Fluid)
-  cotire(Structure)
+  # cotire(Fluid)
+  # cotire(Structure)
 endif()
 # ==============================================================================
 # }}} Targets' definitions
@@ -240,7 +272,7 @@ endif()
 # ==============================================================================
 if(MPI_CXX_COMPILE_FLAGS)
   set_target_properties(Fluid
-    PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
+    PROPERTIES COMPILE_FLAGS ${Fluid_COMPILE_FLAGS})
   set_target_properties(Structure
     PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
 endif()

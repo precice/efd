@@ -154,7 +154,7 @@ private:
     VectorDsize count;
     VectorDsize block_size;
 
-    for (int d = 0; d < Dimensions - 1; ++d) {
+    for (unsigned d = 0; d < Dimensions - 1; ++d) {
       size(d)       = _globalSize(Dimensions - 1 - d);
       start(d)      = _corner(Dimensions - 1 - d);
       count(d)      = 1;
@@ -201,6 +201,7 @@ private:
       count.data(),
       count.data(),
       block_size.data());
+    ((void)status);
 
     // Create property list for collective dataset write.
     plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -237,7 +238,7 @@ public:
                               H5P_DEFAULT,
                               H5P_DEFAULT);
 
-    for (int d = 0; d < dimension_names.size(); ++d) {
+    for (std::size_t d = 0; d < dimension_names.size(); ++d) {
       float*  data = 0;
       hsize_t size = 0;
 
@@ -249,7 +250,7 @@ public:
 
         auto accessor = *_memory->grid()->innerGrid.begin();
 
-        for (int i = 0; i < size; ++i) {
+        for (hsize_t i = 0; i < size; ++i) {
           auto position = static_cast<float>(
             accessor.memory()->gridGeometry()->computeCellPosition(d, i));
           data[data_index] = position;
@@ -301,10 +302,10 @@ public:
 
     createFile(current_file_path.string(), file_id);
 
-    int attribute_index = 0;
+    unsigned attribute_index = 0;
 
     for (auto const& attribute : * _memory->attributes()) {
-      int attribute_size = 1;
+      unsigned attribute_size = 1;
 
       if (attribute.type == AttributeType::Type::Vector) {
         attribute_size = 3;
@@ -314,7 +315,7 @@ public:
       std::size_t data_index = 0;
 
       for (auto const& accessor : _memory->grid()->innerGrid) {
-        for (int j = 0; j < attribute_size; ++j) {
+        for (unsigned j = 0; j < attribute_size; ++j) {
           if (j < Dimensions) {
             data[data_index]
              = static_cast<float>(accessor.centralizedAttribute(attribute_index, j));

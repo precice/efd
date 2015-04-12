@@ -1,4 +1,5 @@
-#pragma once
+#ifndef Fluid_Simulation_IfsfdCellAccessor_hpp
+#define Fluid_Simulation_IfsfdCellAccessor_hpp
 
 #include "SfsfdCellAccessor.hpp"
 
@@ -72,3 +73,4 @@ public:
 };
 }
 }
+#endif

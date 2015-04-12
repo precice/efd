@@ -9,7 +9,7 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace Private {
 template <typename TScalar>
-MPI_Datatype
+inline MPI_Datatype
 getMpiScalarType() {
   throwException("This type is not supported for getMpiScalarType()");
 
@@ -17,13 +17,13 @@ getMpiScalarType() {
 }
 
 template <>
-MPI_Datatype
+inline MPI_Datatype
 getMpiScalarType<float>() {
   return MPI_FLOAT;
 }
 
 template <>
-MPI_Datatype
+inline MPI_Datatype
 getMpiScalarType<double>() {
   return MPI_DOUBLE;
 }

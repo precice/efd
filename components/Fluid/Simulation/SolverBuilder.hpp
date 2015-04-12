@@ -1,13 +1,12 @@
 #pragma once
 
+#include "SolverBuilderTraits.hpp"
+
 #include "Configuration.hpp"
-
-#include "GhostLayer/CornerVelocityHandler.hpp"
-
-#include <functional>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+class Configuration;
 template <typename TSolverBuilderTraits>
 class SolverBuilder {
 private:
@@ -35,178 +34,65 @@ public:
           = typename SolverTraitsType::SolverType;
 
 public:
-  SolverBuilder(Configuration* configuration,
-                SolverType*    solver)
-    : _configuration(configuration) {
-    _solver = solver;
-
-    VectorDiType processor_size;
-    VectorDiType global_cell_size;
-    VectorDsType geometry_width;
-    processor_size(0)
-      = static_cast<ScalarType>(configuration->parallelizationSize(0));
-    global_cell_size(0)
-      = static_cast<ScalarType>(configuration->size(0));
-    geometry_width(0)
-      = static_cast<ScalarType>(configuration->width(0));
-    processor_size(1)
-      = static_cast<ScalarType>(configuration->parallelizationSize(1));
-    global_cell_size(1)
-      = static_cast<ScalarType>(configuration->size(1));
-    geometry_width(1)
-      = static_cast<ScalarType>(configuration->width(1));
-
-    if (Dimensions == 3) {
-      processor_size(2)
-        = static_cast<ScalarType>(configuration->parallelizationSize(2));
-      global_cell_size(2)
-        = static_cast<ScalarType>(configuration->size(2));
-      geometry_width(2)
-        = static_cast<ScalarType>(configuration->width(2));
-    }
-
-    _solver->memory()->parameters()->re() = configuration->re;
-
-    _solver->memory()->parameters()->gamma() = configuration->gamma;
-
-    _solver->memory()->parameters()->tau() = configuration->tau;
-
-    _solver->memory()->parameters()->g(0) = configuration->environment(0);
-
-    _solver->memory()->parameters()->g(1) = configuration->environment(1);
-
-    if (Dimensions == 3) {
-      _solver->memory()->parameters()->g(2) = configuration->environment(2);
-    }
-
-    _solver->immersedBoundaryController()
-    ->outerLayerSize(configuration->outerLayerSize);
-
-    _solver->immersedBoundaryController()
-    ->innerLayerSize(configuration->innerLayerSize);
-
-    _solver->memory()->initialize(processor_size,
-                                  global_cell_size,
-                                  geometry_width);
-
-    setLeftWallAs(configuration->walls[0][0]->type());
-    setRightWallAs(configuration->walls[0][1]->type());
-    setBottomWallAs(configuration->walls[1][0]->type());
-    setTopWallAs(configuration->walls[1][1]->type());
-    setBackWallAs(configuration->walls[2][0]->type());
-    setFrontWallAs(configuration->walls[2][1]->type());
-
-    _solver->ghostHandlers()->cornersHandler
-      = std::bind(
-      &GhostLayer::CornerVelocityHandlers<SolverTraitsType>::execute,
-      std::make_shared
-      < GhostLayer::CornerVelocityHandlers < SolverTraitsType >>
-      (&_solver->memory()->grid()->innerGrid,
-       _solver->memory()->parallelDistribution())
-      );
-  }
+  SolverBuilder(Configuration*, SolverType*);
 
   void
-  setLeftWallAs(WallEnum type) {
-    GhostHandlersBuilderType<0, 0> handlers(_configuration, _solver);
-
-    if (_solver->memory()->parallelDistribution()->neighbors[0][0] >= 0) {
-      handlers.setAsMpiExchange();
-    } else if (type == WallEnum::Input) {
-      handlers.setAsInput();
-    } else if (type == WallEnum::ParabolicInput) {
-      handlers.setAsParabolicInput();
-    } else if (type == WallEnum::Output) {
-      handlers.setAsOutput();
-    }
-  }
+  setLeftWallAs(WallEnum type);
 
   void
-  setRightWallAs(WallEnum type) {
-    GhostHandlersBuilderType<0, 1> handlers(_configuration, _solver);
-
-    if (_solver->memory()->parallelDistribution()->neighbors[0][1] >= 0) {
-      handlers.setAsMpiExchange();
-    } else if (type == WallEnum::Input) {
-      handlers.setAsInput();
-    } else if (type == WallEnum::ParabolicInput) {
-      handlers.setAsParabolicInput();
-    } else if (type == WallEnum::Output) {
-      handlers.setAsOutput();
-    }
-  }
+  setRightWallAs(WallEnum type);
 
   void
-  setBottomWallAs(WallEnum type) {
-    if (Dimensions < 2) { return; }
-
-    GhostHandlersBuilderType<1, 0> handlers(_configuration, _solver);
-
-    if (_solver->memory()->parallelDistribution()->neighbors[1][0] >= 0) {
-      handlers.setAsMpiExchange();
-    } else if (type == WallEnum::Input) {
-      handlers.setAsInput();
-    } else if (type == WallEnum::ParabolicInput) {
-      handlers.setAsParabolicInput();
-    } else if (type == WallEnum::Output) {
-      handlers.setAsOutput();
-    }
-  }
+  setBottomWallAs(WallEnum type);
 
   void
-  setTopWallAs(WallEnum type) {
-    if (Dimensions < 2) { return; }
-
-    GhostHandlersBuilderType<1, 1> handlers(_configuration, _solver);
-
-    if (_solver->memory()->parallelDistribution()->neighbors[1][1] >= 0) {
-      handlers.setAsMpiExchange();
-    } else if (type == WallEnum::Input) {
-      handlers.setAsInput();
-    } else if (type == WallEnum::ParabolicInput) {
-      handlers.setAsParabolicInput();
-    } else if (type == WallEnum::Output) {
-      handlers.setAsOutput();
-    }
-  }
+  setTopWallAs(WallEnum type);
 
   void
-  setBackWallAs(WallEnum type) {
-    if (Dimensions < 3) { return; }
-
-    GhostHandlersBuilderType<2, 0> handlers(_configuration, _solver);
-
-    if (_solver->memory()->parallelDistribution()->neighbors[2][0] >= 0) {
-      handlers.setAsMpiExchange();
-    } else if (type == WallEnum::Input) {
-      handlers.setAsInput();
-    } else if (type == WallEnum::ParabolicInput) {
-      handlers.setAsParabolicInput();
-    } else if (type == WallEnum::Output) {
-      handlers.setAsOutput();
-    }
-  }
+  setBackWallAs(WallEnum type);
 
   void
-  setFrontWallAs(WallEnum type) {
-    if (Dimensions < 3) { return; }
-
-    GhostHandlersBuilderType<2, 1> handlers(_configuration, _solver);
-
-    if (_solver->memory()->parallelDistribution()->neighbors[2][1] >= 0) {
-      handlers.setAsMpiExchange();
-    } else if (type == WallEnum::Input) {
-      handlers.setAsInput();
-    } else if (type == WallEnum::ParabolicInput) {
-      handlers.setAsParabolicInput();
-    } else if (type == WallEnum::Output) {
-      handlers.setAsOutput();
-    }
-  }
+  setFrontWallAs(WallEnum type);
 
 private:
   Configuration* _configuration;
   SolverType*    _solver;
 };
+
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 0, 0, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 0, 1, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 1, 0, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 1, 1, double, 2 >>;
+
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 0, 0, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 0, 1, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 1, 0, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 1, 1, double, 3 >>;
+
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 0, 0, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 0, 1, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 1, 0, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 1, 1, double, 2 >>;
+
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 0, 0, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 0, 1, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 1, 0, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 1, 1, double, 3 >>;
 }
 }

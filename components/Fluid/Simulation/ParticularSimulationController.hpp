@@ -1,14 +1,15 @@
 #pragma once
 
-#include "SimulationController.hpp"
+#include "FsfdSolver.hpp"
+#include "IterationResultWriter.hpp"
 #include "Reporter.hpp"
+#include "SimulationController.hpp"
 
 #include <Uni/Logging/macros>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TSolverTraits,
-          typename ResultWriter>
+template <typename TSolverTraits>
 class ParticularSimulationController : public SimulationController {
 public:
   using BaseType = SimulationController;
@@ -40,7 +41,7 @@ public:
 
   using VectorDiType = typename SolverTraitsType::VectorDiType;
 
-  using ScalarType = typename SolverType::ScalarType;
+  using ScalarType = typename SolverTraitsType::ScalarType;
 
 public:
   ParticularSimulationController() {}
@@ -52,6 +53,11 @@ public:
 
   ParticularSimulationController const&
   operator=(ParticularSimulationController const& other) = delete;
+
+  void
+  setIterationResultWriter(IterationResultWriter* iteration_result_writer) {
+    _resultWriter.reset(iteration_result_writer);
+  }
 
   SolverType const*
   solver() const {
@@ -120,14 +126,14 @@ public:
              std::string const&        fileNamePrefix) {
     _solver.initialize(preciceInteface, reporter);
 
-    _resultWriter.initialize(_solver.memory(), outputDirectory, fileNamePrefix);
+    _resultWriter->setDestination(outputDirectory, fileNamePrefix);
 
     _lastPlotTimeStamp = 0.0;
     _lastTime          = -1.0;
 
     if (_plotInterval >= 0) {
-      _resultWriter.writeGeometry();
-      _resultWriter.writeAttributes();
+      _resultWriter->writeGeometry();
+      _resultWriter->writeAttributes();
     }
   }
 
@@ -155,7 +161,7 @@ public:
       if ((_solver.memory()->time() - _lastPlotTimeStamp) > _plotInterval) {
         _lastPlotTimeStamp = _solver.memory()->time();
 
-        _resultWriter.writeAttributes();
+        _resultWriter->writeAttributes();
       }
     }
 
@@ -163,7 +169,8 @@ public:
   }
 
 private:
-  SolverType _solver;
+  SolverType                             _solver;
+  std::unique_ptr<IterationResultWriter> _resultWriter;
 
   long double        _lastTime;
   long double        _timeLimit;
@@ -171,7 +178,6 @@ private:
   ScalarType         _plotInterval;
   unsigned long long _iterationLimit;
 
-  ResultWriter _resultWriter;
   Reporter* _reporter;
 };
 }

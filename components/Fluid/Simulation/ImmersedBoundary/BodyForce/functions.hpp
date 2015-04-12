@@ -8,8 +8,6 @@
 
 #include <Eigen/Core>
 
-#include <precice/SolverInterface.hpp>
-
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace ImmersedBoundary {

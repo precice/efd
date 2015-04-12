@@ -6,7 +6,7 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TScalar, int TDimensions>
+template <typename TScalar, unsigned TDimensions>
 class UniformGridGeometry {
 public:
   using Scalar = TScalar;

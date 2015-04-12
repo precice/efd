@@ -1,26 +1,59 @@
 #pragma once
 
-#include "FsfdSolver.hpp"
-#include "Grid.hpp"
-#include "IfsfdCellAccessor.hpp"
-#include "IfsfdMemory.hpp"
-#include "ImmersedBoundary/Controller.hpp"
-#include "ParallelDistribution.hpp"
-#include "Parameters.hpp"
-#include "PeSolver.hpp"
-#include "SfsfdCellAccessor.hpp"
-#include "SfsfdMemory.hpp"
-
-#include "GhostLayer/IfsfdHandlers.hpp"
-#include "GhostLayer/SfsfdHandlers.hpp"
-
 #include <Eigen/Core>
 
+namespace Uni {
+namespace StructuredGrid {
+namespace Basic {
+template <typename T>
+class Grid;
+}
+}
+}
 namespace FsiSimulation {
 namespace FluidSimulation {
+template <unsigned D>
+class ParallelDistribution;
+template <typename T, unsigned D>
+class Parameters;
+template <typename T, unsigned D>
+class UniformGridGeometry;
+template <typename T>
+class Grid;
+template <typename T>
+class SfsfdCellAccessor;
+template <typename T>
+class IfsfdCellAccessor;
+template <typename T>
+class SfsfdMemory;
+template <typename T>
+class SfsfdDebugMemory;
+template <typename T>
+class IfsfdMemory;
+template <typename T>
+class IfsfdDebugMemory;
+template <typename T>
+class SfsfdPeSolver;
+template <typename T>
+class IfsfdPeSolver;
+template <typename T>
+class FsfdSolver;
+namespace ImmersedBoundary {
+template <typename T>
+class BasicController;
+template <typename T>
+class Controller;
+}
+namespace GhostLayer {
+template <int D>
+class SfsfdHandlers;
+template <int D>
+class IfsfdHandlers;
+}
+
 template <typename TSolverTraits,
           int TSolverType,
-          int TDebug>
+          unsigned TDebug>
 struct MemoryTraits {};
 
 template <typename TSolverTraits>
@@ -59,14 +92,15 @@ struct ImmersedBoundaryControllerTraits<TSolverTraits, 1> {
 
 template <typename TGridGeometry,
           int TImmersedBoudnaryType,
-          int TDebug,
+          unsigned TDebug,
           typename TScalar,
-          int TD>
+          unsigned TDimensions>
 struct SfsfdSolverTraits {
   using ScalarType = TScalar;
 
   enum {
-    Dimensions = TD
+    Dimensions = TDimensions,
+    SolverId   = 0
   };
 
   using GridType = Grid<SfsfdSolverTraits>;
@@ -96,19 +130,20 @@ struct SfsfdSolverTraits {
           = typename ImmersedBoundaryControllerTraits
             <SfsfdSolverTraits, TImmersedBoudnaryType>::Type;
 
-  using SolverType = FsfdSolver<SfsfdSolverTraits, 0>;
+  using SolverType = FsfdSolver<SfsfdSolverTraits>;
 };
 
 template <typename TGridGeometry,
           int TImmersedBoudnaryType,
           int TDebug,
           typename TScalar,
-          int TD>
+          unsigned TDimensions>
 struct IfsfdSolverTraits {
   using ScalarType = TScalar;
 
   enum {
-    Dimensions = TD
+    Dimensions = TDimensions,
+    SolverId   = 1
   };
 
   using GridType = Grid<IfsfdSolverTraits>;
@@ -138,7 +173,7 @@ struct IfsfdSolverTraits {
           = typename ImmersedBoundaryControllerTraits
             <IfsfdSolverTraits, TImmersedBoudnaryType>::Type;
 
-  using SolverType = FsfdSolver<IfsfdSolverTraits, 1>;
+  using SolverType = FsfdSolver<IfsfdSolverTraits>;
 };
 }
 }

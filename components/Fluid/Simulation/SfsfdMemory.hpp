@@ -1,7 +1,9 @@
-#pragma once
+#ifndef Fluid_Simulation_SfsfdMemory_hpp
+#define Fluid_Simulation_SfsfdMemory_hpp
 
 #include "FsfdDebugMemory.hpp"
 #include "FsfdMemory.hpp"
+#include "SolverTraits.hpp"
 
 namespace FsiSimulation {
 namespace FluidSimulation {
@@ -63,5 +65,23 @@ public:
 public:
   SfsfdDebugMemory() {}
 };
+
+extern template class SfsfdMemory
+  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 0, double, 2 >>;
+extern template class SfsfdMemory
+  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 1, double, 2 >>;
+extern template class SfsfdMemory
+  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 0, double, 2 >>;
+extern template class SfsfdMemory
+  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 1, double, 2 >>;
+extern template class SfsfdMemory
+  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 0, double, 3 >>;
+extern template class SfsfdMemory
+  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 1, double, 3 >>;
+extern template class SfsfdMemory
+  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 0, double, 3 >>;
+extern template class SfsfdMemory
+  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 1, double, 3 >>;
 }
 }
+#endif

@@ -1,10 +1,16 @@
-#pragma once
+#ifndef Fluid_Simulation_GhostLayer_SfsfdHandlersBuilder_hpp
+#define Fluid_Simulation_GhostLayer_SfsfdHandlersBuilder_hpp
 
 #include "FsfdHandlersBuilder.hpp"
+
+#include "Simulation/FsfdSolver.hpp"
 
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
+namespace PetscExchange {
+class PpeRhsAcquiererAction1;
+}
 template <typename TSolverTraits,
           int TDimension,
           int TDirection>
@@ -19,7 +25,7 @@ struct SfsfdHandlersBuilderTraits {
 
   using CellAccessorType = typename SolverTraitsType::CellAccessorType;
 
-  using GridType = typename SolverTraitsType::GridType;
+  using BaseGridType = typename SolverTraitsType::BaseGridType;
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 
@@ -40,7 +46,7 @@ struct SfsfdHandlersBuilderTraits {
           = MpiExchange::Handler
             <ScalarType,
              1,
-             typename GridType::BaseType,
+             BaseGridType,
              SfsfdHandlersBuilderTraits::getPressure,
              SfsfdHandlersBuilderTraits::setPressure,
              TDimension,
@@ -49,6 +55,158 @@ struct SfsfdHandlersBuilderTraits {
   using PpeRhsAcquiererAction
           = PetscExchange::PpeRhsAcquiererAction1;
 };
+
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 0, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 0, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 1, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 1, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 2, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 2, 1 >>;
+
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 0, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 0, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 1, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 1, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 2, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 2, 1 >>;
+
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 0, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 0, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 1, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 1, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 2, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 2, 1 >>;
+
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 0, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 0, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 1, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 1, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 2, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 2, 1 >>;
+
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 0, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 0, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 1, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 1, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 2, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 2, 1 >>;
+
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 0, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 0, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 1, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 1, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 2, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 2, 1 >>;
+
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 0, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 0, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 1, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 1, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 2, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 2, 1 >>;
+
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 0, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 0, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 1, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 1, 1 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 2, 0 >>;
+extern template class FsfdHandlersBuilder
+  < SfsfdHandlersBuilderTraits
+  < SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 2, 1 >>;
 
 template <typename TSolverTraits,
           int TDimension,
@@ -81,34 +239,129 @@ public:
   using VectorDsType = typename SolverTraitsType::VectorDsType;
 
 public:
-  SfsfdHandlersBuilder(Configuration* configuration,
-                       SolverType*    simulation)
-    : BaseType(configuration, simulation) {}
-
-  inline void
-  setAsInput() {
-    this->BaseType::setAsInput();
-  }
-
-  inline void
-  setAsParabolicInput() {
-    this->BaseType::setAsParabolicInput();
-  }
-
-  inline void
-  setAsOutput() {
-    this->BaseType::setAsOutput();
-  }
+  SfsfdHandlersBuilder(Configuration*, SolverType*);
 
   void
-  setAsMpiExchange() {
-    this->BaseType::setAsMpiExchange();
-  }
+  setAsInput();
+
+  void
+  setAsParabolicInput();
+
+  void
+  setAsOutput();
+
+  void
+  setAsMpiExchange();
 
 protected:
   Configuration* _configuration;
   SolverType*    _solver;
 };
+
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 0, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 0, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 1, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 1, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 2, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 0, double, 2>, 2, 1>;
+
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 0, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 0, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 1, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 1, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 2, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 0, 1, double, 2>, 2, 1>;
+
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 0, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 0, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 1, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 1, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 2, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 0, double, 2>, 2, 1>;
+
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 0, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 0, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 1, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 1, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 2, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 2>, 1, 1, double, 2>, 2, 1>;
+
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 0, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 0, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 1, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 1, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 2, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 0, double, 3>, 2, 1>;
+
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 0, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 0, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 1, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 1, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 2, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 0, 1, double, 3>, 2, 1>;
+
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 0, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 0, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 1, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 1, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 2, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 0, double, 3>, 2, 1>;
+
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 0, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 0, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 1, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 1, 1>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 2, 0>;
+extern template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<UniformGridGeometry<double, 3>, 1, 1, double, 3>, 2, 1>;
 }
 }
 }
+#endif

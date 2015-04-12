@@ -42,29 +42,29 @@ public:
       return false;
     }
 
-    if (_preciceInterface->isActionRequired(
-          precice::constants::actionWriteIterationCheckpoint())) {
-      _preciceInterface->fulfilledAction(
-        precice::constants::actionWriteIterationCheckpoint());
-    }
-
-    _preciceInterface->resetMesh(_meshId);
-    _preciceInterface->setMeshVertices(_meshId, size, *positions, *ids);
-    _preciceInterface->setMeshEdge(_meshId, firstId, secondId);
-
-    static VectorDd velocity = VectorDd::Zero();
-
-    auto it = _mesh->vertices().begin();
-
-    for (std::size_t i = 0; i < _mesh->vertices().size(); ++i, it++) {
-      VectorDd coords(it.vertexCoords());
-      coords = _shift.cast<double>() + coords;
-      _preciceInterface->writeVectorData(_forcesID,
-                                         it.vertexID(),
-                                         velocity.data());
-    }
-
-    _dt = _preciceInterface->advance(_dt);
+//    if (_preciceInterface->isActionRequired(
+//          precice::constants::actionWriteIterationCheckpoint())) {
+//      _preciceInterface->fulfilledAction(
+//        precice::constants::actionWriteIterationCheckpoint());
+//    }
+//
+//    _preciceInterface->resetMesh(_meshId);
+//    _preciceInterface->setMeshVertices(_meshId, size, *positions, *ids);
+//    _preciceInterface->setMeshEdge(_meshId, firstId, secondId);
+//
+//    static VectorDd velocity = VectorDd::Zero();
+//
+//    auto it = _mesh->vertices().begin();
+//
+//    for (std::size_t i = 0; i < _mesh->vertices().size(); ++i, it++) {
+//      VectorDd coords(it.vertexCoords());
+//      coords = _shift.cast<double>() + coords;
+//      _preciceInterface->writeVectorData(_forcesID,
+//                                         it.vertexID(),
+//                                         velocity.data());
+//    }
+//
+//    _dt = _preciceInterface->advance(_dt);
 
     return true;
   }

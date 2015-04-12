@@ -1,4 +1,5 @@
-#pragma once
+#ifndef Fluid_Simulation_IfsfdMemory_hpp
+#define Fluid_Simulation_IfsfdMemory_hpp
 
 #include "FsfdDebugMemory.hpp"
 #include "FsfdMemory.hpp"
@@ -131,3 +132,4 @@ class IfsfdDebugMemory :
 };
 }
 }
+#endif

@@ -27,8 +27,7 @@ getEmptyFunctor() {
 template <typename TGrid,
           typename TDataElement>
 using GetValueFunction
-        = TDataElement * (*)
-            (typename TGrid::CellAccessor const &);
+        = TDataElement * (*)(typename TGrid::CellAccessor const &);
 
 template <typename TGrid,
           typename TDataElement>
@@ -235,7 +234,7 @@ private:
   TGrid                           _ghostGrid;
   TGrid                           _boundaryGrid;
   ParallelDistributionType const* _parallelDistribution;
-  std::unique_ptr<ScalarType[]>     _rowMemory;
+  std::unique_ptr<ScalarType[]>   _rowMemory;
   unsigned long long              _rowMemorySize;
   MPI_Request                     _mpiRequest;
   MPI_Status                      _mpiStatus;

@@ -4,25 +4,36 @@
 #include "ParticularSimulationController.hpp"
 #include "SolverBuilder.hpp"
 #include "SolverBuilderTraits.hpp"
-#include "VtkOutput/Writer.hpp"
-#include "XdmfHdf5Output/Writer.hpp"
+#include "VtkOutput/createinctance.hpp"
+#include "XdmfHdf5Output/createinctance.hpp"
 
 #include <Uni/ExecutionControl/exception>
-
-//
 
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace Private {
-template <typename TSolverBuilderTraits, typename TSimulationController>
+template <int TDimensions,
+          typename TScalar,
+          int TSolverType,
+          int TImmersedBoudnaryType,
+          int TDebug>
 inline std::unique_ptr<SimulationController>
-_create_simulation_controller(FluidSimulation::Configuration* configuration) {
-  using namespace FluidSimulation;
+_create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug(
+  FluidSimulation::Configuration* configuration) {
+  using SolverBuilderTraitsType
+          = SolverBuilderTraits<TSolverType,
+                                TImmersedBoudnaryType,
+                                TDebug,
+                                TScalar,
+                                TDimensions>;
 
-  using SimulationControllerType = TSimulationController;
-  using SolverBuilderTraitsType  = TSolverBuilderTraits;
   using SolverTraitsType
-          = typename SimulationControllerType::SolverTraitsType;
+          = typename SolverBuilderTraitsType::SolverTraitsType;
+
+  using SimulationControllerType
+          = ParticularSimulationController<SolverTraitsType>;
+
+  using namespace FluidSimulation;
 
   static_assert((SolverTraitsType::Dimensions > 1)
                 && (SolverTraitsType::Dimensions < 4),
@@ -34,55 +45,23 @@ _create_simulation_controller(FluidSimulation::Configuration* configuration) {
   SolverBuilder<SolverBuilderTraitsType> builder(configuration,
                                                  controller->solver());
 
+  std::unique_ptr<IterationResultWriter> iteration_result_writer;
+
+  if (configuration->outputType == OutputEnum::Vtk) {
+    iteration_result_writer
+      = VtkOutput::create_instance(controller->solver()->memory());
+  } else if (configuration->outputType == OutputEnum::Xdmf) {
+    iteration_result_writer
+      = XdmfHdf5Output::create_instance(controller->solver()->memory());
+  }
+
+  controller->setIterationResultWriter(iteration_result_writer.release());
+
   controller->iterationLimit() = configuration->iterationLimit;
   controller->timeLimit()      = configuration->timeLimit;
   controller->plotInterval()   = configuration->plotInterval;
 
   return std::unique_ptr<SimulationController>(controller.release());
-}
-
-template <int TDimensions,
-          typename TScalar,
-          int TSolverType,
-          int TImmersedBoudnaryType,
-          int TDebug>
-inline std::unique_ptr<SimulationController>
-_create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug(
-  FluidSimulation::Configuration* configuration) {
-  using SolverBuilderTraitsType
-          = SolverBuilderTraits<TScalar,
-                                TDimensions,
-                                TSolverType,
-                                TImmersedBoudnaryType,
-                                TDebug>;
-
-  using SolverTraitsType
-          = typename SolverBuilderTraitsType::SolverTraitsType;
-
-  using MemoryType
-          = typename SolverTraitsType::MemoryType;
-
-//   if (configuration->outputType == OutputEnum::Vtk) {
-//     using SimulationControllerType
-//             = ParticularSimulationController
-//               < SolverTraitsType, VtkOutput::Writer < MemoryType >>;
-
-//     return _create_simulation_controller<SolverBuilderTraitsType,
-//                                          SimulationControllerType>
-//              (configuration);
-//   } else if (configuration->outputType == OutputEnum::Xdmf) {
-    using SimulationControllerType
-            = ParticularSimulationController
-              < SolverTraitsType, XdmfHdf5Output::Writer < MemoryType >>;
-
-    return _create_simulation_controller<SolverBuilderTraitsType,
-                                         SimulationControllerType>
-             (configuration);
-  // }
-  // throwException(
-  //   "Failed to crate simulation controller for the provided output type");
-
-  // return std::unique_ptr<SimulationController>();
 }
 
 template <int TDimensions,

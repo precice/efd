@@ -1,23 +1,21 @@
-#pragma once
+#ifndef Fluid_Simulation_Grid_hpp
+#define Fluid_Simulation_Grid_hpp
 
-#include <Uni/Logging/macros>
+#include "IfsfdCellAccessor.hpp"
+#include "SfsfdCellAccessor.hpp"
+#include "SolverTraits.hpp"
+
 #include <Uni/StructuredGrid/Basic/Grid>
 
 #include <array>
+#include <string>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TSolverTraits>
-class Grid;
-
-template <typename TSolverTraits>
-void
-logGridInitializationInfo(Grid<TSolverTraits> const& grid);
-
-template <typename TSolverTraits>
-class Grid
-  : public Uni::StructuredGrid::Basic::Grid
-    <typename TSolverTraits::CellAccessorType> {
+class Grid :
+  public Uni::StructuredGrid::Basic::Grid
+  <typename TSolverTraits::CellAccessorType> {
 public:
   using BaseType = Uni::StructuredGrid::Basic::Grid
                    <typename TSolverTraits::CellAccessorType>;
@@ -25,7 +23,7 @@ public:
   using CellAccessorType =  typename TSolverTraits::CellAccessorType;
 
   enum {
-    Dimensions = CellAccessorType::Dimensions
+    Dimensions = TSolverTraits::Dimensions
   };
 
   using VectorDiType = typename BaseType::VectorDi;
@@ -45,96 +43,51 @@ public:
   operator=(Grid const& other) = delete;
 
   void
-  initialize(VectorDiType const& size,
-             FactoryType const&  factory) {
-    _factory = factory;
+  initialize(VectorDiType const&, FactoryType const&);
 
-    this->BaseType::initialize(size,
-                               VectorDiType::Zero(),
-                               VectorDiType::Zero(),
-                               _factory);
-
-    VectorDiType indent(VectorDiType::Ones());
-
-    for (int i = 0; i < Dimensions; ++i) {
-      VectorDiType leftIndent(VectorDiType::Zero());
-      leftIndent(i) = 0;
-      VectorDiType rightIndent(VectorDiType::Zero());
-      rightIndent(i) = size(i) - 1;
-
-      boundaries[i][0].initialize(size,
-                                  leftIndent,
-                                  rightIndent,
-                                  _factory);
-
-      boundaries[i][1].initialize(size,
-                                  rightIndent,
-                                  leftIndent,
-                                  _factory);
-      leftIndent     = indent;
-      leftIndent(i)  = 0;
-      rightIndent    = indent;
-      rightIndent(i) = size(i) - rightIndent(i);
-
-      indentedBoundaries[i][0].initialize(size,
-                                          leftIndent,
-                                          rightIndent,
-                                          _factory);
-
-      indentedBoundaries[i][1].initialize(size,
-                                          rightIndent,
-                                          leftIndent,
-                                          _factory);
-    }
-
-    innerGrid.initialize(size, indent, indent, _factory);
-  }
+  std::string
+  toString() const;
 
 public:
   BaseType                                        innerGrid;
   FactoryType                                     _factory;
   std::array<std::array<BaseType, 2>, Dimensions> boundaries;
   std::array<std::array<BaseType, 2>, Dimensions> indentedBoundaries;
-
-  friend void
-  logGridInitializationInfo<TSolverTraits>(Grid const& grid);
 };
 
-template <typename TSolverTraits>
-void
-logGridInitializationInfo(Grid<TSolverTraits> const& grid) {
-  enum {
-    Dimensions = TSolverTraits::Dimensions
-  };
+extern template class Grid
+  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 0, double, 2 >>;
+extern template class Grid
+  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 1, double, 2 >>;
+extern template class Grid
+  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 0, double, 2 >>;
+extern template class Grid
+  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 1, double, 2 >>;
+extern template class Grid
+  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 0, double, 3 >>;
+extern template class Grid
+  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 1, double, 3 >>;
+extern template class Grid
+  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 0, double, 3 >>;
+extern template class Grid
+  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 1, double, 3 >>;
 
-  INFO << "Grid size: "
-       << grid.size().transpose() << "\n"
-       << "Grid left indent: "
-       << grid.leftIndent().transpose() << "\n"
-       << "Grid right indent: "
-       << grid.rightIndent().transpose() << "\n"
-       << "Inner grid size: "
-       << grid.innerGrid.size().transpose() << "\n"
-       << "Inner grid left indent: "
-       << grid.innerGrid.leftIndent().transpose() << "\n"
-       << "Inner grid right indent: "
-       << grid.innerGrid.rightIndent().transpose() << "\n";
-
-  for (int d = 0; d < Dimensions; ++d) {
-    INFO
-      << 2 * d << " grid size: "
-      << grid.boundaries[d][0].size().transpose() << "\n"
-      << 2 * d << " grid left indent: "
-      << grid.boundaries[d][0].leftIndent().transpose() << "\n"
-      << 2 * d << " grid right indent: "
-      << grid.boundaries[d][0].rightIndent().transpose() << "\n"
-      << 2 * d + 1 << " grid size: "
-      << grid.boundaries[d][1].size().transpose() << "\n"
-      << 2 * d + 1 << " grid left indent: "
-      << grid.boundaries[d][1].leftIndent().transpose() << "\n"
-      << 2 * d + 1 << " grid right indent: "
-      << grid.boundaries[d][1].rightIndent().transpose() << "\n";
-  }
+extern template class Grid
+  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 0, double, 2 >>;
+extern template class Grid
+  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 1, double, 2 >>;
+extern template class Grid
+  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 0, double, 2 >>;
+extern template class Grid
+  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 1, double, 2 >>;
+extern template class Grid
+  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 0, double, 3 >>;
+extern template class Grid
+  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 1, double, 3 >>;
+extern template class Grid
+  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 0, double, 3 >>;
+extern template class Grid
+  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 1, double, 3 >>;
 }
 }
-}
+#endif

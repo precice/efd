@@ -1,11 +1,10 @@
-#ifndef FsiSimulation_FluidSimulation_Parameters_hpp
-#define FsiSimulation_FluidSimulation_Parameters_hpp
+#pragma once
 
 #include <Eigen/Core>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-template <typename TScalar, int TD>
+template <typename TScalar, unsigned TD>
 class Parameters {
 public:
   typedef Eigen::Matrix<TScalar, TD, 1> VectorDs;
@@ -91,5 +90,3 @@ private:
 };
 }
 }
-
-#endif

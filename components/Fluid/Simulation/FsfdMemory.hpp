@@ -1,5 +1,10 @@
 #pragma once
 
+#include "Parameters.hpp"
+#include "GridGeometry.hpp"
+#include "Grid.hpp"
+#include "ParallelDistribution.hpp"
+
 #include <Uni/ExecutionControl/assert>
 #include <Uni/ExecutionControl/exception>
 
@@ -121,7 +126,7 @@ public:
     _attributes[1].type         = AttributeType::Type::Scalar;
 
     // logGridInitializationInfo(_grid);
-    logParallelTopologyInfo(_parallelDistribution);
+    _parallelDistribution.toString();
     logInfo(_gridGeometry.toString());
   }
 

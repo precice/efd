@@ -27,7 +27,7 @@ using VectorDConstPetscIntPointer
         = Eigen::Matrix<UniqueConstPetscIntArray, TD, 1>;
 
 template <int TD>
-DMBoundaryTypeVector<TD>
+inline DMBoundaryTypeVector<TD>
 createDMBoundaries() {
   DMBoundaryTypeVector<TD> result;
 
@@ -43,7 +43,7 @@ createDMBoundaries() {
 }
 
 template <int TD>
-void
+inline void
 DMCreate(MPI_Comm const&,
          DMBoundaryTypeVector<TD> const&,
          DMDAStencilType const&,
@@ -55,7 +55,7 @@ DMCreate(MPI_Comm const&,
          DM*) {}
 
 template <>
-void
+inline void
 DMCreate<2
          >(MPI_Comm const&                       comm,
            DMBoundaryTypeVector<2> const&        boundaryTypes,
@@ -82,7 +82,7 @@ DMCreate<2
 }
 
 template <>
-void
+inline void
 DMCreate<3
          >(MPI_Comm const&                       comm,
            DMBoundaryTypeVector<3> const&        boundaryTypes,

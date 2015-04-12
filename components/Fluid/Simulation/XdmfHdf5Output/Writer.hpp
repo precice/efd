@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Simulation/IterationResultWriter.hpp"
+
 #include "Private/Hdf5Writer.hpp"
 #include "Private/XdmfWriter.hpp"
 
@@ -13,7 +15,7 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace XdmfHdf5Output {
 template <typename TMemory>
-class Writer {
+class Writer : public IterationResultWriter {
 public:
   using MemoryType = TMemory;
 
@@ -25,13 +27,12 @@ public:
 
   using Path = boost::filesystem::path;
 
-  Writer() {}
+  Writer(MemoryType const* memory) :
+    _memory(memory) {}
 
   void
-  initialize(MemoryType const* memory,
-             Path const&       directory_path,
-             std::string       file_name_prefix) {
-    _memory         = memory;
+  setDestination(Path const& directory_path,
+                 std::string file_name_prefix) {
     _directoryPath  = directory_path;
     _fileNamePrefix = file_name_prefix;
     _timeStepFileNames.clear();

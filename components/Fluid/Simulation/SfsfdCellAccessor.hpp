@@ -1,4 +1,5 @@
-#pragma once
+#ifndef Fluid_Simulation_SfsfdCellAccessor_hpp
+#define Fluid_Simulation_SfsfdCellAccessor_hpp
 
 #include <Uni/StructuredGrid/Basic/GlobalMultiIndex>
 
@@ -706,3 +707,4 @@ protected:
 };
 }
 }
+#endif

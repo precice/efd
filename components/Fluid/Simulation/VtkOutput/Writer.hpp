@@ -1,6 +1,7 @@
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include "Simulation/IterationResultWriter.hpp"
+
 #include <boost/filesystem/fstream.hpp>
 #include <boost/locale.hpp>
 
@@ -10,7 +11,7 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace VtkOutput {
 template <typename TMemory>
-class Writer {
+class Writer : public IterationResultWriter {
 public:
   using MemoryType = TMemory;
 
@@ -25,14 +26,15 @@ public:
   typedef boost::filesystem::fstream FileStream;
   typedef boost::locale::format      Format;
 
+  using AttributeType = typename MemoryType::AttributeType;
+
 public:
-  Writer() {}
+  Writer(MemoryType const* memory) :
+    _memory(memory) {}
 
   void
-  initialize(MemoryType const* memory,
-             Path const&       directory_path,
-             std::string       file_name_prefix) {
-    _memory         = memory;
+  setDestination(Path const& directory_path,
+                 std::string file_name_prefix) {
     _directoryPath  = directory_path;
     _fileNamePrefix = file_name_prefix;
     _locale         = boost::locale::generator().generate("en_US.UTF-8");
@@ -103,7 +105,7 @@ public:
     for (auto const& attribute : * _memory->attributes()) {
       std::stringstream string_stream;
 
-      if (attribute.type == Attribute::Type::Vector) {
+      if (attribute.type == AttributeType::Type::Vector) {
         fileStream << "\nVECTORS "
                    << attribute.name
                    << " float" << std::endl;

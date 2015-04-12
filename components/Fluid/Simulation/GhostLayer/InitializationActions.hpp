@@ -3,8 +3,7 @@
 #include "Private/utilities.hpp"
 
 #include "Simulation/Configuration.hpp"
-#include "Simulation/ParallelDistribution.hpp"
-#include "Simulation/functions.hpp"
+#include "Simulation/computemaxvelocity.hpp"
 
 namespace FsiSimulation {
 namespace FluidSimulation {

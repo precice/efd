@@ -56,7 +56,7 @@ public:
     updateNode(PropertyTree& node) {
       std::stringstream ss;
 
-      for (int d = 0; d < dimensions.size(); ++d) {
+      for (std::size_t d = 0; d < dimensions.size(); ++d) {
         if (ss.str().empty()) {
           ss << dimensions[d];
         } else {
@@ -80,7 +80,7 @@ public:
       node.put("Topology.<xmlattr>.TopologyType", topologyType);
       std::stringstream ss;
 
-      for (int d = 0; d < dimensions.size(); ++d) {
+      for (std::size_t d = 0; d < dimensions.size(); ++d) {
         if (ss.str().empty()) {
           ss << dimensions[d];
         } else {
@@ -155,10 +155,7 @@ public:
         _attributes.back().item.dimensions.push_back(dimensions(d));
       }
 
-      int attribute_size = 1;
-
       if (attribute.type == AttributeType::Type::Vector) {
-        attribute_size = Dimensions;
         _attributes.back().type = "Vector";
         _attributes.back().item.dimensions.push_back(3);
       } else {
