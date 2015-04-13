@@ -44,9 +44,6 @@ public:
   }
 
   void
-  writeGeometry() {}
-
-  void
   writeAttributes() {
     FileStream fileStream;
 

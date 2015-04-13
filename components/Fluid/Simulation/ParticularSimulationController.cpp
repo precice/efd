@@ -142,11 +142,13 @@ initialize(precice::SolverInterface* preciceInteface,
 
   _im->reporter->setAt("Name", fileNamePrefix);
 
+  // logInfo("Result Writer is being set its destination");
+  _im->resultWriter->setDestination(outputDirectory, fileNamePrefix);
+
   // logInfo("Solver is being initialized");
   _im->solver.initialize(preciceInteface, reporter);
 
-  // logInfo("Result Writer is being set its destination");
-  _im->resultWriter->setDestination(outputDirectory, fileNamePrefix);
+  _im->resultWriter->initialize();
 
   _im->lastPlotTimeStamp = 0.0;
   _im->lastTime          = -1.0;

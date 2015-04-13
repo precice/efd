@@ -27,14 +27,17 @@ public:
 
   using Path = boost::filesystem::path;
 
-  Writer(MemoryType const* memory) :
-    _memory(memory) {}
+  Writer(MemoryType const* memory) : _memory(memory) {}
 
   void
   setDestination(Path const& directory_path,
                  std::string file_name_prefix) {
     _directoryPath  = directory_path;
     _fileNamePrefix = file_name_prefix;
+  }
+
+  void
+  initialize() {
     _timeStepFileNames.clear();
 
     _hdf5Writer.initialize(_memory);

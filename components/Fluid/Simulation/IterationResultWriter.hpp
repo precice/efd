@@ -15,7 +15,10 @@ public:
                  std::string                    file_name_prefix) = 0;
 
   virtual void
-  writeGeometry() = 0;
+  initialize() {}
+
+  virtual void
+  writeGeometry() {}
 
   virtual void
   writeAttributes() = 0;
