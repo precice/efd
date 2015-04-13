@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <scenario
   Re="100"
-  timeLimit="5.0"
+  timeLimit="8.0"
   iterationLimit="0"
   plotInterval="0.01"
   tau="0.5"
-  gamma="0.5"
+  gamma="0.0"
   width="2.2 0.41"
-  size="220 41"
+  size="220 82"
   parallelizationSize="1 1"
   environment="0 0"
   filename="Turek2D2"
   scalar="double"
   solver="Improved Fractional Step Finite Difference"
-  output="Xdmf"
+  output="Vtk"
   >
   <walls>
     <left type="ParabolicInput" velocity="1.5 0.0" />
@@ -21,5 +21,5 @@
     <bottom type="Input" velocity="0.0 0.0" />
     <top type="Input" velocity="0.0 0.0" />
   </walls>
-  <immersed-boundary outerLayerSize="1" innerLayerSize="0"/>
+  <immersed-boundary outerLayerSize="1" innerLayerSize="1"/>
 </scenario>
