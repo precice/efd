@@ -27,8 +27,7 @@ struct SolverBuilderTraits<0,
                            TScalar,
                            TDimensions> {
   using SolverTraitsType = SfsfdSolverTraits
-                           <UniformGridGeometry<TScalar, TDimensions>,
-                            TImmersedBoudnaryType,
+                           <TImmersedBoudnaryType,
                             TDebug,
                             TScalar,
                             TDimensions>;
@@ -49,8 +48,7 @@ struct SolverBuilderTraits<1,
                            TScalar,
                            TDimensions> {
   using SolverTraitsType = IfsfdSolverTraits
-                           <UniformGridGeometry<TScalar, TDimensions>,
-                            TImmersedBoudnaryType,
+                           <TImmersedBoudnaryType,
                             TDebug,
                             TScalar,
                             TDimensions>;

@@ -1,14 +1,8 @@
 #pragma once
 
-#include "GhostLayer/IfsfdHandlers.hpp"
-#include "GhostLayer/SfsfdHandlers.hpp"
-#include "ImmersedBoundary/Controller.hpp"
-#include "PeSolver.hpp"
 #include "SolverTraits.hpp"
-#include "IfsfdMemory.hpp"
-#include "SfsfdMemory.hpp"
 
-#include <Uni/Logging/macros>
+#include <Uni/Firewall/Implementation>
 
 namespace precice {
 class SolverInterface;
@@ -16,9 +10,14 @@ class SolverInterface;
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+template <typename T>
+class FsfdSolverImplementation;
 class Reporter;
 template <typename TSolverTraits>
 class FsfdSolver {
+private:
+  using Implementation = FsfdSolverImplementation<TSolverTraits>;
+
 public:
   using SolverTraitsType = TSolverTraits;
 
@@ -56,44 +55,32 @@ public:
           = typename SolverTraitsType::PeSolverType;
 
 public:
-  FsfdSolver() {}
+  FsfdSolver();
 
   FsfdSolver(FsfdSolver const& other) = delete;
 
-  ~FsfdSolver() {}
+  ~FsfdSolver();
 
   FsfdSolver const&
   operator=(FsfdSolver const& other) = delete;
 
   MemoryType const*
-  memory() const {
-    return &_memory;
-  }
+  memory() const;
 
   MemoryType*
-  memory() {
-    return &_memory;
-  }
+  memory();
 
   ImmersedBoundaryControllerType const*
-  immersedBoundaryController() const {
-    return &_ibController;
-  }
+  immersedBoundaryController() const;
 
   ImmersedBoundaryControllerType*
-  immersedBoundaryController() {
-    return &_ibController;
-  }
+  immersedBoundaryController();
 
   GhostHandlersType const*
-  ghostHandlers() const {
-    return &_ghostHandlers;
-  }
+  ghostHandlers() const;
 
   GhostHandlersType*
-  ghostHandlers() {
-    return &_ghostHandlers;
-  }
+  ghostHandlers();
 
   void
   initialize(precice::SolverInterface*, Reporter*);
@@ -102,46 +89,41 @@ public:
   iterate();
 
 private:
-  MemoryType                     _memory;
-  PeSolverType                   _peSolver;
-  GhostHandlersType              _ghostHandlers;
-  ImmersedBoundaryControllerType _ibController;
-
-  Reporter* _reporter;
+  Uni_Firewall_IMPLEMENTATION_LINK(FsfdSolverImplementation<TSolverTraits> );
 };
 
 extern template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 0, double, 2 >>;
+  < SfsfdSolverTraits < 0, 0, double, 2 >>;
 extern template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 1, double, 2 >>;
+  < SfsfdSolverTraits < 0, 1, double, 2 >>;
 extern template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 0, double, 2 >>;
+  < SfsfdSolverTraits < 1, 0, double, 2 >>;
 extern template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 1, double, 2 >>;
+  < SfsfdSolverTraits < 1, 1, double, 2 >>;
 extern template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 0, double, 3 >>;
+  < SfsfdSolverTraits < 0, 0, double, 3 >>;
 extern template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 1, double, 3 >>;
+  < SfsfdSolverTraits < 0, 1, double, 3 >>;
 extern template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 0, double, 3 >>;
+  < SfsfdSolverTraits < 1, 0, double, 3 >>;
 extern template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 1, double, 3 >>;
+  < SfsfdSolverTraits < 1, 1, double, 3 >>;
 
 extern template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 0, double, 2 >>;
+  < IfsfdSolverTraits < 0, 0, double, 2 >>;
 extern template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 1, double, 2 >>;
+  < IfsfdSolverTraits < 0, 1, double, 2 >>;
 extern template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 0, double, 2 >>;
+  < IfsfdSolverTraits < 1, 0, double, 2 >>;
 extern template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 1, double, 2 >>;
+  < IfsfdSolverTraits < 1, 1, double, 2 >>;
 extern template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 0, double, 3 >>;
+  < IfsfdSolverTraits < 0, 0, double, 3 >>;
 extern template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 1, double, 3 >>;
+  < IfsfdSolverTraits < 0, 1, double, 3 >>;
 extern template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 0, double, 3 >>;
+  < IfsfdSolverTraits < 1, 0, double, 3 >>;
 extern template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 1, double, 3 >>;
+  < IfsfdSolverTraits < 1, 1, double, 3 >>;
 }
 }

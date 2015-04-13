@@ -6,6 +6,9 @@
 #include "SolverBuilderTraits.hpp"
 #include "VtkOutput/createinctance.hpp"
 #include "XdmfHdf5Output/createinctance.hpp"
+#include "SfsfdMemory.hpp"
+#include "IfsfdMemory.hpp"
+#include "FsfdSolver.hpp"
 
 #include <Uni/ExecutionControl/exception>
 

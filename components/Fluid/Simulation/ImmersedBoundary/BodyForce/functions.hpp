@@ -24,13 +24,15 @@ compute_cell_force(TCellAccessor const&                      accessor,
   using Scalar = typename TCellAccessor::ScalarType;
   using Vector = typename TCellAccessor::VectorDsType;
 
-
-  if (is_outside(accessor.positionInRespectToGeometry()) != 1) {
+  if (is_outside(accessor.positionInRespectToGeometry()(0)) != 1) {
     return false;
   }
 
   auto const layer_size
-    = compute_cell_layer_along_geometry_interface(accessor, 2);
+    = compute_cell_layer_along_geometry_interface(
+    accessor,
+    2,
+    0);
 
   if (layer_size != 2) {
     return false;
@@ -58,14 +60,14 @@ compute_cell_force(TCellAccessor const&                      accessor,
   for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
       Scalar normal_direction = +1.0;
-      int offset           = -2;
+      int    offset           = -2;
 
       if (d2 == 1) {
         normal_direction = -1.0;
         offset           = +2;
       }
 
-      if (accessor.positionInRespectToGeometry(d, offset)
+      if (accessor.positionInRespectToGeometry(d, offset)(0)
           != precice::constants::positionOutsideOfGeometry()) {
         Vector normal = Vector::Zero();
 
@@ -95,13 +97,12 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
   using Scalar = typename TCellAccessor::ScalarType;
   using Vector = typename TCellAccessor::VectorDsType;
 
-
-  if (is_outside(accessor.positionInRespectToGeometry()) != 1) {
+  if (is_outside(accessor.positionInRespectToGeometry()(0)) != 1) {
     return false;
   }
 
   auto const layer_size
-    = compute_cell_layer_along_geometry_interface(accessor, 2);
+    = compute_cell_layer_along_geometry_interface(accessor, 2, 0);
 
   if (layer_size != 2) {
     return false;
@@ -119,7 +120,7 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
         offset           = +2;
       }
 
-      if (accessor.positionInRespectToGeometry(d, offset)
+      if (accessor.positionInRespectToGeometry(d, offset)(0)
           != precice::constants::positionOutsideOfGeometry()) {
         Vector normal = Vector::Zero();
 

@@ -1,16 +1,24 @@
 #pragma once
 
-#include "FsfdSolver.hpp"
-#include "IterationResultWriter.hpp"
-#include "Reporter.hpp"
 #include "SimulationController.hpp"
+#include "SolverTraits.hpp"
 
-#include <Uni/Logging/macros>
+#include <Uni/Firewall/Implementation>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TSolverTraits>
+class ParticularSimulationControllerImplementation;
+
+class IterationResultWriter;
+class Reporter;
+
+template <typename TSolverTraits>
 class ParticularSimulationController : public SimulationController {
+private:
+  using Implementation
+          = ParticularSimulationControllerImplementation<TSolverTraits>;
+
 public:
   using BaseType = SimulationController;
 
@@ -44,148 +52,101 @@ public:
   using ScalarType = typename SolverTraitsType::ScalarType;
 
 public:
-  ParticularSimulationController() {}
+  ParticularSimulationController();
 
   ParticularSimulationController(
     ParticularSimulationController const& other) = delete;
 
-  ~ParticularSimulationController() {}
+  ~ParticularSimulationController();
 
   ParticularSimulationController const&
   operator=(ParticularSimulationController const& other) = delete;
 
   void
-  setIterationResultWriter(IterationResultWriter* iteration_result_writer) {
-    _resultWriter.reset(iteration_result_writer);
-  }
+  setIterationResultWriter(IterationResultWriter* iteration_result_writer);
 
   SolverType const*
-  solver() const {
-    return &_solver;
-  }
+  solver() const;
 
   SolverType*
-  solver() {
-    return &_solver;
-  }
+  solver();
 
   long double const&
-  time() const {
-    return _solver.memory()->time();
-  }
+  time() const;
 
   long double const&
-  timeLimit() const {
-    return _timeLimit;
-  }
+  timeLimit() const;
 
   long double&
-  timeLimit() {
-    return _timeLimit;
-  }
+  timeLimit();
 
   long double const&
-  lastPlotTimeStamp() const {
-    return _lastPlotTimeStamp;
-  }
+  lastPlotTimeStamp() const;
 
   long double&
-  lastPlotTimeStamp() {
-    return _lastPlotTimeStamp;
-  }
+  lastPlotTimeStamp();
 
   ScalarType const&
-  plotInterval() const {
-    return _plotInterval;
-  }
+  plotInterval() const;
 
   ScalarType&
-  plotInterval() {
-    return _plotInterval;
-  }
+  plotInterval();
 
   unsigned long long const&
-  iterationNumber() const {
-    return _solver.memory()->iterationNumber();
-  }
+  iterationNumber() const;
 
   unsigned long long const&
-  iterationLimit() const {
-    return _iterationLimit;
-  }
+  iterationLimit() const;
 
   unsigned long long&
-  iterationLimit() {
-    return _iterationLimit;
-  }
+  iterationLimit();
 
   void
   initialize(precice::SolverInterface* preciceInteface,
              Reporter*                 reporter,
              Path const&               outputDirectory,
-             std::string const&        fileNamePrefix) {
-    // logInfo("Enter Initialize");
-    _reporter = reporter;
-
-    _reporter->setAt("Name", fileNamePrefix);
-
-    // logInfo("Solver is being initialized");
-    _solver.initialize(preciceInteface, reporter);
-
-    // logInfo("Result Writer is being set its destination");
-    _resultWriter->setDestination(outputDirectory, fileNamePrefix);
-
-    _lastPlotTimeStamp = 0.0;
-    _lastTime          = -1.0;
-
-    if (_plotInterval >= 0) {
-      _resultWriter->writeGeometry();
-      _resultWriter->writeAttributes();
-    }
-  }
+             std::string const&        fileNamePrefix);
 
   bool
-  iterate() {
-    if (std::abs(_lastTime - _solver.memory()->time())
-        <= std::numeric_limits<long double>::epsilon()) {
-      return false;
-    }
-
-    if (_timeLimit > 0
-        && _solver.memory()->time() >= _timeLimit) {
-      return false;
-    }
-
-    if (_iterationLimit > 0
-        && _solver.memory()->iterationNumber() >= _iterationLimit) {
-      return false;
-    }
-    _lastTime = _solver.memory()->time();
-
-    _solver.iterate();
-
-    if (_plotInterval >= 0) {
-      if ((_solver.memory()->time() - _lastPlotTimeStamp) > _plotInterval) {
-        _lastPlotTimeStamp = _solver.memory()->time();
-
-        _resultWriter->writeAttributes();
-      }
-    }
-
-    return true;
-  }
+  iterate();
 
 private:
-  SolverType                             _solver;
-  std::unique_ptr<IterationResultWriter> _resultWriter;
-
-  long double        _lastTime;
-  long double        _timeLimit;
-  long double        _lastPlotTimeStamp;
-  ScalarType         _plotInterval;
-  unsigned long long _iterationLimit;
-
-  Reporter* _reporter;
+  Uni_Firewall_IMPLEMENTATION_LINK(
+    ParticularSimulationControllerImplementation<TSolverTraits> );
 };
+
+extern template class ParticularSimulationController
+  < SfsfdSolverTraits < 0, 0, double, 2 >>;
+extern template class ParticularSimulationController
+  < SfsfdSolverTraits < 0, 1, double, 2 >>;
+extern template class ParticularSimulationController
+  < SfsfdSolverTraits < 1, 0, double, 2 >>;
+extern template class ParticularSimulationController
+  < SfsfdSolverTraits < 1, 1, double, 2 >>;
+extern template class ParticularSimulationController
+  < SfsfdSolverTraits < 0, 0, double, 3 >>;
+extern template class ParticularSimulationController
+  < SfsfdSolverTraits < 0, 1, double, 3 >>;
+extern template class ParticularSimulationController
+  < SfsfdSolverTraits < 1, 0, double, 3 >>;
+extern template class ParticularSimulationController
+  < SfsfdSolverTraits < 1, 1, double, 3 >>;
+
+extern template class ParticularSimulationController
+  < IfsfdSolverTraits < 0, 0, double, 2 >>;
+extern template class ParticularSimulationController
+  < IfsfdSolverTraits < 0, 1, double, 2 >>;
+extern template class ParticularSimulationController
+  < IfsfdSolverTraits < 1, 0, double, 2 >>;
+extern template class ParticularSimulationController
+  < IfsfdSolverTraits < 1, 1, double, 2 >>;
+extern template class ParticularSimulationController
+  < IfsfdSolverTraits < 0, 0, double, 3 >>;
+extern template class ParticularSimulationController
+  < IfsfdSolverTraits < 0, 1, double, 3 >>;
+extern template class ParticularSimulationController
+  < IfsfdSolverTraits < 1, 0, double, 3 >>;
+extern template class ParticularSimulationController
+  < IfsfdSolverTraits < 1, 1, double, 3 >>;
 }
 }

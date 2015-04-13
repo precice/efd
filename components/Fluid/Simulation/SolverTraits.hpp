@@ -90,8 +90,7 @@ struct ImmersedBoundaryControllerTraits<TSolverTraits, 1> {
   using Type = ImmersedBoundary::Controller<TSolverTraits>;
 };
 
-template <typename TGridGeometry,
-          int TImmersedBoudnaryType,
+template <int TImmersedBoudnaryType,
           unsigned TDebug,
           typename TScalar,
           unsigned TDimensions>
@@ -107,7 +106,7 @@ struct SfsfdSolverTraits {
 
   using ParametersType = Parameters<ScalarType, Dimensions>;
 
-  using GridGeometryType = TGridGeometry;
+  using GridGeometryType = UniformGridGeometry<ScalarType, Dimensions>;
 
   using MemoryType
           = typename MemoryTraits<SfsfdSolverTraits, 0, TDebug>::Type;
@@ -133,8 +132,7 @@ struct SfsfdSolverTraits {
   using SolverType = FsfdSolver<SfsfdSolverTraits>;
 };
 
-template <typename TGridGeometry,
-          int TImmersedBoudnaryType,
+template <int TImmersedBoudnaryType,
           int TDebug,
           typename TScalar,
           unsigned TDimensions>
@@ -150,7 +148,7 @@ struct IfsfdSolverTraits {
 
   using ParametersType = Parameters<ScalarType, Dimensions>;
 
-  using GridGeometryType = TGridGeometry;
+  using GridGeometryType = UniformGridGeometry<ScalarType, Dimensions>;
 
   using MemoryType
           = typename MemoryTraits<IfsfdSolverTraits, 1, TDebug>::Type;

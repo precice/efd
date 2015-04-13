@@ -1,15 +1,22 @@
 #pragma once
 
 #include "BodyForce/functions.hpp"
-#include "Simulation/Reporter.hpp"
-#include "functions.hpp"
 
+#include "Simulation/Grid.hpp"
+#include "Simulation/IfsfdCellAccessor.hpp"
+#include "Simulation/IfsfdMemory.hpp"
 #include "Simulation/Private/mpigenerics.hpp"
+#include "Simulation/Reporter.hpp"
+#include "Simulation/SfsfdCellAccessor.hpp"
+#include "Simulation/SfsfdMemory.hpp"
+
+#include "functions.hpp"
 
 #include <precice/SolverInterface.hpp>
 
 #include <Uni/ExecutionControl/exception>
 
+#include <array>
 #include <map>
 
 namespace FsiSimulation {
@@ -90,13 +97,13 @@ public:
   }
 
   typename VertexIdMap::const_iterator
-  begin() const {
-    return _vertexIds.begin();
+  begin(unsigned const& dimension) const {
+    return _vertexIds[dimension].begin();
   }
 
   typename VertexIdMap::const_iterator
-  end() const {
-    return _vertexIds.end();
+  end(unsigned const& dimension) const {
+    return _vertexIds[dimension].end();
   }
 
   void
@@ -115,17 +122,20 @@ public:
   }
 
   std::pair<typename VertexIdMap::const_iterator, bool>
-  doesVertexExist(CellAccessorType const& accessor) const {
+  doesVertexExist(CellAccessorType const& accessor,
+                  unsigned const&         dimension) const {
     ((void)accessor);
 
-    return std::make_pair(end(), false);
+    return std::make_pair(end(dimension), false);
   }
 
   void
   writeFluidVelocity(typename VertexIdMap::const_iterator const& it,
-                     VectorDsType const&                         velocity) {
+                     ScalarType const&                           velocity,
+                     unsigned const&                             dimension) {
     ((void)it);
     ((void)velocity);
+    ((void)dimension);
   }
 
   void
@@ -135,13 +145,16 @@ public:
 
   void
   readFluidForce(typename VertexIdMap::const_iterator const& it,
-                 VectorDsType&                               force) {
+                 ScalarType&                                 force,
+                 unsigned const&                             dimension) {
     ((void)it);
-    force = VectorDsType::Zero();
+    ((void)dimension);
+    force = 0.0;
   }
 
   VectorDsType
-  computeBodyForceAt(unsigned, VectorDsType const&, MemoryType*) {
+  computeBodyForceAt(unsigned, ScalarType const&, MemoryType*,
+                     unsigned const&) {
     return VectorDsType::Zero();
   }
 
@@ -149,7 +162,7 @@ public:
   computeBodyForce(MemoryType const*, Reporter*) {}
 
 protected:
-  VertexIdMap _vertexIds;
+  std::array<VertexIdMap, Dimensions> _vertexIds;
 };
 
 template <typename TSolverTraits>
@@ -220,13 +233,13 @@ public:
   }
 
   typename VertexIdMap::const_iterator
-  begin() const {
-    return this->_vertexIds.begin();
+  begin(unsigned const& dimension) const {
+    return this->_vertexIds[dimension].begin();
   }
 
   typename VertexIdMap::const_iterator
-  end() const {
-    return this->_vertexIds.end();
+  end(unsigned const& dimension) const {
+    return this->_vertexIds[dimension].end();
   }
 
   void
@@ -238,7 +251,7 @@ public:
     _preciceInterface->initialize();
     _preciceInterface->initializeData();
 
-    if (!_preciceInterface->hasMesh("FluidMesh")) {
+    if (!_preciceInterface->hasMesh("FluidMeshX")) {
       throwException("Precice configuration does not have 'FluidMesh'");
     }
 
@@ -246,84 +259,81 @@ public:
       throwException("Precice configuration does not have 'BodyMesh'");
     }
 
-    _fluidMeshId
-      = _preciceInterface->getMeshID("FluidMesh");
-    _fluidVertexSize
-      = _preciceInterface->getMeshVertexSize(_fluidMeshId);
+    _fluidMeshId[0]
+      = _preciceInterface->getMeshID("FluidMeshX");
+    _fluidMeshId[1]
+      = _preciceInterface->getMeshID("FluidMeshY");
     _bodyMeshId
       = _preciceInterface->getMeshID("BodyMesh");
-    _bodyVertexSize
-      = _preciceInterface->getMeshVertexSize(_bodyMeshId);
 
-    if (!_preciceInterface->hasData("Velocities", _fluidMeshId)) {
+    if (!_preciceInterface->hasData("VelocitiesX", _fluidMeshId[0])) {
       throwException("Precice configuration does not have 'Velocities' data"
                      " related to 'FluidMesh'");
     }
 
-    if (!_preciceInterface->hasData("Forces", _fluidMeshId)) {
+    if (!_preciceInterface->hasData("ForcesX", _fluidMeshId[0])) {
       throwException("Precice configuration does not have 'Forces' data"
                      " related to 'FluidMesh'");
     }
 
-    if (!_preciceInterface->hasData("Velocities", _bodyMeshId)) {
-      throwException("Precice configuration does not have 'Velocities' data"
-                     " related to 'BodyMesh'");
-    }
-
-    if (!_preciceInterface->hasData("Forces", _bodyMeshId)) {
-      throwException("Precice configuration does not have 'Forces' data"
-                     " related to 'BodyMesh'");
-    }
-
-    _fluidMeshVelocitiesId
-      = _preciceInterface->getDataID("Velocities", _fluidMeshId);
-    _fluidMeshForcesId
-      = _preciceInterface->getDataID("Forces", _fluidMeshId);
-    _bodyMeshVelocitiesId
-      = _preciceInterface->getDataID("Velocities", _bodyMeshId);
-    _bodyMeshForcesId
-      = _preciceInterface->getDataID("Forces", _bodyMeshId);
+    _fluidMeshVelocitiesId[0]
+      = _preciceInterface->getDataID("VelocitiesX", _fluidMeshId[0]);
+    _fluidMeshVelocitiesId[1]
+      = _preciceInterface->getDataID("VelocitiesY", _fluidMeshId[1]);
+    _fluidMeshForcesId[0]
+      = _preciceInterface->getDataID("ForcesX", _fluidMeshId[0]);
+    _fluidMeshForcesId[1]
+      = _preciceInterface->getDataID("ForcesY", _fluidMeshId[1]);
   }
 
   void
   computePositionInRespectToGeometry(CellAccessorType const& accessor) const {
-    accessor.positionInRespectToGeometry()
-      = _preciceInterface->inquirePosition(
-      accessor.pressurePosition().data(),
-      std::set<int>({ _bodyMeshId }));
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      accessor.positionInRespectToGeometry()(d)
+        = _preciceInterface->inquirePosition(
+        accessor.velocityPosition(d).data(),
+        std::set<int>({ _bodyMeshId }));
+    }
 
     // if (!is_outside(accessor.positionInRespectToGeometry())) {
-    //   logInfo("{1}", accessor.pressurePosition().transpose());
+    // logInfo("{1}", accessor.pressurePosition().transpose());
     // }
   }
 
   void
   createFluidMeshVertex(CellAccessorType const& accessor) {
-    unsigned distance
-      = compute_cell_layer_along_geometry_interface(
-      accessor,
-      _maxLayerSize);
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      unsigned distance
+        = compute_cell_layer_along_geometry_interface(
+        accessor,
+        _maxLayerSize,
+        d);
 
-    bool doAdd = validate_layer_number(accessor,
-                                       distance,
-                                       outerLayerSize(),
-                                       innerLayerSize());
+      bool doAdd = validate_layer_number(accessor,
+                                         distance,
+                                         outerLayerSize(),
+                                         innerLayerSize(),
+                                         d);
 
-    if (doAdd) {
-      // logInfo("{1} | d = {2}", accessor.index().transpose(), distance);
-      VectorDsType position = accessor.pressurePosition();
-      auto         vertexId
-        = _preciceInterface->setMeshVertex(_fluidMeshId, position.data());
+      if (doAdd) {
+        // logInfo("{1} | d = {2}", accessor.index().transpose(), distance);
+        VectorDsType position = accessor.velocityPosition(d);
+        auto         vertexId
+          = _preciceInterface->setMeshVertex(
+          _fluidMeshId[d], position.data());
 
-      this->_vertexIds.insert(std::make_pair(accessor.globalIndex(), vertexId));
+        this->_vertexIds[d].insert(
+          std::make_pair(accessor.globalIndex(), vertexId));
+      }
     }
   }
 
   std::pair<typename VertexIdMap::const_iterator, bool>
-  doesVertexExist(CellAccessorType const& accessor) const {
-    auto find_it = this->_vertexIds.find(accessor.globalIndex());
+  doesVertexExist(CellAccessorType const& accessor,
+                  unsigned const&         dimension) const {
+    auto find_it = this->_vertexIds[dimension].find(accessor.globalIndex());
 
-    if (find_it == this->_vertexIds.end()) {
+    if (find_it == this->_vertexIds[dimension].end()) {
       return std::make_pair(find_it, false);
     } else {
       return std::make_pair(find_it, true);
@@ -332,10 +342,12 @@ public:
 
   void
   writeFluidVelocity(typename VertexIdMap::const_iterator const& it,
-                     VectorDsType const&                         velocity) {
-    _preciceInterface->writeVectorData(_fluidMeshVelocitiesId,
-                                       it->second,
-                                       velocity.data());
+                     ScalarType const&                           velocity,
+                     unsigned const&                             dimension) {
+    _preciceInterface->writeScalarData(
+      _fluidMeshVelocitiesId[dimension],
+      it->second,
+      static_cast<double>(velocity));
   }
 
   void
@@ -345,24 +357,30 @@ public:
 
   void
   readFluidForce(typename VertexIdMap::const_iterator const& it,
-                 VectorDsType&                               force) {
-    _preciceInterface->readVectorData(_fluidMeshForcesId,
-                                      it->second,
-                                      force.data());
+                 ScalarType&                                 force,
+                 unsigned const&                             dimension) {
+    double temp;
+    _preciceInterface->readScalarData(
+      _fluidMeshForcesId[dimension],
+      it->second,
+      temp);
+    force = static_cast<ScalarType>(temp);
   }
 
   VectorDsType
-  computeBodyForceAt(unsigned            global_index,
-                     VectorDsType const& force,
-                     MemoryType*         memory) {
+  computeBodyForceAt(unsigned          global_index,
+                     ScalarType const& force,
+                     MemoryType*       memory,
+                     unsigned const&   dimension) {
     VectorDsType body_force = VectorDsType::Zero();
 
     auto accessor = *memory->grid()->begin();
     accessor.initialize(global_index);
 
-    body_force += accessor.width().prod() * (-force) / memory->timeStepSize();
+    body_force(dimension)
+      += accessor.width().prod() * (-force) / memory->timeStepSize();
 
-    memory->setForceAt(global_index, body_force);
+    memory->addForceAt(global_index, body_force);
 
     return body_force;
   }
@@ -409,14 +427,10 @@ private:
   unsigned                  _outerLayerSize;
   unsigned                  _innerLayerSize;
 
-  int _fluidMeshId;
-  int _fluidVertexSize;
-  int _bodyMeshId;
-  int _bodyVertexSize;
-  int _fluidMeshVelocitiesId;
-  int _fluidMeshForcesId;
-  int _bodyMeshVelocitiesId;
-  int _bodyMeshForcesId;
+  std::array<int, Dimensions> _fluidMeshId;
+  int                         _bodyMeshId;
+  std::array<int, Dimensions> _fluidMeshVelocitiesId;
+  std::array<int, Dimensions> _fluidMeshForcesId;
 };
 }
 }

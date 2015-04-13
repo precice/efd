@@ -1,9 +1,15 @@
 #include "SolverBuilder.hpp"
 
+#include "ImmersedBoundary/Controller.hpp"
 #include "GhostLayer/CornerVelocityHandler.hpp"
-
 #include "GhostLayer/IfsfdHandlersBuilder.hpp"
 #include "GhostLayer/SfsfdHandlersBuilder.hpp"
+#include "GhostLayer/IfsfdHandlers.hpp"
+#include "GhostLayer/SfsfdHandlers.hpp"
+
+#include "FsfdSolver.hpp"
+#include "IfsfdMemory.hpp"
+#include "SfsfdMemory.hpp"
 
 #include <functional>
 

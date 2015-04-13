@@ -11,7 +11,7 @@ class ApplicationPrivateImplementation;
  */
 class Application {
 private:
-  typedef ApplicationPrivateImplementation Implementation;
+  using Implementation = ApplicationPrivateImplementation;
 
 public:
   Application(int const& argc, char** argv);

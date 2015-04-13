@@ -110,7 +110,7 @@ public:
 
     _velocity.reset(new VectorDsType[_grid.size().prod()]);
     _pressure.reset(new ScalarType[_grid.size().prod()]);
-    _position.reset(new int[_grid.size().prod()]);
+    _position.reset(new VectorDiType[_grid.size().prod()]);
     _fgh.reset(new VectorDsType[_grid.size().prod()]);
     _convection.reset(new VectorDsType[_grid.size().prod()]);
 
@@ -227,6 +227,9 @@ public:
   setForceAt(int const&, VectorDsType const&) {}
 
   void
+  addForceAt(int const&, VectorDsType const&) {}
+
+  void
   setBodyForceAt(int const&, VectorDsType const&) {}
 
   ScalarType
@@ -299,22 +302,22 @@ public:
     return _pressure.get()[index];
   }
 
-  int const*
+  VectorDiType const*
   position() const {
     return _position.get();
   }
 
-  int*
+  VectorDiType*
   position() {
     return _position.get();
   }
 
-  int const&
+  VectorDiType const&
   position(int const& index) const {
     return _position.get()[index];
   }
 
-  int&
+  VectorDiType&
   position(int const& index) {
     return _position.get()[index];
   }
@@ -406,7 +409,7 @@ protected:
 
   std::unique_ptr<VectorDsType[]> _velocity;
   std::unique_ptr<ScalarType[]>   _pressure;
-  std::unique_ptr<int[]>          _position;
+  std::unique_ptr<VectorDiType[]> _position;
   std::unique_ptr<VectorDsType[]> _fgh;
   std::unique_ptr<VectorDsType[]> _convection;
 };

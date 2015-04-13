@@ -45,8 +45,9 @@ is_the_same_position(int const& position0,
 template <typename TCellAccessor>
 inline unsigned
 compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
-                                            unsigned const&           max_distance) {
-  int position = accessor.positionInRespectToGeometry();
+                                            unsigned const&           max_distance,
+                      unsigned const& dimension) {
+  int position = accessor.positionInRespectToGeometry()(dimension);
 
   for (unsigned currentDistance = 1;
        currentDistance <= max_distance;
@@ -69,7 +70,7 @@ compute_cell_layer_along_geometry_interface(TCellAccessor const& accessor,
         }
 
         auto const position1
-          = accessor.absolutePositionInRespectToGeometry(index);
+          = accessor.absolutePositionInRespectToGeometry(index)(dimension);
 
         if (is_the_same_position(position, position1) == 0) {
 
@@ -87,12 +88,13 @@ inline bool
 validate_layer_number(TCellAccessor const& accessor,
                       unsigned const&      distance,
                       unsigned const&      outer_layer_size,
-                      unsigned const&      inner_layer_size) {
-  if (is_outside(accessor.positionInRespectToGeometry()) == 1) {
+                      unsigned const&      inner_layer_size,
+                      unsigned const& dimension) {
+  if (is_outside(accessor.positionInRespectToGeometry()(dimension)) == 1) {
     if (outer_layer_size >= distance) {
       return true;
     }
-  } else if (is_outside(accessor.positionInRespectToGeometry()) == 0) {
+  } else if (is_outside(accessor.positionInRespectToGeometry()(dimension)) == 0) {
     if (inner_layer_size >= distance) {
       return true;
     }

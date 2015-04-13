@@ -67,21 +67,21 @@ public:
 };
 
 extern template class SfsfdMemory
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 0, double, 2 >>;
+  < SfsfdSolverTraits < 0, 0, double, 2 >>;
 extern template class SfsfdMemory
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 1, double, 2 >>;
+  < SfsfdSolverTraits < 0, 1, double, 2 >>;
 extern template class SfsfdMemory
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 0, double, 2 >>;
+  < SfsfdSolverTraits < 1, 0, double, 2 >>;
 extern template class SfsfdMemory
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 1, double, 2 >>;
+  < SfsfdSolverTraits < 1, 1, double, 2 >>;
 extern template class SfsfdMemory
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 0, double, 3 >>;
+  < SfsfdSolverTraits < 0, 0, double, 3 >>;
 extern template class SfsfdMemory
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 1, double, 3 >>;
+  < SfsfdSolverTraits < 0, 1, double, 3 >>;
 extern template class SfsfdMemory
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 0, double, 3 >>;
+  < SfsfdSolverTraits < 1, 0, double, 3 >>;
 extern template class SfsfdMemory
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 1, double, 3 >>;
+  < SfsfdSolverTraits < 1, 1, double, 3 >>;
 }
 }
 #endif

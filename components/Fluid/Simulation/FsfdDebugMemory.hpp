@@ -76,6 +76,11 @@ public:
   }
 
   void
+  addForceAt(int const& index, VectorDsType const& value) {
+    _force.get()[index] += value;
+  }
+
+  void
   setBodyForceAt(int const& index, VectorDsType const& value) {
     _bodyForce.get()[index] = value;
   }
@@ -104,7 +109,7 @@ protected:
 
     case Base::AttributeSize + 4:
 
-      return this->_position.get()[index];
+      return this->_position.get()[index](0);
 
     default:
 

@@ -1,128 +1,234 @@
 #include "FsfdSolver.hpp"
 
-#include "Private/mpigenerics.hpp"
-#include "Reporter.hpp"
-#include "computemaxvelocity.hpp"
-#include "functions.hpp"
-
+#include "GhostLayer/IfsfdHandlers.hpp"
+#include "GhostLayer/SfsfdHandlers.hpp"
 #include "Grid.hpp"
 #include "GridGeometry.hpp"
 #include "IfsfdCellAccessor.hpp"
+#include "IfsfdMemory.hpp"
+#include "ImmersedBoundary/Controller.hpp"
+#include "PeSolver.hpp"
+#include "Private/mpigenerics.hpp"
+#include "Reporter.hpp"
 #include "SfsfdCellAccessor.hpp"
+#include "SfsfdMemory.hpp"
+#include "computemaxvelocity.hpp"
+#include "functions.hpp"
 
 #include <precice/SolverInterface.hpp>
 
+#include <Uni/Firewall/Interface>
+#include <Uni/Logging/macros>
+
 namespace FsiSimulation {
 namespace FluidSimulation {
+template <typename TScalar, typename TVector>
+inline TScalar
+compute_time_step_size(TScalar const& re,
+                       TScalar const& tau,
+                       TVector const& minCellWidth,
+                       TVector const& maxVelocity) {
+  TScalar factor = minCellWidth.cwiseProduct(minCellWidth).cwiseInverse().sum();
+
+  TScalar localMin = (TScalar)(re / (2.0 * factor));
+
+  for (unsigned d = 0; d < TVector::RowsAtCompileTime; ++d) {
+    if (std::abs(maxVelocity(d)) > std::numeric_limits<TScalar>::epsilon()) {
+      localMin = std::min(localMin,
+                          1.0 / maxVelocity(d));
+    }
+  }
+
+  TScalar globalMin = std::numeric_limits<TScalar>::max();
+  Private::mpiAllReduce<TScalar>(&localMin,
+                                 &globalMin,
+                                 1,
+                                 MPI_MIN,
+                                 PETSC_COMM_WORLD);
+
+  factor  = globalMin;
+  factor *= tau;
+
+  return factor;
+}
+
+template <typename TSolverTraits>
+class FsfdSolverImplementation {
+public:
+  using Interface = FsfdSolver<TSolverTraits>;
+
+  FsfdSolverImplementation(Interface* in) : _in(in) {}
+
+  typename Interface::MemoryType                     memory;
+  typename Interface::PeSolverType                   peSolver;
+  typename Interface::GhostHandlersType              ghostHandlers;
+  typename Interface::ImmersedBoundaryControllerType ibController;
+  Reporter* reporter;
+
+  Uni_Firewall_INTERFACE_LINK(FsfdSolver<TSolverTraits> );
+};
+
+template <typename T>
+FsfdSolver<T>::
+FsfdSolver() : _im(new Implementation(this)) {}
+
+template <typename T>
+FsfdSolver<T>::
+~FsfdSolver() {}
+
+template <typename T>
+typename FsfdSolver<T>::MemoryType const*
+FsfdSolver<T>::
+memory() const {
+  return &_im->memory;
+}
+
+template <typename T>
+typename FsfdSolver<T>::MemoryType *
+FsfdSolver<T>::
+memory() {
+  return &_im->memory;
+}
+
+template <typename T>
+typename FsfdSolver<T>::ImmersedBoundaryControllerType const*
+FsfdSolver<T>::
+immersedBoundaryController() const {
+  return &_im->ibController;
+}
+
+template <typename T>
+typename FsfdSolver<T>::ImmersedBoundaryControllerType *
+FsfdSolver<T>::
+immersedBoundaryController() {
+  return &_im->ibController;
+}
+
+template <typename T>
+typename FsfdSolver<T>::GhostHandlersType const*
+FsfdSolver<T>::
+ghostHandlers() const {
+  return &_im->ghostHandlers;
+}
+
+template <typename T>
+typename FsfdSolver<T>::GhostHandlersType *
+FsfdSolver<T>::
+ghostHandlers() {
+  return &_im->ghostHandlers;
+}
+
 template <typename T>
 void
 FsfdSolver<T>::
 initialize(precice::SolverInterface* preciceInteface,
            Reporter*                 reporter) {
-  _ibController.initialize(preciceInteface);
-  _reporter = reporter;
+  _im->ibController.initialize(preciceInteface);
+  _im->reporter = reporter;
 
-  _peSolver.initialize(&_memory, &_ghostHandlers);
+  _im->peSolver.initialize(&_im->memory, &_im->ghostHandlers);
 
-  _memory.maxVelocity()     = VectorDsType::Zero();
-  _memory.timeStepSize()    = 0.0;
-  _memory.time()            = 0.0;
-  _memory.iterationNumber() = 0;
+  _im->memory.maxVelocity()     = VectorDsType::Zero();
+  _im->memory.timeStepSize()    = 0.0;
+  _im->memory.time()            = 0.0;
+  _im->memory.iterationNumber() = 0;
 
-  for (auto& accessor : _memory.grid()->innerGrid) {
-    _ibController.computePositionInRespectToGeometry(accessor);
+  for (auto& accessor : _im->memory.grid()->innerGrid) {
+    _im->ibController.computePositionInRespectToGeometry(accessor);
     accessor.velocity() = VectorDsType::Zero();
     accessor.setDiffusion(VectorDsType::Zero());
     accessor.setForce(VectorDsType::Zero());
     accessor.setBodyForce(VectorDsType::Zero());
     PressureProcessing<SolverId>::initialize(accessor, 0.0);
-    compute_max_velocity(accessor, _memory.maxVelocity());
+    compute_max_velocity(accessor, _im->memory.maxVelocity());
   }
 
-  _ghostHandlers.executeVelocityInitialization();
-  _ghostHandlers.executeVelocityMpiExchange();
-  _ghostHandlers.executePressureMpiExchange();
+  _im->ghostHandlers.executeVelocityInitialization();
+  _im->ghostHandlers.executeVelocityMpiExchange();
+  _im->ghostHandlers.executePressureMpiExchange();
 
-  for (auto const& accessor : _memory.grid()->innerGrid) {
-    _ibController.createFluidMeshVertex(accessor);
+  for (auto const& accessor : _im->memory.grid()->innerGrid) {
+    _im->ibController.createFluidMeshVertex(accessor);
 
     auto convection
       = ConvectionProcessing<Dimensions>::compute(accessor,
-                                                  _memory.parameters()->gamma());
+                                                  _im->memory.parameters()->
+                                                  gamma());
     accessor.convection() = convection;
   }
 
-  _reporter->setAt("Re",
-                   _memory.parameters()->re());
-  _reporter->setAt("Gamma",
-                   _memory.parameters()->gamma());
-  _reporter->setAt("Tau",
-                   _memory.parameters()->tau());
-  _reporter->setAt("G",
-                   _memory.parameters()->g());
-  _reporter->setAt("OuterLayerSize",
-                   _ibController.outerLayerSize());
-  _reporter->setAt("InnerLayerSize",
-                   _ibController.innerLayerSize());
-  _reporter->setAt("ProcessorSize",
-                   _memory.parallelDistribution()->processorSize);
-  _reporter->setAt("GlobalCellSize",
-                   _memory.parallelDistribution()->globalCellSize);
-  _reporter->setAt("UniformLocalCellSize",
-                   _memory.parallelDistribution()->uniformLocalCellSize);
-  _reporter->setAt("LastLocalCellSize",
-                   _memory.parallelDistribution()->lastLocalCellSize);
-  _reporter->setAt("Width",
-                   _memory.gridGeometry()->size());
-  _reporter->setAt("CellWidth",
-                   _memory.gridGeometry()->minCellWidth());
-  _reporter->setAt("SolverId", SolverId);
+  _im->reporter->setAt("Re",
+                       _im->memory.parameters()->re());
+  _im->reporter->setAt("Gamma",
+                       _im->memory.parameters()->gamma());
+  _im->reporter->setAt("Tau",
+                       _im->memory.parameters()->tau());
+  _im->reporter->setAt("G",
+                       _im->memory.parameters()->g());
+  _im->reporter->setAt("OuterLayerSize",
+                       _im->ibController.outerLayerSize());
+  _im->reporter->setAt("InnerLayerSize",
+                       _im->ibController.innerLayerSize());
+  _im->reporter->setAt("ProcessorSize",
+                       _im->memory.parallelDistribution()->processorSize);
+  _im->reporter->setAt("GlobalCellSize",
+                       _im->memory.parallelDistribution()->globalCellSize);
+  _im->reporter->setAt("UniformLocalCellSize",
+                       _im->memory.parallelDistribution()->uniformLocalCellSize);
+  _im->reporter->setAt("LastLocalCellSize",
+                       _im->memory.parallelDistribution()->lastLocalCellSize);
+  _im->reporter->setAt("Width",
+                       _im->memory.gridGeometry()->size());
+  _im->reporter->setAt("CellWidth",
+                       _im->memory.gridGeometry()->minCellWidth());
+  _im->reporter->setAt("SolverId", SolverId);
 
-  _reporter->addAt(0, "IterationNumber");
-  _reporter->addAt(1, "Time");
-  _reporter->addAt(2, "TimeStepSize");
-  _reporter->addAt(3, "Force1");
-  _reporter->addAt(4, "Force2");
-  _reporter->addAt(5, "Force3");
+  _im->reporter->addAt(0, "IterationNumber");
+  _im->reporter->addAt(1, "Time");
+  _im->reporter->addAt(2, "TimeStepSize");
+  _im->reporter->addAt(3, "Force1");
+  _im->reporter->addAt(4, "Force2");
+  _im->reporter->addAt(5, "Force3");
 
-  _reporter->recordIteration();
+  _im->reporter->recordIteration();
 
-  _reporter->addAt(0, _memory.iterationNumber());
-  _reporter->addAt(1, _memory.time());
-  _reporter->addAt(2, _memory.timeStepSize());
-  _reporter->addAt(3, VectorDsType::Zero().eval());
-  _reporter->addAt(4, VectorDsType::Zero().eval());
-  _reporter->addAt(5, VectorDsType::Zero().eval());
+  _im->reporter->addAt(0, _im->memory.iterationNumber());
+  _im->reporter->addAt(1, _im->memory.time());
+  _im->reporter->addAt(2, _im->memory.timeStepSize());
+  _im->reporter->addAt(3, VectorDsType::Zero().eval());
+  _im->reporter->addAt(4, VectorDsType::Zero().eval());
+  _im->reporter->addAt(5, VectorDsType::Zero().eval());
 
-  _reporter->recordIteration();
+  _im->reporter->recordIteration();
 }
 
 template <typename T>
 void
 FsfdSolver<T>::
 iterate() {
-  _memory.timeStepSize()
-    = compute_time_step_size(_memory.parameters()->re(),
-                             _memory.parameters()->tau(),
-                             _memory.gridGeometry()->minCellWidth(),
-                             _memory.maxVelocity());
+  _im->memory.timeStepSize()
+    = compute_time_step_size(_im->memory.parameters()->re(),
+                             _im->memory.parameters()->tau(),
+                             _im->memory.gridGeometry()->minCellWidth(),
+                             _im->memory.maxVelocity());
 
-  logInfo("dt = {1}", _memory.timeStepSize());
+  logInfo("dt = {1}", _im->memory.timeStepSize());
   logInfo("maxv = {1}",
-          _memory.maxVelocity().cwiseProduct(_memory.gridGeometry()->minCellWidth()).transpose());
-  _memory.maxVelocity()
+          _im->memory.maxVelocity().cwiseProduct(
+            _im->memory.gridGeometry()->minCellWidth()).transpose());
+  _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
 
-  for (auto const& accessor : _memory.grid()->innerGrid) {
-    _memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
+  for (auto const& accessor : _im->memory.grid()->innerGrid) {
+    _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
 
     auto convection = ConvectionProcessing<Dimensions>::compute(
       accessor,
-      _memory.parameters()->gamma());
+      _im->memory.parameters()->gamma());
 
     auto previousConvection = accessor.convection();
 
-    if (_memory.iterationNumber() == 0) {
+    if (_im->memory.iterationNumber() == 0) {
       previousConvection = convection;
     }
 
@@ -132,14 +238,14 @@ iterate() {
 
     accessor.setDiffusion(diffusion);
 
-    diffusion = diffusion / _memory.parameters()->re();
+    diffusion = diffusion / _im->memory.parameters()->re();
 
     VectorDsType velocity;
 
-    for (int d = 0; d < Dimensions; ++d) {
-      velocity(d) = 0.5 * (accessor.velocity(d, -1, d) +
-                           accessor.velocity(d));
-    }
+    // for (int d = 0; d < Dimensions; ++d) {
+    // velocity(d) = 0.5 * (accessor.velocity(d, -1, d) +
+    // accessor.velocity(d));
+    // }
 
     VectorDsType grad_pressure;
 
@@ -152,53 +258,61 @@ iterate() {
     if (SolverId == 0) {
       accessor.fgh()
         = accessor.velocity()
-          + _memory.timeStepSize() * (diffusion
-                                      - convection
-                                      + _memory.parameters()->g()
-                                      );
+          + _im->memory.timeStepSize() * (diffusion
+                                          - convection
+                                          + _im->memory.parameters()->g()
+                                          );
     } else {
       accessor.fgh()
         = accessor.velocity()
-          + _memory.timeStepSize() * (-1.5 * convection
-                                      + 0.5 * previousConvection
-                                      + 0.5 * diffusion
-                                      - grad_pressure
-                                      + _memory.parameters()->g());
+          + _im->memory.timeStepSize() * (-1.5 * convection
+                                          + 0.5 * previousConvection
+                                          + 0.5 * diffusion
+                                          - grad_pressure
+                                          + _im->memory.parameters()->g());
       // logInfo("Fgh | {1}", accessor.index().transpose());
     }
 
-    auto status = _ibController.doesVertexExist(accessor);
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      auto status = _im->ibController.doesVertexExist(accessor, d);
 
-    if (status.second) {
-      VectorDsType temp
-        = velocity
-          + _memory.timeStepSize() * (-1.5 * convection
-                                      + 0.5 * previousConvection
-                                      + diffusion
-                                      - grad_pressure);
+      if (status.second) {
+        _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
+        ScalarType temp
+          = accessor.velocity(d)
+            + _im->memory.timeStepSize() * (-1.5 * convection
+                                            + 0.5 * previousConvection
+                                            + diffusion
+                                            - grad_pressure).eval()(d);
 
-      _ibController.writeFluidVelocity(status.first, temp);
+        _im->ibController.writeFluidVelocity(status.first, temp, d);
+      }
     }
   }
 
   // logInfo("Map data");
-  _ibController.mapData(_memory.timeStepSize());
+  _im->ibController.mapData(_im->memory.timeStepSize());
 
   // logInfo("Read data");
   VectorDsType total_force = VectorDsType::Zero();
 
-  for (auto it = _ibController.begin(); it != _ibController.end(); ++it) {
-    VectorDsType force;
-    _ibController.readFluidForce(it, force);
+  for (unsigned d = 0; d < Dimensions; ++d) {
+    for (auto it = _im->ibController.begin(d);
+         it != _im->ibController.end(d);
+         ++it) {
+      ScalarType force;
+      _im->ibController.readFluidForce(it, force, d);
 
-    _memory.fgh()[it->first] += force;
+      _im->memory.fgh()[it->first](d) += force;
 
-    auto body_force = _ibController.computeBodyForceAt(
-      it->first,
-      force,
-      &_memory);
+      auto body_force = _im->ibController.computeBodyForceAt(
+        it->first,
+        force,
+        &_im->memory,
+        d);
 
-    total_force += body_force;
+      total_force += body_force;
+    }
   }
 
   Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
@@ -207,72 +321,72 @@ iterate() {
                                     MPI_SUM,
                                     PETSC_COMM_WORLD);
 
-  _reporter->addAt(3, total_force);
+  _im->reporter->addAt(3, total_force);
 
   // logInfo("Vpe");
-  _peSolver.executeVpe();
-  _ghostHandlers.executeFghMpiExchange();
+  _im->peSolver.executeVpe();
+  _im->ghostHandlers.executeFghMpiExchange();
 
   // logInfo("Ppe");
-  _peSolver.executePpe();
-  _ghostHandlers.executePressureMpiExchange();
+  _im->peSolver.executePpe();
+  _im->ghostHandlers.executePressureMpiExchange();
 
-  for (auto& accessor : _memory.grid()->innerGrid) {
+  for (auto& accessor : _im->memory.grid()->innerGrid) {
     VectorDsType grad_pressure
       = PressureProcessing<SolverId>::grad(accessor);
 
     accessor.velocity()
       = accessor.fgh()
-        - _memory.timeStepSize() * grad_pressure;
+        - _im->memory.timeStepSize() * grad_pressure;
 
-    compute_max_velocity(accessor, _memory.maxVelocity());
+    compute_max_velocity(accessor, _im->memory.maxVelocity());
   }
 
-  _ghostHandlers.executeVelocityInitialization();
-  _ghostHandlers.executeVelocityMpiExchange();
+  _im->ghostHandlers.executeVelocityInitialization();
+  _im->ghostHandlers.executeVelocityMpiExchange();
 
-  _ibController.computeBodyForce(&_memory, _reporter);
+  _im->ibController.computeBodyForce(&_im->memory, _im->reporter);
 
-  _memory.time() += _memory.timeStepSize();
-  ++_memory.iterationNumber();
+  _im->memory.time() += _im->memory.timeStepSize();
+  ++_im->memory.iterationNumber();
 
-  _reporter->addAt(0, _memory.iterationNumber());
-  _reporter->addAt(1, _memory.time());
-  _reporter->addAt(2, _memory.timeStepSize());
+  _im->reporter->addAt(0, _im->memory.iterationNumber());
+  _im->reporter->addAt(1, _im->memory.time());
+  _im->reporter->addAt(2, _im->memory.timeStepSize());
 }
 
 template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 0, double, 2 >>;
+  < SfsfdSolverTraits < 0, 0, double, 2 >>;
 template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 1, double, 2 >>;
+  < SfsfdSolverTraits < 0, 1, double, 2 >>;
 template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 0, double, 2 >>;
+  < SfsfdSolverTraits < 1, 0, double, 2 >>;
 template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 1, double, 2 >>;
+  < SfsfdSolverTraits < 1, 1, double, 2 >>;
 template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 0, double, 3 >>;
+  < SfsfdSolverTraits < 0, 0, double, 3 >>;
 template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 1, double, 3 >>;
+  < SfsfdSolverTraits < 0, 1, double, 3 >>;
 template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 0, double, 3 >>;
+  < SfsfdSolverTraits < 1, 0, double, 3 >>;
 template class FsfdSolver
-  < SfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 1, double, 3 >>;
+  < SfsfdSolverTraits < 1, 1, double, 3 >>;
 
 template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 0, double, 2 >>;
+  < IfsfdSolverTraits < 0, 0, double, 2 >>;
 template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 0, 1, double, 2 >>;
+  < IfsfdSolverTraits < 0, 1, double, 2 >>;
 template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 0, double, 2 >>;
+  < IfsfdSolverTraits < 1, 0, double, 2 >>;
 template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 2>, 1, 1, double, 2 >>;
+  < IfsfdSolverTraits < 1, 1, double, 2 >>;
 template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 0, double, 3 >>;
+  < IfsfdSolverTraits < 0, 0, double, 3 >>;
 template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 0, 1, double, 3 >>;
+  < IfsfdSolverTraits < 0, 1, double, 3 >>;
 template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 0, double, 3 >>;
+  < IfsfdSolverTraits < 1, 0, double, 3 >>;
 template class FsfdSolver
-  < IfsfdSolverTraits < UniformGridGeometry<double, 3>, 1, 1, double, 3 >>;
+  < IfsfdSolverTraits < 1, 1, double, 3 >>;
 }
 }

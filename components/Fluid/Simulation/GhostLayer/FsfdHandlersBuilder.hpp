@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Simulation/Grid.hpp"
+
 #include "Simulation/SolverTraits.hpp"
 
 namespace FsiSimulation {
