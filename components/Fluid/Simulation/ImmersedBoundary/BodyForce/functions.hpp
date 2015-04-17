@@ -14,27 +14,41 @@ namespace ImmersedBoundary {
 namespace BodyForce {
 template <typename TCellAccessor>
 bool
+do_cell_force_computation(TCellAccessor const& accessor,
+                          unsigned const&      offset) {
+  bool doAccept = false;
+
+  for (unsigned d = 0; d < TCellAccessor::Dimensions; ++d) {
+    auto const position = accessor.positionInRespectToGeometry()(d);
+
+    if (position < 0) {
+      return false;
+    }
+
+    if (get_distance<TCellAccessor::Dimensions>(position) == offset) {
+      doAccept = true;
+    }
+  }
+
+  return doAccept;
+}
+
+template <typename TCellAccessor>
+bool
 compute_cell_force(TCellAccessor const&                      accessor,
                    typename TCellAccessor::ScalarType const& re,
                    typename TCellAccessor::VectorDsType&     force) {
-  typedef Eigen::Matrix<typename TCellAccessor::ScalarType,
-                        TCellAccessor::Dimensions,
-                        TCellAccessor::Dimensions> Matrix;
-
   using Scalar = typename TCellAccessor::ScalarType;
+
   using Vector = typename TCellAccessor::VectorDsType;
 
-  if (is_outside(accessor.positionInRespectToGeometry()(0)) != 1) {
-    return false;
-  }
+  using Matrix = Eigen::Matrix<Scalar,
+                               TCellAccessor::Dimensions,
+                               TCellAccessor::Dimensions>;
 
-  auto const layer_size
-    = compute_cell_layer_along_geometry_interface(
-    accessor,
-    2,
-    0);
+  unsigned const offset = 1;
 
-  if (layer_size != 2) {
+  if (!do_cell_force_computation(accessor, offset)) {
     return false;
   }
 
@@ -59,16 +73,28 @@ compute_cell_force(TCellAccessor const&                      accessor,
 
   for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      Scalar normal_direction = +1.0;
-      int    offset           = -2;
+      for (int pd = 0; pd < TCellAccessor::Dimensions; ++pd) {
+        auto const position
+          = accessor.positionInRespectToGeometry()(pd);
+        auto const distance
+          = get_distance<TCellAccessor::Dimensions>(position);
+        auto const bits
+          = get_neighbor_bits<TCellAccessor::Dimensions>(position);
 
-      if (d2 == 1) {
-        normal_direction = -1.0;
-        offset           = +2;
-      }
+        if (distance != offset) {
+          continue;
+        }
 
-      if (accessor.positionInRespectToGeometry(d, offset)(0)
-          != precice::constants::positionOutsideOfGeometry()) {
+        if ((((1 << d) << d2) & bits) == 0) {
+          continue;
+        }
+
+        Scalar normal_direction = +1.0;
+
+        if (d2 == 1) {
+          normal_direction = -1.0;
+        }
+
         Vector normal = Vector::Zero();
 
         normal(d) = normal_direction;
@@ -80,8 +106,10 @@ compute_cell_force(TCellAccessor const&                      accessor,
             width *= accessor.width(d4);
           }
         }
+
         normal(d) *= width;
         force     += matrix * normal;
+        break;
       }
     }
   }
@@ -95,16 +123,12 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
                          typename TCellAccessor::ScalarType const& re,
                          typename TCellAccessor::VectorDsType&     force) {
   using Scalar = typename TCellAccessor::ScalarType;
+
   using Vector = typename TCellAccessor::VectorDsType;
 
-  if (is_outside(accessor.positionInRespectToGeometry()(0)) != 1) {
-    return false;
-  }
+  unsigned const offset = 1;
 
-  auto const layer_size
-    = compute_cell_layer_along_geometry_interface(accessor, 2, 0);
-
-  if (layer_size != 2) {
+  if (!do_cell_force_computation(accessor, offset)) {
     return false;
   }
 
@@ -112,16 +136,29 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
 
   for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      Scalar normal_direction = +1.0;
-      int    offset           = -2;
+      for (int pd = 0; pd < TCellAccessor::Dimensions; ++pd) {
+        auto const position
+          = accessor.positionInRespectToGeometry()(pd);
+        auto const distance
+          = get_distance<TCellAccessor::Dimensions>(position);
 
-      if (d2 == 1) {
-        normal_direction = -1.0;
-        offset           = +2;
-      }
+        auto const bits
+          = get_neighbor_bits<TCellAccessor::Dimensions>(position);
 
-      if (accessor.positionInRespectToGeometry(d, offset)(0)
-          != precice::constants::positionOutsideOfGeometry()) {
+        if (distance != offset) {
+          continue;
+        }
+
+        if ((((1 << d) << d2) & bits) == 0) {
+          continue;
+        }
+
+        Scalar normal_direction = +1.0;
+
+        if (d2 == 1) {
+          normal_direction = -1.0;
+        }
+
         Vector normal = Vector::Zero();
 
         normal(d) = normal_direction;

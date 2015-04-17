@@ -53,14 +53,14 @@
 
     <participant name="Fluid">
       <mapping:rbf-compact-tps-c2
-        support-radius="0.023"
+        support-radius="0.01"
         constraint="consistent"
         direction="write"
         from="FluidMeshX"
         to="BodyMesh"
         timing="initial"/>
       <mapping:rbf-compact-tps-c2
-        support-radius="0.023"
+        support-radius="0.01"
         constraint="consistent"
         direction="write"
         from="FluidMeshY"
@@ -68,14 +68,14 @@
         timing="initial"/>
 
       <mapping:rbf-compact-tps-c2
-        support-radius="0.023"
+        support-radius="0.01"
         constraint="consistent"
         direction="read"
         from="BodyMesh"
         to="FluidMeshX"
         timing="initial"/>
       <mapping:rbf-compact-tps-c2
-        support-radius="0.023"
+        support-radius="0.01"
         constraint="consistent"
         direction="read"
         from="BodyMeshY"

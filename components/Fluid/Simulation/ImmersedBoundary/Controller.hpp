@@ -197,7 +197,7 @@ public:
 
 public:
   Controller() :
-    _maxLayerSize(0),
+    _maxLayerSize(2),
     _outerLayerSize(0),
     _innerLayerSize(0) {}
 
@@ -290,27 +290,23 @@ public:
   computePositionInRespectToGeometry(CellAccessorType const& accessor) const {
     for (unsigned d = 0; d < Dimensions; ++d) {
       accessor.positionInRespectToGeometry()(d)
-        = _preciceInterface->inquirePosition(
+        = convert_precice_position(_preciceInterface->inquirePosition(
         accessor.velocityPosition(d).data(),
-        std::set<int>({ _bodyMeshId }));
+        std::set<int>({ _bodyMeshId })));
     }
-
-    // if (!is_outside(accessor.positionInRespectToGeometry())) {
-    // logInfo("{1}", accessor.pressurePosition().transpose());
-    // }
   }
 
   void
   createFluidMeshVertex(CellAccessorType const& accessor) {
     for (unsigned d = 0; d < Dimensions; ++d) {
-      unsigned distance
-        = compute_cell_layer_along_geometry_interface(
+        set_cell_neighbors_along_geometry_interface(
         accessor,
+        _preciceInterface,
+        std::set<int>({_bodyMeshId}),
         _maxLayerSize,
         d);
 
       bool doAdd = validate_layer_number(accessor,
-                                         distance,
                                          outerLayerSize(),
                                          innerLayerSize(),
                                          d);
