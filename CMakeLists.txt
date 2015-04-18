@@ -4,12 +4,11 @@ cmake_minimum_required(VERSION 2.8.8)
 # ------------------------------------------------------------------------------
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
-
 if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(SEND_ERROR "In-source builds are not allowed.")
 endif ()
 # ------------------------------------------------------------------------------
-project("Fluid-Structure Interations Simulation" C CXX)
+project("Fluid-Structure Interations Simulation" CXX C)
 # ------------------------------------------------------------------------------
 set(CMAKE_ERROR_DEPRECATED ON)
 # ------------------------------------------------------------------------------
@@ -35,14 +34,11 @@ endif ()
 # Modules {{{
 # ==============================================================================
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
-include(cotire)
-include(pch)
 # ==============================================================================
 # }}} Modules
 
 # Packages {{{
 # ==============================================================================
-#find_package(Petsc COMPONENTS CXX REQUIRED)
 find_package(Petsc REQUIRED)
 set(MPI_CXX_COMPILER ${PETSC_COMPILER})
 find_package(MPI REQUIRED)
@@ -51,7 +47,7 @@ find_package(PythonLibs 2.7 REQUIRED)
 set(Boost_USE_STATIC_LIBS    OFF)
 set(Boost_USE_MULTITHREADED  ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.57 # Versions 1.54, 1.55 have failed
+find_package(Boost 1.56 # Versions 1.54, 1.55 have failed
   COMPONENTS
   locale
   filesystem
@@ -64,7 +60,7 @@ find_package(Precice REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(Uni REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(XDMF REQUIRED)
+find_package(Xdmf REQUIRED)
 find_library(XDMF_LIBRARIES
   NAMES Xdmf
   PATHS ${XDMF_LIBRARY_DIRS}
@@ -183,36 +179,9 @@ set(Fluid_DEFINITIONS
 set(Fluid_COMPILE_FLAGS
   ${MPI_CXX_COMPILE_FLAGS}
   )
-
-# set(Fluid_PRECOMPILED_HEADERS
-  # "${PROJECT_DIR}/components/Fluid/Simulation/SfsfdMemory.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/IfsfdMemory.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/Grid.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/functions.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/SfsfdCellAccessor.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/IfsfdCellAccessor.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/LinearSolver.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/GhostLayer/SfsfdHandlersBuilder.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/GhostLayer/IfsfdHandlersBuilder.hpp"
-  # "${PROJECT_DIR}/components/Fluid/Simulation/IfsfdMemory.hpp"
-  # )
-
 add_executable(Fluid ${FLUID_CPP_FILES})
-
-# precompile_headers(
-#   Fluid
-#   "${Fluid_Private_INCLUDES}"
-#   "${Fluid_INCLUDES};${Uni_INCLUDE_DIRS}"
-#   "${Fluid_DEFINITIONS}"
-#   "${Fluid_COMPILE_FLAGS}"
-#   "${Fluid_PRECOMPILED_HEADERS}"
-#   "${PROJECT_DIR}/components/Fluid"
-#   )
-
 target_include_directories(Fluid PRIVATE ${Fluid_Private_INCLUDES})
-
 target_include_directories(Fluid SYSTEM PRIVATE ${Fluid_INCLUDES})
-
 target_link_libraries(Fluid PRIVATE
   Uni
   ${Precice_LIBRARIES}
@@ -230,13 +199,10 @@ file(GLOB_RECURSE STRUCTURE_CPP_FILES
   "${PROJECT_DIR}/components/Structure/*.cpp"
   "${PROJECT_DIR}/components/Structure/*.hpp"
   )
-
 add_executable(Structure ${STRUCTURE_CPP_FILES})
-
 target_include_directories(Structure PRIVATE
   "${PROJECT_DIR}/components/Structure"
   )
-
 target_include_directories(Structure SYSTEM PRIVATE
   ${Precice_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
@@ -260,11 +226,6 @@ target_link_libraries(Structure PRIVATE
 # ==============================================================================
 target_compile_definitions(Fluid PRIVATE ${Fluid_DEFINITIONS})
 target_compile_definitions(Structure PRIVATE ${LIBXML2_DEFINITIONS})
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  # cotire(Fluid)
-  # cotire(Structure)
-endif()
 # ==============================================================================
 # }}} Targets' definitions
 
