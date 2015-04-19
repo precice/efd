@@ -22,8 +22,8 @@
 !/configuration/Report
 !/configuration/Report/js
 !/configuration/Structure
-!/configuration/Petsc/*.conf
 !/configuration/Fluid/*.xml
+!/configuration/Petsc/*.conf
 !/configuration/Precice/*.xml
 !/configuration/Precice/*.py
 !/configuration/Report/*.html
@@ -61,6 +61,17 @@
 !/components/Fluid/**/*.hpp
 !/components/Structure/**/*.cpp
 !/components/Structure/**/*.hpp
+
+!/tests
+!/tests/LrzLinuxCluster
+!/tests/LrzLinuxCluster/*.sh
+!/tests/LrzLinuxCluster/Fluid
+!/tests/LrzLinuxCluster/Petsc
+!/tests/LrzLinuxCluster/Precice
+!/tests/LrzLinuxCluster/Fluid/*.xml
+!/tests/LrzLinuxCluster/Petsc/*.conf
+!/tests/LrzLinuxCluster/Precice/*.xml
+!/tests/LrzLinuxCluster/Precice/*.py
 
 *.*.*
 *.*.*.*
