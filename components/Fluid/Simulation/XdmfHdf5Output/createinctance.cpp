@@ -2,6 +2,7 @@
 
 #include "Writer.hpp"
 
+#include "Simulation/IterationResultWriter.hpp"
 #include "Simulation/IfsfdMemory.hpp"
 #include "Simulation/SfsfdMemory.hpp"
 

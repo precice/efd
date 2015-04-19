@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Simulation/SolverTraits.hpp"
-#include "Simulation/IterationResultWriter.hpp"
 
 #include <memory>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+class IterationResultWriter;
 namespace XdmfHdf5Output {
 template <typename TMemory>
 std::unique_ptr<IterationResultWriter>

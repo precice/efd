@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Simulation/IterationResultWriter.hpp"
-
 #include "Private/Hdf5Writer.hpp"
 #include "Private/XdmfWriter.hpp"
+
+#include "Simulation/IterationResultWriter.hpp"
 
 #include <boost/filesystem.hpp>
 

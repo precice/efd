@@ -11,7 +11,6 @@ endif ()
 project("Fluid-Structure Interations Simulation" CXX C)
 # ------------------------------------------------------------------------------
 set(CMAKE_ERROR_DEPRECATED ON)
-# ------------------------------------------------------------------------------
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_COLOR_MAKEFILE   ON)
 # ------------------------------------------------------------------------------
@@ -40,14 +39,16 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
 # Packages {{{
 # ==============================================================================
 find_package(Petsc REQUIRED)
-set(MPI_CXX_COMPILER ${PETSC_COMPILER})
+if ("${MPI_CXX_COMPILER}" STREQUAL "")
+  set(MPI_CXX_COMPILER ${PETSC_COMPILER})
+endif()
 find_package(MPI REQUIRED)
 find_package(Precice REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
 set(Boost_USE_STATIC_LIBS    OFF)
 set(Boost_USE_MULTITHREADED  ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.56 # Versions 1.54, 1.55 have failed
+find_package(Boost 1.57
   COMPONENTS
   locale
   filesystem
@@ -56,16 +57,31 @@ find_package(Boost 1.56 # Versions 1.54, 1.55 have failed
   system
   thread # Required for precice
   REQUIRED)
-find_package(Precice REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(Uni REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(Xdmf REQUIRED)
-find_library(XDMF_LIBRARIES
+find_path(Xdmf_INCLUDE_DIR
+  NAMES Xdmf.hpp
+  PATHS ${XDMF_INCLUDE_DIRS}
+  HINTS $ENV{XDMF_ROOT}
+  PATH_SUFFIXES include
+  )
+find_library(Xdmf_LIBRARY
   NAMES Xdmf
   PATHS ${XDMF_LIBRARY_DIRS}
-  NO_DEFAULT_PATH
+  HINTS $ENV{XDMF_ROOT}
+  PATH_SUFFIXES lib
   )
+find_path(Hdf5_INCLUDE_DIR
+  hdf5.h
+  HINTS $ENV{HDF5_ROOT}
+  PATH_SUFFIXES include
+)
+find_library(Hdf5_LIBRARY
+  hdf5
+  HINTS $ENV{HDF5_ROOT}
+  PATH_SUFFIXES lib
+)
 # ==============================================================================
 # }}} Packages
 
@@ -83,8 +99,6 @@ else()
   set(LINKER_IS_LD    TRUE)
 endif ()
 endif ()
-# SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-# SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 # ==============================================================================
 # }}} Compilers
 
@@ -100,7 +114,6 @@ if (COMPILER_IS_G++)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -167,14 +180,15 @@ set(Fluid_INCLUDES
   ${Boost_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR}
   ${PYTHON_INCLUDE_DIRS}
-  ${XDMF_HDF5_INCLUDE}
-  ${XDMF_LIBXML2_INCLUDE}
-  ${XDMF_ZLIB_INCLUDE}
+  ${Xdmf_INCLUDE_DIR}
+  ${Hdf5_INCLUDE_DIR}
   )
 set(Fluid_DEFINITIONS
+  -DMPICH_IGNORE_CXX_SEEK
   -DPETSC_USE_REAL_DOUBLE
   ${PETSC_DEFINITIONS}
   ${LIBXML2_DEFINITIONS}
+  ${HDF5_DEFINITIONS}
   )
 set(Fluid_COMPILE_FLAGS
   ${MPI_CXX_COMPILE_FLAGS}
@@ -189,10 +203,8 @@ target_link_libraries(Fluid PRIVATE
   ${Boost_LIBRARIES}
   ${LIBXML2_LIBRARIES}
   ${PYTHON_LIBRARIES}
-  ${XDMF_LIBRARIES}
-  ${XDMF_LIBXML2_LIBRARIES}
-  ${XDMF_HDF5_LIBRARIES}
-  ${XDMF_ZLIB_LIBRARIES}
+  ${Xdmf_LIBRARY}
+  ${Hdf5_LIBRARY}
   )
 
 file(GLOB_RECURSE STRUCTURE_CPP_FILES

@@ -1,10 +1,10 @@
 #pragma once
 
+#include <hdf5.h>
+
 #include <Uni/Logging/macros>
 
 #include <Eigen/Core>
-
-#include <hdf5.h>
 
 #include <boost/filesystem.hpp>
 
