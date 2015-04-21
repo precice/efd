@@ -10,10 +10,12 @@
 #SBATCH --clusters=mpp1
 #SBATCH --ntasks=25
 
-source ./modules.sh
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-bin=~/Project/.install/Release/bin
-conf=~/Project/tests/LrzLinuxCluster
+source $DIR/modules.sh
+
+bin=$DIR/../../.install/Release/bin
+conf=$DIR
 
 mpiexec -n 25 $bin/Fluid \
   -o Turek2D1-Ifsfd-11-220x205 \
