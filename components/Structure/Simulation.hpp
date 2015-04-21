@@ -31,9 +31,8 @@ public:
     _dt               = _preciceInterface->initialize();
 
     _meshId = _preciceInterface->getMeshID("BodyMesh");
-    _mesh.reset(new precice::MeshHandle(_preciceInterface->getMeshHandle(
-                                          "BodyMesh")));
     _forcesID = _preciceInterface->getDataID("Forces", _meshId);
+    _displacementsID = _preciceInterface->getDataID("Displacements", _meshId);
   }
 
   bool
@@ -75,9 +74,10 @@ public:
 private:
   double                               _dt;
   precice::SolverInterface*            _preciceInterface;
-  std::unique_ptr<precice::MeshHandle> _mesh;
+  std::unique_ptr<double[]> _displacements;
   VectorDs                             _shift;
   int                                  _meshId;
   int                                  _forcesID;
+  int                                  _displacementsID;
 };
 }

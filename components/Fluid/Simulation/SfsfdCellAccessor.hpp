@@ -473,19 +473,19 @@ public:
     return _memory->pressure(this->relativeGlobalIndex(index));
   }
 
-  VectorDiType&
+  int&
   positionInRespectToGeometry() const {
     return _memory->position(this->globalIndex());
   }
 
-  VectorDiType&
+  int&
   positionInRespectToGeometry(int const& dimension,
                               int const& offset) const {
     return _memory->position(
       this->relativeGlobalIndex(dimension, offset));
   }
 
-  VectorDiType&
+  int&
   positionInRespectToGeometry(int const& dimension,
                               int const& offset,
                               int const& dimension2,
@@ -495,7 +495,7 @@ public:
                                 dimension2, offset2));
   }
 
-  VectorDiType&
+  int&
   positionInRespectToGeometry(VectorDiType const& index) const {
     return _memory->position(this->relativeGlobalIndex(index));
   }
@@ -617,7 +617,7 @@ public:
     return _memory->pressure(this->absoluteGlobalIndex(index));
   }
 
-  VectorDiType&
+  int&
   absolutePositionInRespectToGeometry(VectorDiType const& index) const {
     return _memory->position(this->absoluteGlobalIndex(index));
   }

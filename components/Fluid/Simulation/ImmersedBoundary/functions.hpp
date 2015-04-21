@@ -19,12 +19,6 @@ get_distance(int const& position) {
 }
 
 template <unsigned TDimensions>
-inline void
-set_distance(int& position, unsigned const& distance) {
-  position = Uni::sign(position) * (distance << 2 * TDimensions);
-}
-
-template <unsigned TDimensions>
 inline unsigned
 get_neighbor_bits(int const& position) {
   return (~(0 << (2 * TDimensions - 1))) & position;
@@ -32,7 +26,8 @@ get_neighbor_bits(int const& position) {
 
 template <unsigned TDimensions>
 inline void
-set_neighbor_bits(int& position, unsigned const& bits) {
+set_position(int& position, unsigned const& distance, unsigned const& bits) {
+  position = Uni::sign(position) * (distance << 2 * TDimensions);
   position = position | bits;
 }
 
@@ -60,18 +55,17 @@ set_cell_neighbors_along_geometry_interface(
   TCellAccessor const&      accessor,
   precice::SolverInterface* precice_interface,
   std::set<int> const&      body_meshes,
-  unsigned const&           max_distance,
-  unsigned const&           dimension) {
-  auto const position = accessor.positionInRespectToGeometry()(dimension);
+  unsigned const&           max_distance) {
+  auto const position = accessor.positionInRespectToGeometry();
 
-  auto const velocity_position = accessor.velocityPosition(dimension);
+  auto const velocity_position = accessor.pressurePosition();
 
   unsigned distance = max_distance + 1;
   unsigned bits     = 0;
 
   for (unsigned d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (unsigned d2 = 0; d2 < 2; ++d2) {
-      auto current_velocity_position = velocity_position;
+      auto current_position = velocity_position;
 
       for (unsigned currentDistance = 1;
            currentDistance <= max_distance;
@@ -96,19 +90,21 @@ set_cell_neighbors_along_geometry_interface(
         // continue;
         // }
 
-        if (d == dimension) {
-          current_velocity_position(dimension)
-            += accessor.width(dimension, direction * currentDistance,
-                              dimension);
-        } else {
-          current_velocity_position(d)
-            += (accessor.width(d, direction * currentDistance, d)
-                + accessor.width(d)) / 2.0;
-        }
+        // if (d == dimension) {
+        // current_position(dimension)
+        // += accessor.width(dimension, direction * currentDistance,
+        // dimension);
+        // } else {
+        current_position(d)
+          += direction
+             * (accessor.width(d)
+                + accessor.width(d, direction * currentDistance, d))
+             / 2.0;
+        // }
 
         auto const position1 = convert_precice_position(
           precice_interface->inquirePosition(
-            current_velocity_position.template cast<double>().data(),
+            current_position.template cast<double>().data(),
             body_meshes));
 
         if (Uni::sign(position) != Uni::sign(position1)) {
@@ -123,11 +119,9 @@ set_cell_neighbors_along_geometry_interface(
     }
   }
 
-  set_distance<TCellAccessor::Dimensions>(
-    accessor.positionInRespectToGeometry()(dimension),
-    distance);
-  set_neighbor_bits<TCellAccessor::Dimensions>(
-    accessor.positionInRespectToGeometry()(dimension),
+  set_position<TCellAccessor::Dimensions>(
+    accessor.positionInRespectToGeometry(),
+    distance,
     bits);
 }
 
@@ -135,11 +129,10 @@ template <typename TCellAccessor>
 inline bool
 validate_layer_number(TCellAccessor const& accessor,
                       unsigned const&      outer_layer_size,
-                      unsigned const&      inner_layer_size,
-                      unsigned const&      dimension) {
-  auto const position = accessor.positionInRespectToGeometry()(dimension);
+                      unsigned const&      inner_layer_size) {
+  auto const position = accessor.positionInRespectToGeometry();
 
-  auto const distance= get_distance<TCellAccessor::Dimensions>(position);
+  auto const distance = get_distance<TCellAccessor::Dimensions>(position);
 
   if (position > 0) {
     if (outer_layer_size >= distance) {
@@ -150,6 +143,7 @@ validate_layer_number(TCellAccessor const& accessor,
       return true;
     }
   }
+
   return false;
 }
 }

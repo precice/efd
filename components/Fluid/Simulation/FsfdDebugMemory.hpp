@@ -109,7 +109,7 @@ protected:
 
     case Base::AttributeSize + 4:
 
-      return this->_position.get()[index](0);
+      return this->_position.get()[index];
 
     default:
 

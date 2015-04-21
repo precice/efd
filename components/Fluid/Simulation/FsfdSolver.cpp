@@ -123,7 +123,7 @@ void
 FsfdSolver<T>::
 initialize(precice::SolverInterface* preciceInteface,
            Reporter*                 reporter) {
-  _im->ibController.initialize(preciceInteface);
+  _im->ibController.initialize(preciceInteface, &_im->memory);
   _im->reporter = reporter;
 
   _im->peSolver.initialize(&_im->memory, &_im->ghostHandlers);
@@ -212,12 +212,16 @@ iterate() {
                              _im->memory.gridGeometry()->minCellWidth(),
                              _im->memory.maxVelocity());
 
-  logInfo("dt = {1}", _im->memory.timeStepSize());
-  logInfo("maxv = {1}",
-          _im->memory.maxVelocity().cwiseProduct(
-            _im->memory.gridGeometry()->minCellWidth()).transpose());
+  if (_im->memory.parallelDistribution()->rank == 0) {
+    logInfo("dt = {1}", _im->memory.timeStepSize());
+    logInfo("maxv = {1}",
+            _im->memory.maxVelocity().cwiseProduct(
+              _im->memory.gridGeometry()->minCellWidth()).transpose());
+  }
   _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
+
+  _im->ibController.resetIntermediateData();
 
   for (auto const& accessor : _im->memory.grid()->innerGrid) {
     _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
@@ -273,46 +277,42 @@ iterate() {
       // logInfo("Fgh | {1}", accessor.index().transpose());
     }
 
-    for (unsigned d = 0; d < Dimensions; ++d) {
-      auto status = _im->ibController.doesVertexExist(accessor, d);
+    auto status = _im->ibController.doesVertexExist(accessor);
 
-      if (status.second) {
-        _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
-        ScalarType temp
-          = accessor.velocity(d)
-            + _im->memory.timeStepSize() * (-1.5 * convection
-                                            + 0.5 * previousConvection
-                                            + diffusion
-                                            - grad_pressure).eval()(d);
+    if (status.second) {
+      _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
+      auto temp
+        = accessor.velocity()
+          + _im->memory.timeStepSize() * (-1.5 * convection
+                                          + 0.5 * previousConvection
+                                          + diffusion
+                                          - grad_pressure);
 
-        _im->ibController.writeFluidVelocity(status.first, temp, d);
-      }
+      _im->ibController.setFluidVelocity(status.first, temp);
     }
   }
 
+  _im->ibController.writeFluidVelocities();
   // logInfo("Map data");
   _im->ibController.mapData(_im->memory.timeStepSize());
+  _im->ibController.readFluidForces();
 
   // logInfo("Read data");
   VectorDsType total_force = VectorDsType::Zero();
 
-  for (unsigned d = 0; d < Dimensions; ++d) {
-    for (auto it = _im->ibController.begin(d);
-         it != _im->ibController.end(d);
-         ++it) {
-      ScalarType force;
-      _im->ibController.readFluidForce(it, force, d);
+  for (auto it = _im->ibController.begin();
+       it != _im->ibController.end();
+       ++it) {
+    auto force = _im->ibController.getFluidForce(it);
 
-      _im->memory.fgh()[it->first](d) += force;
+    _im->memory.fgh()[it->first] += force;
 
-      auto body_force = _im->ibController.computeBodyForceAt(
-        it->first,
-        force,
-        &_im->memory,
-        d);
+    auto body_force = _im->ibController.computeBodyForceAt(
+      it->first,
+      force,
+      &_im->memory);
 
-      total_force += body_force;
-    }
+    total_force += body_force;
   }
 
   Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,

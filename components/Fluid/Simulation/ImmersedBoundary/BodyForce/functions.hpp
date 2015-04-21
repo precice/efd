@@ -18,16 +18,14 @@ do_cell_force_computation(TCellAccessor const& accessor,
                           unsigned const&      offset) {
   bool doAccept = false;
 
-  for (unsigned d = 0; d < TCellAccessor::Dimensions; ++d) {
-    auto const position = accessor.positionInRespectToGeometry()(d);
+  auto const position = accessor.positionInRespectToGeometry();
 
-    if (position < 0) {
-      return false;
-    }
+  if (position < 0) {
+    return false;
+  }
 
-    if (get_distance<TCellAccessor::Dimensions>(position) == offset) {
-      doAccept = true;
-    }
+  if (get_distance<TCellAccessor::Dimensions>(position) == offset) {
+    doAccept = true;
   }
 
   return doAccept;
@@ -46,7 +44,7 @@ compute_cell_force(TCellAccessor const&                      accessor,
                                TCellAccessor::Dimensions,
                                TCellAccessor::Dimensions>;
 
-  unsigned const offset = 1;
+  unsigned const offset = 2;
 
   if (!do_cell_force_computation(accessor, offset)) {
     return false;
@@ -73,44 +71,42 @@ compute_cell_force(TCellAccessor const&                      accessor,
 
   for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      for (int pd = 0; pd < TCellAccessor::Dimensions; ++pd) {
-        auto const position
-          = accessor.positionInRespectToGeometry()(pd);
-        auto const distance
-          = get_distance<TCellAccessor::Dimensions>(position);
-        auto const bits
-          = get_neighbor_bits<TCellAccessor::Dimensions>(position);
+      auto const position
+        = accessor.positionInRespectToGeometry();
+      auto const distance
+        = get_distance<TCellAccessor::Dimensions>(position);
+      auto const bits
+        = get_neighbor_bits<TCellAccessor::Dimensions>(position);
 
-        if (distance != offset) {
-          continue;
-        }
-
-        if ((((1 << d) << d2) & bits) == 0) {
-          continue;
-        }
-
-        Scalar normal_direction = +1.0;
-
-        if (d2 == 1) {
-          normal_direction = -1.0;
-        }
-
-        Vector normal = Vector::Zero();
-
-        normal(d) = normal_direction;
-
-        Scalar width = 1.0;
-
-        for (int d4 = 0; d4 < TCellAccessor::Dimensions; ++d4) {
-          if (d4 != d) {
-            width *= accessor.width(d4);
-          }
-        }
-
-        normal(d) *= width;
-        force     += matrix * normal;
-        break;
+      if (distance != offset) {
+        continue;
       }
+
+      if ((((1 << d) << d2) & bits) == 0) {
+        continue;
+      }
+
+      Scalar normal_direction = +1.0;
+
+      if (d2 == 1) {
+        normal_direction = -1.0;
+      }
+
+      Vector normal = Vector::Zero();
+
+      normal(d) = normal_direction;
+
+      Scalar width = 1.0;
+
+      for (int d4 = 0; d4 < TCellAccessor::Dimensions; ++d4) {
+        if (d4 != d) {
+          width *= accessor.width(d4);
+        }
+      }
+
+      normal(d) *= width;
+      force     += matrix * normal;
+      break;
     }
   }
 
@@ -126,7 +122,7 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
 
   using Vector = typename TCellAccessor::VectorDsType;
 
-  unsigned const offset = 1;
+  unsigned const offset = 2;
 
   if (!do_cell_force_computation(accessor, offset)) {
     return false;
@@ -136,61 +132,59 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
 
   for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      for (int pd = 0; pd < TCellAccessor::Dimensions; ++pd) {
-        auto const position
-          = accessor.positionInRespectToGeometry()(pd);
-        auto const distance
-          = get_distance<TCellAccessor::Dimensions>(position);
+      auto const position
+        = accessor.positionInRespectToGeometry();
+      auto const distance
+        = get_distance<TCellAccessor::Dimensions>(position);
 
-        auto const bits
-          = get_neighbor_bits<TCellAccessor::Dimensions>(position);
+      auto const bits
+        = get_neighbor_bits<TCellAccessor::Dimensions>(position);
 
-        if (distance != offset) {
-          continue;
-        }
-
-        if ((((1 << d) << d2) & bits) == 0) {
-          continue;
-        }
-
-        Scalar normal_direction = +1.0;
-
-        if (d2 == 1) {
-          normal_direction = -1.0;
-        }
-
-        Vector normal = Vector::Zero();
-
-        normal(d) = normal_direction;
-
-        Scalar width = 1.0;
-
-        for (int d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
-          if (d3 != d) {
-            width *= accessor.width(d3);
-          }
-        }
-        Vector tangent = normal;
-        tangent(0) = normal(1);
-        tangent(1) = normal(0);
-
-        Vector grad_velocity;
-
-        for (int d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
-          grad_velocity(d3) = dudx(
-            accessor.velocity(d3, -1).dot(tangent),
-            accessor.velocity(d3, +1).dot(tangent),
-            accessor.width(d3),
-            accessor.width(d3, -1, d3),
-            accessor.width(d3, +1, d3));
-        }
-
-        Scalar dvdn = grad_velocity.dot(normal) / re;
-        force(0)
-          += (dvdn * normal(1) - accessor.pressure() * normal(0)) * width;
-        force(1)
-          += (dvdn * normal(0) - accessor.pressure() * normal(1)) * width;
+      if (distance != offset) {
+        continue;
       }
+
+      if ((((1 << d) << d2) & bits) == 0) {
+        continue;
+      }
+
+      Scalar normal_direction = +1.0;
+
+      if (d2 == 1) {
+        normal_direction = -1.0;
+      }
+
+      Vector normal = Vector::Zero();
+
+      normal(d) = normal_direction;
+
+      Scalar width = 1.0;
+
+      for (int d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
+        if (d3 != d) {
+          width *= accessor.width(d3);
+        }
+      }
+      Vector tangent = normal;
+      tangent(0) = normal(1);
+      tangent(1) = normal(0);
+
+      Vector grad_velocity;
+
+      for (int d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
+        grad_velocity(d3) = dudx(
+          accessor.velocity(d3, -1).dot(tangent),
+          accessor.velocity(d3, +1).dot(tangent),
+          accessor.width(d3),
+          accessor.width(d3, -1, d3),
+          accessor.width(d3, +1, d3));
+      }
+
+      Scalar dvdn = grad_velocity.dot(normal) / re;
+      force(0)
+        += (dvdn * normal(1) - accessor.pressure() * normal(0)) * width;
+      force(1)
+        += (dvdn * normal(0) - accessor.pressure() * normal(1)) * width;
     }
   }
 
