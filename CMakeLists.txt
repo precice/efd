@@ -60,18 +60,18 @@ find_package(Boost 1.57
 find_package(Eigen REQUIRED)
 find_package(Uni REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_path(Xdmf_INCLUDE_DIR
-  NAMES Xdmf.hpp
-  PATHS ${XDMF_INCLUDE_DIRS}
-  HINTS $ENV{XDMF_ROOT}
-  PATH_SUFFIXES include
-  )
-find_library(Xdmf_LIBRARY
-  NAMES Xdmf
-  PATHS ${XDMF_LIBRARY_DIRS}
-  HINTS $ENV{XDMF_ROOT}
-  PATH_SUFFIXES lib
-  )
+# find_path(Xdmf_INCLUDE_DIR
+#   NAMES Xdmf.hpp
+#   PATHS ${XDMF_INCLUDE_DIRS}
+#   HINTS $ENV{XDMF_ROOT}
+#   PATH_SUFFIXES include
+#   )
+# find_library(Xdmf_LIBRARY
+#   NAMES Xdmf
+#   PATHS ${XDMF_LIBRARY_DIRS}
+#   HINTS $ENV{XDMF_ROOT}
+#   PATH_SUFFIXES lib
+#   )
 find_path(Hdf5_INCLUDE_DIR
   hdf5.h
   HINTS $ENV{HDF5_ROOT}
@@ -180,7 +180,6 @@ set(Fluid_INCLUDES
   ${Boost_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR}
   ${PYTHON_INCLUDE_DIRS}
-  ${Xdmf_INCLUDE_DIR}
   ${Hdf5_INCLUDE_DIR}
   )
 set(Fluid_DEFINITIONS
@@ -203,7 +202,6 @@ target_link_libraries(Fluid PRIVATE
   ${Boost_LIBRARIES}
   ${LIBXML2_LIBRARIES}
   ${PYTHON_LIBRARIES}
-  ${Xdmf_LIBRARY}
   ${Hdf5_LIBRARY}
   )
 
