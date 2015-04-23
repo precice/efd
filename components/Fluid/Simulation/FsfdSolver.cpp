@@ -355,38 +355,7 @@ iterate() {
   _im->reporter->addAt(2, _im->memory.timeStepSize());
 }
 
-template class FsfdSolver
-  < SfsfdSolverTraits < 0, 0, double, 2 >>;
-template class FsfdSolver
-  < SfsfdSolverTraits < 0, 1, double, 2 >>;
-template class FsfdSolver
-  < SfsfdSolverTraits < 1, 0, double, 2 >>;
-template class FsfdSolver
-  < SfsfdSolverTraits < 1, 1, double, 2 >>;
-template class FsfdSolver
-  < SfsfdSolverTraits < 0, 0, double, 3 >>;
-template class FsfdSolver
-  < SfsfdSolverTraits < 0, 1, double, 3 >>;
-template class FsfdSolver
-  < SfsfdSolverTraits < 1, 0, double, 3 >>;
-template class FsfdSolver
-  < SfsfdSolverTraits < 1, 1, double, 3 >>;
+Fluid_InstantiateExternTemplates(FsfdSolver);
 
-template class FsfdSolver
-  < IfsfdSolverTraits < 0, 0, double, 2 >>;
-template class FsfdSolver
-  < IfsfdSolverTraits < 0, 1, double, 2 >>;
-template class FsfdSolver
-  < IfsfdSolverTraits < 1, 0, double, 2 >>;
-template class FsfdSolver
-  < IfsfdSolverTraits < 1, 1, double, 2 >>;
-template class FsfdSolver
-  < IfsfdSolverTraits < 0, 0, double, 3 >>;
-template class FsfdSolver
-  < IfsfdSolverTraits < 0, 1, double, 3 >>;
-template class FsfdSolver
-  < IfsfdSolverTraits < 1, 0, double, 3 >>;
-template class FsfdSolver
-  < IfsfdSolverTraits < 1, 1, double, 3 >>;
 }
 }

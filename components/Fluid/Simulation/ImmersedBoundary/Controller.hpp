@@ -69,8 +69,10 @@ public:
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 
-  using VertexIdMap = std::map < int, Private::BodyInterfaceCell
-        < VectorDsType >>;
+  using BodyInterfaceCellType = Private::BodyInterfaceCell<VectorDsType >;
+
+  using VertexIdMap
+          = std::map < int, std::unique_ptr <BodyInterfaceCellType >>;
 
 public:
   BasicController() {}
@@ -123,7 +125,11 @@ public:
   }
 
   void
-  resetIntermediateData() {}
+  resetIntermediateData() {
+    for (auto& cell : this->_vertexIds[0]) {
+      cell.second->data = VectorDsType::Zero();
+    }
+  }
 
   void
   initialize(precice::SolverInterface* preciceInterface,
@@ -192,6 +198,8 @@ public:
   using SolverTraitsType = TSolverTraits;
 
   using BaseType = BasicController<SolverTraitsType>;
+
+  using BodyInterfaceCellType = typename BaseType::BodyInterfaceCellType;
 
   using VertexIdMap = typename BaseType::VertexIdMap;
 
@@ -266,13 +274,6 @@ public:
   }
 
   void
-  resetIntermediateData() {
-    for (auto& cell : this->_vertexIds[0]) {
-      cell.second.data = VectorDsType::Zero();
-    }
-  }
-
-  void
   initialize(precice::SolverInterface* preciceInterface,
              MemoryType const*         memory) {
     // logInfo("Controller is being initialized");
@@ -341,7 +342,8 @@ public:
         _fluidMeshId[0], position.data());
 
       this->_vertexIds[0].insert(
-        std::make_pair(accessor.globalIndex(), vertexId));
+        std::make_pair(accessor.globalIndex(),
+          std::unique_ptr<BodyInterfaceCellType>(new BodyInterfaceCellType(vertexId))));
     }
   }
 
@@ -359,13 +361,13 @@ public:
   void
   setFluidVelocity(typename VertexIdMap::iterator const& it,
                    VectorDsType const&                   velocity) {
-    it->second.data = velocity;
+    it->second->data = velocity;
   }
 
   void
   writeFluidVelocities() {
     for (auto const& cell : this->_vertexIds[0]) {
-      VectorDsType resulting_velocity = cell.second.data;
+      VectorDsType resulting_velocity = cell.second->data;
 
       for (unsigned d = 0; d < Dimensions; ++d) {
         auto accessor = *_memory->grid()->innerGrid.begin();
@@ -377,13 +379,13 @@ public:
         if (find_it == this->_vertexIds[0].end()) {
           // resulting_velocity(d) += 0.0;
         } else {
-          resulting_velocity(d) += find_it->second.data(d);
+          resulting_velocity(d) += find_it->second->data(d);
         }
       }
       resulting_velocity /= 2.0;
       _preciceInterface->writeVectorData(
         _fluidMeshVelocitiesId[0],
-        cell.second.vertexId,
+        cell.second->vertexId,
         resulting_velocity.template cast<double>().data());
     }
   }
@@ -401,15 +403,15 @@ public:
       Eigen::Matrix<double, Dimensions, 1> temp;
       _preciceInterface->readVectorData(
         _fluidMeshForcesId[0],
-        cell.second.vertexId,
+        cell.second->vertexId,
         temp.data());
-      cell.second.data = temp.template cast<ScalarType>();
+      cell.second->data = temp.template cast<ScalarType>();
     }
   }
 
   VectorDsType
   getFluidForce(typename VertexIdMap::iterator const& it) {
-    VectorDsType force = it->second.data;
+    VectorDsType force = it->second->data;
 
     for (unsigned d = 0; d < Dimensions; ++d) {
       auto accessor = *_memory->grid()->innerGrid.begin();
@@ -422,7 +424,7 @@ public:
       if (find_it == this->_vertexIds[0].end()) {
         // force(d) += 0.0;
       } else {
-        force(d) += find_it->second.data(d);
+        force(d) += find_it->second->data(d);
       }
     }
     force /= 2.0;
@@ -483,7 +485,7 @@ public:
     reporter->addAt(5, total_force_turek);
   }
 
-private:
+protected:
   precice::SolverInterface* _preciceInterface;
   MemoryType const*         _memory;
   unsigned                  _maxLayerSize;

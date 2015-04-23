@@ -65,23 +65,6 @@ public:
 public:
   SfsfdDebugMemory() {}
 };
-
-extern template class SfsfdMemory
-  < SfsfdSolverTraits < 0, 0, double, 2 >>;
-extern template class SfsfdMemory
-  < SfsfdSolverTraits < 0, 1, double, 2 >>;
-extern template class SfsfdMemory
-  < SfsfdSolverTraits < 1, 0, double, 2 >>;
-extern template class SfsfdMemory
-  < SfsfdSolverTraits < 1, 1, double, 2 >>;
-extern template class SfsfdMemory
-  < SfsfdSolverTraits < 0, 0, double, 3 >>;
-extern template class SfsfdMemory
-  < SfsfdSolverTraits < 0, 1, double, 3 >>;
-extern template class SfsfdMemory
-  < SfsfdSolverTraits < 1, 0, double, 3 >>;
-extern template class SfsfdMemory
-  < SfsfdSolverTraits < 1, 1, double, 3 >>;
 }
 }
 #endif

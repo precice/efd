@@ -92,38 +92,6 @@ private:
   Uni_Firewall_IMPLEMENTATION_LINK(FsfdSolverImplementation<TSolverTraits> );
 };
 
-extern template class FsfdSolver
-  < SfsfdSolverTraits < 0, 0, double, 2 >>;
-extern template class FsfdSolver
-  < SfsfdSolverTraits < 0, 1, double, 2 >>;
-extern template class FsfdSolver
-  < SfsfdSolverTraits < 1, 0, double, 2 >>;
-extern template class FsfdSolver
-  < SfsfdSolverTraits < 1, 1, double, 2 >>;
-extern template class FsfdSolver
-  < SfsfdSolverTraits < 0, 0, double, 3 >>;
-extern template class FsfdSolver
-  < SfsfdSolverTraits < 0, 1, double, 3 >>;
-extern template class FsfdSolver
-  < SfsfdSolverTraits < 1, 0, double, 3 >>;
-extern template class FsfdSolver
-  < SfsfdSolverTraits < 1, 1, double, 3 >>;
-
-extern template class FsfdSolver
-  < IfsfdSolverTraits < 0, 0, double, 2 >>;
-extern template class FsfdSolver
-  < IfsfdSolverTraits < 0, 1, double, 2 >>;
-extern template class FsfdSolver
-  < IfsfdSolverTraits < 1, 0, double, 2 >>;
-extern template class FsfdSolver
-  < IfsfdSolverTraits < 1, 1, double, 2 >>;
-extern template class FsfdSolver
-  < IfsfdSolverTraits < 0, 0, double, 3 >>;
-extern template class FsfdSolver
-  < IfsfdSolverTraits < 0, 1, double, 3 >>;
-extern template class FsfdSolver
-  < IfsfdSolverTraits < 1, 0, double, 3 >>;
-extern template class FsfdSolver
-  < IfsfdSolverTraits < 1, 1, double, 3 >>;
+Fluid_DeclareExternTemplates(FsfdSolver);
 }
 }

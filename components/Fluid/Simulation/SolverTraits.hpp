@@ -32,10 +32,8 @@ template <typename T>
 class IfsfdMemory;
 template <typename T>
 class IfsfdDebugMemory;
-template <typename T>
-class SfsfdPeSolver;
-template <typename T>
-class IfsfdPeSolver;
+template <typename T, unsigned TSolverId = T::SolverId>
+class PeSolver;
 template <typename T>
 class FsfdSolver;
 namespace ImmersedBoundary {
@@ -43,6 +41,8 @@ template <typename T>
 class BasicController;
 template <typename T>
 class Controller;
+template <typename T>
+class RbfController;
 }
 namespace GhostLayer {
 template <int D>
@@ -90,6 +90,11 @@ struct ImmersedBoundaryControllerTraits<TSolverTraits, 1> {
   using Type = ImmersedBoundary::Controller<TSolverTraits>;
 };
 
+template <typename TSolverTraits>
+struct ImmersedBoundaryControllerTraits<TSolverTraits, 2> {
+  using Type = ImmersedBoundary::RbfController<TSolverTraits>;
+};
+
 template <int TImmersedBoudnaryType,
           unsigned TDebug,
           typename TScalar,
@@ -123,7 +128,7 @@ struct SfsfdSolverTraits {
 
   using GhostHandlersType = typename GhostLayer::SfsfdHandlers<Dimensions>;
 
-  using PeSolverType = SfsfdPeSolver<SfsfdSolverTraits>;
+  using PeSolverType = PeSolver<SfsfdSolverTraits>;
 
   using ImmersedBoundaryControllerType
           = typename ImmersedBoundaryControllerTraits
@@ -165,7 +170,7 @@ struct IfsfdSolverTraits {
 
   using GhostHandlersType = typename GhostLayer::IfsfdHandlers<Dimensions>;
 
-  using PeSolverType = IfsfdPeSolver<IfsfdSolverTraits>;
+  using PeSolverType = PeSolver<IfsfdSolverTraits>;
 
   using ImmersedBoundaryControllerType
           = typename ImmersedBoundaryControllerTraits
@@ -175,3 +180,71 @@ struct IfsfdSolverTraits {
 };
 }
 }
+
+#define Fluid_DeclareExternTemplates(ClassName) \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 0, 0, double, 2 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 0, 1, double, 2 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 1, 0, double, 2 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 1, 1, double, 2 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 0, 0, double, 3 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 0, 1, double, 3 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 1, 0, double, 3 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 1, 1, double, 3 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 0, 0, double, 2 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 0, 1, double, 2 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 1, 0, double, 2 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 1, 1, double, 2 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 0, 0, double, 3 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 0, 1, double, 3 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 1, 0, double, 3 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 1, 1, double, 3 >>;
+
+#define Fluid_InstantiateExternTemplates(ClassName) \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 0, 0, double, 2 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 0, 1, double, 2 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 1, 0, double, 2 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 1, 1, double, 2 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 0, 0, double, 3 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 0, 1, double, 3 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 1, 0, double, 3 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 1, 1, double, 3 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 0, 0, double, 2 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 0, 1, double, 2 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 1, 0, double, 2 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 1, 1, double, 2 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 0, 0, double, 3 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 0, 1, double, 3 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 1, 0, double, 3 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 1, 1, double, 3 >>;

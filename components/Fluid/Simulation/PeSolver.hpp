@@ -7,8 +7,12 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+template <typename TSolverTraits,
+          unsigned TSolverId>
+class PeSolver {};
+
 template <typename TSolverTraits>
-class SfsfdPeSolver {
+class PeSolver<TSolverTraits, 0> {
 public:
   using SolverTraitsType = TSolverTraits;
 
@@ -100,7 +104,7 @@ private:
 }
 
 template <typename TSolverTraits>
-class IfsfdPeSolver {
+class PeSolver<TSolverTraits, 1> {
 public:
   using SolverTraitsType = TSolverTraits;
 
@@ -150,38 +154,6 @@ private:
   std::unique_ptr<LinearSolver> _ppeSolver;
 };
 
-extern template class SfsfdPeSolver
-  < SfsfdSolverTraits < 0, 0, double, 2 >>;
-extern template class SfsfdPeSolver
-  < SfsfdSolverTraits < 0, 1, double, 2 >>;
-extern template class SfsfdPeSolver
-  < SfsfdSolverTraits < 1, 0, double, 2 >>;
-extern template class SfsfdPeSolver
-  < SfsfdSolverTraits < 1, 1, double, 2 >>;
-extern template class SfsfdPeSolver
-  < SfsfdSolverTraits < 0, 0, double, 3 >>;
-extern template class SfsfdPeSolver
-  < SfsfdSolverTraits < 0, 1, double, 3 >>;
-extern template class SfsfdPeSolver
-  < SfsfdSolverTraits < 1, 0, double, 3 >>;
-extern template class SfsfdPeSolver
-  < SfsfdSolverTraits < 1, 1, double, 3 >>;
-
-extern template class IfsfdPeSolver
-  < IfsfdSolverTraits < 0, 0, double, 2 >>;
-extern template class IfsfdPeSolver
-  < IfsfdSolverTraits < 0, 1, double, 2 >>;
-extern template class IfsfdPeSolver
-  < IfsfdSolverTraits < 1, 0, double, 2 >>;
-extern template class IfsfdPeSolver
-  < IfsfdSolverTraits < 1, 1, double, 2 >>;
-extern template class IfsfdPeSolver
-  < IfsfdSolverTraits < 0, 0, double, 3 >>;
-extern template class IfsfdPeSolver
-  < IfsfdSolverTraits < 0, 1, double, 3 >>;
-extern template class IfsfdPeSolver
-  < IfsfdSolverTraits < 1, 0, double, 3 >>;
-extern template class IfsfdPeSolver
-  < IfsfdSolverTraits < 1, 1, double, 3 >>;
+Fluid_DeclareExternTemplates(PeSolver);
 }
 }

@@ -193,38 +193,6 @@ iterate() {
   return true;
 }
 
-template class ParticularSimulationController
-  < SfsfdSolverTraits < 0, 0, double, 2 >>;
-template class ParticularSimulationController
-  < SfsfdSolverTraits < 0, 1, double, 2 >>;
-template class ParticularSimulationController
-  < SfsfdSolverTraits < 1, 0, double, 2 >>;
-template class ParticularSimulationController
-  < SfsfdSolverTraits < 1, 1, double, 2 >>;
-template class ParticularSimulationController
-  < SfsfdSolverTraits < 0, 0, double, 3 >>;
-template class ParticularSimulationController
-  < SfsfdSolverTraits < 0, 1, double, 3 >>;
-template class ParticularSimulationController
-  < SfsfdSolverTraits < 1, 0, double, 3 >>;
-template class ParticularSimulationController
-  < SfsfdSolverTraits < 1, 1, double, 3 >>;
-
-template class ParticularSimulationController
-  < IfsfdSolverTraits < 0, 0, double, 2 >>;
-template class ParticularSimulationController
-  < IfsfdSolverTraits < 0, 1, double, 2 >>;
-template class ParticularSimulationController
-  < IfsfdSolverTraits < 1, 0, double, 2 >>;
-template class ParticularSimulationController
-  < IfsfdSolverTraits < 1, 1, double, 2 >>;
-template class ParticularSimulationController
-  < IfsfdSolverTraits < 0, 0, double, 3 >>;
-template class ParticularSimulationController
-  < IfsfdSolverTraits < 0, 1, double, 3 >>;
-template class ParticularSimulationController
-  < IfsfdSolverTraits < 1, 0, double, 3 >>;
-template class ParticularSimulationController
-  < IfsfdSolverTraits < 1, 1, double, 3 >>;
+Fluid_InstantiateExternTemplates(ParticularSimulationController);
 }
 }

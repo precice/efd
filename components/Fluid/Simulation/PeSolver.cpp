@@ -17,7 +17,7 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename T>
 void
-SfsfdPeSolver<T>::
+PeSolver<T, 0>::
 initialize(MemoryType const*        memory,
            GhostHandlersType const* ghost_handlers) {
   _ghostHandlers = ghost_handlers;
@@ -49,14 +49,14 @@ initialize(MemoryType const*        memory,
 
 template <typename T>
 void
-SfsfdPeSolver<T>::
+PeSolver<T, 0>::
 executeVpe() {
   _ghostHandlers->executeFghInitialization();
 }
 
 template <typename T>
 void
-SfsfdPeSolver<T>::
+PeSolver<T, 0>::
 executePpe() {
   _ppeSolver->solve();
 }
@@ -109,7 +109,7 @@ executeVpe() {
 
 template <typename T>
 void
-IfsfdPeSolver<T>::
+PeSolver<T, 1>::
 initialize(MemoryType const*        memory,
            GhostHandlersType const* ghost_handlers) {
   _memory = memory;
@@ -198,7 +198,7 @@ initialize(MemoryType const*        memory,
 
 template <typename T>
 void
-IfsfdPeSolver<T>::
+PeSolver<T, 1>::
 executeVpe() {
   _vxpeSolver->absoluteTolerance(
     _memory->timeStepSize() * _vxpeAbsoluteTolerance / 1000.0);
@@ -218,43 +218,11 @@ executeVpe() {
 
 template <typename T>
 void
-IfsfdPeSolver<T>::
+PeSolver<T, 1>::
 executePpe() {
   _ppeSolver->solve();
 }
 
-template class SfsfdPeSolver
-  < SfsfdSolverTraits < 0, 0, double, 2 >>;
-template class SfsfdPeSolver
-  < SfsfdSolverTraits < 0, 1, double, 2 >>;
-template class SfsfdPeSolver
-  < SfsfdSolverTraits < 1, 0, double, 2 >>;
-template class SfsfdPeSolver
-  < SfsfdSolverTraits < 1, 1, double, 2 >>;
-template class SfsfdPeSolver
-  < SfsfdSolverTraits < 0, 0, double, 3 >>;
-template class SfsfdPeSolver
-  < SfsfdSolverTraits < 0, 1, double, 3 >>;
-template class SfsfdPeSolver
-  < SfsfdSolverTraits < 1, 0, double, 3 >>;
-template class SfsfdPeSolver
-  < SfsfdSolverTraits < 1, 1, double, 3 >>;
-
-template class IfsfdPeSolver
-  < IfsfdSolverTraits < 0, 0, double, 2 >>;
-template class IfsfdPeSolver
-  < IfsfdSolverTraits < 0, 1, double, 2 >>;
-template class IfsfdPeSolver
-  < IfsfdSolverTraits < 1, 0, double, 2 >>;
-template class IfsfdPeSolver
-  < IfsfdSolverTraits < 1, 1, double, 2 >>;
-template class IfsfdPeSolver
-  < IfsfdSolverTraits < 0, 0, double, 3 >>;
-template class IfsfdPeSolver
-  < IfsfdSolverTraits < 0, 1, double, 3 >>;
-template class IfsfdPeSolver
-  < IfsfdSolverTraits < 1, 0, double, 3 >>;
-template class IfsfdPeSolver
-  < IfsfdSolverTraits < 1, 1, double, 3 >>;
+Fluid_InstantiateExternTemplates(PeSolver);
 }
 }
