@@ -10,6 +10,7 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+
 template <typename TScalar>
 inline TScalar
 dudx(TScalar const& leftU,

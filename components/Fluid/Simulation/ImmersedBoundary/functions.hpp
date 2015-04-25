@@ -14,58 +14,70 @@ namespace FluidSimulation {
 namespace ImmersedBoundary {
 template <unsigned TDimensions>
 inline unsigned
-get_distance(int const& position) {
-  return (Uni::sign(position) * position) >> 2 * TDimensions;
+get_distance(int const& location) {
+  return Uni::sign(location) * location;
 }
 
-template <unsigned TDimensions>
-inline unsigned
-get_neighbor_bits(int const& position) {
-  return (~(0 << (2 * TDimensions - 1))) & position;
-}
+// template <unsigned TDimensions>
+// inline unsigned
+// get_distance(int const& location) {
+// return (Uni::sign(location) * location) >> 2 * TDimensions;
+// }
 
-template <unsigned TDimensions>
-inline void
-set_position(int& position, unsigned const& distance, unsigned const& bits) {
-  position = Uni::sign(position) * (distance << 2 * TDimensions);
-  position = position | bits;
-}
+// template <unsigned TDimensions>
+// inline unsigned
+// get_neighbor_bits(int const& location) {
+// return (~(0 << (2 * TDimensions - 1))) & location;
+// }
+
+// template <unsigned TDimensions>
+// inline void
+// set_position(int& location, unsigned const& distance, unsigned const& bits) {
+// location = Uni::sign(location) * (distance << 2 * TDimensions);
+// location = location | bits;
+// }
 
 inline int
-convert_precice_position(int const& position) {
+convert_precice_position(int const& location) {
   namespace pc = precice::constants;
 
-  if (position == pc::positionOutsideOfGeometry()) {
+  if (location == pc::positionOutsideOfGeometry()) {
     return 1;
-  } else if (position == pc::positionOnGeometry()) {
+  } else if (location == pc::positionOnGeometry()) {
     return -1;
-  } else if (position == pc::positionInsideOfGeometry()) {
+  } else if (location == pc::positionInsideOfGeometry()) {
     return -1;
   }
 
-  throwException("Failed to locate the position '{1}'",
-                 position);
+  throwException("Failed to find the location '{1}'", location);
 
   return 0;
 }
 
 template <typename TCellAccessor>
 inline void
-set_cell_neighbors_along_geometry_interface(
+set_cell_neighbors_along_geometry_interface_in_dimension(
   TCellAccessor const&      accessor,
   precice::SolverInterface* precice_interface,
   std::set<int> const&      body_meshes,
-  unsigned const&           max_distance) {
-  auto const position = accessor.positionInRespectToGeometry();
+  unsigned const&           max_distance,
+  unsigned const&           dimension) {
+  auto const location = accessor.positionInRespectToGeometry(dimension);
 
-  auto const velocity_position = accessor.pressurePosition();
+  typename TCellAccessor::VectorDsType position;
+
+  if (dimension < TCellAccessor::Dimensions) {
+    position = accessor.velocityPosition(dimension);
+  } else {
+    position = accessor.pressurePosition();
+  }
 
   unsigned distance = max_distance + 1;
-  unsigned bits     = 0;
+  // unsigned bits     = 0;
 
   for (unsigned d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (unsigned d2 = 0; d2 < 2; ++d2) {
-      auto current_position = velocity_position;
+      auto current_position = position;
 
       for (unsigned currentDistance = 1;
            currentDistance <= max_distance;
@@ -90,39 +102,63 @@ set_cell_neighbors_along_geometry_interface(
         // continue;
         // }
 
-        // if (d == dimension) {
-        // current_position(dimension)
-        // += accessor.width(dimension, direction * currentDistance,
-        // dimension);
-        // } else {
-        current_position(d)
-          += direction
-             * (accessor.width(d)
-                + accessor.width(d, direction * currentDistance, d))
-             / 2.0;
-        // }
+        if (d == dimension) {
+          if (direction == -1) {
+            current_position(d)
+              -= accessor.width(d, -(currentDistance - 1), d);
+          } else {
+            current_position(d)
+              += accessor.width(d, currentDistance, d);
+          }
+        } else {
+          current_position(d)
+            += direction
+               * (accessor.width(d, direction * (currentDistance - 1), d)
+                  + accessor.width(d, direction * currentDistance, d))
+               / 2.0;
+        }
 
         auto const position1 = convert_precice_position(
           precice_interface->inquirePosition(
             current_position.template cast<double>().data(),
             body_meshes));
 
-        if (Uni::sign(position) != Uni::sign(position1)) {
+        if (Uni::sign(location) != Uni::sign(position1)) {
           if (currentDistance < distance) {
-            bits     = 0;
+            // bits     = 0;
             distance = currentDistance;
           }
-          bits |= ((1 << d) << d2);
+          // bits |= ((1 << d) << d2);
           break;
         }
       }
     }
   }
 
-  set_position<TCellAccessor::Dimensions>(
-    accessor.positionInRespectToGeometry(),
-    distance,
-    bits);
+  accessor.positionInRespectToGeometry(dimension)
+    = Uni::sign(location) * distance;
+
+  // set_position<TCellAccessor::Dimensions>(
+  // accessor.positionInRespectToGeometry(dimension),
+  // distance,
+  // bits);
+}
+
+template <typename TCellAccessor>
+inline void
+set_cell_neighbors_along_geometry_interface(
+  TCellAccessor const&      accessor,
+  precice::SolverInterface* precice_interface,
+  std::set<int> const&      body_meshes,
+  unsigned const&           max_distance) {
+  for (unsigned d = 0; d <= TCellAccessor::Dimensions; ++d) {
+    set_cell_neighbors_along_geometry_interface_in_dimension(
+      accessor,
+      precice_interface,
+      body_meshes,
+      max_distance,
+      d);
+  }
 }
 
 template <typename TCellAccessor>
@@ -130,11 +166,12 @@ inline bool
 validate_layer_number(TCellAccessor const& accessor,
                       unsigned const&      outer_layer_size,
                       unsigned const&      inner_layer_size) {
-  auto const position = accessor.positionInRespectToGeometry();
+  auto const location
+    = accessor.positionInRespectToGeometry(TCellAccessor::Dimensions + 1);
 
-  auto const distance = get_distance<TCellAccessor::Dimensions>(position);
+  auto const distance = get_distance<TCellAccessor::Dimensions>(location);
 
-  if (position > 0) {
+  if (location > 0) {
     if (outer_layer_size >= distance) {
       return true;
     }

@@ -2,18 +2,18 @@
 <scenario
   Re="20"
   timeLimit="1.0"
-  iterationLimit="100"
+  iterationLimit="1000"
   plotInterval="0.0"
   tau="0.5"
   gamma="0.5"
   width="2.2 0.41"
-  size="220 82"
+  size="220 41"
   parallelizationSize="1 1"
   environment="0 0"
   filename="Turek2D1"
   scalar="double"
   solver="Improved Fractional Step Finite Difference"
-  output="Xdmf"
+  output="Vtk"
   >
   <walls>
     <left type="ParabolicInput" velocity="0.3 0.0" />

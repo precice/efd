@@ -67,6 +67,10 @@ extern template class SolverBuilder
   < SolverBuilderTraits < 0, 1, 0, double, 2 >>;
 extern template class SolverBuilder
   < SolverBuilderTraits < 0, 1, 1, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 2, 0, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 2, 1, double, 2 >>;
 
 extern template class SolverBuilder
   < SolverBuilderTraits < 0, 0, 0, double, 3 >>;
@@ -76,6 +80,10 @@ extern template class SolverBuilder
   < SolverBuilderTraits < 0, 1, 0, double, 3 >>;
 extern template class SolverBuilder
   < SolverBuilderTraits < 0, 1, 1, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 2, 0, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 0, 2, 1, double, 3 >>;
 
 extern template class SolverBuilder
   < SolverBuilderTraits < 1, 0, 0, double, 2 >>;
@@ -85,6 +93,10 @@ extern template class SolverBuilder
   < SolverBuilderTraits < 1, 1, 0, double, 2 >>;
 extern template class SolverBuilder
   < SolverBuilderTraits < 1, 1, 1, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 2, 0, double, 2 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 2, 1, double, 2 >>;
 
 extern template class SolverBuilder
   < SolverBuilderTraits < 1, 0, 0, double, 3 >>;
@@ -94,5 +106,9 @@ extern template class SolverBuilder
   < SolverBuilderTraits < 1, 1, 0, double, 3 >>;
 extern template class SolverBuilder
   < SolverBuilderTraits < 1, 1, 1, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 2, 0, double, 3 >>;
+extern template class SolverBuilder
+  < SolverBuilderTraits < 1, 2, 1, double, 3 >>;
 }
 }

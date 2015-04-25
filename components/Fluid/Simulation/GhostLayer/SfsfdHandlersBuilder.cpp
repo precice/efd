@@ -91,6 +91,32 @@ template class SfsfdHandlersBuilder
   <SfsfdSolverTraits<1, 1, double, 2>, 2, 1>;
 
 template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 2>, 0, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 2>, 0, 1>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 2>, 1, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 2>, 1, 1>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 2>, 2, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 2>, 2, 1>;
+
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 2>, 0, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 2>, 0, 1>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 2>, 1, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 2>, 1, 1>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 2>, 2, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 2>, 2, 1>;
+
+template class SfsfdHandlersBuilder
   <SfsfdSolverTraits<0, 0, double, 3>, 0, 0>;
 template class SfsfdHandlersBuilder
   <SfsfdSolverTraits<0, 0, double, 3>, 0, 1>;
@@ -141,6 +167,32 @@ template class SfsfdHandlersBuilder
   <SfsfdSolverTraits<1, 1, double, 3>, 2, 0>;
 template class SfsfdHandlersBuilder
   <SfsfdSolverTraits<1, 1, double, 3>, 2, 1>;
+
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 3>, 0, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 3>, 0, 1>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 3>, 1, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 3>, 1, 1>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 3>, 2, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 0, double, 3>, 2, 1>;
+
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 3>, 0, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 3>, 0, 1>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 3>, 1, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 3>, 1, 1>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 3>, 2, 0>;
+template class SfsfdHandlersBuilder
+  <SfsfdSolverTraits<2, 1, double, 3>, 2, 1>;
 }
 }
 }

@@ -191,6 +191,10 @@ struct IfsfdSolverTraits {
   extern template class ClassName               \
     < SfsfdSolverTraits < 1, 1, double, 2 >>;   \
   extern template class ClassName               \
+    < SfsfdSolverTraits < 2, 0, double, 2 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 2, 1, double, 2 >>;   \
+  extern template class ClassName               \
     < SfsfdSolverTraits < 0, 0, double, 3 >>;   \
   extern template class ClassName               \
     < SfsfdSolverTraits < 0, 1, double, 3 >>;   \
@@ -198,6 +202,10 @@ struct IfsfdSolverTraits {
     < SfsfdSolverTraits < 1, 0, double, 3 >>;   \
   extern template class ClassName               \
     < SfsfdSolverTraits < 1, 1, double, 3 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 2, 0, double, 3 >>;   \
+  extern template class ClassName               \
+    < SfsfdSolverTraits < 2, 1, double, 3 >>;   \
   extern template class ClassName               \
     < IfsfdSolverTraits < 0, 0, double, 2 >>;   \
   extern template class ClassName               \
@@ -207,13 +215,21 @@ struct IfsfdSolverTraits {
   extern template class ClassName               \
     < IfsfdSolverTraits < 1, 1, double, 2 >>;   \
   extern template class ClassName               \
+    < IfsfdSolverTraits < 2, 0, double, 2 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 2, 1, double, 2 >>;   \
+  extern template class ClassName               \
     < IfsfdSolverTraits < 0, 0, double, 3 >>;   \
   extern template class ClassName               \
     < IfsfdSolverTraits < 0, 1, double, 3 >>;   \
   extern template class ClassName               \
     < IfsfdSolverTraits < 1, 0, double, 3 >>;   \
   extern template class ClassName               \
-    < IfsfdSolverTraits < 1, 1, double, 3 >>;
+    < IfsfdSolverTraits < 1, 1, double, 3 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 2, 0, double, 3 >>;   \
+  extern template class ClassName               \
+    < IfsfdSolverTraits < 2, 1, double, 3 >>;
 
 #define Fluid_InstantiateExternTemplates(ClassName) \
   template class ClassName                          \
@@ -225,6 +241,10 @@ struct IfsfdSolverTraits {
   template class ClassName                          \
     < SfsfdSolverTraits < 1, 1, double, 2 >>;       \
   template class ClassName                          \
+    < SfsfdSolverTraits < 2, 0, double, 2 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 2, 1, double, 2 >>;       \
+  template class ClassName                          \
     < SfsfdSolverTraits < 0, 0, double, 3 >>;       \
   template class ClassName                          \
     < SfsfdSolverTraits < 0, 1, double, 3 >>;       \
@@ -232,6 +252,10 @@ struct IfsfdSolverTraits {
     < SfsfdSolverTraits < 1, 0, double, 3 >>;       \
   template class ClassName                          \
     < SfsfdSolverTraits < 1, 1, double, 3 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 2, 0, double, 3 >>;       \
+  template class ClassName                          \
+    < SfsfdSolverTraits < 2, 1, double, 3 >>;       \
   template class ClassName                          \
     < IfsfdSolverTraits < 0, 0, double, 2 >>;       \
   template class ClassName                          \
@@ -241,10 +265,18 @@ struct IfsfdSolverTraits {
   template class ClassName                          \
     < IfsfdSolverTraits < 1, 1, double, 2 >>;       \
   template class ClassName                          \
+    < IfsfdSolverTraits < 2, 0, double, 2 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 2, 1, double, 2 >>;       \
+  template class ClassName                          \
     < IfsfdSolverTraits < 0, 0, double, 3 >>;       \
   template class ClassName                          \
     < IfsfdSolverTraits < 0, 1, double, 3 >>;       \
   template class ClassName                          \
     < IfsfdSolverTraits < 1, 0, double, 3 >>;       \
   template class ClassName                          \
-    < IfsfdSolverTraits < 1, 1, double, 3 >>;
+    < IfsfdSolverTraits < 1, 1, double, 3 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 2, 0, double, 3 >>;       \
+  template class ClassName                          \
+    < IfsfdSolverTraits < 2, 1, double, 3 >>;

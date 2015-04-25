@@ -13,19 +13,54 @@ namespace FluidSimulation {
 namespace ImmersedBoundary {
 namespace BodyForce {
 template <typename TCellAccessor>
-bool
-do_cell_force_computation(TCellAccessor const& accessor,
-                          unsigned const&      offset) {
-  bool doAccept = false;
+inline Eigen::Matrix<int, 2* TCellAccessor::Dimensions, 1>
+compute_neighbor_locations(TCellAccessor const& accessor) {
+  using Vector = Eigen::Matrix<int, 2* TCellAccessor::Dimensions, 1>;
+  Vector locations = Vector::Zero();
 
-  auto const position = accessor.positionInRespectToGeometry();
+  auto const positions = accessor.positionInRespectToGeometry();
 
-  if (position < 0) {
-    return false;
+  for (unsigned d = 0; d < TCellAccessor::Dimensions; ++d) {
+    for (int d2 = 0; d2 < 2; ++d2) {
+      int direction_offset = -1;
+
+      if (d2 == 1) {
+        direction_offset = +1;
+      }
+
+      bool isOuside = true;
+
+      for (unsigned d3 = 0; d3 <= TCellAccessor::Dimensions; ++d3) {
+        if (accessor.positionInRespectToGeometry(d, direction_offset, d3) < 0) {
+          isOuside = false;
+          break;
+        }
+      }
+
+      if (isOuside) {
+        locations(2 * d + d2) = 1;
+      }
+    }
   }
 
-  if (get_distance<TCellAccessor::Dimensions>(position) == offset) {
-    doAccept = true;
+  return locations;
+}
+
+template <typename TCellAccessor>
+bool
+do_cell_force_computation(TCellAccessor const& accessor) {
+  auto const positions = accessor.positionInRespectToGeometry();
+
+  bool doAccept = false;
+
+  for (unsigned d = 0; d <= TCellAccessor::Dimensions; ++d) {
+    if (positions(d) < 0) {
+      return false;
+    }
+
+    if (get_distance<TCellAccessor::Dimensions>(positions(d)) == 1) {
+      doAccept = true;
+    }
   }
 
   return doAccept;
@@ -44,49 +79,47 @@ compute_cell_force(TCellAccessor const&                      accessor,
                                TCellAccessor::Dimensions,
                                TCellAccessor::Dimensions>;
 
-  unsigned const offset = 2;
-
-  if (!do_cell_force_computation(accessor, offset)) {
+  if (!do_cell_force_computation(accessor)) {
     return false;
   }
 
+  auto locations = compute_neighbor_locations(accessor);
+
   Matrix matrix;
 
-  for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
-    for (int d2 = 0; d2 < TCellAccessor::Dimensions; ++d2) {
-      matrix(d, d2) = dudx(
-        accessor.velocity(d2, -1, d),
-        accessor.velocity(d2, +1, d),
-        accessor.width(d),
-        accessor.width(d2, -1, d),
-        accessor.width(d2, +1, d));
+  for (unsigned d = 0; d < TCellAccessor::Dimensions; ++d) {
+    for (unsigned d2 = 0; d2 < TCellAccessor::Dimensions; ++d2) {
+      if (locations(2 * d2 + 0) == 1
+          && locations(2 * d2 + 1) == 1) {
+        matrix(d, d2)
+          = (accessor.velocity(d2, +1, d) - accessor.velocity(d2, -1, d))
+            / (accessor.width(d2)
+               + (accessor.width(d2, +1, d2) + accessor.width(d2, -1, d2))
+               / 2.0);
+      } else if (locations(2 * d2 + 0) == 1) {
+        matrix(d, d2)
+          = (accessor.velocity(d) - accessor.velocity(d2, -1, d))
+            / accessor.width(d2);
+      } else if (locations(2 * d2 + 1) == 1) {
+        matrix(d, d2)
+          = (accessor.velocity(d2, +1, d) - accessor.velocity(d))
+            / accessor.width(d2, +1, d2);
+      } else {
+        throwException("One of the neighboring cells in the dimension {1} "
+                       "must be ouside the body", d2);
+      }
     }
   }
-
-  matrix = (matrix + matrix.transpose()) / re;
-
-  matrix -= accessor.pressure() * Matrix::Identity();
 
   force = Vector::Zero();
 
   for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      auto const position
-        = accessor.positionInRespectToGeometry();
-      auto const distance
-        = get_distance<TCellAccessor::Dimensions>(position);
-      auto const bits
-        = get_neighbor_bits<TCellAccessor::Dimensions>(position);
-
-      if (distance != offset) {
+      if (locations(2 * d + d2) == 1) {
         continue;
       }
 
-      if ((((1 << d) << d2) & bits) == 0) {
-        continue;
-      }
-
-      Scalar normal_direction = +1.0;
+      int normal_direction = +1.0;
 
       if (d2 == 1) {
         normal_direction = -1.0;
@@ -104,9 +137,12 @@ compute_cell_force(TCellAccessor const&                      accessor,
         }
       }
 
+      matrix = (matrix + matrix.transpose()) / re;
+
+      matrix -= accessor.pressure() * Matrix::Identity();
+
       normal(d) *= width;
       force     += matrix * normal;
-      break;
     }
   }
 
@@ -122,33 +158,21 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
 
   using Vector = typename TCellAccessor::VectorDsType;
 
-  unsigned const offset = 2;
-
-  if (!do_cell_force_computation(accessor, offset)) {
+  if (!do_cell_force_computation(accessor)) {
     return false;
   }
+
+  auto locations = compute_neighbor_locations(accessor);
 
   force = Vector::Zero();
 
   for (int d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
-      auto const position
-        = accessor.positionInRespectToGeometry();
-      auto const distance
-        = get_distance<TCellAccessor::Dimensions>(position);
-
-      auto const bits
-        = get_neighbor_bits<TCellAccessor::Dimensions>(position);
-
-      if (distance != offset) {
+      if (locations(2 * d + d2) == 1) {
         continue;
       }
 
-      if ((((1 << d) << d2) & bits) == 0) {
-        continue;
-      }
-
-      Scalar normal_direction = +1.0;
+      int normal_direction = +1.0;
 
       if (d2 == 1) {
         normal_direction = -1.0;
@@ -172,12 +196,28 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
       Vector grad_velocity;
 
       for (int d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
-        grad_velocity(d3) = dudx(
-          accessor.velocity(d3, -1).dot(tangent),
-          accessor.velocity(d3, +1).dot(tangent),
-          accessor.width(d3),
-          accessor.width(d3, -1, d3),
-          accessor.width(d3, +1, d3));
+        if (locations(2 * d3 + 0) == 1
+            && locations(2 * d3 + 1) == 1) {
+          grad_velocity(d3)
+            = (accessor.velocity(d3, +1).dot(tangent)
+               - accessor.velocity(d3, -1).dot(tangent))
+              / (accessor.width(d3)
+                 + (accessor.width(d3, +1, d3)
+                    + accessor.width(d3, -1, d3)) / 2.0);
+        } else if (locations(2 * d3 + 0) == 1) {
+          grad_velocity(d3)
+            = (accessor.velocity().dot(tangent)
+               - accessor.velocity(d3, -1).dot(tangent))
+              / accessor.width(d3);
+        } else if (locations(2 * d3 + 1) == 1) {
+          grad_velocity(d3)
+            = (accessor.velocity(d3, +1).dot(tangent)
+               - accessor.velocity().dot(tangent))
+              / accessor.width(d3, +1, d3);
+        } else {
+          throwException("One of the neighboring cells in the dimension {1} "
+                         "must be ouside the body", d3);
+        }
       }
 
       Scalar dvdn = grad_velocity.dot(normal) / re;

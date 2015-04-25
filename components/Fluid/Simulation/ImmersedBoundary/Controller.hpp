@@ -69,10 +69,10 @@ public:
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 
-  using BodyInterfaceCellType = Private::BodyInterfaceCell<VectorDsType >;
+  using BodyInterfaceCellType = Private::BodyInterfaceCell<VectorDsType>;
 
   using VertexIdMap
-          = std::map < int, std::unique_ptr <BodyInterfaceCellType >>;
+          = std::map < int, std::unique_ptr < BodyInterfaceCellType >>;
 
 public:
   BasicController() {}
@@ -228,6 +228,7 @@ public:
 
 public:
   Controller() :
+    BaseType(),
     _maxLayerSize(2),
     _outerLayerSize(0),
     _innerLayerSize(0) {}
@@ -315,10 +316,18 @@ public:
 
   void
   computePositionInRespectToGeometry(CellAccessorType const& accessor) const {
-    accessor.positionInRespectToGeometry()
-      = convert_precice_position(_preciceInterface->inquirePosition(
-                                   accessor.pressurePosition().data(),
-                                   std::set<int>({ _bodyMeshId })));
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      accessor.positionInRespectToGeometry(d)
+        = convert_precice_position(
+        _preciceInterface->inquirePosition(
+          accessor.velocityPosition(d).template cast<double>().data(),
+          std::set<int>({ _bodyMeshId })));
+    }
+    accessor.positionInRespectToGeometry(Dimensions)
+      = convert_precice_position(
+      _preciceInterface->inquirePosition(
+        accessor.pressurePosition().template cast<double>().data(),
+        std::set<int>({ _bodyMeshId })));
   }
 
   void
@@ -343,7 +352,8 @@ public:
 
       this->_vertexIds[0].insert(
         std::make_pair(accessor.globalIndex(),
-          std::unique_ptr<BodyInterfaceCellType>(new BodyInterfaceCellType(vertexId))));
+                       std::unique_ptr<BodyInterfaceCellType>(
+                         new BodyInterfaceCellType(vertexId))));
     }
   }
 
@@ -429,7 +439,7 @@ public:
     }
     force /= 2.0;
 
-    return force;
+    return force / _memory->timeStepSize();
   }
 
   VectorDsType
@@ -441,8 +451,7 @@ public:
     auto accessor = *memory->grid()->begin();
     accessor.initialize(global_index);
 
-    body_force
-      += accessor.width().prod() * (-force) / memory->timeStepSize();
+    body_force += accessor.width().prod() * (-force);
 
     memory->addForceAt(global_index, body_force);
 

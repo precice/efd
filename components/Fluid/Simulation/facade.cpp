@@ -100,7 +100,7 @@ _create_simulation_controller_nd_scalar_solver_type(
   if (configuration->doImmersedBoundary) {
     return
       _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type
-      <TDimensions, TScalar, TSolverType, 1>(configuration);
+      <TDimensions, TScalar, TSolverType, 2>(configuration);
   }
 
   return

@@ -1,14 +1,14 @@
 #include "IfsfdHandlersBuilder.hpp"
 
-#include "PressureStencilHanler.hpp"
 #include "PetscExchangeActions.hpp"
 #include "PetscExchangeHandler.hpp"
+#include "PressureStencilHanler.hpp"
 
 #include "IfsfdHandlers.hpp"
 
 #include "Simulation/Configuration.hpp"
-#include "Simulation/IfsfdMemory.hpp"
 #include "Simulation/FsfdSolver.hpp"
+#include "Simulation/IfsfdMemory.hpp"
 
 namespace FsiSimulation {
 namespace FluidSimulation {
@@ -423,6 +423,32 @@ template class IfsfdHandlersBuilder
   <IfsfdSolverTraits<1, 1, double, 2>, 2, 1>;
 
 template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 2>, 0, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 2>, 0, 1>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 2>, 1, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 2>, 1, 1>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 2>, 2, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 2>, 2, 1>;
+
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 2>, 0, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 2>, 0, 1>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 2>, 1, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 2>, 1, 1>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 2>, 2, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 2>, 2, 1>;
+
+template class IfsfdHandlersBuilder
   <IfsfdSolverTraits<0, 0, double, 3>, 0, 0>;
 template class IfsfdHandlersBuilder
   <IfsfdSolverTraits<0, 0, double, 3>, 0, 1>;
@@ -463,7 +489,7 @@ template class IfsfdHandlersBuilder
 
 template class IfsfdHandlersBuilder
   <IfsfdSolverTraits<1, 1, double, 3>, 0, 0>;
-  template class IfsfdHandlersBuilder
+template class IfsfdHandlersBuilder
   <IfsfdSolverTraits<1, 1, double, 3>, 0, 1>;
 template class IfsfdHandlersBuilder
   <IfsfdSolverTraits<1, 1, double, 3>, 1, 0>;
@@ -473,6 +499,32 @@ template class IfsfdHandlersBuilder
   <IfsfdSolverTraits<1, 1, double, 3>, 2, 0>;
 template class IfsfdHandlersBuilder
   <IfsfdSolverTraits<1, 1, double, 3>, 2, 1>;
+
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 3>, 0, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 3>, 0, 1>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 3>, 1, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 3>, 1, 1>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 3>, 2, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 0, double, 3>, 2, 1>;
+
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 3>, 0, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 3>, 0, 1>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 3>, 1, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 3>, 1, 1>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 3>, 2, 0>;
+template class IfsfdHandlersBuilder
+  <IfsfdSolverTraits<2, 1, double, 3>, 2, 1>;
 }
 }
 }

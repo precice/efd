@@ -41,6 +41,8 @@ public:
 
   using ScalarType = typename TSolverTraits::ScalarType;
 
+  using LocationType = Eigen::Matrix<int, Dimensions + 1, 1>;
+
 public:
   SfsfdCellAccessor(MemoryType*         memory,
                     BaseGridType const* grid)
@@ -473,19 +475,19 @@ public:
     return _memory->pressure(this->relativeGlobalIndex(index));
   }
 
-  int&
+  LocationType&
   positionInRespectToGeometry() const {
     return _memory->position(this->globalIndex());
   }
 
-  int&
+  LocationType&
   positionInRespectToGeometry(int const& dimension,
                               int const& offset) const {
     return _memory->position(
       this->relativeGlobalIndex(dimension, offset));
   }
 
-  int&
+  LocationType&
   positionInRespectToGeometry(int const& dimension,
                               int const& offset,
                               int const& dimension2,
@@ -495,9 +497,42 @@ public:
                                 dimension2, offset2));
   }
 
-  int&
+  LocationType&
   positionInRespectToGeometry(VectorDiType const& index) const {
     return _memory->position(this->relativeGlobalIndex(index));
+  }
+
+  int&
+  positionInRespectToGeometry(unsigned const& dimension) const {
+    return _memory->position(this->globalIndex())(dimension);
+  }
+
+  int&
+  positionInRespectToGeometry(int const&      dimension,
+                              int const&      offset,
+                              unsigned const& position_dimension) const {
+    return _memory->position(
+      this->relativeGlobalIndex(dimension, offset))
+             (position_dimension);
+  }
+
+  int&
+  positionInRespectToGeometry(int const&      dimension,
+                              int const&      offset,
+                              int const&      dimension2,
+                              int const&      offset2,
+                              unsigned const& position_dimension) const {
+    return _memory->position(
+      this->relativeGlobalIndex(dimension, offset,
+                                dimension2, offset2))
+             (position_dimension);
+  }
+
+  int&
+  positionInRespectToGeometry(VectorDiType const& index,
+                              unsigned const&     position_dimension) const {
+    return _memory->position(this->relativeGlobalIndex(index))
+             (position_dimension);
   }
 
   VectorDsType&
@@ -617,7 +652,7 @@ public:
     return _memory->pressure(this->absoluteGlobalIndex(index));
   }
 
-  int&
+  LocationType&
   absolutePositionInRespectToGeometry(VectorDiType const& index) const {
     return _memory->position(this->absoluteGlobalIndex(index));
   }

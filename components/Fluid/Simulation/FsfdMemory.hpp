@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Parameters.hpp"
-#include "GridGeometry.hpp"
 #include "Grid.hpp"
+#include "GridGeometry.hpp"
 #include "ParallelDistribution.hpp"
+#include "Parameters.hpp"
 
 #include <Uni/ExecutionControl/assert>
 #include <Uni/ExecutionControl/exception>
@@ -76,6 +76,8 @@ public:
 
   using ScalarType = typename TSolverTraits::ScalarType;
 
+  using LocationType = Eigen::Matrix<int, Dimensions + 1, 1>;
+
   using AttributeType = Attribute;
 
   using AttributesType
@@ -110,7 +112,7 @@ public:
 
     _velocity.reset(new VectorDsType[_grid.size().prod()]);
     _pressure.reset(new ScalarType[_grid.size().prod()]);
-    _position.reset(new int[_grid.size().prod()]);
+    _position.reset(new LocationType[_grid.size().prod()]);
     _fgh.reset(new VectorDsType[_grid.size().prod()]);
     _convection.reset(new VectorDsType[_grid.size().prod()]);
 
@@ -302,22 +304,22 @@ public:
     return _pressure.get()[index];
   }
 
-  int const*
+  LocationType const*
   position() const {
     return _position.get();
   }
 
-  int*
+  LocationType*
   position() {
     return _position.get();
   }
 
-  int const&
+  LocationType const&
   position(int const& index) const {
     return _position.get()[index];
   }
 
-  int&
+  LocationType&
   position(int const& index) {
     return _position.get()[index];
   }
@@ -394,6 +396,7 @@ protected:
     default:
       throwException("Invalid attribute index");
     }
+
     return 0.0;
   }
 
@@ -409,7 +412,7 @@ protected:
 
   std::unique_ptr<VectorDsType[]> _velocity;
   std::unique_ptr<ScalarType[]>   _pressure;
-  std::unique_ptr<int[]> _position;
+  std::unique_ptr<LocationType>   _position;
   std::unique_ptr<VectorDsType[]> _fgh;
   std::unique_ptr<VectorDsType[]> _convection;
 };

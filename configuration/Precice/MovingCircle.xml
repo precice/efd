@@ -14,17 +14,30 @@
     geometry-mode="0"
     restart-mode="0">
 
-    <data:vector name="Velocities"/>
-    <data:vector name="Forces"/>
+    <data:scalar name="VelocitiesX"/>
+    <data:scalar name="VelocitiesY"/>
+    <data:scalar name="ForcesX"/>
+    <data:scalar name="ForcesY"/>
+    <data:vector name="Dispacements"/>
 
     <mesh name="BodyMesh" flip-normals="0">
-      <use-data name="Velocities"/>
-      <use-data name="Forces"/>
+      <use-data name="VelocitiesX"/>
+      <use-data name="ForcesX"/>
     </mesh>
 
-    <mesh name="FluidMesh" flip-normals="0">
-      <use-data name="Velocities"/>
-      <use-data name="Forces"/>
+    <mesh name="BodyMeshY" flip-normals="0">
+      <use-data name="VelocitiesY"/>
+      <use-data name="ForcesY"/>
+    </mesh>
+
+    <mesh name="FluidMeshX" flip-normals="0">
+      <use-data name="VelocitiesX"/>
+      <use-data name="ForcesX"/>
+    </mesh>
+
+    <mesh name="FluidMeshY" flip-normals="0">
+      <use-data name="VelocitiesY"/>
+      <use-data name="ForcesY"/>
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
@@ -33,38 +46,78 @@
       <offset value="0.2; 0.2"/>
     </geometry:builtin-sphere>
 
+    <geometry:builtin-sphere of-mesh="BodyMeshY">
+      <discretization-width value="0.001"/>
+      <radius value="0.05"/>
+      <offset value="0.2; 0.2"/>
+    </geometry:builtin-sphere>
+
     <participant name="Fluid">
-      <mapping:rbf-thin-plate-splines
+      <mapping:rbf-compact-tps-c2
+        support-radius="0.01"
         constraint="consistent"
         direction="write"
-        from="FluidMesh"
+        from="FluidMeshX"
         to="BodyMesh"
         timing="initial"/>
+      <mapping:rbf-compact-tps-c2
+        support-radius="0.01"
+        constraint="consistent"
+        direction="write"
+        from="FluidMeshY"
+        to="BodyMeshY"
+        timing="initial"/>
 
-      <mapping:rbf-thin-plate-splines
+      <mapping:rbf-compact-tps-c2
+        support-radius="0.01"
         constraint="consistent"
         direction="read"
         from="BodyMesh"
-        to="FluidMesh"
+        to="FluidMeshX"
+        timing="initial"/>
+      <mapping:rbf-compact-tps-c2
+        support-radius="0.01"
+        constraint="consistent"
+        direction="read"
+        from="BodyMeshY"
+        to="FluidMeshY"
         timing="initial"/>
 
-      <write-data mesh="FluidMesh" name="Velocities"/>
-      <read-data mesh="FluidMesh" name="Forces"/>
+      <write-data mesh="FluidMeshX" name="VelocitiesX"/>
+      <write-data mesh="FluidMeshY" name="VelocitiesY"/>
+      <read-data mesh="FluidMeshX" name="ForcesX"/>
+      <read-data mesh="FluidMeshY" name="ForcesY"/>
 
-      <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
+      <use-mesh name="FluidMeshX" provide="1" offset="0; 0; 0"/>
+      <use-mesh name="FluidMeshY" provide="1" offset="0; 0; 0"/>
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
+      <use-mesh name="BodyMeshY" provide="0" offset="0; 0; 0"/>
 
       <action:python mesh="BodyMesh" timing="regular-post">
         <path name="Precice"/>
         <module name="CouplingModeDirectForcingAction"/>
-        <source-data name="Velocities"/>
-        <target-data name="Forces"/>
+        <source-data name="VelocitiesX"/>
+        <target-data name="ForcesX"/>
       </action:python>
+      <action:python mesh="BodyMeshY" timing="regular-post">
+        <path name="Precice"/>
+        <module name="CouplingModeDirectForcingAction"/>
+        <source-data name="VelocitiesY"/>
+        <target-data name="ForcesY"/>
+      </action:python>
+      <action:add-to-coordinates mesh="BodyMesh" timing="regular-post">
+        <source-data name="Displacements"/>
+      </action:add-to-coordinates>
+      <action:add-to-coordinates mesh="BodyMeshY" timing="regular-post">
+        <source-data name="Displacements"/>
+      </action:add-to-coordinates>
     </participant>
-
     <participant name="Structure">
       <use-mesh name="BodyMesh"/>
-      <write-data mesh="BodyMesh" name="Forces"/>
+      <write-data mesh="BodyMesh" name="ForcesX"/>
+      <write-data mesh="BodyMeshY" name="ForcesY"/>
+      <write-data mesh="BodyMesh" name="Dispacements"/>
+      <write-data mesh="BodyMeshY" name="Dispacements"/>
     </participant>
 
     <communication:sockets from="Fluid" to="Structure"/>
@@ -75,6 +128,7 @@
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
       <exchange data="Forces" from="Structure" mesh="BodyMesh"/>
+      <exchange data="Forces" from="Structure" mesh="BodyMeshY"/>
     </coupling-scheme:serial-explicit>
 
   </solver-interface>

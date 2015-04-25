@@ -109,7 +109,8 @@ protected:
 
     case Base::AttributeSize + 4:
 
-      return this->_position.get()[index];
+      return static_cast<ScalarType>(
+        this->_position.get()[index](Dimensions));
 
     default:
 

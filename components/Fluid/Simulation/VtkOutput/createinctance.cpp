@@ -10,7 +10,7 @@ namespace FluidSimulation {
 namespace VtkOutput {
 template <typename TMemory>
 std::unique_ptr<IterationResultWriter>
-create_instance(TMemory const*                 memory) {
+create_instance(TMemory const* memory) {
   return std::unique_ptr<IterationResultWriter>(new Writer<TMemory>(memory));
 }
 
@@ -32,6 +32,14 @@ create_instance(typename SfsfdSolverTraits
                 ::MemoryType const*);
 template std::unique_ptr<IterationResultWriter>
 create_instance(typename SfsfdSolverTraits
+                <2, 0, double, 2>
+                ::MemoryType const*);
+template std::unique_ptr<IterationResultWriter>
+create_instance(typename SfsfdSolverTraits
+                <2, 1, double, 2>
+                ::MemoryType const*);
+template std::unique_ptr<IterationResultWriter>
+create_instance(typename SfsfdSolverTraits
                 <0, 0, double, 3>
                 ::MemoryType const*);
 template std::unique_ptr<IterationResultWriter>
@@ -45,6 +53,14 @@ create_instance(typename SfsfdSolverTraits
 template std::unique_ptr<IterationResultWriter>
 create_instance(typename SfsfdSolverTraits
                 <1, 1, double, 3>
+                ::MemoryType const*);
+template std::unique_ptr<IterationResultWriter>
+create_instance(typename SfsfdSolverTraits
+                <2, 0, double, 3>
+                ::MemoryType const*);
+template std::unique_ptr<IterationResultWriter>
+create_instance(typename SfsfdSolverTraits
+                <2, 1, double, 3>
                 ::MemoryType const*);
 
 template std::unique_ptr<IterationResultWriter>
@@ -65,6 +81,14 @@ create_instance(typename IfsfdSolverTraits
                 ::MemoryType const*);
 template std::unique_ptr<IterationResultWriter>
 create_instance(typename IfsfdSolverTraits
+                <2, 0, double, 2>
+                ::MemoryType const*);
+template std::unique_ptr<IterationResultWriter>
+create_instance(typename IfsfdSolverTraits
+                <2, 1, double, 2>
+                ::MemoryType const*);
+template std::unique_ptr<IterationResultWriter>
+create_instance(typename IfsfdSolverTraits
                 <0, 0, double, 3>
                 ::MemoryType const*);
 template std::unique_ptr<IterationResultWriter>
@@ -79,7 +103,14 @@ template std::unique_ptr<IterationResultWriter>
 create_instance(typename IfsfdSolverTraits
                 <1, 1, double, 3>
                 ::MemoryType const*);
-
+template std::unique_ptr<IterationResultWriter>
+create_instance(typename IfsfdSolverTraits
+                <2, 0, double, 3>
+                ::MemoryType const*);
+template std::unique_ptr<IterationResultWriter>
+create_instance(typename IfsfdSolverTraits
+                <2, 1, double, 3>
+                ::MemoryType const*);
 }
 }
 }

@@ -7,6 +7,7 @@
 #include "IfsfdCellAccessor.hpp"
 #include "IfsfdMemory.hpp"
 #include "ImmersedBoundary/Controller.hpp"
+#include "ImmersedBoundary/RbfController.hpp"
 #include "PeSolver.hpp"
 #include "Private/mpigenerics.hpp"
 #include "Reporter.hpp"
@@ -286,7 +287,8 @@ iterate() {
           + _im->memory.timeStepSize() * (-1.5 * convection
                                           + 0.5 * previousConvection
                                           + diffusion
-                                          - grad_pressure);
+                                          - grad_pressure
+                                          + _im->memory.parameters()->g());
 
       _im->ibController.setFluidVelocity(status.first, temp);
     }
@@ -305,7 +307,7 @@ iterate() {
        ++it) {
     auto force = _im->ibController.getFluidForce(it);
 
-    _im->memory.fgh()[it->first] += force;
+    _im->memory.fgh()[it->first] += _im->memory.timeStepSize() * force;
 
     auto body_force = _im->ibController.computeBodyForceAt(
       it->first,
@@ -356,6 +358,5 @@ iterate() {
 }
 
 Fluid_InstantiateExternTemplates(FsfdSolver);
-
 }
 }

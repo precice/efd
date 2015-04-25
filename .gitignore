@@ -27,7 +27,7 @@
 !/configuration/Precice/*.xml
 !/configuration/Precice/*.py
 !/configuration/Report/*.html
-!/configuration/Report/*.csv
+!/configuration/Report/*.cst
 !/configuration/Report/js/*.js
 !/configuration/Structure/*.xml
 
