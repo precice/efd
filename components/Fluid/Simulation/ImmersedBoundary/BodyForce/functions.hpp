@@ -18,8 +18,6 @@ compute_neighbor_locations(TCellAccessor const& accessor) {
   using Vector = Eigen::Matrix<int, 2* TCellAccessor::Dimensions, 1>;
   Vector locations = Vector::Zero();
 
-  auto const positions = accessor.positionInRespectToGeometry();
-
   for (unsigned d = 0; d < TCellAccessor::Dimensions; ++d) {
     for (int d2 = 0; d2 < 2; ++d2) {
       int direction_offset = -1;
