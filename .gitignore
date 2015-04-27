@@ -63,15 +63,15 @@
 !/components/Structure/**/*.hpp
 
 !/tests
-!/tests/LrzLinuxCluster
-!/tests/LrzLinuxCluster/*.sh
-!/tests/LrzLinuxCluster/Fluid
-!/tests/LrzLinuxCluster/Petsc
-!/tests/LrzLinuxCluster/Precice
-!/tests/LrzLinuxCluster/Fluid/*.xml
-!/tests/LrzLinuxCluster/Petsc/*.conf
-!/tests/LrzLinuxCluster/Precice/*.xml
-!/tests/LrzLinuxCluster/Precice/*.py
+!/tests/LrzMacCluster
+!/tests/LrzMacCluster/*.sh
+!/tests/LrzMacCluster/Fluid
+!/tests/LrzMacCluster/Petsc
+!/tests/LrzMacCluster/Precice
+!/tests/LrzMacCluster/Fluid/*.xml
+!/tests/LrzMacCluster/Petsc/*.conf
+!/tests/LrzMacCluster/Precice/*.xml
+!/tests/LrzMacCluster/Precice/*.py
 
 *.*.*
 *.*.*.*

@@ -7,7 +7,7 @@
 #SBATCH --mail-user=SlavaMikerov@gmail.com
 #SBATCH --time=05:00:00
 #SBATCH --get-user-env
-#SBATCH --clusters=mpp1
+#SBATCH --clusters=snb
 #SBATCH --ntasks=1
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
