@@ -12,7 +12,7 @@
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-source $DIR/modules.sh
+source $DIR/environment-configuration.sh
 
 bin=$DIR/../../.install/Release/bin
 conf=$DIR

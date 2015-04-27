@@ -36,4 +36,4 @@ export XDMF_ROOT=~/builds/install
 export EIGEN_INCLUDE_DIRS=~/builds/install/include
 export PATH=~/builds/install/bin:~/install/python/bin:~/Precice/build/release:$PATH
 export PRECICE_DIR=~/Precice
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/builds/install/lib:$HOME/install/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/builds/install/lib:$HOME/install/python/lib
