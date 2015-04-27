@@ -386,12 +386,22 @@ public:
                         MAT_INITIAL_MATRIX,
                         PETSC_DEFAULT,
                         &preconditioning_global_matrix);
+#if ((PETSC_VERSION_MAJOR >= 3) && (PETSC_VERSION_MINOR >= 5))
+    KSPSetOperators(solver,
+                    // global_matrix,
+                    preconditioning_global_matrix,
+                    preconditioning_global_matrix
+                    // 0
+                    );
+#else
     KSPSetOperators(solver,
                     // global_matrix,
                     preconditioning_global_matrix,
                     preconditioning_global_matrix,
                     // 0,
                     SAME_PRECONDITIONER);
+#endif
+
     logInfo("KSP Setup");
     KSPSetUp(solver);
     logInfo("KSP Solve");
