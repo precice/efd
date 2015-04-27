@@ -5,10 +5,10 @@
 #SBATCH -D  /home/hpc/pr63so/ga39puw2/jobs/output
 #SBATCH --mail-type=end
 #SBATCH --mail-user=SlavaMikerov@gmail.com
-#SBATCH --time=01:00:00
+#SBATCH --time=05:00:00
 #SBATCH --get-user-env
 #SBATCH --clusters=mpp1
-#SBATCH --ntasks=25
+#SBATCH --ntasks=1
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
@@ -17,8 +17,14 @@ source $DIR/modules.sh
 bin=$DIR/../../.install/Release/bin
 conf=$DIR
 
-mpiexec -n 25 $bin/Fluid \
-  -o Turek2D1-Ifsfd-11-220x205 \
+mpiexec -n 1 $bin/Fluid \
+  -o Turek2D1-Ifsfd-11-220x205-11 \
   -e $conf/Petsc/Basic.conf \
-  -s $conf/Fluid/Turek2D1-Ifsfd-11-220x205.xml \
+  -s $conf/Fluid/Turek2D1-Ifsfd-11-220x205-11.xml \
+  -p $conf/Precice/Turek2D.xml
+
+mpiexec -n 1 $bin/Fluid \
+  -o Turek2D2-Ifsfd-11-220x205-11 \
+  -e $conf/Petsc/Basic.conf \
+  -s $conf/Fluid/Turek2D2-Ifsfd-11-220x205-11.xml \
   -p $conf/Precice/Turek2D.xml
