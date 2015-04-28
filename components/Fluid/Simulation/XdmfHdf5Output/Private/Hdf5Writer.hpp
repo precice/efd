@@ -263,7 +263,7 @@ public:
       }
 
       hid_t file_space = H5Screate_simple(1, &size, NULL);
-      hid_t dataset_id = H5Dcreate(
+      hid_t dataset = H5Dcreate(
         file_id,
         (std::string("/") + dimension_names[d]).c_str(),
         H5T_NATIVE_FLOAT,
@@ -271,7 +271,7 @@ public:
         H5P_DEFAULT,
         H5P_DEFAULT,
         H5P_DEFAULT);
-      herr_t status = H5Dwrite(dataset_id,
+      herr_t status = H5Dwrite(dataset,
                                H5T_NATIVE_FLOAT,
                                H5S_ALL,
                                H5S_ALL,
@@ -279,6 +279,8 @@ public:
                                data);
       ((void)status);
 
+      H5Dclose(dataset);
+      H5Fclose(file_space);
       delete data;
     }
 
