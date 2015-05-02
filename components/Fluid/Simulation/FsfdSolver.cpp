@@ -224,6 +224,121 @@ template <typename T>
 void
 FsfdSolver<T>::
 iterate() {
+  iterateWithDeepIbVelocityPrediction();
+}
+
+template <typename T>
+void
+FsfdSolver<T>::
+iterateWithShallowIbVelocityPrediction() {
+  computeTimeStepSize();
+
+  for (auto const& accessor : _im->memory.grid()->innerGrid) {
+    auto parts = updateFgh(accessor);
+
+    auto ib_fluid_cell
+      = _im->ibController->getVelocityIterable().find(accessor.globalIndex());
+
+    if (ib_fluid_cell != _im->ibController->getVelocityIterable().end()) {
+      _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
+      auto temp
+        = accessor.velocity()
+          + _im->memory.timeStepSize() * (-1.5 * parts[0]
+                                          + 0.5 * accessor.convection()
+                                          + parts[1]
+                                          - parts[2]
+                                          + _im->memory.parameters()->g());
+
+      ib_fluid_cell->data() = temp;
+    }
+
+    accessor.convection() = parts[0];
+  }
+
+  _im->ibController->processVelocities();
+  // logInfo("Map data");
+  _im->preciceInterface->advance(_im->memory.timeStepSize());
+  _im->ibController->processForces();
+
+  addIbForces();
+
+  solvePoissonEquations();
+
+  updateVelocities();
+
+  finalizeIteration();
+}
+
+template <typename T>
+void
+FsfdSolver<T>::
+iterateWithDeepIbVelocityPrediction() {
+  logInfo("Start Deep Ib velocity prediction ...");
+
+  computeTimeStepSize();
+
+  for (auto const& accessor : _im->memory.grid()->innerGrid) {
+    updateFgh(accessor);
+  }
+
+  std::unique_ptr<ScalarType[]> pressure_backup(
+    new ScalarType[_im->memory.grid()->size().prod()]);
+
+  std::memcpy(pressure_backup.get(),
+              _im->memory.pressure(),
+              _im->memory.grid()->size().prod() * sizeof (ScalarType));
+
+  solvePoissonEquations();
+
+  for (auto& ib_fluid_cell : _im->ibController->getVelocityIterable()) {
+    auto accessor = *_im->memory.grid()->begin();
+    accessor.initialize(ib_fluid_cell.globalIndex());
+
+    VectorDsType grad_pressure
+      = PressureProcessing<SolverId>::grad(accessor);
+
+    ib_fluid_cell.data()
+      = accessor.fgh()
+        - _im->memory.timeStepSize() * grad_pressure;
+  }
+
+  std::memcpy(_im->memory.pressure(),
+              pressure_backup.get(),
+              _im->memory.grid()->size().prod() * sizeof (ScalarType));
+
+  _im->memory.maxVelocity()
+    = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
+
+  logInfo("Finish the prediction phase");
+
+  logInfo("Start solving phase ...");
+
+  for (auto const& accessor : _im->memory.grid()->innerGrid) {
+    auto parts = updateFgh(accessor);
+
+    accessor.convection() = parts[0];
+  }
+
+  _im->ibController->processVelocities();
+  // logInfo("Map data");
+  _im->preciceInterface->advance(_im->memory.timeStepSize());
+  _im->ibController->processForces();
+
+  addIbForces();
+
+  solvePoissonEquations();
+
+  updateVelocities();
+
+  finalizeIteration();
+
+  logInfo("Finish deep Ib velocity prediction");
+}
+
+template <typename T>
+void
+FsfdSolver<T>::
+computeTimeStepSize() {
   _im->memory.timeStepSize()
     = compute_time_step_size(_im->memory.parameters()->re(),
                              _im->memory.parameters()->tau(),
@@ -238,78 +353,56 @@ iterate() {
   }
   _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
+}
 
-  for (auto const& accessor : _im->memory.grid()->innerGrid) {
-    _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
+template <typename T>
+std::array<typename FsfdSolver<T>::VectorDsType, 3>
+FsfdSolver<T>::
+updateFgh(CellAccessorType const& accessor) {
+  std::array<VectorDsType, 3> parts;
 
-    auto convection = ConvectionProcessing<Dimensions>::compute(
-      accessor,
-      _im->memory.parameters()->gamma());
+  _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
 
-    auto previousConvection = accessor.convection();
+  parts[0] = ConvectionProcessing<Dimensions>::compute(
+    accessor,
+    _im->memory.parameters()->gamma());
 
-    if (_im->memory.iterationNumber() == 0) {
-      previousConvection = convection;
-    }
+  parts[1] = DiffusionProcessing<Dimensions>::compute(accessor);
 
-    accessor.convection() = convection;
+  accessor.setDiffusion(parts[1]);
 
-    auto diffusion = DiffusionProcessing<Dimensions>::compute(accessor);
+  parts[1] = parts[1] / _im->memory.parameters()->re();
 
-    accessor.setDiffusion(diffusion);
-
-    diffusion = diffusion / _im->memory.parameters()->re();
-
-    VectorDsType velocity;
-
-    VectorDsType grad_pressure;
-
-    for (int d = 0; d < Dimensions; ++d) {
-      grad_pressure(d)
-        = (accessor.pressure(d, +1) - accessor.pressure())
-          / (0.5 * (accessor.width(d, +1, d) + accessor.width(d)));
-    }
-
-    if (SolverId == 0) {
-      accessor.fgh()
-        = accessor.velocity()
-          + _im->memory.timeStepSize() * (diffusion
-                                          - convection
-                                          + _im->memory.parameters()->g()
-                                          );
-    } else {
-      accessor.fgh()
-        = accessor.velocity()
-          + _im->memory.timeStepSize() * (-1.5 * convection
-                                          + 0.5 * previousConvection
-                                          + 0.5 * diffusion
-                                          - grad_pressure
-                                          + _im->memory.parameters()->g());
-      // logInfo("Fgh | {1}", accessor.index().transpose());
-    }
-
-    auto ib_fluid_cell
-      = _im->ibController->getVelocityIterable().find(accessor.globalIndex());
-
-    if (ib_fluid_cell != _im->ibController->getVelocityIterable().end()) {
-      _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
-      auto temp
-        = accessor.velocity()
-          + _im->memory.timeStepSize() * (-1.5 * convection
-                                          + 0.5 * previousConvection
-                                          + diffusion
-                                          - grad_pressure
-                                          + _im->memory.parameters()->g());
-
-      ib_fluid_cell->data() = temp;
-    }
+  for (int d = 0; d < Dimensions; ++d) {
+    parts[2](d)
+      = (accessor.pressure(d, +1) - accessor.pressure())
+        / (0.5 * (accessor.width(d, +1, d) + accessor.width(d)));
   }
 
-  _im->ibController->processVelocities();
-  // logInfo("Map data");
-  _im->preciceInterface->advance(_im->memory.timeStepSize());
-  _im->ibController->processForces();
+  if (SolverId == 0) {
+    accessor.fgh()
+      = accessor.velocity()
+        + _im->memory.timeStepSize() * (parts[1]
+                                        - parts[0]
+                                        + _im->memory.parameters()->g()
+                                        );
+  } else {
+    accessor.fgh()
+      = accessor.velocity()
+        + _im->memory.timeStepSize() * (-1.5 * parts[0]
+                                        + 0.5 * accessor.convection()
+                                        + 0.5 * parts[1]
+                                        - parts[2]
+                                        + _im->memory.parameters()->g());
+  }
 
+  return parts;
+}
+
+template <typename T>
+void
+FsfdSolver<T>::
+addIbForces() {
   // logInfo("Read data");
   VectorDsType total_force = VectorDsType::Zero();
 
@@ -327,7 +420,6 @@ iterate() {
 
     total_force += body_force;
   }
-
   Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
                                     total_force.data(),
                                     Dimensions,
@@ -335,7 +427,12 @@ iterate() {
                                     PETSC_COMM_WORLD);
 
   _im->reporter->addAt(3, total_force);
+}
 
+template <typename T>
+void
+FsfdSolver<T>::
+solvePoissonEquations() {
   // logInfo("Vpe");
   _im->peSolver.executeVpe();
   _im->ghostHandlers.executeFghMpiExchange();
@@ -343,7 +440,12 @@ iterate() {
   // logInfo("Ppe");
   _im->peSolver.executePpe();
   _im->ghostHandlers.executePressureMpiExchange();
+}
 
+template <typename T>
+void
+FsfdSolver<T>::
+updateVelocities() {
   for (auto& accessor : _im->memory.grid()->innerGrid) {
     VectorDsType grad_pressure
       = PressureProcessing<SolverId>::grad(accessor);
@@ -357,7 +459,12 @@ iterate() {
 
   _im->ghostHandlers.executeVelocityInitialization();
   _im->ghostHandlers.executeVelocityMpiExchange();
+}
 
+template <typename T>
+void
+FsfdSolver<T>::
+finalizeIteration() {
   computeBodyForce();
 
   _im->memory.time() += _im->memory.timeStepSize();

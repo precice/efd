@@ -90,6 +90,30 @@ public:
 
 private:
   void
+  iterateWithShallowIbVelocityPrediction();
+
+  void
+  iterateWithDeepIbVelocityPrediction();
+
+  void
+  computeTimeStepSize();
+
+  std::array<VectorDsType, 3>
+  updateFgh(CellAccessorType const& accessor);
+
+  void
+  addIbForces();
+
+  void
+  solvePoissonEquations();
+
+  void
+  updateVelocities();
+
+  void
+  finalizeIteration();
+
+  void
   locateInterfaceCells();
 
   void
