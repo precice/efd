@@ -22,12 +22,13 @@ parser.add_argument('-G', nargs='?', default='Ninja')
 parser.add_argument('flags', nargs='*')
 # 'c' means 'configuration type'
 parser.add_argument('-c', default='Release')
+parser.add_argument('-p', default='Clang')
 parser.add_argument('-prefix')
 
 args = parser.parse_args()
 
 if args.prefix is None:
-  installDir = os.path.join(projectDir, '.install', args.c)
+  installDir = os.path.join(projectDir, '.install', args.c, args.p)
 else:
   installDir = os.path.normpath(args.prefix)
 # -----------------------------------------------------------------------------
@@ -68,7 +69,7 @@ buildDir = os.path.join(projectDir, '.build')
 if not os.path.isdir(buildDir):
     os.mkdir(buildDir)
 
-variandDir = os.path.join(buildDir, args.c)
+variandDir = os.path.join(buildDir, args.c, args.p)
 
 if os.path.isdir(variandDir):
     shutil.rmtree(variandDir)

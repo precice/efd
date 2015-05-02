@@ -19,6 +19,7 @@ parser = ArgumentParser()
 
 parser.add_argument('builder', nargs='?', default='ninja')
 parser.add_argument('-c', default='Release')
+parser.add_argument('-p', default='Clang')
 
 args, unknown_args = parser.parse_known_args()
 # -----------------------------------------------------------------------------
@@ -32,7 +33,7 @@ args.c = args.c.strip()
 
 # Invoke Builder {{{
 # -----------------------------------------------------------------------------
-variandDir = os.path.join(projectDir, '.build', args.c)
+variandDir = os.path.join(projectDir, '.build', args.c, args.p)
 
 command = "%s %s" % (args.builder,
       " ".join(unknown_args))

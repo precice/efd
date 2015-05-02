@@ -20,6 +20,7 @@ parser = ArgumentParser()
 parser.add_argument('installer', nargs='?', default='ninja')
 # 'c' means 'configuration type'
 parser.add_argument('-c', default='Release')
+parser.add_argument('-p', default='Clang')
 
 args, unknown_args = parser.parse_known_args()
 # -----------------------------------------------------------------------------
@@ -33,7 +34,7 @@ args.c = args.c.strip()
 
 # Invoke Installer {{{
 # -----------------------------------------------------------------------------
-variandDir = os.path.join(projectDir, '.build', args.c)
+variandDir = os.path.join(projectDir, '.build', args.c, args.p)
 
 command = "{0} {1} {2}".format(args.installer,
       " ".join(unknown_args),
