@@ -28,7 +28,7 @@
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
-      <discretization-width value="0.001"/>
+      <discretization-width value="0.005"/>
       <radius value="0.05"/>
       <offset value="0.2; 0.2"/>
     </geometry:builtin-sphere>

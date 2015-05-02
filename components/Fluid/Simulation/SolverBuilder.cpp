@@ -1,7 +1,6 @@
 #include "SolverBuilder.hpp"
 
 #include "ImmersedBoundary/Controller.hpp"
-#include "ImmersedBoundary/RbfController.hpp"
 #include "GhostLayer/CornerVelocityHandler.hpp"
 #include "GhostLayer/IfsfdHandlersBuilder.hpp"
 #include "GhostLayer/SfsfdHandlersBuilder.hpp"
@@ -61,11 +60,11 @@ SolverBuilder(Configuration* configuration, SolverType*    solver) :
     _solver->memory()->parameters()->g(2) = configuration->environment(2);
   }
 
-  _solver->immersedBoundaryController()
-  ->outerLayerSize(configuration->outerLayerSize);
+  // _solver->immersedBoundaryController()
+  // ->outerLayerSize(configuration->outerLayerSize);
 
-  _solver->immersedBoundaryController()
-  ->innerLayerSize(configuration->innerLayerSize);
+  // _solver->immersedBoundaryController()
+  // ->innerLayerSize(configuration->innerLayerSize);
 
   _solver->memory()->initialize(processor_size,
                                 global_cell_size,

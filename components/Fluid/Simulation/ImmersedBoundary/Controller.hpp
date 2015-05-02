@@ -1,510 +1,383 @@
 #pragma once
 
-#include "BodyForce/functions.hpp"
+#include <Uni/IteratorFacade>
 
-#include "Simulation/Grid.hpp"
-#include "Simulation/IfsfdCellAccessor.hpp"
-#include "Simulation/IfsfdMemory.hpp"
-#include "Simulation/Private/mpigenerics.hpp"
-#include "Simulation/Reporter.hpp"
-#include "Simulation/SfsfdCellAccessor.hpp"
-#include "Simulation/SfsfdMemory.hpp"
-
-#include "functions.hpp"
-
-#include <precice/SolverInterface.hpp>
-
-#include <Uni/ExecutionControl/exception>
-
-#include <array>
-#include <map>
+#include <memory>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace ImmersedBoundary {
-namespace Private {
+template <typename TValue>
+class IteratorBackEnd {
+public:
+  virtual
+  ~IteratorBackEnd() {}
+
+  virtual std::unique_ptr<IteratorBackEnd>
+  clone() const = 0;
+
+  virtual bool
+  equals(std::unique_ptr<IteratorBackEnd> const& other) = 0;
+
+  virtual TValue const&
+  dereference() const = 0;
+
+  virtual TValue&
+  dereference() = 0;
+
+  virtual void
+  increment() = 0;
+
+  virtual void
+  decrement() = 0;
+};
+
+template <typename TValue>
+class Iterator :
+  public Uni::IteratorFacade<Iterator<TValue>, TValue> {
+public:
+  using BackEndType = IteratorBackEnd<TValue>;
+
+  using UniqueBackEndType = std::unique_ptr<BackEndType>;
+
+  Iterator(UniqueBackEndType&& back_end)
+    : _backEnd(std::move(back_end)) {}
+
+  Iterator(Iterator const& other)
+    : _backEnd(std::move(other._backEnd->clone())) {}
+
+  Iterator&
+  operator=(Iterator const& other) {
+    _backEnd = std::move(other._backEnd->clone());
+
+    return *this;
+  }
+
+  bool
+  equals(Iterator const& other) const {
+    return _backEnd->equals(other._backEnd);
+  }
+
+  TValue&
+  dereference() const {
+    return const_cast<TValue&>(_backEnd->dereference());
+  }
+
+  void
+  increment() {
+    _backEnd->increment();
+  }
+
+  void
+  decrement() {
+    _backEnd->decrement();
+  }
+
+private:
+  UniqueBackEndType _backEnd;
+};
+
+template <typename TValue>
+class IterableBackEnd {
+public:
+  using Value = TValue;
+
+  using IteratorType = Iterator<Value>;
+
+  virtual ~IterableBackEnd() {}
+
+  virtual unsigned
+  size() = 0;
+
+  virtual IteratorType
+  begin() = 0;
+
+  virtual IteratorType
+  end() = 0;
+
+  virtual IteratorType
+  find(unsigned const& global_index) = 0;
+};
+
+template <typename TValue>
+class CompoundIteratorBackEnd : public IteratorBackEnd<TValue> {
+public:
+  using Base = IteratorBackEnd<TValue>;
+
+  using IteratorType = Iterator<TValue>;
+
+  using IterableBackEndType = IterableBackEnd<TValue>;
+
+  CompoundIteratorBackEnd(
+    IteratorType const&                         it,
+    bool const&                                 is_first,
+    std::shared_ptr<IterableBackEndType> const& first_iterable,
+    std::shared_ptr<IterableBackEndType> const& second_iterable)
+    : _it(it),
+    _isFirst(is_first),
+    _firstIterable(first_iterable),
+    _secondIterable(second_iterable) {}
+
+  CompoundIteratorBackEnd(CompoundIteratorBackEnd&) = delete;
+
+  virtual
+  ~CompoundIteratorBackEnd() {}
+
+  CompoundIteratorBackEnd&
+  operator=(CompoundIteratorBackEnd&) = delete;
+
+  virtual std::unique_ptr<Base>
+  clone() const {
+    return std::unique_ptr<Base>(
+      new CompoundIteratorBackEnd(_it,
+                                  _isFirst,
+                                  _firstIterable,
+                                  _secondIterable));
+  }
+
+  virtual bool
+  equals(std::unique_ptr<Base> const& other) {
+    return _it == reinterpret_cast<CompoundIteratorBackEnd*>
+           (other.get())->_it
+           && _isFirst == reinterpret_cast<CompoundIteratorBackEnd*>
+           (other.get())->_isFirst;
+  }
+
+  virtual TValue const&
+  dereference() const {
+    return *_it;
+  }
+
+  virtual TValue&
+  dereference() {
+    return *_it;
+  }
+
+  virtual void
+  increment() {
+    if (_it == _secondIterable->end()) {
+      return;
+    }
+
+    ++_it;
+
+    if (_it == _firstIterable->end()) {
+      _isFirst = false;
+      _it = _secondIterable->begin();
+    }
+  }
+
+  virtual void
+  decrement() {
+    if (_it == _firstIterable->begin()) {
+      return;
+    }
+
+    if (_it == _secondIterable->begin()) {
+      _isFirst = true;
+      _it = _firstIterable->end();
+    }
+    --_it;
+  }
+
+private:
+  IteratorType _it;
+  bool         _isFirst;
+
+  std::shared_ptr<IterableBackEndType> _firstIterable;
+  std::shared_ptr<IterableBackEndType> _secondIterable;
+};
+
+template <typename TValue>
+class CompoundIterableBackEnd : public IterableBackEnd<TValue> {
+public:
+  using Value = TValue;
+
+  using Base = IterableBackEnd<Value>;
+
+  using IteratorType = typename Base::IteratorType;
+
+  using IteratorBackEndType = typename IteratorType::BackEndType;
+
+  using UniqueIteratorBackEndType = typename IteratorType::UniqueBackEndType;
+
+  using IterableBackEndType = Base;
+
+  using SharedIterableBackEndType = std::shared_ptr<IterableBackEndType>;
+
+  CompoundIterableBackEnd(
+    SharedIterableBackEndType const& first_iterable,
+    SharedIterableBackEndType const& second_iterable)
+    : _firstIterable(first_iterable),
+    _secondIterable(second_iterable) {}
+
+  virtual ~CompoundIterableBackEnd() {}
+
+  virtual unsigned
+  size() {
+    return _firstIterable->size() + _secondIterable->size();
+  }
+
+  virtual IteratorType
+  begin() {
+    if (_firstIterable->begin() == _firstIterable->end()) {
+      return IteratorType(
+        UniqueIteratorBackEndType(
+          new CompoundIteratorBackEnd<Value>(
+            _secondIterable->begin(),
+            false,
+            _firstIterable,
+            _secondIterable)));
+    }
+
+    return IteratorType(
+      UniqueIteratorBackEndType(
+        new CompoundIteratorBackEnd<Value>(
+          _firstIterable->begin(),
+          true,
+          _firstIterable,
+          _secondIterable)));
+  }
+
+  virtual IteratorType
+  end() {
+    return IteratorType(
+      UniqueIteratorBackEndType(
+        new CompoundIteratorBackEnd<Value>(
+          _secondIterable->end(),
+          false,
+          _firstIterable,
+          _secondIterable)));
+  }
+
+  virtual IteratorType
+  find(unsigned const& global_index) {
+    auto find_it = _firstIterable->find(global_index);
+
+    if (find_it == _firstIterable->end()) {
+      find_it = _secondIterable->find(global_index);
+
+      return IteratorType(
+        UniqueIteratorBackEndType(
+          new CompoundIteratorBackEnd<Value>(
+            find_it,
+            false,
+            _firstIterable,
+            _secondIterable)));
+    } else {
+      return IteratorType(
+        UniqueIteratorBackEndType(
+          new CompoundIteratorBackEnd<Value>(
+            find_it,
+            true,
+            _firstIterable,
+            _secondIterable)));
+    }
+  }
+
+private:
+  SharedIterableBackEndType _firstIterable;
+  SharedIterableBackEndType _secondIterable;
+};
+
+template <typename TValue>
+class Iterable {
+public:
+  using BackEndType = IterableBackEnd<TValue>;
+
+  using SharedBackEndType = std::shared_ptr<BackEndType>;
+
+  Iterable(SharedBackEndType const& back_end)
+    : _backEnd(back_end) {}
+
+  Iterable&
+  operator=(Iterable const& other) {
+    _backEnd = other._backEnd;
+
+    return *this;
+  }
+
+  unsigned
+  size() {
+    return _backEnd->size();
+  }
+
+  Iterator<TValue> begin() {
+    return _backEnd->begin();
+  }
+
+  Iterator<TValue> end() {
+    return _backEnd->end();
+  }
+
+  Iterator<TValue> find(unsigned const& global_index) {
+    return _backEnd->find(global_index);
+  }
+
+private:
+  SharedBackEndType _backEnd;
+};
+
 template <typename TVector>
-struct BodyInterfaceCell {
+class InterfaceCell {
+public:
   using Vector = TVector;
+
+  using Scalar = typename Vector::Scalar;
+
   enum {
     Dimensions = Vector::RowsAtCompileTime
   };
 
-  BodyInterfaceCell(int const& vertexId_)
-    : vertexId(vertexId_) {}
+  virtual ~InterfaceCell() {}
 
-  int    vertexId;
-  Vector data;
-};
-}
-/**
- * TODO:
- *      1. Change vertexId from global index to unique id
- */
-template <typename TSolverTraits>
-class BasicController {
-public:
-  using SolverTraitsType = TSolverTraits;
+  InterfaceCell&
+  operator=(InterfaceCell&) = delete;
 
-  enum {
-    Dimensions = SolverTraitsType::Dimensions
-  };
+  virtual Vector const&
+  data() const = 0;
 
-  using GridGeometryType = typename SolverTraitsType::GridGeometryType;
+  virtual Vector&
+  data() = 0;
 
-  using ParametersType = typename SolverTraitsType::ParametersType;
+  virtual Scalar const&
+  data(unsigned const& dimension) const = 0;
 
-  using ParallelDistributionType
-          = typename SolverTraitsType::ParallelDistributionType;
+  virtual Scalar&
+  data(unsigned const& dimension) = 0;
 
-  using MemoryType = typename SolverTraitsType::MemoryType;
-
-  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
-
-  using GridType = typename SolverTraitsType::GridType;
-
-  using VectorDsType = typename SolverTraitsType::VectorDsType;
-
-  using VectorDiType = typename SolverTraitsType::VectorDiType;
-
-  using ScalarType = typename SolverTraitsType::ScalarType;
-
-  using BodyInterfaceCellType = Private::BodyInterfaceCell<VectorDsType>;
-
-  using VertexIdMap
-          = std::map < int, std::unique_ptr < BodyInterfaceCellType >>;
-
-public:
-  BasicController() {}
-
-  BasicController(BasicController const&) = delete;
-
-  ~BasicController() {}
-
-  BasicController&
-  operator=(BasicController const& other) = delete;
-
-  unsigned const&
-  outerLayerSize() const {
-    static unsigned value = 0;
-
-    return value;
-  }
-
-  unsigned&
-  outerLayerSize(unsigned const& i) {
-    ((void)i);
-    static unsigned value = 0;
-
-    return value;
-  }
-
-  unsigned const&
-  innerLayerSize() const {
-    static unsigned value = 0;
-
-    return value;
-  }
-
-  unsigned&
-  innerLayerSize(unsigned const& i) {
-    ((void)i);
-    static unsigned value = 0;
-
-    return value;
-  }
-
-  typename VertexIdMap::iterator
-  begin() {
-    return _vertexIds[0].begin();
-  }
-
-  typename VertexIdMap::iterator
-  end() {
-    return _vertexIds[0].end();
-  }
-
-  void
-  resetIntermediateData() {
-    for (auto& cell : this->_vertexIds[0]) {
-      cell.second->data = VectorDsType::Zero();
-    }
-  }
-
-  void
-  initialize(precice::SolverInterface* preciceInterface,
-             MemoryType const*         memory) {
-    ((void)preciceInterface);
-    ((void)memory);
-  }
-
-  void
-  computePositionInRespectToGeometry(CellAccessorType const& accessor) const {
-    ((void)accessor);
-  }
-
-  void
-  createFluidMeshVertex(CellAccessorType const& accessor) {
-    ((void)accessor);
-  }
-
-  std::pair<typename VertexIdMap::iterator, bool>
-  doesVertexExist(CellAccessorType const& accessor) {
-    ((void)accessor);
-
-    return std::make_pair(end(), false);
-  }
-
-  void
-  setFluidVelocity(typename VertexIdMap::iterator const& it,
-                   VectorDsType const&                   velocity) {
-    ((void)it);
-    ((void)velocity);
-  }
-
-  void
-  writeFluidVelocities() {}
-
-  void
-  mapData(ScalarType const& time_step_size) {
-    ((void)time_step_size);
-  }
-
-  void
-  readFluidForces() {}
-
-  VectorDsType
-  getFluidForce(typename VertexIdMap::iterator const& it) {
-    ((void)it);
-
-    return VectorDsType::Zero();
-  }
-
-  VectorDsType
-  computeBodyForceAt(unsigned, VectorDsType const&, MemoryType*) {
-    return VectorDsType::Zero();
-  }
-
-  void
-  computeBodyForce(MemoryType const*, Reporter*) {}
-
-protected:
-  std::array<VertexIdMap, 1> _vertexIds;
+  virtual unsigned
+  globalIndex() const = 0;
 };
 
-template <typename TSolverTraits>
-class Controller : public BasicController<TSolverTraits> {
+template <typename TVector>
+class Controller {
 public:
-  using SolverTraitsType = TSolverTraits;
+  using VectorType = TVector;
 
-  using BaseType = BasicController<SolverTraitsType>;
+  using InterfaceCellType = InterfaceCell<VectorType>;
 
-  using BodyInterfaceCellType = typename BaseType::BodyInterfaceCellType;
+  using IterableType = Iterable<InterfaceCellType>;
 
-  using VertexIdMap = typename BaseType::VertexIdMap;
+  virtual ~Controller() {}
 
-  enum {
-    Dimensions = SolverTraitsType::Dimensions
-  };
+  virtual void
+  initialize() = 0;
 
-  using GridGeometryType = typename SolverTraitsType::GridGeometryType;
+  virtual void
+  precompute() = 0;
 
-  using ParametersType = typename SolverTraitsType::ParametersType;
+  virtual void
+  processVelocities() = 0;
 
-  using ParallelDistributionType
-          = typename SolverTraitsType::ParallelDistributionType;
+  virtual void
+  processForces() = 0;
 
-  using MemoryType = typename SolverTraitsType::MemoryType;
+  virtual IterableType
+  getVelocityIterable() = 0;
 
-  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
-
-  using GridType = typename SolverTraitsType::GridType;
-
-  using VectorDsType = typename SolverTraitsType::VectorDsType;
-
-  using VectorDiType = typename SolverTraitsType::VectorDiType;
-
-  using ScalarType = typename SolverTraitsType::ScalarType;
-
-public:
-  Controller() :
-    BaseType(),
-    _maxLayerSize(2),
-    _outerLayerSize(0),
-    _innerLayerSize(0) {}
-
-  Controller(Controller const&) = delete;
-
-  ~Controller() {}
-
-  Controller&
-  operator=(Controller const& other) = delete;
-
-  unsigned const&
-  outerLayerSize() const {
-    return _outerLayerSize;
-  }
-
-  unsigned&
-  outerLayerSize(unsigned const& i) {
-    _maxLayerSize = std::max(_maxLayerSize, i);
-
-    return _outerLayerSize = i;
-  }
-
-  unsigned const&
-  innerLayerSize() const {
-    return _innerLayerSize;
-  }
-
-  unsigned&
-  innerLayerSize(unsigned const& i) {
-    _maxLayerSize = std::max(_maxLayerSize, i);
-
-    return _innerLayerSize = i;
-  }
-
-  typename VertexIdMap::iterator
-  begin() {
-    return this->_vertexIds[0].begin();
-  }
-
-  typename VertexIdMap::iterator
-  end() {
-    return this->_vertexIds[0].end();
-  }
-
-  void
-  initialize(precice::SolverInterface* preciceInterface,
-             MemoryType const*         memory) {
-    // logInfo("Controller is being initialized");
-
-    _preciceInterface = preciceInterface;
-    _memory           = memory;
-
-    _preciceInterface->initialize();
-    _preciceInterface->initializeData();
-
-    if (!_preciceInterface->hasMesh("FluidMesh")) {
-      throwException("Precice configuration does not have 'FluidMesh'");
-    }
-
-    if (!_preciceInterface->hasMesh("BodyMesh")) {
-      throwException("Precice configuration does not have 'BodyMesh'");
-    }
-
-    _fluidMeshId[0]
-      = _preciceInterface->getMeshID("FluidMesh");
-    _bodyMeshId
-      = _preciceInterface->getMeshID("BodyMesh");
-
-    if (!_preciceInterface->hasData("Velocities", _fluidMeshId[0])) {
-      throwException("Precice configuration does not have 'Velocities' data"
-                     " related to 'FluidMesh'");
-    }
-
-    if (!_preciceInterface->hasData("Forces", _fluidMeshId[0])) {
-      throwException("Precice configuration does not have 'Forces' data"
-                     " related to 'FluidMesh'");
-    }
-
-    _fluidMeshVelocitiesId[0]
-      = _preciceInterface->getDataID("Velocities", _fluidMeshId[0]);
-    _fluidMeshForcesId[0]
-      = _preciceInterface->getDataID("Forces", _fluidMeshId[0]);
-  }
-
-  void
-  computePositionInRespectToGeometry(CellAccessorType const& accessor) const {
-    for (unsigned d = 0; d < Dimensions; ++d) {
-      accessor.positionInRespectToGeometry(d)
-        = convert_precice_position(
-        _preciceInterface->inquirePosition(
-          accessor.velocityPosition(d).template cast<double>().data(),
-          std::set<int>({ _bodyMeshId })));
-    }
-    accessor.positionInRespectToGeometry(Dimensions)
-      = convert_precice_position(
-      _preciceInterface->inquirePosition(
-        accessor.pressurePosition().template cast<double>().data(),
-        std::set<int>({ _bodyMeshId })));
-  }
-
-  void
-  createFluidMeshVertex(CellAccessorType const& accessor) {
-    set_cell_neighbors_along_geometry_interface(
-      accessor,
-      _preciceInterface,
-      std::set<int>({ _bodyMeshId }),
-      _maxLayerSize);
-
-    bool doAdd = validate_layer_number(accessor,
-                                       outerLayerSize(),
-                                       innerLayerSize());
-
-    if (doAdd) {
-      // logInfo("{1} | d = {2}", accessor.index().transpose(), distance);
-      VectorDsType position = accessor.pressurePosition();
-
-      auto vertexId
-        = _preciceInterface->setMeshVertex(
-        _fluidMeshId[0], position.data());
-
-      this->_vertexIds[0].insert(
-        std::make_pair(accessor.globalIndex(),
-                       std::unique_ptr<BodyInterfaceCellType>(
-                         new BodyInterfaceCellType(vertexId))));
-    }
-  }
-
-  std::pair<typename VertexIdMap::iterator, bool>
-  doesVertexExist(CellAccessorType const& accessor) {
-    auto find_it = this->_vertexIds[0].find(accessor.globalIndex());
-
-    if (find_it == this->_vertexIds[0].end()) {
-      return std::make_pair(find_it, false);
-    } else {
-      return std::make_pair(find_it, true);
-    }
-  }
-
-  void
-  setFluidVelocity(typename VertexIdMap::iterator const& it,
-                   VectorDsType const&                   velocity) {
-    it->second->data = velocity;
-  }
-
-  void
-  writeFluidVelocities() {
-    for (auto const& cell : this->_vertexIds[0]) {
-      VectorDsType resulting_velocity = cell.second->data;
-
-      for (unsigned d = 0; d < Dimensions; ++d) {
-        auto accessor = *_memory->grid()->innerGrid.begin();
-        accessor.initialize(cell.first);
-        auto neighbor_global_index = accessor.relativeGlobalIndex(d, -1);
-
-        auto find_it = this->_vertexIds[0].find(neighbor_global_index);
-
-        if (find_it == this->_vertexIds[0].end()) {
-          // resulting_velocity(d) += 0.0;
-        } else {
-          resulting_velocity(d) += find_it->second->data(d);
-        }
-      }
-      resulting_velocity /= 2.0;
-      _preciceInterface->writeVectorData(
-        _fluidMeshVelocitiesId[0],
-        cell.second->vertexId,
-        resulting_velocity.template cast<double>().data());
-    }
-  }
-
-  void
-  mapData(ScalarType const& time_step_size) {
-    _preciceInterface->advance(time_step_size);
-  }
-
-  void
-  readFluidForces() {
-    this->resetIntermediateData();
-
-    for (auto& cell : this->_vertexIds[0]) {
-      Eigen::Matrix<double, Dimensions, 1> temp;
-      _preciceInterface->readVectorData(
-        _fluidMeshForcesId[0],
-        cell.second->vertexId,
-        temp.data());
-      cell.second->data = temp.template cast<ScalarType>();
-    }
-  }
-
-  VectorDsType
-  getFluidForce(typename VertexIdMap::iterator const& it) {
-    VectorDsType force = it->second->data;
-
-    for (unsigned d = 0; d < Dimensions; ++d) {
-      auto accessor = *_memory->grid()->innerGrid.begin();
-      accessor.initialize(it->first);
-
-      auto neighbor_global_index = accessor.relativeGlobalIndex(d, +1);
-
-      auto find_it = this->_vertexIds[0].find(neighbor_global_index);
-
-      if (find_it == this->_vertexIds[0].end()) {
-        // force(d) += 0.0;
-      } else {
-        force(d) += find_it->second->data(d);
-      }
-    }
-    force /= 2.0;
-
-    return force / _memory->timeStepSize();
-  }
-
-  VectorDsType
-  computeBodyForceAt(unsigned            global_index,
-                     VectorDsType const& force,
-                     MemoryType*         memory) {
-    VectorDsType body_force = VectorDsType::Zero();
-
-    auto accessor = *memory->grid()->begin();
-    accessor.initialize(global_index);
-
-    body_force += accessor.width().prod() * (-force);
-
-    memory->addForceAt(global_index, body_force);
-
-    return body_force;
-  }
-
-  void
-  computeBodyForce(MemoryType const* memory,
-                   Reporter*         reporter) {
-    VectorDsType total_force       = VectorDsType::Zero();
-    VectorDsType total_force_turek = VectorDsType::Zero();
-
-    for (auto const& accessor : memory->grid()->innerGrid) {
-      VectorDsType force       = VectorDsType::Zero();
-      VectorDsType force_turek = VectorDsType::Zero();
-      BodyForce::compute_cell_force(accessor,
-                                    memory->parameters()->re(),
-                                    force);
-      BodyForce::compute_cell_force_turek(accessor,
-                                          memory->parameters()->re(),
-                                          force_turek);
-      accessor.setBodyForce(force);
-      total_force       += force;
-      total_force_turek += force_turek;
-    }
-
-    FluidSimulation::Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
-                                                       total_force.data(),
-                                                       Dimensions,
-                                                       MPI_SUM,
-                                                       PETSC_COMM_WORLD);
-
-    FluidSimulation::Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
-                                                       total_force_turek.data(),
-                                                       Dimensions,
-                                                       MPI_SUM,
-                                                       PETSC_COMM_WORLD);
-
-    reporter->addAt(4, total_force);
-    reporter->addAt(5, total_force_turek);
-  }
-
-protected:
-  precice::SolverInterface* _preciceInterface;
-  MemoryType const*         _memory;
-  unsigned                  _maxLayerSize;
-  unsigned                  _outerLayerSize;
-  unsigned                  _innerLayerSize;
-
-  std::array<int, Dimensions> _fluidMeshId;
-  int                         _bodyMeshId;
-  std::array<int, Dimensions> _fluidMeshVelocitiesId;
-  std::array<int, Dimensions> _fluidMeshForcesId;
+  virtual IterableType
+  getForceIterable() = 0;
 };
 }
 }

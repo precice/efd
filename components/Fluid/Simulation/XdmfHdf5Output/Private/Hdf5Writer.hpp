@@ -280,7 +280,7 @@ public:
       ((void)status);
 
       H5Dclose(dataset);
-      H5Fclose(file_space);
+      H5Sclose(file_space);
       delete data;
     }
 

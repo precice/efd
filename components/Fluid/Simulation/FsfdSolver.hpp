@@ -45,8 +45,8 @@ public:
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 
-  using ImmersedBoundaryControllerType
-          = typename SolverTraitsType::ImmersedBoundaryControllerType;
+  using IbControllerType
+          = ImmersedBoundary::Controller<VectorDsType>;
 
   using GhostHandlersType
           = typename SolverTraitsType::GhostHandlersType;
@@ -70,10 +70,10 @@ public:
   MemoryType*
   memory();
 
-  ImmersedBoundaryControllerType const*
+  IbControllerType const*
   immersedBoundaryController() const;
 
-  ImmersedBoundaryControllerType*
+  IbControllerType*
   immersedBoundaryController();
 
   GhostHandlersType const*
@@ -89,6 +89,12 @@ public:
   iterate();
 
 private:
+  void
+  locateInterfaceCells();
+
+  void
+  computeBodyForce();
+
   Uni_Firewall_IMPLEMENTATION_LINK(FsfdSolverImplementation<TSolverTraits> );
 };
 

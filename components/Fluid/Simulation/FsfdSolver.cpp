@@ -6,8 +6,11 @@
 #include "GridGeometry.hpp"
 #include "IfsfdCellAccessor.hpp"
 #include "IfsfdMemory.hpp"
+#include "ImmersedBoundary/BodyForce/functions.hpp"
 #include "ImmersedBoundary/Controller.hpp"
-#include "ImmersedBoundary/RbfController.hpp"
+#include "ImmersedBoundary/PreciceBasedController.hpp"
+#include "ImmersedBoundary/RbfBasedController.hpp"
+#include "ImmersedBoundary/functions.hpp"
 #include "PeSolver.hpp"
 #include "Private/mpigenerics.hpp"
 #include "Reporter.hpp"
@@ -63,7 +66,11 @@ public:
   typename Interface::MemoryType                     memory;
   typename Interface::PeSolverType                   peSolver;
   typename Interface::GhostHandlersType              ghostHandlers;
-  typename Interface::ImmersedBoundaryControllerType ibController;
+  precice::SolverInterface* preciceInterface;
+
+  std::unique_ptr<typename Interface::IbControllerType> ibController;
+  unsigned                                              maxLayerSize;
+
   Reporter* reporter;
 
   Uni_Firewall_INTERFACE_LINK(FsfdSolver<TSolverTraits> );
@@ -92,17 +99,17 @@ memory() {
 }
 
 template <typename T>
-typename FsfdSolver<T>::ImmersedBoundaryControllerType const*
+typename FsfdSolver<T>::IbControllerType const*
 FsfdSolver<T>::
 immersedBoundaryController() const {
-  return &_im->ibController;
+  return _im->ibController.get();
 }
 
 template <typename T>
-typename FsfdSolver<T>::ImmersedBoundaryControllerType *
+typename FsfdSolver<T>::IbControllerType *
 FsfdSolver<T>::
 immersedBoundaryController() {
-  return &_im->ibController;
+  return _im->ibController.get();
 }
 
 template <typename T>
@@ -122,9 +129,19 @@ ghostHandlers() {
 template <typename T>
 void
 FsfdSolver<T>::
-initialize(precice::SolverInterface* preciceInteface,
+initialize(precice::SolverInterface* preciceInterface,
            Reporter*                 reporter) {
-  _im->ibController.initialize(preciceInteface, &_im->memory);
+  _im->preciceInterface = preciceInterface;
+  _im->preciceInterface->initialize();
+  _im->preciceInterface->initializeData();
+
+  _im->maxLayerSize = 1;
+  _im->ibController.reset(
+    new ImmersedBoundary::RbfBasedController<SolverTraitsType>(
+      _im->preciceInterface,
+      &_im->memory));
+  _im->ibController->initialize();
+
   _im->reporter = reporter;
 
   _im->peSolver.initialize(&_im->memory, &_im->ghostHandlers);
@@ -134,8 +151,10 @@ initialize(precice::SolverInterface* preciceInteface,
   _im->memory.time()            = 0.0;
   _im->memory.iterationNumber() = 0;
 
+  locateInterfaceCells();
+  _im->ibController->precompute();
+
   for (auto& accessor : _im->memory.grid()->innerGrid) {
-    _im->ibController.computePositionInRespectToGeometry(accessor);
     accessor.velocity() = VectorDsType::Zero();
     accessor.setDiffusion(VectorDsType::Zero());
     accessor.setForce(VectorDsType::Zero());
@@ -149,12 +168,8 @@ initialize(precice::SolverInterface* preciceInteface,
   _im->ghostHandlers.executePressureMpiExchange();
 
   for (auto const& accessor : _im->memory.grid()->innerGrid) {
-    _im->ibController.createFluidMeshVertex(accessor);
-
-    auto convection
-      = ConvectionProcessing<Dimensions>::compute(accessor,
-                                                  _im->memory.parameters()->
-                                                  gamma());
+    auto convection = ConvectionProcessing<Dimensions>::compute(
+      accessor, _im->memory.parameters()->gamma());
     accessor.convection() = convection;
   }
 
@@ -167,9 +182,11 @@ initialize(precice::SolverInterface* preciceInteface,
   _im->reporter->setAt("G",
                        _im->memory.parameters()->g());
   _im->reporter->setAt("OuterLayerSize",
-                       _im->ibController.outerLayerSize());
+                       1);
+  // _im->ibController.outerLayerSize());
   _im->reporter->setAt("InnerLayerSize",
-                       _im->ibController.innerLayerSize());
+                       1);
+  // _im->ibController.innerLayerSize());
   _im->reporter->setAt("ProcessorSize",
                        _im->memory.parallelDistribution()->processorSize);
   _im->reporter->setAt("GlobalCellSize",
@@ -222,8 +239,6 @@ iterate() {
   _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
 
-  _im->ibController.resetIntermediateData();
-
   for (auto const& accessor : _im->memory.grid()->innerGrid) {
     _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
 
@@ -246,11 +261,6 @@ iterate() {
     diffusion = diffusion / _im->memory.parameters()->re();
 
     VectorDsType velocity;
-
-    // for (int d = 0; d < Dimensions; ++d) {
-    // velocity(d) = 0.5 * (accessor.velocity(d, -1, d) +
-    // accessor.velocity(d));
-    // }
 
     VectorDsType grad_pressure;
 
@@ -278,9 +288,10 @@ iterate() {
       // logInfo("Fgh | {1}", accessor.index().transpose());
     }
 
-    auto status = _im->ibController.doesVertexExist(accessor);
+    auto ib_fluid_cell
+      = _im->ibController->getVelocityIterable().find(accessor.globalIndex());
 
-    if (status.second) {
+    if (ib_fluid_cell != _im->ibController->getVelocityIterable().end()) {
       _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
       auto temp
         = accessor.velocity()
@@ -290,29 +301,29 @@ iterate() {
                                           - grad_pressure
                                           + _im->memory.parameters()->g());
 
-      _im->ibController.setFluidVelocity(status.first, temp);
+      ib_fluid_cell->data() = temp;
     }
   }
 
-  _im->ibController.writeFluidVelocities();
+  _im->ibController->processVelocities();
   // logInfo("Map data");
-  _im->ibController.mapData(_im->memory.timeStepSize());
-  _im->ibController.readFluidForces();
+  _im->preciceInterface->advance(_im->memory.timeStepSize());
+  _im->ibController->processForces();
 
   // logInfo("Read data");
   VectorDsType total_force = VectorDsType::Zero();
 
-  for (auto it = _im->ibController.begin();
-       it != _im->ibController.end();
-       ++it) {
-    auto force = _im->ibController.getFluidForce(it);
+  for (auto& ib_fluid_cell : _im->ibController->getForceIterable()) {
+    _im->memory.fgh()[ib_fluid_cell.globalIndex()]
+      += _im->memory.timeStepSize() * ib_fluid_cell.data();
 
-    _im->memory.fgh()[it->first] += _im->memory.timeStepSize() * force;
+    auto accessor = *_im->memory.grid()->begin();
+    accessor.initialize(ib_fluid_cell.globalIndex());
 
-    auto body_force = _im->ibController.computeBodyForceAt(
-      it->first,
-      force,
-      &_im->memory);
+    VectorDsType body_force = accessor.width().prod()
+                              * ib_fluid_cell.data();
+
+    _im->memory.setForceAt(ib_fluid_cell.globalIndex(), body_force);
 
     total_force += body_force;
   }
@@ -347,7 +358,7 @@ iterate() {
   _im->ghostHandlers.executeVelocityInitialization();
   _im->ghostHandlers.executeVelocityMpiExchange();
 
-  _im->ibController.computeBodyForce(&_im->memory, _im->reporter);
+  computeBodyForce();
 
   _im->memory.time() += _im->memory.timeStepSize();
   ++_im->memory.iterationNumber();
@@ -355,6 +366,80 @@ iterate() {
   _im->reporter->addAt(0, _im->memory.iterationNumber());
   _im->reporter->addAt(1, _im->memory.time());
   _im->reporter->addAt(2, _im->memory.timeStepSize());
+}
+
+template <typename T>
+void
+FsfdSolver<T>::
+locateInterfaceCells() {
+  namespace ib = ImmersedBoundary;
+
+  if (!_im->preciceInterface->hasMesh("BodyMesh")) {
+    throwException("Precice configuration does not have 'BodyMesh'");
+  }
+
+  std::set<int> mesh_set({ _im->preciceInterface->getMeshID("BodyMesh") });
+
+  for (auto const& accessor : * _im->memory.grid()) {
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      accessor.positionInRespectToGeometry(d)
+        = ib::convert_precice_position(
+        _im->preciceInterface->inquirePosition(
+          accessor.velocityPosition(d).template cast<double>().data(),
+          mesh_set));
+    }
+    accessor.positionInRespectToGeometry(Dimensions)
+      = ib::convert_precice_position(
+      _im->preciceInterface->inquirePosition(
+        accessor.pressurePosition().template cast<double>().data(),
+        mesh_set));
+  }
+
+  for (auto const& accessor : * _im->memory.grid()) {
+    ib::set_cell_neighbors_along_geometry_interface(
+      accessor,
+      _im->preciceInterface,
+      mesh_set,
+      _im->maxLayerSize);
+  }
+}
+
+template <typename T>
+void
+FsfdSolver<T>::
+computeBodyForce() {
+  VectorDsType total_force       = VectorDsType::Zero();
+  VectorDsType total_force_turek = VectorDsType::Zero();
+
+  for (auto const& accessor : _im->memory.grid()->innerGrid) {
+    namespace fc = ImmersedBoundary::BodyForce;
+    VectorDsType force       = VectorDsType::Zero();
+    VectorDsType force_turek = VectorDsType::Zero();
+    fc::compute_cell_force(accessor,
+                           _im->memory.parameters()->re(),
+                           force);
+    fc::compute_cell_force_turek(accessor,
+                                 _im->memory.parameters()->re(),
+                                 force_turek);
+    accessor.setBodyForce(force);
+    total_force       += force;
+    total_force_turek += force_turek;
+  }
+
+  FluidSimulation::Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
+                                                     total_force.data(),
+                                                     Dimensions,
+                                                     MPI_SUM,
+                                                     PETSC_COMM_WORLD);
+
+  FluidSimulation::Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
+                                                     total_force_turek.data(),
+                                                     Dimensions,
+                                                     MPI_SUM,
+                                                     PETSC_COMM_WORLD);
+
+  _im->reporter->addAt(4, total_force);
+  _im->reporter->addAt(5, total_force_turek);
 }
 
 Fluid_InstantiateExternTemplates(FsfdSolver);
