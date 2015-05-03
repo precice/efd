@@ -2,6 +2,8 @@
 
 #include <Uni/IteratorFacade>
 
+#include <boost/iterator/iterator_facade.hpp>
+
 #include <memory>
 
 namespace FsiSimulation {
@@ -34,7 +36,9 @@ public:
 
 template <typename TValue>
 class Iterator :
-  public Uni::IteratorFacade<Iterator<TValue>, TValue> {
+  public boost::iterator_facade<Iterator<TValue>,
+                                TValue,
+                                std::bidirectional_iterator_tag> {
 public:
   using BackEndType = IteratorBackEnd<TValue>;
 
@@ -54,7 +58,7 @@ public:
   }
 
   bool
-  equals(Iterator const& other) const {
+  equal(Iterator const& other) const {
     return _backEnd->equals(other._backEnd);
   }
 
@@ -163,7 +167,7 @@ public:
 
     if (_it == _firstIterable->end()) {
       _isFirst = false;
-      _it = _secondIterable->begin();
+      _it      = _secondIterable->begin();
     }
   }
 
@@ -175,7 +179,7 @@ public:
 
     if (_it == _secondIterable->begin()) {
       _isFirst = true;
-      _it = _firstIterable->end();
+      _it      = _firstIterable->end();
     }
     --_it;
   }
