@@ -88,7 +88,8 @@ public:
 
     stencil[2 * Dimensions] = 1.0;
 
-    ScalarType const coeff =  -(*_dt) / (2.0 * _parameters->re());
+    ScalarType const coeff
+      =  -(*_dt) * _parameters->diffusionMultiplier() / 2.0;
 
     for (int d = 0; d < Dimensions; ++d) {
       auto meanLeftAndRightWidth = meanWidths(2 * d) + meanWidths(2 * d + 1);

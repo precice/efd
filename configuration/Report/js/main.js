@@ -20,6 +20,14 @@ function Handler(name) {
   this.name = name;
   this.Turek2D1Handler = function(d) {
     for (var i = 0; i < d.force2.length; ++i) {
+      d.force1[i] = 500.0 * d.force1[i];
+      d.force2[i] = 500.0 * d.force2[i];
+      d.force3[i] = 500.0 * d.force3[i];
+    }
+  };
+  this.Turek2D2Handler = function(d) {
+    for (var i = 0; i < d.force2.length; ++i) {
+      d.force1[i] = 20.0 * d.force1[i];
       d.force2[i] = 20.0 * d.force2[i];
       d.force3[i] = 20.0 * d.force3[i];
     }
@@ -27,9 +35,10 @@ function Handler(name) {
   this.handle = function(d) {}
 
   if (this.name == "Turek2D1"
-      || this.name == "Turek2D2"
       || this.name == "Template") {
     this.handle = this.Turek2D1Handler;
+  } else if (this.name == "Turek2D2") {
+    this.handle = this.Turek2D2Handler;
   }
 }
 

@@ -1,11 +1,10 @@
 #include "SolverBuilder.hpp"
 
-#include "ImmersedBoundary/Controller.hpp"
 #include "GhostLayer/CornerVelocityHandler.hpp"
-#include "GhostLayer/IfsfdHandlersBuilder.hpp"
-#include "GhostLayer/SfsfdHandlersBuilder.hpp"
 #include "GhostLayer/IfsfdHandlers.hpp"
+#include "GhostLayer/IfsfdHandlersBuilder.hpp"
 #include "GhostLayer/SfsfdHandlers.hpp"
+#include "GhostLayer/SfsfdHandlersBuilder.hpp"
 
 #include "FsfdSolver.hpp"
 #include "IfsfdMemory.hpp"
@@ -46,8 +45,6 @@ SolverBuilder(Configuration* configuration, SolverType*    solver) :
       = static_cast<ScalarType>(configuration->width(2));
   }
 
-  _solver->memory()->parameters()->re() = configuration->re;
-
   _solver->memory()->parameters()->gamma() = configuration->gamma;
 
   _solver->memory()->parameters()->tau() = configuration->tau;
@@ -59,12 +56,6 @@ SolverBuilder(Configuration* configuration, SolverType*    solver) :
   if (Dimensions == 3) {
     _solver->memory()->parameters()->g(2) = configuration->environment(2);
   }
-
-  // _solver->immersedBoundaryController()
-  // ->outerLayerSize(configuration->outerLayerSize);
-
-  // _solver->immersedBoundaryController()
-  // ->innerLayerSize(configuration->innerLayerSize);
 
   _solver->memory()->initialize(processor_size,
                                 global_cell_size,

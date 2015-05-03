@@ -10,6 +10,8 @@ class SolverInterface;
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+class Configuration;
+
 template <typename T>
 class FsfdSolverImplementation;
 class Reporter;
@@ -55,7 +57,7 @@ public:
           = typename SolverTraitsType::PeSolverType;
 
 public:
-  FsfdSolver();
+  FsfdSolver(Configuration const* configuration);
 
   FsfdSolver(FsfdSolver const& other) = delete;
 
@@ -70,12 +72,6 @@ public:
   MemoryType*
   memory();
 
-  IbControllerType const*
-  immersedBoundaryController() const;
-
-  IbControllerType*
-  immersedBoundaryController();
-
   GhostHandlersType const*
   ghostHandlers() const;
 
@@ -83,23 +79,27 @@ public:
   ghostHandlers();
 
   void
-  initialize(precice::SolverInterface*, Reporter*);
+  initialize(precice::SolverInterface* precice_interface,
+             Reporter*                 reporter);
 
   void
   iterate();
 
 private:
   void
-  iterateWithShallowIbVelocityPrediction();
+  iterateWithFastIbVelocityPrediction();
 
   void
-  iterateWithDeepIbVelocityPrediction();
+  iterateWithFullIbVelocityPrediction();
 
   void
   computeTimeStepSize();
 
   std::array<VectorDsType, 3>
   updateFgh(CellAccessorType const& accessor);
+
+  void
+  advanceFsi();
 
   void
   addIbForces();
@@ -114,7 +114,7 @@ private:
   finalizeIteration();
 
   void
-  locateInterfaceCells();
+  locateStructure();
 
   void
   computeBodyForce();

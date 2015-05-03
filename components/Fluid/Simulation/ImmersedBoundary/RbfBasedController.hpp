@@ -2,6 +2,7 @@
 
 #include "Controller.hpp"
 
+#include "Simulation/Configuration.hpp"
 #include "Simulation/Grid.hpp"
 #include "Simulation/IfsfdCellAccessor.hpp"
 #include "Simulation/IfsfdMemory.hpp"
@@ -88,9 +89,9 @@ public:
 
 private:
   unsigned _globalIndex;
-  Vector   _data;
   Uni_PrivateProperty(Vector,      position);
   Uni_PrivateProperty(InternalIds, internalIds);
+  Vector _data;
 };
 
 template <typename TVector>
@@ -138,14 +139,9 @@ public:
            (other.get())->_it;
   }
 
-  Value const&
-  dereference() const {
-    return **_it;
-  }
-
   Value&
-  dereference() {
-    return const_cast<Value&>(reinterpret_cast<Value const&>(*_it->get()));
+  dereference() const {
+    return *_it->get();
   }
 
   void
@@ -255,11 +251,12 @@ public:
 
   using BaseType = Controller<VectorDsType>;
 
+  using IterableType = typename BaseType::IterableType;
+
+private:
   using BaseInterfaceCellType = typename BaseType::InterfaceCellType;
 
   using InterfaceCellType = RbfBasedInterfaceCell<VectorDsType>;
-
-  using IterableType = typename BaseType::IterableType;
 
   using BaseIterableBackEndType
           = typename IterableType::BackEndType;
@@ -273,27 +270,55 @@ public:
 
 public:
   RbfBasedController(
-    precice::SolverInterface* precice_interface,
-    MemoryType const*         memory) :
-    _preciceInterface(precice_interface),
-    _memory(memory) {}
+    Configuration const* configuration,
+    MemoryType const*    memory) :
+    _memory(memory),
+    _doComputeSupportRadius(true),
+    _doComputeImqShape(true) {
+    if (!configuration->isOfType<std::string>(
+          "/Ib/Schemes/DirectForcing/RbfBased/SupportRadius")) {
+      _doComputeSupportRadius = false;
+      _suppportRadius
+        = static_cast<ScalarType>(
+        configuration->get<long double>(
+          "/Ib/Schemes/DirectForcing/RbfBased/SupportRadius"));
+    }
+
+    if (!configuration->isOfType<std::string>(
+          "/Ib/Schemes/DirectForcing/RbfBased/ImqShape")) {
+      _doComputeImqShape = false;
+      _imqShape
+        = static_cast<ScalarType>(
+        configuration->get<long double>(
+          "/Ib/Schemes/DirectForcing/RbfBased/ImqShape"));
+    }
+  }
 
   void
-  initialize() {
+  initialize(precice::SolverInterface* precice_interface) {
+    _preciceInterface = precice_interface;
+
     _bodyMeshSet.insert(_preciceInterface->getMeshID("BodyMesh"));
 
-    _rbfShape
-      = _memory->parameters()->re()
-        / _memory->gridGeometry()->maxCellWidth().maxCoeff();
-    _suppportRadius
-      = _memory->gridGeometry()->maxCellWidth().maxCoeff();
+    if (_doComputeSupportRadius) {
+      _suppportRadius
+        = _memory->gridGeometry()->maxCellWidth().maxCoeff();
+    }
 
-    logInfo("RBF shape = {1}",      _rbfShape);
+    if (_doComputeImqShape) {
+      _imqShape
+        = _memory->parameters()->re()
+          / _memory->gridGeometry()->maxCellWidth().maxCoeff();
+    }
+
+    logInfo("RBF shape = {1}",      _imqShape);
     logInfo("Support radius = {1}", _suppportRadius);
   }
 
   void
   precompute() {
+    logInfo("Locate Interface Cells has been starting ...");
+
     auto     mesh_handle = _preciceInterface->getMeshHandle("BodyMesh");
     unsigned body_id     = 0;
 
@@ -332,6 +357,8 @@ public:
     for (unsigned d = 0; d < Dimensions; ++d) {
       _locateCells(d);
     }
+
+    logInfo("Locate Interface Cells has finished");
   }
 
   void
@@ -557,20 +584,22 @@ private:
 
     // Fill right-hand side;
 
-    double temp_row = 0;
-    double temp_norm_base = 0;
+    double temp_row         = 0;
+    double temp_norm_base   = 0;
     double temp_norm_base_b = 0;
 
     for (auto& supports : _lagrangiansSupports[dimension]) {
       PetscScalar value = 0;
 
       for (auto& fluid_cell : supports) {
-        value -= fluid_cell.weight() * fluid_cell.cell()->data(dimension);
+        value -= fluid_cell.weight() * fluid_cell.cell()->data(
+          dimension);
         temp_norm_base += fluid_cell.cell()->data(dimension)
-            / _memory->timeStepSize();
+                          / _memory->timeStepSize();
 
-        temp_norm_base_b += fluid_cell.weight() *fluid_cell.cell()->data(dimension)
-            / _memory->timeStepSize();
+        temp_norm_base_b += fluid_cell.weight() * fluid_cell.cell()->data(
+          dimension)
+                            / _memory->timeStepSize();
 
         if (supports.lagrangianNode()->id() == 1) {
           temp_row += fluid_cell.weight();
@@ -807,7 +836,7 @@ private:
 
   ScalarType
   computeImqRbf(ScalarType radius) const {
-    return 1.0 / std::sqrt(1.0 + _rbfShape * _rbfShape * radius * radius);
+    return 1.0 / std::sqrt(1.0 + _imqShape * _imqShape * radius * radius);
   }
 
   unsigned
@@ -830,8 +859,10 @@ private:
 
   std::set<int> _bodyMeshSet;
 
-  ScalarType _rbfShape;
+  bool       _doComputeSupportRadius;
   ScalarType _suppportRadius;
+  bool       _doComputeImqShape;
+  ScalarType _imqShape;
 
   Eigen::Matrix<unsigned, Dimensions, 1> _interfaceCellsSize;
 

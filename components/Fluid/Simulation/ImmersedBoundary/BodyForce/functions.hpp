@@ -66,9 +66,11 @@ do_cell_force_computation(TCellAccessor const& accessor) {
 
 template <typename TCellAccessor>
 bool
-compute_cell_force(TCellAccessor const&                      accessor,
-                   typename TCellAccessor::ScalarType const& re,
-                   typename TCellAccessor::VectorDsType&     force) {
+compute_cell_force(
+  TCellAccessor const&                      accessor,
+  typename TCellAccessor::ScalarType const& diffusion_multiplier,
+  typename TCellAccessor::ScalarType const& grad_pressure_multiplier,
+  typename TCellAccessor::VectorDsType&     force) {
   using Scalar = typename TCellAccessor::ScalarType;
 
   using Vector = typename TCellAccessor::VectorDsType;
@@ -135,9 +137,9 @@ compute_cell_force(TCellAccessor const&                      accessor,
         }
       }
 
-      matrix = (matrix + matrix.transpose()) / re;
-
-      matrix -= accessor.pressure() * Matrix::Identity();
+      matrix  = diffusion_multiplier * (matrix + matrix.transpose());
+      matrix -= grad_pressure_multiplier * accessor.pressure()
+                * Matrix::Identity();
 
       normal(d) *= width;
       force     += matrix * normal;
@@ -149,9 +151,11 @@ compute_cell_force(TCellAccessor const&                      accessor,
 
 template <typename TCellAccessor>
 bool
-compute_cell_force_turek(TCellAccessor const&                      accessor,
-                         typename TCellAccessor::ScalarType const& re,
-                         typename TCellAccessor::VectorDsType&     force) {
+compute_cell_force_turek(
+  TCellAccessor const&                      accessor,
+  typename TCellAccessor::ScalarType const& diffusion_multiplier,
+  typename TCellAccessor::ScalarType const& grad_pressure_multiplier,
+  typename TCellAccessor::VectorDsType&     force) {
   using Scalar = typename TCellAccessor::ScalarType;
 
   using Vector = typename TCellAccessor::VectorDsType;
@@ -218,11 +222,12 @@ compute_cell_force_turek(TCellAccessor const&                      accessor,
         }
       }
 
-      Scalar dvdn = grad_velocity.dot(normal) / re;
+      Scalar dvdn     = diffusion_multiplier * grad_velocity.dot(normal);
+      Scalar pressure = grad_pressure_multiplier * accessor.pressure();
       force(0)
-        += (dvdn * normal(1) - accessor.pressure() * normal(0)) * width;
+        += (dvdn * normal(1) - pressure * normal(0)) * width;
       force(1)
-        += (dvdn * normal(0) - accessor.pressure() * normal(1)) * width;
+        -= (dvdn * normal(0) - pressure * normal(1)) * width;
     }
   }
 

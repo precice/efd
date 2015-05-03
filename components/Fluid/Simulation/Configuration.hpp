@@ -1,8 +1,11 @@
 #pragma once
 
-#include <Uni/Logging/format>
+#include <Uni/ExecutionControl/exception>
+#include <Uni/Firewall/Implementation>
 
 #include <Eigen/Core>
+
+#include <boost/any.hpp>
 
 #include <array>
 #include <memory>
@@ -10,6 +13,8 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+class ConfigurationImplementation;
+
 enum class SolverEnum {
   Sfsfd,
   Ifsfd,
@@ -155,78 +160,15 @@ public:
   typedef std::array<std::array<UniqueWallType, 2>, 3> WallTypes;
 
 public:
-  Configuration() {
-    reset();
-  }
+  Configuration();
+
+  ~Configuration();
 
   void
-  reset() {
-    re                  = 1;
-    timeLimit           = 0;
-    plotInterval        = 0;
-    tau                 = 0.5;
-    gamma               = 0.5;
-    dimensions          = 2;
-    width               = VectorDsType::Zero();
-    size                = VectorDiType::Ones();
-    parallelizationSize = VectorDiType::Ones();
-    environment         = VectorDsType::Zero();
-    solverType          = SolverEnum::Sfsfd;
-    scalarType          = ScalarEnum::Double;
-    outputType          = OutputEnum::Vtk;
-    outerLayerSize      = 1;
-    innerLayerSize      = 0;
-    doImmersedBoundary  = false;
-    doDebug             = false;
-
-    for (int d = 0; d < 3; ++d) {
-      walls[d][0].reset(new Input());
-      walls[d][1].reset(new Input());
-    }
-  }
+  reset();
 
   std::string
-  toString() {
-    return Uni::Logging::format(
-      "Re = {1}\n"
-      "TimeLimit = {2}\n"
-      "IterationLimit = {3}\n"
-      "PlotInterval = {4}\n"
-      "Tau = {5}\n"
-      "Gamma = {6}\n"
-      "Dimensions = {7}\n"
-      "Width = {8}\n"
-      "Size = {9}\n"
-      "ParallelizationSize = {10}\n"
-      "Environment = {11}\n"
-      "Walls[0][0].velocity = {12}\n"
-      "Walls[0][1].velocity = {13}\n"
-      "Walls[1][0].velocity = {14}\n"
-      "Walls[1][1].velocity = {15}\n"
-      "Walls[2][0].velocity = {16}\n"
-      "Walls[2][1].velocity = {17}\n",
-      "OuterLayerSize = {18}\n",
-      "InnerLayerSize = {19}\n",
-      re,
-      timeLimit,
-      iterationLimit,
-      plotInterval,
-      tau,
-      gamma,
-      dimensions,
-      width.transpose(),
-      size.transpose(),
-      parallelizationSize.transpose(),
-      environment.transpose(),
-      walls[0][0]->velocity().transpose(),
-      walls[0][1]->velocity().transpose(),
-      walls[1][0]->velocity().transpose(),
-      walls[1][1]->velocity().transpose(),
-      walls[2][0]->velocity().transpose(),
-      walls[2][1]->velocity().transpose(),
-      outerLayerSize,
-      innerLayerSize);
-  }
+  toString() const;
 
   ScalarType   re;
   ScalarType   timeLimit;
@@ -248,6 +190,58 @@ public:
   unsigned     innerLayerSize;
   bool         doImmersedBoundary;
   bool         doDebug;
+
+  bool
+  is(std::string const& name) const;
+
+  template <typename T>
+  T
+  get(std::string const& name) const {
+    try {
+      return boost::any_cast<T>(_find(name));
+    } catch (boost::bad_any_cast const&) {
+      logFatal("Cannot retrieve property '{1}' value", name);
+      throw std::exception();
+    }
+  }
+
+  template <typename T>
+  T
+  tryToGet(std::string const& name) const {
+    return boost::any_cast<T>(_find(name));
+  }
+
+  template <typename T>
+  bool
+  isOfType(std::string const& name) const {
+    auto value = _find(name);
+
+    try {
+      boost::any_cast<T>(value);
+
+      return true;
+    } catch (boost::bad_any_cast const&) {
+      return false;
+    }
+  }
+
+  void
+  set(std::string const& name, boost::any const& value);
+
+  void
+  set(std::string const& name);
+
+private:
+  void
+  _set(std::string const& name, boost::any const& value);
+
+  boost::any const&
+  _find(std::string const& name) const;
+
+  boost::any&
+  _find(std::string const& name);
+
+  Uni_Firewall_IMPLEMENTATION_LINK(ConfigurationImplementation);
 };
 }
 }

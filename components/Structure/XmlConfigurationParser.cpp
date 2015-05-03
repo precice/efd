@@ -19,7 +19,7 @@ namespace Private {
 template <typename T>
 inline void
 parse_in(xmlChar const* content, T& number) {
-  if (!Uni::Helpers::parse_ineger_number(
+  if (!Uni::Helpers::parse_integer_number(
     std::string(reinterpret_cast<char const*>(content)),
     number)) {
     throwException("Failed to parse integer number "

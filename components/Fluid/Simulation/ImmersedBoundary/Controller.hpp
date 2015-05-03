@@ -4,6 +4,10 @@
 
 #include <memory>
 
+namespace precice {
+class SolverInterface;
+}
+
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace ImmersedBoundary {
@@ -19,11 +23,8 @@ public:
   virtual bool
   equals(std::unique_ptr<IteratorBackEnd> const& other) = 0;
 
-  virtual TValue const&
-  dereference() const = 0;
-
   virtual TValue&
-  dereference() = 0;
+  dereference() const = 0;
 
   virtual void
   increment() = 0;
@@ -62,7 +63,7 @@ public:
 
   TValue&
   dereference() const {
-    return const_cast<TValue&>(_backEnd->dereference());
+    return _backEnd->dereference();
   }
 
   void
@@ -145,13 +146,8 @@ public:
            (other.get())->_isFirst;
   }
 
-  virtual TValue const&
-  dereference() const {
-    return *_it;
-  }
-
   virtual TValue&
-  dereference() {
+  dereference() const {
     return *_it;
   }
 
@@ -364,7 +360,7 @@ public:
   virtual ~Controller() {}
 
   virtual void
-  initialize() = 0;
+  initialize(precice::SolverInterface* precice_interface) = 0;
 
   virtual void
   precompute() = 0;

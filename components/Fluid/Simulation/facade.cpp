@@ -43,7 +43,7 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
                 "Only 2D and 3D simulations supported");
 
   std::unique_ptr<SimulationControllerType> controller(
-    new SimulationControllerType());
+    new SimulationControllerType(configuration));
 
   SolverBuilder<SolverBuilderTraitsType> builder(configuration,
                                                  controller->solver());

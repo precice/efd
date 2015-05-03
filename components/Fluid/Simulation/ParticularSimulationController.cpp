@@ -1,5 +1,6 @@
 #include "ParticularSimulationController.hpp"
 
+#include "Configuration.hpp"
 #include "FsfdSolver.hpp"
 #include "IfsfdMemory.hpp"
 #include "IterationResultWriter.hpp"
@@ -16,7 +17,13 @@ class ParticularSimulationControllerImplementation {
 public:
   using Interface = ParticularSimulationController<TSolverTraits>;
 
-  ParticularSimulationControllerImplementation(Interface* in) : _in(in) {}
+  ParticularSimulationControllerImplementation(
+    Interface*           in,
+    Configuration const* configuration)
+    : _in(in),
+    solver(configuration) {}
+
+  Uni_Firewall_INTERFACE_LINK(ParticularSimulationController<TSolverTraits> );
 
   typename Interface::SolverType                             solver;
   std::unique_ptr<IterationResultWriter> resultWriter;
@@ -27,13 +34,12 @@ public:
   long double lastPlotTimeStamp;
   typename Interface::ScalarType         plotInterval;
   unsigned long long iterationLimit;
-
-  Uni_Firewall_INTERFACE_LINK(ParticularSimulationController<TSolverTraits>);
 };
 
 template <typename T>
 ParticularSimulationController<T>::
-ParticularSimulationController() : _im(new Implementation(this)) {}
+ParticularSimulationController(Configuration const* configuration) :
+  _im(new Implementation(this, configuration)) {}
 
 template <typename T>
 ParticularSimulationController<T>::
@@ -54,7 +60,7 @@ solver() const {
 }
 
 template <typename T>
-typename ParticularSimulationController<T>::SolverType*
+typename ParticularSimulationController<T>::SolverType *
 ParticularSimulationController<T>::
 solver() {
   return &_im->solver;
@@ -96,14 +102,14 @@ lastPlotTimeStamp() {
 }
 
 template <typename T>
-typename ParticularSimulationController<T>::ScalarType const&
+typename ParticularSimulationController<T>::ScalarType const &
 ParticularSimulationController<T>::
 plotInterval() const {
   return _im->plotInterval;
 }
 
 template <typename T>
-typename ParticularSimulationController<T>::ScalarType&
+typename ParticularSimulationController<T>::ScalarType &
 ParticularSimulationController<T>::
 plotInterval() {
   return _im->plotInterval;

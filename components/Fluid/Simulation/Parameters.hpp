@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Uni/Helpers/macros>
+
 #include <Eigen/Core>
 
 namespace FsiSimulation {
@@ -80,6 +82,9 @@ public:
   g(int const& i) {
     return _g(i);
   }
+
+  Uni_PublicProperty(TScalar, diffusionMultiplier);
+  Uni_PublicProperty(TScalar, gradPressureMultiplier);
 
 private:
   TScalar  _re;

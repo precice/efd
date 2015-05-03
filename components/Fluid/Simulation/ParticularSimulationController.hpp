@@ -7,6 +7,8 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+class Configuration;
+
 template <typename TSolverTraits>
 class ParticularSimulationControllerImplementation;
 
@@ -52,7 +54,7 @@ public:
   using ScalarType = typename SolverTraitsType::ScalarType;
 
 public:
-  ParticularSimulationController();
+  ParticularSimulationController(Configuration const* configuration);
 
   ParticularSimulationController(
     ParticularSimulationController const& other) = delete;

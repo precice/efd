@@ -167,7 +167,7 @@ validate_layer_number(TCellAccessor const& accessor,
                       unsigned const&      outer_layer_size,
                       unsigned const&      inner_layer_size) {
   auto const location
-    = accessor.positionInRespectToGeometry(TCellAccessor::Dimensions + 1);
+    = accessor.positionInRespectToGeometry(TCellAccessor::Dimensions);
 
   auto const distance = get_distance<TCellAccessor::Dimensions>(location);
 

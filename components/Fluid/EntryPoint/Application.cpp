@@ -157,19 +157,17 @@ parseArguments() {
       options["petsc"].as<std::string>());
   }
 
-  if (options.count("no-immersed-boundary")) {
-    _im->fluidConfiguration->doImmersedBoundary = false;
-  } else {
-    _im->fluidConfiguration->doImmersedBoundary = true;
-  }
-
   if (options.count("precice")) {
     _im->fluidConfiguration->doImmersedBoundary = true;
 
     _im->preciceConfigurationPath
       = boost::filesystem::canonical(options["precice"].as<std::string>());
-  } else {
+  }
+
+  if (options.count("no-immersed-boundary")) {
     _im->fluidConfiguration->doImmersedBoundary = false;
+  } else {
+    _im->fluidConfiguration->doImmersedBoundary = true;
   }
 
   if (options.count("simulation")) {
@@ -309,8 +307,8 @@ release() {
 void
 Application::
 parseSimulationConfiguration() {
-  XmlConfigurationParser::parse(_im->fluidConfiguration,
-                                _im->fluidConfigurationPath);
+  XmlConfigurationParser(_im->fluidConfiguration,
+                         _im->fluidConfigurationPath);
   logInfo(_im->fluidConfiguration->toString());
 }
 
@@ -337,28 +335,43 @@ Application::
 initializePrecice() {
   using namespace precice;
 
-  _im->preciceInterface.reset(
-    new Implementation::PreciceInterface("Fluid",
-                                         _im->rank,
-                                         _im->processCount));
-
   if (!_im->fluidConfiguration->doImmersedBoundary) {
     return;
   }
 
+  bool                    has_path = false;
+  boost::filesystem::path config_path;
+  try {
+    config_path
+      = _im->fluidConfiguration->tryToGet<boost::filesystem::path>(
+      "/Ib/PreciceConfigurationPath");
+    has_path = true;
+  } catch (std::exception const&) {}
+
+  if (!has_path) {
+    return;
+  }
+
+  config_path = boost::filesystem::canonical(config_path);
+
   // Change current working directory of the application to overcome a Precice
   // configuration issue with python modules paths.
   boost::filesystem::current_path(
-    _im->preciceConfigurationPath.parent_path());
-  logInfo("{1}", boost::filesystem::current_path());
+    config_path.parent_path());
 
   auto preciceConfigurationPath
     = Uni::convertUtfPathToAnsi(
     boost::filesystem::make_relative(
-      _im->preciceConfigurationPath).string(),
+      config_path).string(),
     _im->globalLocale,
     _im->ansiLocale);
 
-  logInfo("PreCiCe is being configured");
+  _im->preciceInterface.reset(
+    new Implementation::PreciceInterface("Fluid",
+                                         _im->rank,
+                                         _im->processCount));
   _im->preciceInterface->configure(preciceConfigurationPath);
+
+  _im->preciceInterface->initialize();
+  _im->preciceInterface->initializeData();
 }
