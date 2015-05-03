@@ -18,8 +18,8 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 
 parser.add_argument('builder', nargs='?', default='ninja')
-parser.add_argument('-c', default='Release')
 parser.add_argument('-p', default='Clang')
+parser.add_argument('-c', default='Release')
 
 args, unknown_args = parser.parse_known_args()
 # -----------------------------------------------------------------------------
@@ -27,17 +27,18 @@ args, unknown_args = parser.parse_known_args()
 
 # Filter arguments {{{
 # -----------------------------------------------------------------------------
+args.p = args.p.strip()
 args.c = args.c.strip()
 # -----------------------------------------------------------------------------
 # }}}
 
 # Invoke Builder {{{
 # -----------------------------------------------------------------------------
-variandDir = os.path.join(projectDir, '.build', args.c, args.p)
+variantDir = os.path.join(projectDir, '.build', args.p, args.c)
 
 command = "%s %s" % (args.builder,
       " ".join(unknown_args))
 
-subprocess.call(command, cwd=variandDir, shell=True)
+subprocess.call(command, cwd=variantDir, shell=True)
 # -----------------------------------------------------------------------------
 # }}}
