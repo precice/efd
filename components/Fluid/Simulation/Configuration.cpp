@@ -29,8 +29,6 @@ any_to_string(boost::any const& any) {
 }
 
 class ConfigurationImplementation {
-  friend class Configuration;
-
   ConfigurationImplementation(Configuration* in) : _in(in) {}
 
   std::map<std::string, boost::any> properties;
@@ -82,7 +80,7 @@ reset() {
   _set("/Equations/Ins/PressureGradientMultiplier",
        std::string("default"));
 
-   _set("/Ib/PreciceConfigurationPath", false);
+  _set("/Ib/PreciceConfigurationPath",           false);
 
   _set("/Ib/Features/DevelopingStructure",       false);
 
