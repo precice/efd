@@ -11,7 +11,7 @@
 #SBATCH --ntasks=1
 
 DIR=$HOME/Project
-bin=$DIR/.install/Release/bin
+bin=$DIR/.install/Gcc/Release/bin
 conf=$DIR/tests/LrzMacCluster
 
 source $conf/environment-configuration.sh
