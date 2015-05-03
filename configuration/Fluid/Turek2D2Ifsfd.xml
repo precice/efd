@@ -14,7 +14,7 @@
   filename="Turek2D2"
   scalar="double"
   solver="Improved Fractional Step Finite Difference"
-  output="Vtk"
+  output="Xdmf"
   >
   <walls>
     <left type="ParabolicInput" velocity="1.5 0.0" />
@@ -22,5 +22,10 @@
     <bottom type="Input" velocity="0.0 0.0" />
     <top type="Input" velocity="0.0 0.0" />
   </walls>
-  <immersed-boundary outerLayerSize="1" innerLayerSize="1"/>
+  <immersed-boundary
+    type="Precice-Based"
+    full-prediction="on"
+    precice-configuration-path="../Precice/Turek2D-IbMapping.xml"
+    outerLayerSize="0"
+    innerLayerSize="1"/>
 </scenario>

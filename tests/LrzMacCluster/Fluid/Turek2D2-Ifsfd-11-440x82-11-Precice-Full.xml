@@ -11,7 +11,7 @@
   size="440 82"
   parallelizationSize="1 1"
   environment="0 0"
-  filename="Turek2D1"
+  filename="Turek2D2"
   scalar="double"
   solver="Improved Fractional Step Finite Difference"
   output="Xdmf"
