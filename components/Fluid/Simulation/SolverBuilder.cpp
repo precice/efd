@@ -197,55 +197,23 @@ setFrontWallAs(WallEnum type) {
 }
 
 template class SolverBuilder
-  < SolverBuilderTraits < 0, 0, 0, double, 2 >>;
+  < SolverBuilderTraits <0, 0, double, 2>>;
 template class SolverBuilder
-  < SolverBuilderTraits < 0, 0, 1, double, 2 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 0, 1, 0, double, 2 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 0, 1, 1, double, 2 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 0, 2, 0, double, 2 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 0, 2, 1, double, 2 >>;
+  < SolverBuilderTraits <0, 1, double, 2>>;
 
 template class SolverBuilder
-  < SolverBuilderTraits < 0, 0, 0, double, 3 >>;
+  < SolverBuilderTraits <0, 0, double, 3>>;
 template class SolverBuilder
-  < SolverBuilderTraits < 0, 0, 1, double, 3 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 0, 1, 0, double, 3 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 0, 1, 1, double, 3 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 0, 2, 0, double, 3 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 0, 2, 1, double, 3 >>;
+  < SolverBuilderTraits <0, 1, double, 3>>;
 
 template class SolverBuilder
-  < SolverBuilderTraits < 1, 0, 0, double, 2 >>;
+  < SolverBuilderTraits <1, 0, double, 2>>;
 template class SolverBuilder
-  < SolverBuilderTraits < 1, 0, 1, double, 2 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 1, 1, 0, double, 2 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 1, 1, 1, double, 2 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 1, 2, 0, double, 2 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 1, 2, 1, double, 2 >>;
+  < SolverBuilderTraits <1, 1, double, 2>>;
 
 template class SolverBuilder
-  < SolverBuilderTraits < 1, 0, 0, double, 3 >>;
+  < SolverBuilderTraits <1, 0, double, 3>>;
 template class SolverBuilder
-  < SolverBuilderTraits < 1, 0, 1, double, 3 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 1, 1, 0, double, 3 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 1, 1, 1, double, 3 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 1, 2, 0, double, 3 >>;
-template class SolverBuilder
-  < SolverBuilderTraits < 1, 2, 1, double, 3 >>;
+  < SolverBuilderTraits <1, 1, double, 3>>;
 }
 }

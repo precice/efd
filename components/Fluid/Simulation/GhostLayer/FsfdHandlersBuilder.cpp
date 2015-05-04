@@ -313,459 +313,155 @@ setAsMpiExchange() {
 
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 2>, 0, 0 >>;
+  < SfsfdSolverTraits<0, double, 2>, 0, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 2>, 0, 1 >>;
+  < SfsfdSolverTraits<0, double, 2>, 0, 1 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 2>, 1, 0 >>;
+  < SfsfdSolverTraits<0, double, 2>, 1, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 2>, 1, 1 >>;
+  < SfsfdSolverTraits<0, double, 2>, 1, 1 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 2>, 2, 0 >>;
+  < SfsfdSolverTraits<0, double, 2>, 2, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 2>, 2, 1 >>;
+  < SfsfdSolverTraits<0, double, 2>, 2, 1 >>;
 
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 2>, 0, 0 >>;
+  < SfsfdSolverTraits<1, double, 2>, 0, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 2>, 0, 1 >>;
+  < SfsfdSolverTraits<1, double, 2>, 0, 1 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 2>, 1, 0 >>;
+  < SfsfdSolverTraits<1, double, 2>, 1, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 2>, 1, 1 >>;
+  < SfsfdSolverTraits<1, double, 2>, 1, 1 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 2>, 2, 0 >>;
+  < SfsfdSolverTraits<1, double, 2>, 2, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 2>, 2, 1 >>;
+  < SfsfdSolverTraits<1, double, 2>, 2, 1 >>;
 
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 2>, 0, 0 >>;
+  < SfsfdSolverTraits<0, double, 3>, 0, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 2>, 0, 1 >>;
+  < SfsfdSolverTraits<0, double, 3>, 0, 1 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 2>, 1, 0 >>;
+  < SfsfdSolverTraits<0, double, 3>, 1, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 2>, 1, 1 >>;
+  < SfsfdSolverTraits<0, double, 3>, 1, 1 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 2>, 2, 0 >>;
+  < SfsfdSolverTraits<0, double, 3>, 2, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 2>, 2, 1 >>;
+  < SfsfdSolverTraits<0, double, 3>, 2, 1 >>;
 
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 2>, 0, 0 >>;
+  < SfsfdSolverTraits<1, double, 3>, 0, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 2>, 0, 1 >>;
+  < SfsfdSolverTraits<1, double, 3>, 0, 1 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 2>, 1, 0 >>;
+  < SfsfdSolverTraits<1, double, 3>, 1, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 2>, 1, 1 >>;
+  < SfsfdSolverTraits<1, double, 3>, 1, 1 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 2>, 2, 0 >>;
+  < SfsfdSolverTraits<1, double, 3>, 2, 0 >>;
 template class FsfdHandlersBuilder
   < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 2>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 2>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 2>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 2>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 2>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 2>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 2>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 2>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 2>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 2>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 2>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 2>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 2>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 0, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<0, 1, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 0, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<1, 1, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 0, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < SfsfdHandlersBuilderTraits
-  < SfsfdSolverTraits<2, 1, double, 3>, 2, 1 >>;
+  < SfsfdSolverTraits<1, double, 3>, 2, 1 >>;
 
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 2>, 0, 0 >>;
+  < IfsfdSolverTraits<0, double, 2>, 0, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 2>, 0, 1 >>;
+  < IfsfdSolverTraits<0, double, 2>, 0, 1 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 2>, 1, 0 >>;
+  < IfsfdSolverTraits<0, double, 2>, 1, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 2>, 1, 1 >>;
+  < IfsfdSolverTraits<0, double, 2>, 1, 1 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 2>, 2, 0 >>;
+  < IfsfdSolverTraits<0, double, 2>, 2, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 2>, 2, 1 >>;
+  < IfsfdSolverTraits<0, double, 2>, 2, 1 >>;
 
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 2>, 0, 0 >>;
+  < IfsfdSolverTraits<1, double, 2>, 0, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 2>, 0, 1 >>;
+  < IfsfdSolverTraits<1, double, 2>, 0, 1 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 2>, 1, 0 >>;
+  < IfsfdSolverTraits<1, double, 2>, 1, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 2>, 1, 1 >>;
+  < IfsfdSolverTraits<1, double, 2>, 1, 1 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 2>, 2, 0 >>;
+  < IfsfdSolverTraits<1, double, 2>, 2, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 2>, 2, 1 >>;
+  < IfsfdSolverTraits<1, double, 2>, 2, 1 >>;
 
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 2>, 0, 0 >>;
+  < IfsfdSolverTraits<0, double, 3>, 0, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 2>, 0, 1 >>;
+  < IfsfdSolverTraits<0, double, 3>, 0, 1 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 2>, 1, 0 >>;
+  < IfsfdSolverTraits<0, double, 3>, 1, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 2>, 1, 1 >>;
+  < IfsfdSolverTraits<0, double, 3>, 1, 1 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 2>, 2, 0 >>;
+  < IfsfdSolverTraits<0, double, 3>, 2, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 2>, 2, 1 >>;
+  < IfsfdSolverTraits<0, double, 3>, 2, 1 >>;
 
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 2>, 0, 0 >>;
+  < IfsfdSolverTraits<1, double, 3>, 0, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 2>, 0, 1 >>;
+  < IfsfdSolverTraits<1, double, 3>, 0, 1 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 2>, 1, 0 >>;
+  < IfsfdSolverTraits<1, double, 3>, 1, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 2>, 1, 1 >>;
+  < IfsfdSolverTraits<1, double, 3>, 1, 1 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 2>, 2, 0 >>;
+  < IfsfdSolverTraits<1, double, 3>, 2, 0 >>;
 template class FsfdHandlersBuilder
   < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 2>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 2>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 2>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 2>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 2>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 2>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 2>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 2>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 2>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 2>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 2>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 2>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 2>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 0, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<0, 1, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 0, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<1, 1, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 0, double, 3>, 2, 1 >>;
-
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 3>, 0, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 3>, 0, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 3>, 1, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 3>, 1, 1 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 3>, 2, 0 >>;
-template class FsfdHandlersBuilder
-  < IfsfdHandlersBuilderTraits
-  < IfsfdSolverTraits<2, 1, double, 3>, 2, 1 >>;
+  < IfsfdSolverTraits<1, double, 3>, 2, 1 >>;
 }
 }
 }

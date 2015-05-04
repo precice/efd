@@ -18,14 +18,12 @@ namespace Private {
 template <int TDimensions,
           typename TScalar,
           int TSolverType,
-          int TImmersedBoudnaryType,
           int TDebug>
 inline std::unique_ptr<SimulationController>
 _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug(
   FluidSimulation::Configuration* configuration) {
   using SolverBuilderTraitsType
           = SolverBuilderTraits<TSolverType,
-                                TImmersedBoudnaryType,
                                 TDebug,
                                 TScalar,
                                 TDimensions>;
@@ -67,12 +65,9 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
   return std::unique_ptr<SimulationController>(controller.release());
 }
 
-template <int TDimensions,
-          typename TScalar,
-          int TSolverType,
-          int TImmersedBoudnaryType>
+template <int TDimensions, typename TScalar, int TSolverType>
 inline std::unique_ptr<SimulationController>
-_create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type(
+_create_simulation_controller_nd_scalar_solver_type(
   FluidSimulation::Configuration* configuration) {
   if (configuration->doDebug) {
     return
@@ -80,7 +75,6 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type(
       <TDimensions,
        TScalar,
        TSolverType,
-       TImmersedBoudnaryType,
        1>(configuration);
   }
 
@@ -89,23 +83,7 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type(
     <TDimensions,
      TScalar,
      TSolverType,
-     TImmersedBoudnaryType,
      0>(configuration);
-}
-
-template <int TDimensions, typename TScalar, int TSolverType>
-inline std::unique_ptr<SimulationController>
-_create_simulation_controller_nd_scalar_solver_type(
-  FluidSimulation::Configuration* configuration) {
-  if (configuration->doImmersedBoundary) {
-    return
-      _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type
-      <TDimensions, TScalar, TSolverType, 2>(configuration);
-  }
-
-  return
-    _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type
-    <TDimensions, TScalar, TSolverType, 0>(configuration);
 }
 
 template <int TDimensions, typename TScalar>

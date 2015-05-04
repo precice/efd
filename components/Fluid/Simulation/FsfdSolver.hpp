@@ -12,6 +12,11 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 class Configuration;
 
+namespace ImmersedBoundary {
+template<typename TVector>
+class Controller;
+}
+
 template <typename T>
 class FsfdSolverImplementation;
 class Reporter;
