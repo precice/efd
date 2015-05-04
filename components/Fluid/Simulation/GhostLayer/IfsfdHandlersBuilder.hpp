@@ -22,7 +22,7 @@ struct IfsfdHandlersBuilderTraits {
 
   using CellAccessorType = typename SolverTraitsType::CellAccessorType;
 
-  using BaseGridType = typename SolverTraitsType::BaseGridType;
+  using SubgridType = typename SolverTraitsType::SubgridType;
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 
@@ -44,7 +44,7 @@ struct IfsfdHandlersBuilderTraits {
           = MpiExchange::Handler
             <ScalarType,
              1,
-             BaseGridType,
+             SubgridType,
              IfsfdHandlersBuilderTraits::getProjectionTerm,
              IfsfdHandlersBuilderTraits::setProjectionTerm,
              TDimension,

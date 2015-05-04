@@ -1,69 +1,30 @@
 #ifndef Fluid_Simulation_SfsfdMemory_hpp
 #define Fluid_Simulation_SfsfdMemory_hpp
 
-#include "FsfdDebugMemory.hpp"
 #include "FsfdMemory.hpp"
 #include "SolverTraits.hpp"
 
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TSolverTraits>
-class SfsfdMemory;
+class SfsfdMemory : public FsfdMemory<TSolverTraits> {
+  friend class FsfdMemory<TSolverTraits>;
 
-template <typename TSolverTraits>
-class SfsfdDebugMemory;
-
-template <typename TSolverTraits>
-struct SfsfdMemoryTraits {
-  using Type = SfsfdMemory<TSolverTraits>;
-
-  enum {
-    AdditionalAttributeSize
-      = FsfdMemoryTraits<TSolverTraits>::AdditionalAttributeSize + 0
-  };
-};
-
-template <typename TSolverTraits>
-struct SfsfdDebugMemoryTraits {
-  using Type = SfsfdDebugMemory<TSolverTraits>;
-
-  enum {
-    AdditionalAttributeSize
-      = FsfdDebugMemoryTraits<TSolverTraits>::AdditionalAttributeSize + 0
-  };
-};
-
-template <typename TSolverTraits>
-class SfsfdMemory : public FsfdMemory
-                    < TSolverTraits,
-                           SfsfdMemoryTraits < TSolverTraits >> {
-  friend class FsfdMemory
-               < TSolverTraits, SfsfdMemoryTraits < TSolverTraits >>;
 public:
-  using Base = FsfdMemory
-               < TSolverTraits, SfsfdMemoryTraits < TSolverTraits >>;
+  using BaseType = FsfdMemory<TSolverTraits>;
 
   using ScalarType = typename TSolverTraits::ScalarType;
 
 public:
   SfsfdMemory() {}
-};
 
-template <typename TSolverTraits>
-class SfsfdDebugMemory : public FsfdDebugMemory
-                         < TSolverTraits,
-                                SfsfdDebugMemoryTraits < TSolverTraits >> {
-  friend class FsfdMemory
-               < TSolverTraits, SfsfdDebugMemoryTraits < TSolverTraits >>;
-
-public:
-  using Base = FsfdDebugMemory
-               < TSolverTraits, SfsfdDebugMemoryTraits < TSolverTraits >>;
-
-  using ScalarType = typename TSolverTraits::ScalarType;
-
-public:
-  SfsfdDebugMemory() {}
+protected:
+  ScalarType
+  _attribute(int const& index,
+             int const& attribute_index,
+             int const& dimension) const {
+    return this->BaseType::_attribute(index, attribute_index, dimension);
+  }
 };
 }
 }

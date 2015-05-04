@@ -423,7 +423,15 @@ private:
       VectorDiType search_size
         = size + support_size + 2 * VectorDiType::Ones();
 
-      typename AccessorTraits::GridType grid;
+      struct GridTraits {
+        using CellAccessorType = Uni::StructuredGrid::Basic::GlobalMultiIndex
+                                 <void, void, Dimensions, GridTraits>;
+
+        using GridType = Uni::StructuredGrid::Basic::Grid
+                         <void, void, Dimensions, GridTraits>;
+      };
+
+      typename GridTraits::GridType grid;
       grid.initialize(search_size - search_offset);
 
       for (auto const& accessor : grid) {
@@ -811,19 +819,6 @@ public:
 
     Uni_PublicProperty(LagrangianNode*, lagrangianNode);
     Uni_PublicProperty(Supports,        supports);
-  };
-
-  class AccessorTraits {
-public:
-    enum {
-      Dimensions = RbfBasedController::Dimensions
-    };
-
-    using Type
-            = Uni::StructuredGrid::Basic::GlobalMultiIndex<AccessorTraits>;
-
-    using GridType
-            = Uni::StructuredGrid::Basic::Grid<Type>;
   };
 
 private:

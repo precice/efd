@@ -23,9 +23,9 @@
     <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
-    type="Precice-Based"
+    type="Rbf-Based"
     full-prediction="on"
-    precice-configuration-path="../Precice/Turek2D-IbMapping.xml"
+    precice-configuration-path="../Precice/Turek2D-NoIbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>
 </scenario>

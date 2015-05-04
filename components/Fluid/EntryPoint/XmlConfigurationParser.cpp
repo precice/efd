@@ -388,7 +388,7 @@ private:
     static xmlChar* const _typeOutput = (xmlChar* const)"Output";
 
     xmlAttrPtr                    attr = node->properties;
-    xmlChar*                      type;
+    xmlChar*                      type = 0;
     Configuration::Wall::VectorDs velocity
       = Configuration::Wall::VectorDs::Zero();
 
@@ -402,6 +402,10 @@ private:
     }
 
     Configuration::UniqueWallType wall;
+
+    if (type == 0) {
+      throwException("No wall type was provided");
+    }
 
     if (xmlStrcasecmp(type, _typeInput) == 0) {
       wall.reset(new Configuration::Input(velocity));

@@ -40,19 +40,34 @@ public:
   bool        doCentralize;
 };
 
-template <typename TSolverTraits>
-struct FsfdMemoryTraits {
+namespace Private {
+template <unsigned TDebugLeve>
+struct AttributesSizeTraits {};
+
+template <>
+struct AttributesSizeTraits<0> {
   enum {
-    AdditionalAttributeSize = 0
+    Size = 2
   };
 };
 
-template <typename TSolverTraits, typename TDerivedTraits>
+template <>
+struct AttributesSizeTraits<1> {
+  enum {
+    Size = AttributesSizeTraits<0>::Size + 5
+  };
+};
+}
+
+template <typename TSolverTraits>
 class FsfdMemory {
 public:
+  using SolverTraitsType = TSolverTraits;
+
   enum {
-    Dimensions    = TSolverTraits::Dimensions,
-    AttributeSize = 2
+    Dimensions     = TSolverTraits::Dimensions,
+    DebugLevel     = SolverTraitsType::DebugLevel,
+    AttributesSize = Private::AttributesSizeTraits<DebugLevel>::Size
   };
 
   using GridGeometryType = typename TSolverTraits::GridGeometryType;
@@ -64,7 +79,7 @@ public:
 
   using GridType = typename TSolverTraits::GridType;
 
-  using BaseGridType = typename TSolverTraits::BaseGridType;
+  using SubgridType = typename TSolverTraits::SubgridType;
 
   using CellAccessorType = typename TSolverTraits::CellAccessorType;
 
@@ -80,9 +95,7 @@ public:
 
   using AttributeType = Attribute;
 
-  using AttributesType
-          = std::array<Attribute,
-                       2 + TDerivedTraits::AdditionalAttributeSize>;
+  using AttributesType = std::array<Attribute, AttributesSize>;
 
 public:
   FsfdMemory() {}
@@ -101,7 +114,7 @@ public:
       _parallelDistribution.localCellSize + 2 * VectorDiType::Ones());
 
     typename GridType::FactoryType cell_accessor_factory
-      = [ = ] (BaseGridType const* grid, VectorDiType const& index) {
+      = [ = ] (SubgridType const* grid, VectorDiType const& index) {
           return CellAccessorType(static_cast<MemoryType*>(this),
                                   grid,
                                   index);
@@ -126,6 +139,32 @@ public:
     _attributes[0].doCentralize = true;
     _attributes[1].name         = "pressure";
     _attributes[1].type         = AttributeType::Type::Scalar;
+
+    if (DebugLevel == 1) {
+      _diffusion.reset(new VectorDsType[this->_grid.size().prod()]);
+      _force.reset(new VectorDsType[this->_grid.size().prod()]);
+      _bodyForce.reset(new VectorDsType[this->_grid.size().prod()]);
+      this->_attributes[2].name
+        = "convection";
+      this->_attributes[2].type
+        = Attribute::Type::Vector;
+      this->_attributes[3].name
+        = "diffusion";
+      this->_attributes[3].type
+        = Attribute::Type::Vector;
+      this->_attributes[4].name
+        = "force";
+      this->_attributes[4].type
+        = Attribute::Type::Vector;
+      this->_attributes[5].name
+        = "body-force";
+      this->_attributes[5].type
+        = Attribute::Type::Vector;
+      this->_attributes[6].name
+        = "position-in-respect-to-geometry";
+      this->_attributes[6].type
+        = Attribute::Type::Scalar;
+    }
 
     // logGridInitializationInfo(_grid);
     _parallelDistribution.toString();
@@ -222,23 +261,33 @@ public:
     return _iterationNumber;
   }
 
+  // Those members are for the debug reasons {{{
   void
-  setDiffusionAt(int const&, VectorDsType const&) {}
+  setDiffusionAt(int const& index, VectorDsType const& value) {
+    _diffusion.get()[index] = value;
+  }
 
   void
-  setForceAt(int const&, VectorDsType const&) {}
+  setForceAt(int const& index, VectorDsType const& value) {
+    _force.get()[index] = value;
+  }
 
   void
-  addForceAt(int const&, VectorDsType const&) {}
+  addForceAt(int const& index, VectorDsType const& value) {
+    _force.get()[index] += value;
+  }
 
   void
-  setBodyForceAt(int const&, VectorDsType const&) {}
+  setBodyForceAt(int const& index, VectorDsType const& value) {
+    _bodyForce.get()[index] = value;
+  }
+  // Those members are for the debug reasons }}}
 
   ScalarType
   attribute(int const&   index,
             short const& attribute_index,
             int const&   dimension = 0) const {
-    return static_cast<typename TDerivedTraits::Type*>(this)
+    return static_cast<MemoryType*>(this)
            ->_attribute(index,
                         attribute_index,
                         dimension);
@@ -248,7 +297,7 @@ public:
   attribute(int const&   index,
             short const& attribute_index,
             int const&   dimension = 0) {
-    return static_cast<typename TDerivedTraits::Type*>(this)
+    return static_cast<MemoryType*>(this)
            ->_attribute(index,
                         attribute_index,
                         dimension);
@@ -384,6 +433,31 @@ protected:
   _attribute(int const& index,
              int const& attribute_index,
              int const& dimension) const {
+    if (DebugLevel > 0) {
+      switch (attribute_index) {
+      case 2:
+
+        return this->_convection.get()[index].data()[dimension];
+
+      case 3:
+
+        return this->_diffusion.get()[index].data()[dimension];
+
+      case 4:
+
+        return _force.get()[index].data()[dimension];
+
+      case 5:
+
+        return _bodyForce.get()[index].data()[dimension];
+
+      case 6:
+
+        return static_cast<ScalarType>(
+          this->_position.get()[index](Dimensions));
+      }
+    }
+
     switch (attribute_index) {
     case 0:
 
@@ -415,6 +489,11 @@ protected:
   std::unique_ptr<LocationType>   _position;
   std::unique_ptr<VectorDsType[]> _fgh;
   std::unique_ptr<VectorDsType[]> _convection;
+
+  // The members below are for the debug reasons
+  std::unique_ptr<VectorDsType[]> _diffusion;
+  std::unique_ptr<VectorDsType[]> _force;
+  std::unique_ptr<VectorDsType[]> _bodyForce;
 };
 }
 }

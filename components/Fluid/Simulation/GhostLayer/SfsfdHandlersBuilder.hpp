@@ -23,7 +23,7 @@ struct SfsfdHandlersBuilderTraits {
 
   using CellAccessorType = typename SolverTraitsType::CellAccessorType;
 
-  using BaseGridType = typename SolverTraitsType::BaseGridType;
+  using SubgridType = typename SolverTraitsType::SubgridType;
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 
@@ -44,7 +44,7 @@ struct SfsfdHandlersBuilderTraits {
           = MpiExchange::Handler
             <ScalarType,
              1,
-             BaseGridType,
+             SubgridType,
              SfsfdHandlersBuilderTraits::getPressure,
              SfsfdHandlersBuilderTraits::setPressure,
              TDimension,

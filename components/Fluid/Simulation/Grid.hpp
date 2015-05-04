@@ -13,14 +13,13 @@
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TSolverTraits>
-class Grid :
-  public Uni::StructuredGrid::Basic::Grid
-  <typename TSolverTraits::CellAccessorType> {
+class Grid : public TSolverTraits::SubgridType {
 public:
-  using BaseType = Uni::StructuredGrid::Basic::Grid
-                   <typename TSolverTraits::CellAccessorType>;
+  using SubgridType = typename TSolverTraits::SubgridType;
 
   using CellAccessorType =  typename TSolverTraits::CellAccessorType;
+
+  using BaseType = SubgridType;
 
   enum {
     Dimensions = TSolverTraits::Dimensions
@@ -49,10 +48,10 @@ public:
   toString() const;
 
 public:
-  BaseType                                        innerGrid;
-  FactoryType                                     _factory;
-  std::array<std::array<BaseType, 2>, Dimensions> boundaries;
-  std::array<std::array<BaseType, 2>, Dimensions> indentedBoundaries;
+  SubgridType                                        innerGrid;
+  FactoryType                                        _factory;
+  std::array<std::array<SubgridType, 2>, Dimensions> boundaries;
+  std::array<std::array<SubgridType, 2>, Dimensions> indentedBoundaries;
 };
 
 Fluid_DeclareExternTemplates(Grid);

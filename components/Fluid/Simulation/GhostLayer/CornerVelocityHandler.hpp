@@ -31,7 +31,7 @@ public:
 
   using GridType = typename SolverTraitsType::GridType;
 
-  using BaseGridType = typename SolverTraitsType::BaseGridType;
+  using SubgridType = typename SolverTraitsType::SubgridType;
 
   using CellAccessorType = typename SolverTraitsType::CellAccessorType;
 
@@ -46,7 +46,7 @@ public:
 
 public:
   CornerVelocityHandler(
-    BaseGridType const*             grid,
+    SubgridType const*             grid,
     ParallelDistributionType const* parallel_distribution)
     : _grid(grid),
     _parallelDistribution(parallel_distribution),
@@ -84,20 +84,20 @@ public:
       return;
     }
 
-    auto it    = _grid->at(_boundaryIndex);
+    auto accessor    = *_grid->at(_boundaryIndex);
     int  index = 0;
 
     if (_dimension == -1) {
       for (unsigned i = 0; i < TDataElementSize; ++i) {
-        _rowMemory.get()[index] = it->velocity(i);
+        _rowMemory.get()[index] = accessor.velocity(i);
         ++index;
       }
     } else {
-      for (; it->indexValue(_dimension)
+      for (; accessor.indexValue(_dimension)
            < _grid->end()->indexValue(_dimension);
-           it->index(_dimension) += 1) {
+           accessor.index(_dimension) += 1) {
         for (unsigned i = 0; i < TDataElementSize; ++i) {
-          _rowMemory.get()[index] = it->velocity(i);
+          _rowMemory.get()[index] = accessor.velocity(i);
           ++index;
         }
       }
@@ -115,20 +115,20 @@ public:
       _parallelDistribution->mpiCommunicator,
       &mpi_status);
 
-    it    = _grid->at(_ghostIndex);
+    accessor    = *_grid->at(_ghostIndex);
     index = 0;
 
     if (_dimension == -1) {
       for (unsigned i = 0; i < TDataElementSize; ++i) {
-        it->velocity(i) = _rowMemory.get()[index];
+        accessor.velocity(i) = _rowMemory.get()[index];
         ++index;
       }
     } else {
-      for (; it->indexValue(_dimension)
+      for (; accessor.indexValue(_dimension)
            < _grid->end()->indexValue(_dimension);
-           it->index(_dimension) += 1) {
+           accessor.index(_dimension) += 1) {
         for (unsigned i = 0; i < TDataElementSize; ++i) {
-          it->velocity(i) = _rowMemory.get()[index];
+          accessor.velocity(i) = _rowMemory.get()[index];
           ++index;
         }
       }
@@ -157,7 +157,7 @@ private:
     }
   }
 
-  BaseGridType const*             _grid;
+  SubgridType const*             _grid;
   ParallelDistributionType const* _parallelDistribution;
   int                             _dimension;
   int                             _communicationRank;
@@ -177,13 +177,13 @@ struct CornerVelocityHandlers<TSolverTraits, 2> {
 
   using MemoryType = typename SolverTraitsType::MemoryType;
 
-  using BaseGridType = typename SolverTraitsType::BaseGridType;
+  using SubgridType = typename SolverTraitsType::SubgridType;
 
   using ParallelDistributionType
           = typename SolverTraitsType::ParallelDistributionType;
 
   using ScalarType = typename SolverTraitsType::ScalarType;
-  CornerVelocityHandlers(BaseGridType const*             grid,
+  CornerVelocityHandlers(SubgridType const*             grid,
                          ParallelDistributionType const* parallel_distribution)
     : _rb(grid, parallel_distribution),
     _lt(grid, parallel_distribution) {}
@@ -205,14 +205,14 @@ struct CornerVelocityHandlers<TSolverTraits, 3> {
 
   using MemoryType = typename SolverTraitsType::MemoryType;
 
-  using BaseGridType = typename SolverTraitsType::BaseGridType;
+  using SubgridType = typename SolverTraitsType::SubgridType;
 
   using ParallelDistributionType
           = typename SolverTraitsType::ParallelDistributionType;
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 
-  CornerVelocityHandlers(BaseGridType const*             grid,
+  CornerVelocityHandlers(SubgridType const*             grid,
                          ParallelDistributionType const* parallel_distribution)
     : _rightBottom(grid, parallel_distribution),
     _rightBack(grid, parallel_distribution),

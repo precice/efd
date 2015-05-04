@@ -65,7 +65,7 @@ public:
                << "I need something to put here" << std::endl
                << "ASCII" << std::endl << std::endl;
 
-    typedef typename GridType::BaseType TempGrid;
+    typedef typename GridType::SubgridType TempGrid;
 
     TempGrid grid = _memory->grid()->innerGrid;
 

@@ -13,11 +13,10 @@ public:
   enum {
     Dimensions = TSolverTraits::Dimensions
   };
+
   using MemoryType = typename TSolverTraits::MemoryType;
 
-  using GridType = typename TSolverTraits::GridType;
-
-  using BaseGridType = typename TSolverTraits::BaseGridType;
+  using SubgridType = typename TSolverTraits::SubgridType;
 
   using VectorDsType = typename TSolverTraits::VectorDsType;
 
@@ -26,13 +25,14 @@ public:
   using ScalarType = typename TSolverTraits::ScalarType;
 
 public:
-  IfsfdCellAccessor(MemoryType*         memory,
-                    BaseGridType const* grid) : BaseType(memory, grid) {}
+  IfsfdCellAccessor(MemoryType*        memory,
+                    SubgridType const* grid)
+    : BaseType(memory, grid) {}
 
   IfsfdCellAccessor(MemoryType*         memory,
-                    BaseGridType const* grid,
-                    VectorDiType const& index) : BaseType(memory, grid,
-                                                          index) {}
+                    SubgridType const*  grid,
+                    VectorDiType const& index)
+    : BaseType(memory, grid, index) {}
 
   IfsfdCellAccessor(IfsfdCellAccessor const& other) : BaseType(other) {}
 

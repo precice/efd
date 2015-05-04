@@ -2,14 +2,8 @@
 
 #include <Eigen/Core>
 
-namespace Uni {
-namespace StructuredGrid {
-namespace Basic {
-template <typename T>
-class Grid;
-}
-}
-}
+#include <Uni/StructuredGrid/Basic/Grid>
+
 namespace FsiSimulation {
 namespace FluidSimulation {
 template <unsigned D>
@@ -27,11 +21,7 @@ class IfsfdCellAccessor;
 template <typename T>
 class SfsfdMemory;
 template <typename T>
-class SfsfdDebugMemory;
-template <typename T>
 class IfsfdMemory;
-template <typename T>
-class IfsfdDebugMemory;
 template <typename T, unsigned TSolverId = T::SolverId>
 class PeSolver;
 template <typename T>
@@ -43,31 +33,6 @@ template <int D>
 class IfsfdHandlers;
 }
 
-template <typename TSolverTraits,
-          int TSolverType,
-          unsigned TDebug>
-struct MemoryTraits {};
-
-template <typename TSolverTraits>
-struct MemoryTraits<TSolverTraits, 0, 0> {
-  using Type = SfsfdMemory<TSolverTraits>;
-};
-
-template <typename TSolverTraits>
-struct MemoryTraits<TSolverTraits, 0, 1> {
-  using Type = SfsfdDebugMemory<TSolverTraits>;
-};
-
-template <typename TSolverTraits>
-struct MemoryTraits<TSolverTraits, 1, 0> {
-  using Type = IfsfdMemory<TSolverTraits>;
-};
-
-template <typename TSolverTraits>
-struct MemoryTraits<TSolverTraits, 1, 1> {
-  using Type = IfsfdDebugMemory<TSolverTraits>;
-};
-
 template <unsigned TDebug,
           typename TScalar,
           unsigned TDimensions>
@@ -76,7 +41,8 @@ struct SfsfdSolverTraits {
 
   enum {
     Dimensions = TDimensions,
-    SolverId   = 0
+    SolverId   = 0,
+    DebugLevel = TDebug
   };
 
   using GridType = Grid<SfsfdSolverTraits>;
@@ -85,12 +51,14 @@ struct SfsfdSolverTraits {
 
   using GridGeometryType = UniformGridGeometry<ScalarType, Dimensions>;
 
-  using MemoryType
-          = typename MemoryTraits<SfsfdSolverTraits, 0, TDebug>::Type;
+  using MemoryType = SfsfdMemory<SfsfdSolverTraits>;
 
   using CellAccessorType = SfsfdCellAccessor<SfsfdSolverTraits>;
 
-  using BaseGridType = Uni::StructuredGrid::Basic::Grid<CellAccessorType>;
+  using SubgridType = Uni::StructuredGrid::Basic::Grid<
+          Uni::StructuredGrid::Basic::DummyForThisGrid,
+          CellAccessorType,
+          Dimensions>;
 
   using ParallelDistributionType = ParallelDistribution<Dimensions>;
 
@@ -113,7 +81,8 @@ struct IfsfdSolverTraits {
 
   enum {
     Dimensions = TDimensions,
-    SolverId   = 1
+    SolverId   = 1,
+    DebugLevel = TDebug
   };
 
   using GridType = Grid<IfsfdSolverTraits>;
@@ -122,12 +91,14 @@ struct IfsfdSolverTraits {
 
   using GridGeometryType = UniformGridGeometry<ScalarType, Dimensions>;
 
-  using MemoryType
-          = typename MemoryTraits<IfsfdSolverTraits, 1, TDebug>::Type;
+  using MemoryType = IfsfdMemory<IfsfdSolverTraits>;
 
   using CellAccessorType = IfsfdCellAccessor<IfsfdSolverTraits>;
 
-  using BaseGridType = Uni::StructuredGrid::Basic::Grid<CellAccessorType>;
+  using SubgridType = Uni::StructuredGrid::Basic::Grid<
+          Uni::StructuredGrid::Basic::DummyForThisGrid,
+          CellAccessorType,
+          Dimensions>;
 
   using ParallelDistributionType = ParallelDistribution<Dimensions>;
 

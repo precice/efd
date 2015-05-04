@@ -68,6 +68,7 @@ public:
 
   FsfdSolverImplementation(Interface* in)
     : _in(in),
+    preciceInterface(nullptr),
     maxLayerSize(0) {}
 
   Uni_Firewall_INTERFACE_LINK(FsfdSolver<TSolverTraits> );
@@ -126,9 +127,9 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
       = std::bind(&FsfdSolver::locateStructure, this);
   } else {
     _im->locateStructureFunction
-      = [ = ] () {
+      = [this] () {
+          this->locateStructure();
           _im->locateStructureFunction = [] () {};
-          locateStructure();
         };
   }
 
@@ -283,6 +284,7 @@ void
 FsfdSolver<T>::
 iterate() {
   _im->locateStructureFunction();
+  // this->locateStructure();
   _im->iterateFunction();
 }
 
@@ -551,7 +553,7 @@ FsfdSolver<T>::
 locateStructure() {
   namespace ib = ImmersedBoundary;
 
-  if (!_im->preciceInterface) {
+  if (_im->preciceInterface == nullptr) {
     return;
   }
 

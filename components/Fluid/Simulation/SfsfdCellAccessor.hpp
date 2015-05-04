@@ -5,25 +5,18 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
-namespace Private {
-template <typename TSolverTraits>
-struct MultiIndexTraits {
-  using Type = typename TSolverTraits::CellAccessorType;
-
-  using GridType = typename TSolverTraits::BaseGridType;
-
-  enum {
-    Dimensions = TSolverTraits::Dimensions
-  };
-};
-}
 template <typename TSolverTraits>
 class SfsfdCellAccessor :
   public Uni::StructuredGrid::Basic::GlobalMultiIndex
-  < Private::MultiIndexTraits < TSolverTraits >> {
+  <typename TSolverTraits::CellAccessorType,
+   typename TSolverTraits::SubgridType,
+   TSolverTraits::Dimensions> {
 public:
-  using BaseType = Uni::StructuredGrid::Basic::GlobalMultiIndex
-                   < Private::MultiIndexTraits < TSolverTraits >>;
+  using BaseType
+          = Uni::StructuredGrid::Basic::GlobalMultiIndex
+            <typename TSolverTraits::CellAccessorType,
+             typename TSolverTraits::SubgridType,
+             TSolverTraits::Dimensions>;
 
   enum {
     Dimensions = TSolverTraits::Dimensions
@@ -31,9 +24,7 @@ public:
 
   using MemoryType = typename TSolverTraits::MemoryType;
 
-  using GridType = typename TSolverTraits::GridType;
-
-  using BaseGridType = typename TSolverTraits::BaseGridType;
+  using SubgridType = typename TSolverTraits::SubgridType;
 
   using VectorDsType = typename TSolverTraits::VectorDsType;
 
@@ -44,13 +35,13 @@ public:
   using LocationType = Eigen::Matrix<int, Dimensions + 1, 1>;
 
 public:
-  SfsfdCellAccessor(MemoryType*         memory,
-                    BaseGridType const* grid)
+  SfsfdCellAccessor(MemoryType*     memory,
+                    SubgridType const* grid)
     : BaseType(grid),
     _memory(memory) {}
 
   SfsfdCellAccessor(MemoryType*         memory,
-                    BaseGridType const* grid,
+                    SubgridType const*     grid,
                     VectorDiType const& index)
     : BaseType(grid, index),
     _memory(memory) {}
