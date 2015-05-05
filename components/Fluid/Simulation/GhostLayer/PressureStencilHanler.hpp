@@ -18,7 +18,7 @@ namespace GhostLayer {
 namespace LsStencilGenerator {
 typedef std::function<void (Mat&)> Functor;
 template <int Dimensions>
-using FunctorStack = FunctorStack<Functor, Dimensions>;
+using FunctorStack = BasicFunctorStack<Functor, Dimensions>;
 
 template <int Dimensions>
 Functor

@@ -16,7 +16,7 @@ namespace GhostLayer {
 namespace MpiExchange {
 typedef std::function<void ()> Functor;
 template <int Dimensions>
-using FunctorStack = FunctorStack<Functor, Dimensions>;
+using FunctorStack = BasicFunctorStack<Functor, Dimensions>;
 
 template <int Dimensions>
 Functor

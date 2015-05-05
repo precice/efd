@@ -22,7 +22,7 @@ using Functor
         = std::function
           <void(typename Uni::StructuredMemory::Pointers<PetscScalar, TD>::Type)>;
 template <int TD>
-using FunctorStack = FunctorStack<Functor<TD>, TD>;
+using FunctorStack = BasicFunctorStack<Functor<TD>, TD>;
 
 template <int TD>
 inline Functor<TD>

@@ -9,7 +9,7 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 namespace GhostLayer {
 template <typename TFunctor, int TD>
-using FunctorStack = std::array<std::array<TFunctor, 2>, TD>;
+using BasicFunctorStack = std::array<std::array<TFunctor, 2>, TD>;
 
 template <typename TScalar>
 inline TScalar

@@ -15,7 +15,7 @@ namespace GhostLayer {
 namespace Initialization {
 typedef std::function<void ()> Functor;
 template <int TD>
-using FunctorStack = FunctorStack<Functor, TD>;
+using FunctorStack = BasicFunctorStack<Functor, TD>;
 
 template <int TD>
 inline Functor
