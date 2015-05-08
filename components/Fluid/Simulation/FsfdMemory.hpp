@@ -264,22 +264,30 @@ public:
   // Those members are for the debug reasons {{{
   void
   setDiffusionAt(int const& index, VectorDsType const& value) {
-    _diffusion.get()[index] = value;
+    if (DebugLevel > 0) {
+      _diffusion.get()[index] = value;
+    }
   }
 
   void
   setForceAt(int const& index, VectorDsType const& value) {
-    _force.get()[index] = value;
+    if (DebugLevel > 0) {
+      _force.get()[index] = value;
+    }
   }
 
   void
   addForceAt(int const& index, VectorDsType const& value) {
-    _force.get()[index] += value;
+    if (DebugLevel > 0) {
+      _force.get()[index] += value;
+    }
   }
 
   void
   setBodyForceAt(int const& index, VectorDsType const& value) {
-    _bodyForce.get()[index] = value;
+    if (DebugLevel > 0) {
+      _bodyForce.get()[index] = value;
+    }
   }
   // Those members are for the debug reasons }}}
 
