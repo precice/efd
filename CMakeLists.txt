@@ -91,11 +91,13 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(COMPILER_IS_CLANG TRUE)
   set(LINKER_IS_LD      TRUE)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(COMPILER_IS_G++ TRUE)
+  set(COMPILER_IS_GCC TRUE)
   set(LINKER_IS_LD    TRUE)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+  set(COMPILER_IS_ICC TRUE)
+  set(LINKER_IS_ICC    TRUE)
 else()
-  set(COMPILER_IS_G++ TRUE)
-  set(LINKER_IS_LD    TRUE)
+  message(FATAL "Unsopported toolchain")
 endif ()
 # ==============================================================================
 # }}} Compilers
@@ -108,15 +110,14 @@ endif ()
 # General-purpose flags {{{
 # ==============================================================================
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-if (COMPILER_IS_G++)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
-endif(COMPILER_IS_G++)
 if (COMPILER_IS_CLANG)
   # Hide unused compiler flags
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Qunused-arguments")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
+elseif (COMPILER_IS_GCC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
 endif ()
-if (COMPILER_IS_G++ OR COMPILER_IS_CLANG)
+if (COMPILER_IS_CLANG OR COMPILER_IS_GCC OR COMPILER_IS_ICC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
@@ -160,6 +161,7 @@ if (LINKER_IS_LD)
   #set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,-O5")
   # ----------------------------------------------------------------------------
   #set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "${CMAKE_STATIC_LINKER_FLAGS_RELEASE} -Wl,-O5")
+elseif (LINKER_IS_ICC)
 endif ()
 # ==============================================================================
 # }}} General-purpose flags
