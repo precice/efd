@@ -600,13 +600,13 @@ private:
       PetscScalar value = 0;
 
       for (auto& fluid_cell : supports) {
-        value -= fluid_cell.weight() * fluid_cell.cell()->data(
-          dimension);
+        value -= fluid_cell.weight() * fluid_cell.cell()->data(dimension);
+
         temp_norm_base += fluid_cell.cell()->data(dimension)
                           / _memory->timeStepSize();
 
-        temp_norm_base_b += fluid_cell.weight() * fluid_cell.cell()->data(
-          dimension)
+        temp_norm_base_b += fluid_cell.weight()
+                            * fluid_cell.cell()->data(dimension)
                             / _memory->timeStepSize();
 
         if (supports.lagrangianNode()->id() == 1) {
