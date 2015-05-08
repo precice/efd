@@ -10,7 +10,7 @@ export PRECICE_SOCKET_LIB=pthread
 
 module load git
 module unload gcc
-module gcc/4.9
+module load gcc/4.9
 module unload ccomp/intel
 module load ccomp/intel/15.0
 module unload cmake
