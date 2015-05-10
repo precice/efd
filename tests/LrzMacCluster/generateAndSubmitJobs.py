@@ -67,8 +67,8 @@ template2 = (""
 "\n"
 "source $conf/environment-configuration.sh\n"
 "\n"
-"cd $conf/Fluid/\n"
-"binprecice server Fluid {0}.xml &\n
+"cd $conf/Precice\n"
+"binprecice server Fluid Turek2D-NoIbMapping.xml &\n
 "\n"
 "mpiexec -n {1} $bin/Fluid \\\n"
 "  -o {0} \\\n"
