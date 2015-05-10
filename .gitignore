@@ -64,7 +64,8 @@
 
 !/tests
 !/tests/LrzMacCluster
-!/tests/LrzMacCluster/*.sh
+!/tests/LrzMacCluster/environment-configuration.sh
+!/tests/LrzMacCluster/generateAndSubmitJobs.py
 !/tests/LrzMacCluster/Fluid
 !/tests/LrzMacCluster/Petsc
 !/tests/LrzMacCluster/Precice
