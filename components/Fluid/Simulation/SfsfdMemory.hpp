@@ -19,10 +19,9 @@ public:
   SfsfdMemory() {}
 
 protected:
-  ScalarType
-  _attribute(int const& index,
-             int const& attribute_index,
-             int const& dimension) const {
+  ScalarType _attribute(int const &index,
+                        int const &attribute_index,
+                        int const &dimension) const {
     return this->BaseType::_attribute(index, attribute_index, dimension);
   }
 };

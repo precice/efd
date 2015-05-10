@@ -35,13 +35,13 @@ public:
   using LocationType = Eigen::Matrix<int, Dimensions + 1, 1>;
 
 public:
-  SfsfdCellAccessor(MemoryType*     memory,
+  SfsfdCellAccessor(MemoryType*        memory,
                     SubgridType const* grid)
     : BaseType(grid),
     _memory(memory) {}
 
   SfsfdCellAccessor(MemoryType*         memory,
-                    SubgridType const*     grid,
+                    SubgridType const*  grid,
                     VectorDiType const& index)
     : BaseType(grid, index),
     _memory(memory) {}
@@ -90,9 +90,7 @@ public:
   centralizedAttribute(int const& attribute_index,
                        int const& dimension = 0) const {
     if (_memory->attributes()->at(attribute_index).doCentralize) {
-      return (_attribute(this->globalIndex(),
-                         attribute_index,
-                         dimension)
+      return (attribute(attribute_index, dimension)
               + _attribute(this->relativeGlobalIndex(dimension, -1),
                            attribute_index,
                            dimension)) / 2.0;

@@ -42,7 +42,7 @@ public:
 
     _hdf5Writer.initialize(_memory);
 
-    if (_memory->parallelDistribution()->rank == 0) {
+    if (_memory->parallelDistribution()->rank() == 0) {
       _xdmfWriter.reset(new XdmfWriterType());
       _xdmfWriter->initialize(_memory);
     }

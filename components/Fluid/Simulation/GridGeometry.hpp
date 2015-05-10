@@ -80,9 +80,19 @@ public:
     return _cellWidth;
   }
 
+  Scalar const&
+  minCellWidth(unsigned const& dimension) const {
+    return _cellWidth(dimension);
+  }
+
   VectorDs const&
   maxCellWidth() const {
     return _cellWidth;
+  }
+
+  Scalar&
+  minCellWidth(unsigned const& dimension) {
+    return _cellWidth(dimension);
   }
 
   std::string

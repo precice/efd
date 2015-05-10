@@ -229,7 +229,7 @@ public:
     Path current_file_path = directory_path;
     current_file_path.append(file_name_prefix + ".h5");
 
-    if (_memory->parallelDistribution()->rank != 0) {
+    if (_memory->parallelDistribution()->rank() != 0) {
       return current_file_path;
     }
 

@@ -301,7 +301,6 @@ iterateWithFastIbVelocityPrediction() {
       = _im->ibController->getVelocityIterable().find(accessor.globalIndex());
 
     if (ib_fluid_cell != _im->ibController->getVelocityIterable().end()) {
-      _im->memory.setForceAt(accessor.globalIndex(), VectorDsType::Zero());
       auto temp
         = accessor.velocity()
           + _im->memory.timeStepSize() * (-1.5 * parts[0]
@@ -311,6 +310,7 @@ iterateWithFastIbVelocityPrediction() {
                                           + _im->memory.parameters()->g());
 
       ib_fluid_cell->data() = temp;
+      // logInfo("Add velocity {1}", ib_fluid_cell->data().transpose());
     }
 
     accessor.convection() = parts[0];
@@ -401,7 +401,7 @@ computeTimeStepSize() {
                              _im->memory.gridGeometry()->minCellWidth(),
                              _im->memory.maxVelocity());
 
-  if (_im->memory.parallelDistribution()->rank == 0) {
+  if (_im->memory.parallelDistribution()->rank() == 0) {
     logInfo("dt = {1}", _im->memory.timeStepSize());
     logInfo("maxv = {1}",
             _im->memory.maxVelocity().cwiseProduct(
@@ -480,6 +480,8 @@ addIbForces() {
   for (auto& ib_fluid_cell : _im->ibController->getForceIterable()) {
     _im->memory.fgh()[ib_fluid_cell.globalIndex()]
       += _im->memory.timeStepSize() * ib_fluid_cell.data();
+
+    // logInfo("Add force {1}", ib_fluid_cell.data().transpose());
 
     auto accessor = *_im->memory.grid()->begin();
     accessor.initialize(ib_fluid_cell.globalIndex());

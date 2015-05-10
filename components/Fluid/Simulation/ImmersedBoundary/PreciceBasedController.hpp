@@ -29,9 +29,7 @@ class PreciceBasedInterfaceCell : public InterfaceCell<TVector> {
 public:
   using Base = InterfaceCell<TVector>;
 
-  enum {
-    Dimensions = Base::Dimensions
-  };
+  enum { Dimensions = Base::Dimensions };
 
   using Vector = typename Base::Vector;
 
@@ -42,63 +40,47 @@ public:
   PreciceBasedInterfaceCell(unsigned const& global_index)
     : _globalIndex(global_index) {}
 
-  PreciceBasedInterfaceCell(unsigned const& global_index,
-                            int const&      state)
-    : _globalIndex(global_index),
-    _state(state) {}
+  PreciceBasedInterfaceCell(unsigned const& global_index, int const& state)
+    : _globalIndex(global_index), _state(state) {}
 
-  unsigned
-  globalIndex() const {
-    return _globalIndex;
-  }
+  unsigned globalIndex() const { return _globalIndex; }
 
-  Vector const&
-  data() const {
-    return _data;
-  }
+  Vector const& data() const { return _data; }
 
-  Vector&
-  data() {
-    return _data;
-  }
+  Vector& data() { return _data; }
 
-  Scalar const&
-  data(unsigned const& dimension) const {
+  Scalar const& data(unsigned const& dimension) const {
     return _data(dimension);
   }
 
-  Scalar&
-  data(unsigned const& dimension) {
-    return _data(dimension);
-  }
+  Scalar& data(unsigned const& dimension) { return _data(dimension); }
 
-  Scalar const&
-  force(unsigned const& dimension) const {
+  Scalar const& force(unsigned const& dimension) const {
     return _force(dimension);
   }
 
 private:
   unsigned _globalIndex;
-  Uni_PrivateProperty(int,    vertexId);
-  Uni_PrivateProperty(int,    state);
+  Uni_PrivateProperty(int, vertexId);
+  Uni_PrivateProperty(int, state);
   Vector _data;
   Uni_PrivateProperty(Vector, force);
 };
 
 template <typename TVector>
-using PreciceBasedInterfaceCellSet
-        = boost::multi_index_container
-          < std::shared_ptr < PreciceBasedInterfaceCell < TVector >>,
-      boost::multi_index::indexed_by
-      < boost::multi_index::ordered_unique
-      < boost::multi_index::const_mem_fun
-      < PreciceBasedInterfaceCell<TVector>,
-      unsigned,
-      &PreciceBasedInterfaceCell<TVector>::globalIndex >> >>;
+using PreciceBasedInterfaceCellSet = boost::
+  multi_index_container<std::shared_ptr<PreciceBasedInterfaceCell<TVector>>,
+                        boost::multi_index::
+                          indexed_by<boost::multi_index::
+                                       ordered_unique<boost::multi_index::
+                                                        const_mem_fun<PreciceBasedInterfaceCell<TVector>,
+                                                                      unsigned,
+                                                                      &PreciceBasedInterfaceCell<TVector>::
+                                                                        globalIndex>>>>;
 
 template <typename TVector, typename TPredicate>
-class PreciceBasedIteratorBackEnd :
-  public IteratorBackEnd < InterfaceCell < TVector >> {
+class PreciceBasedIteratorBackEnd
+  : public IteratorBackEnd<InterfaceCell<TVector>> {
 public:
   using Value = InterfaceCell<TVector>;
 
@@ -106,45 +88,34 @@ public:
 
   using Set = PreciceBasedInterfaceCellSet<TVector>;
 
-  using SetIterator
-          = typename Set::template nth_index<0>::type::iterator;
+  using SetIterator = typename Set::template nth_index<0>::type::iterator;
 
   PreciceBasedIteratorBackEnd(SetIterator const& it,
                               SetIterator const& begin_it,
                               SetIterator const& end_it)
-    : _it(it),
-    _beginIt(begin_it),
-    _endIt(end_it) {}
+    : _it(it), _beginIt(begin_it), _endIt(end_it) {}
 
   PreciceBasedIteratorBackEnd(PreciceBasedIteratorBackEnd const&) = delete;
 
   ~PreciceBasedIteratorBackEnd() {}
 
-  PreciceBasedIteratorBackEnd&
-  operator=(PreciceBasedIteratorBackEnd const&) = delete;
+  PreciceBasedIteratorBackEnd& operator=(PreciceBasedIteratorBackEnd const&)
+    = delete;
 
-  std::unique_ptr<Base>
-  clone() const {
+  std::unique_ptr<Base> clone() const {
     return std::unique_ptr<Base>(
-      new PreciceBasedIteratorBackEnd(_it,
-                                      _beginIt,
-                                      _endIt));
+      new PreciceBasedIteratorBackEnd(_it, _beginIt, _endIt));
   }
 
-  bool
-  equals(std::unique_ptr<Base> const& other) {
+  bool equals(std::unique_ptr<Base> const& other) {
     return _it
-           == reinterpret_cast<PreciceBasedIteratorBackEnd const*>
-           (other.get())->_it;
+           == reinterpret_cast<PreciceBasedIteratorBackEnd const*>(other.get())
+                ->_it;
   }
 
-  Value&
-  dereference() const {
-    return *_it->get();
-  }
+  Value& dereference() const { return *_it->get(); }
 
-  void
-  increment() {
+  void increment() {
     ++_it;
 
     for (; _it != _endIt; ++_it) {
@@ -154,8 +125,7 @@ public:
     }
   }
 
-  void
-  decrement() {
+  void decrement() {
     --_it;
 
     for (; _it != _beginIt; --_it) {
@@ -169,12 +139,12 @@ private:
   SetIterator _it;
   SetIterator _beginIt;
   SetIterator _endIt;
-  TPredicate  _predicate;
+  TPredicate _predicate;
 };
 
 template <typename TVector, typename TPredicate>
-class PreciceBasedIterableBackEnd :
-  public IterableBackEnd < InterfaceCell < TVector >> {
+class PreciceBasedIterableBackEnd
+  : public IterableBackEnd<InterfaceCell<TVector>> {
 public:
   using Vector = TVector;
 
@@ -185,10 +155,9 @@ public:
   using BaseIteratorType = typename Base::IteratorType;
 
   using BaseUniqueIteratorBackEndType
-          = typename BaseIteratorType::UniqueBackEndType;
+    = typename BaseIteratorType::UniqueBackEndType;
 
-  using IteratorBackEndType
-          = PreciceBasedIteratorBackEnd<Vector, TPredicate>;
+  using IteratorBackEndType = PreciceBasedIteratorBackEnd<Vector, TPredicate>;
 
   using Set = PreciceBasedInterfaceCellSet<TVector>;
 
@@ -198,12 +167,11 @@ public:
 
   ~PreciceBasedIterableBackEnd() {}
 
-  PreciceBasedIterableBackEnd&
-  operator=(PreciceBasedIterableBackEnd const&) = delete;
+  PreciceBasedIterableBackEnd& operator=(PreciceBasedIterableBackEnd const&)
+    = delete;
 
-  unsigned
-  size() {
-    auto it     = _set->template get<0>().begin();
+  unsigned size() {
+    auto it = _set->template get<0>().begin();
     auto it_end = _set->template get<0>().end();
 
     unsigned size = 0;
@@ -217,28 +185,22 @@ public:
     return size;
   }
 
-  BaseIteratorType
-  begin() {
-    auto it     = _set->template get<0>().begin();
+  BaseIteratorType begin() {
+    auto it = _set->template get<0>().begin();
     auto it_end = _set->template get<0>().end();
 
     for (; it != it_end; ++it) {
       if (_predicate(*it)) {
-        return BaseIteratorType(
-          BaseUniqueIteratorBackEndType(
-            new IteratorBackEndType(
-              it,
-              it,
-              it_end)));
+        return BaseIteratorType(BaseUniqueIteratorBackEndType(
+          new IteratorBackEndType(it, it, it_end)));
       }
     }
 
     return end();
   }
 
-  BaseIteratorType
-  end() {
-    auto it     = _set->template get<0>().begin();
+  BaseIteratorType end() {
+    auto it = _set->template get<0>().begin();
     auto it_end = _set->template get<0>().end();
 
     for (; it != it_end; ++it) {
@@ -247,16 +209,11 @@ public:
       }
     }
 
-    return BaseIteratorType(
-      BaseUniqueIteratorBackEndType(
-        new IteratorBackEndType(
-          it_end,
-          it,
-          it_end)));
+    return BaseIteratorType(BaseUniqueIteratorBackEndType(
+      new IteratorBackEndType(it_end, it, it_end)));
   }
 
-  BaseIteratorType
-  find(unsigned const& global_index) {
+  BaseIteratorType find(unsigned const& global_index) {
     auto find_it = _set->template get<0>().find(global_index);
 
     if (find_it == _set->template get<0>().end()) {
@@ -267,7 +224,7 @@ public:
       return end();
     }
 
-    auto it     = _set->template get<0>().begin();
+    auto it = _set->template get<0>().begin();
     auto it_end = _set->template get<0>().end();
 
     for (; it != it_end; ++it) {
@@ -276,30 +233,25 @@ public:
       }
     }
 
-    return BaseIteratorType(
-      BaseUniqueIteratorBackEndType(new IteratorBackEndType(
-                                      find_it,
-                                      it,
-                                      _set->template get<0>().end())));
+    return BaseIteratorType(BaseUniqueIteratorBackEndType(
+      new IteratorBackEndType(find_it, it, _set->template get<0>().end())));
   }
 
 private:
   TPredicate _predicate;
-  Set*       _set;
+  Set* _set;
 };
 
 template <typename TSolverTraits>
-class PreciceBasedController :
-  public Controller<typename TSolverTraits::VectorDsType> {
+class PreciceBasedController
+  : public Controller<typename TSolverTraits::VectorDsType> {
 public:
   using SolverTraitsType = TSolverTraits;
 
-  enum {
-    Dimensions = SolverTraitsType::Dimensions
-  };
+  enum { Dimensions = SolverTraitsType::Dimensions };
 
   using ParallelDistributionType
-          = typename SolverTraitsType::ParallelDistributionType;
+    = typename SolverTraitsType::ParallelDistributionType;
 
   using MemoryType = typename SolverTraitsType::MemoryType;
 
@@ -322,45 +274,42 @@ private:
 
   using InterfaceCellType = PreciceBasedInterfaceCell<VectorDsType>;
 
-  using BaseIterableBackEndType
-          = typename IterableType::BackEndType;
+  using BaseIterableBackEndType = typename IterableType::BackEndType;
 
   using BaseSharedIterableBackEndType
-          = typename IterableType::SharedBackEndType;
+    = typename IterableType::SharedBackEndType;
 
   struct VelocityPredicate;
 
   using VelocityIterableBackEndType
-          = PreciceBasedIterableBackEnd
-            <VectorDsType, typename PreciceBasedController::VelocityPredicate>;
+    = PreciceBasedIterableBackEnd<VectorDsType,
+                                  typename PreciceBasedController::
+                                    VelocityPredicate>;
 
   struct ForcePredicate;
 
   using ForceIterableBackEndType
-          = PreciceBasedIterableBackEnd
-            <VectorDsType, typename PreciceBasedController::ForcePredicate>;
+    = PreciceBasedIterableBackEnd<VectorDsType,
+                                  typename PreciceBasedController::
+                                    ForcePredicate>;
 
   using Set = PreciceBasedInterfaceCellSet<VectorDsType>;
 
 public:
   PreciceBasedController(Configuration const* configuration,
-                         MemoryType const*    memory) :
-    _memory(memory) {
-    _outerLayerSize
-      = configuration->get<unsigned>(
+                         MemoryType const* memory)
+    : _memory(memory) {
+    _outerLayerSize = configuration->get<unsigned>(
       "/Ib/Schemes/DirectForcing/PreciceBased/OuterLayerSize");
-    _innerLayerSize
-      = configuration->get<unsigned>(
+    _innerLayerSize = configuration->get<unsigned>(
       "/Ib/Schemes/DirectForcing/PreciceBased/InnerLayerSize");
   }
 
-  unsigned
-  getMaxLayerSize() const {
+  unsigned getMaxLayerSize() const {
     return std::max(_outerLayerSize, _innerLayerSize);
   }
 
-  void
-  initialize(precice::SolverInterface* precice_interface) {
+  void initialize(precice::SolverInterface* precice_interface) {
     // logInfo("Controller is being initialized");
     //
     _preciceInterface = precice_interface;
@@ -370,7 +319,7 @@ public:
     }
 
     _fluidMeshId = _preciceInterface->getMeshID("FluidMesh");
-    _bodyMeshId  = _preciceInterface->getMeshID("BodyMesh");
+    _bodyMeshId = _preciceInterface->getMeshID("BodyMesh");
 
     if (!_preciceInterface->hasData("Velocities", _fluidMeshId)) {
       throwException("Precice configuration does not have 'Velocities' data"
@@ -384,45 +333,37 @@ public:
 
     _fluidMeshVelocitiesId
       = _preciceInterface->getDataID("Velocities", _fluidMeshId);
-    _fluidMeshForcesId
-      = _preciceInterface->getDataID("Forces", _fluidMeshId);
+    _fluidMeshForcesId = _preciceInterface->getDataID("Forces", _fluidMeshId);
   }
 
-  void
-  precompute() {
+  void precompute() {
     for (auto const& accessor : _memory->grid()->innerGrid) {
-      bool doAdd = validate_layer_number(accessor,
-                                         _outerLayerSize,
-                                         _innerLayerSize);
+      bool doAdd
+        = validate_layer_number(accessor, _outerLayerSize, _innerLayerSize);
 
       if (doAdd) {
         // logInfo("{1} | d = {2}", accessor.index().transpose(), distance);
 
-        _insertAndCreateVertex(accessor.globalIndex(),
-                               accessor.pressurePosition(),
-                               3);
+        _insertAndCreateVertex(
+          accessor.globalIndex(), accessor.pressurePosition(), 3);
         _insertNeighbors(accessor);
       }
     }
   }
 
-  void
-  _insertAndCreateVertex(unsigned const&     global_index,
-                         VectorDsType const& position,
-                         int const&          state) {
-    auto status = _set.emplace(
-      new InterfaceCellType(global_index, state));
+  void _insertAndCreateVertex(unsigned const& global_index,
+                              VectorDsType const& position,
+                              int const& state) {
+    auto status = _set.emplace(new InterfaceCellType(global_index, state));
 
     if (status.second) {
       auto vertex_id = _preciceInterface->setMeshVertex(
-        _fluidMeshId,
-        position.template cast<double>().data());
+        _fluidMeshId, position.template cast<double>().data());
       (*status.first)->vertexId() = vertex_id;
     } else {
       if ((*status.first)->state() == 1) {
         auto vertex_id = _preciceInterface->setMeshVertex(
-          _fluidMeshId,
-          position.template cast<double>().data());
+          _fluidMeshId, position.template cast<double>().data());
         (*status.first)->vertexId() = vertex_id;
         (*status.first)->state(state);
       } else if ((*status.first)->state() == 2) {
@@ -431,30 +372,25 @@ public:
     }
   }
 
-  void
-  _insertNeighbors(CellAccessorType const& accessor) {
+  void _insertNeighbors(CellAccessorType const& accessor) {
     for (unsigned d = 0; d < Dimensions; ++d) {
       auto left_global_index = accessor.relativeGlobalIndex(d, -1);
 
-      _set.emplace(
-        new InterfaceCellType(left_global_index, 1));
+      _set.emplace(new InterfaceCellType(left_global_index, 1));
 
       auto right_global_index = accessor.relativeGlobalIndex(d, +1);
-      auto right_position     = accessor.pressurePosition(d, +1);
+      auto right_position = accessor.pressurePosition(d, +1);
       _insertAndCreateVertex(right_global_index, right_position, 2);
 
       for (unsigned d2 = 0; d2 < Dimensions; ++d2) {
-        auto left_global_index
-          = accessor.relativeGlobalIndex(d, +1, d2, -1);
+        auto left_global_index = accessor.relativeGlobalIndex(d, +1, d2, -1);
 
-        _set.emplace(
-          new InterfaceCellType(left_global_index, 1));
+        _set.emplace(new InterfaceCellType(left_global_index, 1));
       }
     }
   }
 
-  void
-  processVelocities() {
+  void processVelocities() {
     for (auto const& interface_cell : _set) {
       if (interface_cell->state() == 1) {
         continue;
@@ -467,8 +403,7 @@ public:
         accessor.initialize(interface_cell->globalIndex());
         auto neighbor_global_index = accessor.relativeGlobalIndex(d, -1);
 
-        auto find_it
-          = _set.template get<0>().find(neighbor_global_index);
+        auto find_it = _set.template get<0>().find(neighbor_global_index);
 
         if (find_it == _set.template get<0>().end()) {
           throwException("Wow, this must never happen");
@@ -484,8 +419,7 @@ public:
     }
   }
 
-  void
-  processForces() {
+  void processForces() {
     for (auto& interface_cell : _set) {
       if (interface_cell->state() == 1) {
         continue;
@@ -493,9 +427,7 @@ public:
       Eigen::Matrix<double, Dimensions, 1> temp;
 
       _preciceInterface->readVectorData(
-        _fluidMeshForcesId,
-        interface_cell->vertexId(),
-        temp.data());
+        _fluidMeshForcesId, interface_cell->vertexId(), temp.data());
       interface_cell->force() = temp.template cast<ScalarType>();
     }
 
@@ -524,25 +456,21 @@ public:
     }
   }
 
-  IterableType
-  getVelocityIterable() {
+  IterableType getVelocityIterable() {
     return IterableType(
-      BaseSharedIterableBackEndType(
-        new VelocityIterableBackEndType(&_set)));
+      BaseSharedIterableBackEndType(new VelocityIterableBackEndType(&_set)));
   }
 
-  IterableType
-  getForceIterable() {
+  IterableType getForceIterable() {
     return IterableType(
-      BaseSharedIterableBackEndType(
-        new ForceIterableBackEndType(&_set)));
+      BaseSharedIterableBackEndType(new ForceIterableBackEndType(&_set)));
   }
 
 private:
   precice::SolverInterface* _preciceInterface;
-  MemoryType const*         _memory;
-  unsigned                  _outerLayerSize;
-  unsigned                  _innerLayerSize;
+  MemoryType const* _memory;
+  unsigned _outerLayerSize;
+  unsigned _innerLayerSize;
 
   int _fluidMeshId;
   int _bodyMeshId;

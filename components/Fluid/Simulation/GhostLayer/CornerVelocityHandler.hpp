@@ -71,7 +71,8 @@ public:
       = _parallelDistribution->index;
     composeIndexAndOffset(TDimension1, TDirection1, communication_index);
     composeIndexAndOffset(TDimension2, TDirection2, communication_index);
-    _communicationRank = _parallelDistribution->getRank(communication_index);
+    _communicationRank
+            = _parallelDistribution->getMpiRankFromSubdomainSpatialIndex(communication_index);
 
     if (_communicationRank < 0) {
       return;

@@ -105,7 +105,8 @@ public:
              VectorDiType const& global_cell_size,
              VectorDsType const& geometry_width) {
     _parallelDistribution.initialize(processor_size,
-                                     global_cell_size);
+                                     global_cell_size,
+                                     VectorDiType::Ones());
     _gridGeometry.initialize(geometry_width,
                              _parallelDistribution.globalCellSize,
                              _parallelDistribution.corner);
@@ -295,17 +296,7 @@ public:
   attribute(int const&   index,
             short const& attribute_index,
             int const&   dimension = 0) const {
-    return static_cast<MemoryType*>(this)
-           ->_attribute(index,
-                        attribute_index,
-                        dimension);
-  }
-
-  ScalarType
-  attribute(int const&   index,
-            short const& attribute_index,
-            int const&   dimension = 0) {
-    return static_cast<MemoryType*>(this)
+    return static_cast<MemoryType const*>(this)
            ->_attribute(index,
                         attribute_index,
                         dimension);
@@ -445,19 +436,19 @@ protected:
       switch (attribute_index) {
       case 2:
 
-        return this->_convection.get()[index].data()[dimension];
+        return this->_convection.get()[index](dimension);
 
       case 3:
 
-        return this->_diffusion.get()[index].data()[dimension];
+        return this->_diffusion.get()[index](dimension);
 
       case 4:
 
-        return _force.get()[index].data()[dimension];
+        return _force.get()[index](dimension);
 
       case 5:
 
-        return _bodyForce.get()[index].data()[dimension];
+        return _bodyForce.get()[index](dimension);
 
       case 6:
 

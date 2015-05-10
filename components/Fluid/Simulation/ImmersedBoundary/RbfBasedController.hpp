@@ -6,20 +6,29 @@
 #include "Simulation/Grid.hpp"
 #include "Simulation/IfsfdCellAccessor.hpp"
 #include "Simulation/IfsfdMemory.hpp"
+#include "Simulation/Private/mpigenerics.hpp"
 #include "Simulation/SfsfdCellAccessor.hpp"
 #include "Simulation/SfsfdMemory.hpp"
 
 #include <precice/SolverInterface.hpp>
 
 #include <Eigen/Dense>
+
+#include <mpi.h>
 #include <petscksp.h>
 
 #include <Uni/ExecutionControl/exception>
 #include <Uni/Helpers/macros>
 
+#include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>
+
+#include <algorithm>
+#include <array>
+#include <map>
+#include <vector>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
@@ -31,9 +40,7 @@ class RbfBasedInterfaceCell : public InterfaceCell<TVector> {
 public:
   using Base = InterfaceCell<TVector>;
 
-  enum {
-    Dimensions = Base::Dimensions
-  };
+  enum {Dimensions = Base::Dimensions};
 
   using Vector = typename Base::Vector;
 
@@ -41,26 +48,24 @@ public:
 
   using InternalIds = Eigen::Matrix<int, Dimensions, 1>;
 
-  RbfBasedInterfaceCell(unsigned const& global_index,
+  RbfBasedInterfaceCell(unsigned const& serial_index)
+    : _globalIndex(serial_index),
+    _internalIds(InternalIds::Constant(-1)) {}
+
+  RbfBasedInterfaceCell(unsigned const& serial_index,
                         Vector const&   position)
-    : _globalIndex(global_index),
+    : _globalIndex(serial_index),
     _position(position),
     _internalIds(InternalIds::Constant(-1)) {}
 
   unsigned
-  globalIndex() const {
-    return _globalIndex;
-  }
+  globalIndex() const { return _globalIndex; }
 
   Vector const&
-  data() const {
-    return _data;
-  }
+  data() const { return _data; }
 
   Vector&
-  data() {
-    return _data;
-  }
+  data() { return _data; }
 
   Scalar const&
   data(unsigned const& dimension) const {
@@ -68,9 +73,7 @@ public:
   }
 
   Scalar&
-  data(unsigned const& dimension) {
-    return _data(dimension);
-  }
+  data(unsigned const& dimension) { return _data(dimension); }
 
   bool
   isInternal(unsigned const& dimension) const {
@@ -100,14 +103,15 @@ using RbfBasedInterfaceCellSet
           < std::shared_ptr < RbfBasedInterfaceCell < TVector >>,
       boost::multi_index::indexed_by
       < boost::multi_index::ordered_unique
-      < boost::multi_index::const_mem_fun
+      <
+      boost::multi_index::const_mem_fun
       < RbfBasedInterfaceCell<TVector>,
       unsigned,
       &RbfBasedInterfaceCell<TVector>::globalIndex >> >>;
 
 template <typename TVector>
-class RbfBasedIteratorBackEnd :
-  public IteratorBackEnd < InterfaceCell < TVector >> {
+class RbfBasedIteratorBackEnd : public IteratorBackEnd < InterfaceCell
+                                < TVector >> {
 public:
   using Value = InterfaceCell<TVector>;
 
@@ -115,8 +119,7 @@ public:
 
   using Set = RbfBasedInterfaceCellSet<TVector>;
 
-  using SetIterator
-          = typename Set::template nth_index<0>::type::iterator;
+  using SetIterator = typename Set::template nth_index<0>::type::iterator;
 
   RbfBasedIteratorBackEnd(SetIterator const& it) : _it(it) {}
 
@@ -127,40 +130,33 @@ public:
   RbfBasedIteratorBackEnd&
   operator=(RbfBasedIteratorBackEnd const&) = delete;
 
-  std::unique_ptr<Base>
-  clone() const {
+  std::unique_ptr<Base> clone() const {
     return std::unique_ptr<Base>(new RbfBasedIteratorBackEnd(_it));
   }
 
   bool
   equals(std::unique_ptr<Base> const& other) {
     return _it
-           == reinterpret_cast<RbfBasedIteratorBackEnd const*>
-           (other.get())->_it;
+           == reinterpret_cast<RbfBasedIteratorBackEnd const*>(other.get())
+           ->_it;
   }
 
   Value&
-  dereference() const {
-    return *_it->get();
-  }
+  dereference() const { return *_it->get(); }
 
   void
-  increment() {
-    ++_it;
-  }
+  increment() { ++_it; }
 
   void
-  decrement() {
-    --_it;
-  }
+  decrement() { --_it; }
 
 private:
   SetIterator _it;
 };
 
 template <typename TVector>
-class RbfBasedIterableBackEnd :
-  public IterableBackEnd < InterfaceCell < TVector >> {
+class RbfBasedIterableBackEnd : public IterableBackEnd < InterfaceCell
+                                < TVector >> {
 public:
   using Vector = TVector;
 
@@ -187,30 +183,27 @@ public:
   operator=(RbfBasedIterableBackEnd const&) = delete;
 
   unsigned
-  size() {
-    return static_cast<unsigned>(_set->size());
-  }
+  size() { return static_cast<unsigned>(_set->size()); }
 
   BaseIteratorType
   begin() {
-    return BaseIteratorType(
-      BaseUniqueIteratorBackEndType(
-        new IteratorBackEndType(_set->template get<0>().begin())));
+    return BaseIteratorType(BaseUniqueIteratorBackEndType(
+                              new IteratorBackEndType(
+                                _set->template get<0>().begin())));
   }
 
   BaseIteratorType
   end() {
-    return BaseIteratorType(
-      BaseUniqueIteratorBackEndType(
-        new IteratorBackEndType(_set->template get<0>().end())));
+    return BaseIteratorType(BaseUniqueIteratorBackEndType(
+                              new IteratorBackEndType(
+                                _set->template get<0>().end())));
   }
 
   BaseIteratorType
-  find(unsigned const& global_index) {
-    return BaseIteratorType(
-      BaseUniqueIteratorBackEndType(
-        new IteratorBackEndType(
-          _set->template get<0>().find(global_index))));
+  find(unsigned const& serial_index) {
+    return BaseIteratorType(BaseUniqueIteratorBackEndType(
+                              new IteratorBackEndType(
+                                _set->template get<0>().find(serial_index))));
   }
 
 private:
@@ -226,9 +219,7 @@ public:
 public:
   using SolverTraitsType = TSolverTraits;
 
-  enum {
-    Dimensions = SolverTraitsType::Dimensions
-  };
+  enum {Dimensions = SolverTraitsType::Dimensions};
 
   using GridGeometryType = typename SolverTraitsType::GridGeometryType;
 
@@ -258,8 +249,7 @@ private:
 
   using InterfaceCellType = RbfBasedInterfaceCell<VectorDsType>;
 
-  using BaseIterableBackEndType
-          = typename IterableType::BackEndType;
+  using BaseIterableBackEndType = typename IterableType::BackEndType;
 
   using BaseSharedIterableBackEndType
           = typename IterableType::SharedBackEndType;
@@ -269,28 +259,23 @@ private:
   using Set = RbfBasedInterfaceCellSet<VectorDsType>;
 
 public:
-  RbfBasedController(
-    Configuration const* configuration,
-    MemoryType const*    memory) :
-    _memory(memory),
-    _doComputeSupportRadius(true),
-    _doComputeImqShape(true) {
+  RbfBasedController(Configuration const* configuration,
+                     MemoryType const*    memory)
+    : _memory(memory), _doComputeSupportRadius(true), _doComputeImqShape(true) {
     if (!configuration->isOfType<std::string>(
           "/Ib/Schemes/DirectForcing/RbfBased/SupportRadius")) {
       _doComputeSupportRadius = false;
-      _suppportRadius
-        = static_cast<ScalarType>(
-        configuration->get<long double>(
-          "/Ib/Schemes/DirectForcing/RbfBased/SupportRadius"));
+      _suppportRadius         = static_cast<ScalarType>(configuration->get<long
+                                                                           double>(
+                                                          "/Ib/Schemes/DirectForcing/RbfBased/SupportRadius"));
     }
 
     if (!configuration->isOfType<std::string>(
           "/Ib/Schemes/DirectForcing/RbfBased/ImqShape")) {
       _doComputeImqShape = false;
-      _imqShape
-        = static_cast<ScalarType>(
-        configuration->get<long double>(
-          "/Ib/Schemes/DirectForcing/RbfBased/ImqShape"));
+      _imqShape          = static_cast<ScalarType>(configuration->get<long
+                                                                      double>(
+                                                     "/Ib/Schemes/DirectForcing/RbfBased/ImqShape"));
     }
   }
 
@@ -301,14 +286,12 @@ public:
     _bodyMeshSet.insert(_preciceInterface->getMeshID("BodyMesh"));
 
     if (_doComputeSupportRadius) {
-      _suppportRadius
-        = _memory->gridGeometry()->maxCellWidth().maxCoeff();
+      _suppportRadius = _memory->gridGeometry()->maxCellWidth().maxCoeff();
     }
 
     if (_doComputeImqShape) {
-      _imqShape
-        = _memory->parameters()->re()
-          / _memory->gridGeometry()->maxCellWidth().maxCoeff();
+      _imqShape = _memory->parameters()->re()
+                  / _memory->gridGeometry()->maxCellWidth().maxCoeff();
     }
 
     logInfo("RBF shape = {1}",      _imqShape);
@@ -322,40 +305,84 @@ public:
     auto     mesh_handle = _preciceInterface->getMeshHandle("BodyMesh");
     unsigned body_id     = 0;
 
-    double                               max_temp = -1;
-    double                               mix_temp = 100000000000;
-    Eigen::Matrix<double, Dimensions, 1> temp_coords2;
+    // double                               max_temp = -1;
+    // double                               mix_temp = 100000000000;
+    // Eigen::Matrix<double, Dimensions, 1> temp_coords2;
 
-    _lagrangians.clear();
-    _lagrangians.reserve(mesh_handle.vertices().size());
+    _lagrangianNodes.clear();
+    // _lagrangianNodes.reserve(mesh_handle.vertices().size());
+
+    VectorDsType lower_boundary
+      = _memory->gridGeometry()->minCellWidth().cwiseProduct(
+      _memory->parallelDistribution()->corner.template cast<ScalarType>());
+    VectorDsType upper_boundary
+      =  lower_boundary
+        + _memory->gridGeometry()->minCellWidth().cwiseProduct(
+      _memory->parallelDistribution()->localCellSize.template cast<ScalarType>());
 
     for (auto vertex = mesh_handle.vertices().begin();
          vertex != mesh_handle.vertices().end();
          vertex++) {
       Eigen::Matrix<double, Dimensions, 1> temp_coords(vertex.vertexCoords());
 
-      if (max_temp != -1) {
-        max_temp = std::max(max_temp,
-                            (temp_coords - temp_coords2).norm());
-        mix_temp = std::min(mix_temp,
-                            (temp_coords - temp_coords2).norm());
-      } else {
-        max_temp = 0;
+      // if (max_temp != -1) {
+      // max_temp = std::max(max_temp, (temp_coords - temp_coords2).norm());
+      // mix_temp = std::min(mix_temp, (temp_coords - temp_coords2).norm());
+      // } else {
+      // max_temp = 0;
+      // }
+
+      // temp_coords2 = temp_coords;
+
+      VectorDsType lagrangian_cell_position
+        = temp_coords.template cast<ScalarType>();
+
+      if ((lagrangian_cell_position.array() <= upper_boundary.array()).all()
+          && (lagrangian_cell_position.array() > lower_boundary.array()).all()) {
+        _lagrangianNodes.emplace_back(body_id, lagrangian_cell_position);
+        ++body_id;
       }
+    }
 
-      temp_coords2 = temp_coords;
+    if ((_memory->parallelDistribution()->rank() - 1) >= 0) {
+      MPI_Status status;
+      MPI_Recv(&_lagrangianIdOffset,
+               1,
+               MPI_UNSIGNED,
+               (_memory->parallelDistribution()->rank() - 1),
+               20,
+               _memory->parallelDistribution()->mpiCommunicator,
+               &status);
+    } else {
+      _lagrangianIdOffset = 0;
+    }
 
-      VectorDsType body_position = temp_coords.template cast<ScalarType>();
+    if ((_memory->parallelDistribution()->rank() + 1)
+        < _memory->parallelDistribution()->rankSize()) {
+      unsigned global_lagrangian_size = _lagrangianIdOffset + body_id;
 
-      _lagrangians.emplace_back(body_id, body_position);
-      ++body_id;
+      MPI_Send(&global_lagrangian_size,
+               1,
+               MPI_UNSIGNED,
+               (_memory->parallelDistribution()->rank() + 1),
+               20,
+               _memory->parallelDistribution()->mpiCommunicator);
+    }
+
+    logInfo("Lagrangian offset {1} {2} {3}",
+            _memory->parallelDistribution()->rank(),
+            _lagrangianIdOffset,
+            body_id);
+
+    for (auto& node : _lagrangianNodes) {
+      node.id() += _lagrangianIdOffset;
     }
 
     _velocitySet.clear();
     _forceSet.clear();
 
     for (unsigned d = 0; d < Dimensions; ++d) {
-      _locateCells(d);
+      _locateEulerianCells(d);
     }
 
     logInfo("Locate Interface Cells has finished");
@@ -373,8 +400,7 @@ public:
 
   IterableType
   getVelocityIterable() {
-    using CompoundIterableType
-            = CompoundIterableBackEnd<BaseInterfaceCellType>;
+    using CompoundIterableType = CompoundIterableBackEnd<BaseInterfaceCellType>;
 
     return IterableType(
       BaseSharedIterableBackEndType(
@@ -388,14 +414,14 @@ public:
   IterableType
   getForceIterable() {
     return IterableType(
-      BaseSharedIterableBackEndType(
-        new IterableBackEndType(&_forceSet)));
+      BaseSharedIterableBackEndType(new IterableBackEndType(&_forceSet)));
   }
 
 private:
   void
-  _locateCells(unsigned const& dimension) {
-    _lagrangiansSupports[dimension].clear();
+  _locateEulerianCells(unsigned const& dimension) {
+    _lagrangianNodesSupports[dimension].clear();
+    _foreignEulerianCells[dimension].clear();
 
     auto         width = _memory->gridGeometry()->minCellWidth();
     VectorDsType grid_shift;
@@ -408,37 +434,38 @@ private:
 
     unsigned internal_id = 0;
 
-    for (auto& lagrangian_node : _lagrangians) {
-      _lagrangiansSupports[dimension].emplace_back(&lagrangian_node);
+    for (auto& lagrangian_node : _lagrangianNodes) {
+      _lagrangianNodesSupports[dimension].emplace_back(&lagrangian_node);
 
-      VectorDiType size
-        = (lagrangian_node.position() - grid_shift)
-          .cwiseQuotient(width).template cast<int>();
+      VectorDiType size = (lagrangian_node.position() - grid_shift)
+                          .cwiseQuotient(width)
+                          .template cast<int>();
 
       // Compute search boundaries for the fluid cells
       // around the body vertex
 
-      VectorDiType search_offset
-        = size - support_size - 0 * VectorDiType::Ones();
-      VectorDiType search_size
-        = size + support_size + 2 * VectorDiType::Ones();
+      VectorDiType search_offset = size - support_size
+                                   - 0 * VectorDiType::Ones();
+      VectorDiType search_size = size + support_size + 2 * VectorDiType::Ones();
 
       struct GridTraits {
-        using CellAccessorType = Uni::StructuredGrid::Basic::GlobalMultiIndex
-                                 <void, void, Dimensions, GridTraits>;
+        using CellAccessorType
+                = Uni::StructuredGrid::Basic::GlobalMultiIndex
+                  <void, void, Dimensions, GridTraits>;
 
-        using GridType = Uni::StructuredGrid::Basic::Grid
-                         <void, void, Dimensions, GridTraits>;
+        using GridType
+                = Uni::StructuredGrid::Basic::Grid
+                  <void, void, Dimensions, GridTraits>;
       };
 
       typename GridTraits::GridType grid;
       grid.initialize(search_size - search_offset);
 
       for (auto const& accessor : grid) {
-        VectorDiType global_space_index = search_offset + accessor.index();
+        VectorDiType global_spatial_index = search_offset + accessor.index();
 
         VectorDsType position
-          = global_space_index.template cast<ScalarType>().cwiseProduct(width)
+          = global_spatial_index.template cast<ScalarType>().cwiseProduct(width)
             + grid_shift;
 
         auto dist = (lagrangian_node.position() - position).norm();
@@ -447,44 +474,275 @@ private:
           continue;
         }
 
-        unsigned global_index = computeGlobalIndex(global_space_index);
+        // Test if the eulerian cell belongs to this domain
+        int                rank;
+        unsigned           serial_index;
+        InterfaceCellType* eulerian_cell;
 
-        auto fluid_cell = _insertFluidCell(dimension,
-                                           global_index,
-                                           internal_id,
-                                           position);
 
-        _lagrangiansSupports[dimension].back().addInterfaceCell(fluid_cell);
+        if (_memory->parallelDistribution()
+            ->convertUnindentedGlobalIndexFromSpatialToSerial(
+              global_spatial_index,
+              rank,
+              serial_index)) {
+          eulerian_cell = _insertEulerianCell(dimension,
+                                              serial_index,
+                                              internal_id,
+                                              position);
+        } else {
+          eulerian_cell = _insertReceiveForeignEulerianCell(dimension,
+                                                            rank,
+                                                            serial_index,
+                                                            position);
+        }
+
+        _lagrangianNodesSupports[dimension].back().addEulerianCell(eulerian_cell);
       }
     }
-    _interfaceCellsSize(dimension) = internal_id;
+
+    _locateForeignCells(dimension, internal_id);
+
+    _localEulerianCellSize(dimension) = internal_id;
+
+    if ((_memory->parallelDistribution()->rank() - 1) >= 0) {
+      MPI_Status status;
+      MPI_Recv(&_eulerianIdOffset[dimension],
+               1,
+               MPI_UNSIGNED,
+               (_memory->parallelDistribution()->rank() - 1),
+               21 + dimension,
+               _memory->parallelDistribution()->mpiCommunicator,
+               &status);
+    } else {
+      _eulerianIdOffset[dimension] = 0;
+    }
+
+    if ((_memory->parallelDistribution()->rank() + 1)
+        < _memory->parallelDistribution()->rankSize()) {
+      unsigned global_lagrangian_size = _eulerianIdOffset[dimension] + internal_id;
+
+      MPI_Send(&global_lagrangian_size,
+               1,
+               MPI_UNSIGNED,
+               (_memory->parallelDistribution()->rank() + 1),
+               21 + dimension,
+               _memory->parallelDistribution()->mpiCommunicator);
+    }
+
+    for (auto& cell : _forceSet) {
+      if (cell->internalIds(dimension) != -1) {
+        cell->internalIds(dimension) += _eulerianIdOffset[dimension];
+      }
+    }
+
+    for (auto& cell : _velocitySet) {
+      if (cell->internalIds(dimension) != -1) {
+        cell->internalIds(dimension) += _eulerianIdOffset[dimension];
+      }
+    }
+  }
+
+  void
+  _locateForeignCells(unsigned const& dimension,
+                      unsigned&       internal_id) {
+    struct GridTraits {
+      using CellAccessorType
+              = Uni::StructuredGrid::Basic::GlobalMultiIndex
+                <void, void, Dimensions, GridTraits>;
+
+      using GridType
+              = Uni::StructuredGrid::Basic::Grid
+                <void, void, Dimensions, GridTraits>;
+    };
+
+    typename GridTraits::GridType neighbors;
+    neighbors.initialize(VectorDiType::Constant(3));
+
+    auto corner
+      = _memory->parallelDistribution()->index
+        - VectorDiType::Constant(1);
+
+    std::vector<unsigned> send_sizes;
+
+    send_sizes.clear();
+    send_sizes.resize(neighbors.size().prod(), 0);
+    receive_sizes[dimension].clear();
+    receive_sizes[dimension].resize(neighbors.size().prod(), 0);
+
+    std::vector<MPI_Request> send_requests;
+    std::vector<MPI_Request> receive_requests;
+    std::vector<MPI_Status>  statuses;
+
+    send_requests.resize(neighbors.size().prod());
+    receive_requests.resize(neighbors.size().prod());
+    statuses.resize(2 * neighbors.size().prod());
+
+    unsigned neighbors_size = 0;
+
+    for (auto const& neighbor : neighbors) {
+      int rank = _memory->parallelDistribution()
+                 ->getMpiRankFromSubdomainSpatialIndex(
+        corner + neighbor.index());
+
+      if (rank < 0
+          || rank == _memory->parallelDistribution()->rank()) {
+        continue;
+      }
+
+      auto find_it = _foreignEulerianCells[dimension].find(rank);
+
+      if (find_it != _foreignEulerianCells[dimension].end()) {
+        send_sizes[neighbor.globalIndex()]
+          = static_cast<unsigned>(find_it->second.size());
+      }
+      // logInfo("Send {1}", send_sizes[neighbor.globalIndex()]);
+      MPI_Isend(&send_sizes[neighbor.globalIndex()],
+                1,
+                MPI_UNSIGNED,
+                rank,
+                1,
+                _memory->parallelDistribution()->mpiCommunicator,
+                &send_requests[neighbors_size]);
+      MPI_Irecv(&receive_sizes[dimension][neighbor.globalIndex()],
+                1,
+                MPI_UNSIGNED,
+                rank,
+                1,
+                _memory->parallelDistribution()->mpiCommunicator,
+                &receive_requests[neighbors_size]);
+      ++neighbors_size;
+    }
+    MPI_Waitall(neighbors_size,
+                send_requests.data(),
+                statuses.data());
+    MPI_Waitall(neighbors_size,
+                receive_requests.data(),
+                statuses.data() +  neighbors.size().prod());
+
+    std::vector < std::vector < unsigned >> send_serial_indices;
+    send_serial_indices.resize(_foreignEulerianCells.size());
+    receive_serial_indices[dimension].clear();
+    receive_serial_indices[dimension].resize(neighbors.size().prod());
+
+    unsigned send_index    = 0;
+    unsigned receive_index = 0;
+
+    for (auto const& neighbor : neighbors) {
+      int rank = _memory->parallelDistribution()
+                 ->getMpiRankFromSubdomainSpatialIndex(
+        corner + neighbor.index());
+
+      auto find_it = _foreignEulerianCells[dimension].find(rank);
+
+      if (find_it != _foreignEulerianCells[dimension].end()) {
+        send_serial_indices[send_index].resize(find_it->second.size());
+
+        unsigned cell_index = 0;
+
+        for (auto const& cell : find_it->second) {
+          send_serial_indices[send_index][cell_index] = cell->globalIndex();
+          ++cell_index;
+        }
+
+        MPI_Isend(
+          send_serial_indices[send_index].data(),
+          find_it->second.size(),
+          MPI_UNSIGNED,
+          rank,
+          2,
+          _memory->parallelDistribution()->mpiCommunicator,
+          &send_requests[send_index]);
+        ++send_index;
+      }
+
+      auto const temp_receive_size
+        = receive_sizes[dimension][neighbor.globalIndex()];
+
+      if (temp_receive_size == 0) {
+        continue;
+      }
+
+      receive_serial_indices[dimension][neighbor.globalIndex()]
+      .resize(temp_receive_size);
+
+      MPI_Irecv(
+        receive_serial_indices[dimension][neighbor.globalIndex()].data(),
+        temp_receive_size,
+        MPI_UNSIGNED,
+        rank,
+        2,
+        _memory->parallelDistribution()->mpiCommunicator,
+        &receive_requests[receive_index]);
+      ++receive_index;
+    }
+
+    MPI_Waitall(send_index,
+                send_requests.data(),
+                statuses.data());
+    MPI_Waitall(receive_index,
+                receive_requests.data(),
+                &statuses[neighbors.size().prod()]);
+
+    send_size[dimension]    = receive_index;
+    receive_size[dimension] = send_index;
+
+    for (auto const& neighbor : neighbors) {
+      int rank = _memory->parallelDistribution()
+                 ->getMpiRankFromSubdomainSpatialIndex(
+        corner + neighbor.index());
+
+      auto const temp_receive_size
+        = receive_sizes[dimension][neighbor.globalIndex()];
+
+      for (unsigned i = 0; i < temp_receive_size; ++i) {
+        _insertSendForeignEulerianCell(
+          dimension,
+          rank,
+          receive_serial_indices[dimension][neighbor.globalIndex()][i],
+          internal_id);
+      }
+    }
   }
 
   InterfaceCellType*
-  _insertFluidCell(unsigned const&     dimension,
-                   unsigned const&     global_index,
-                   unsigned&           internal_id,
-                   VectorDsType const& position) {
-    bool isInternal = (_preciceInterface->inquirePosition(
-                         position.template cast<double>().data(),
-                         _bodyMeshSet)
-                       != precice::constants::positionOutsideOfGeometry());
-    auto find_it = _velocitySet.template get<0>().find(global_index);
+  _insertEulerianCell(unsigned const&     dimension,
+                      unsigned const&     serial_index,
+                      unsigned&           internal_id,
+                      VectorDsType const& position) {
+    // if (static_cast<int>(serial_index)
+    //     < _memory->grid()->innerGrid.begin()->globalIndex()
+    //     || static_cast<int>(serial_index)
+    //     > (_memory->grid()->innerGrid.end())->globalIndex()) {
+    //   logInfo("{1}", serial_index);
+    //   logInfo("{1}", _memory->grid()->innerGrid.begin()->globalIndex());
+    //   logInfo("{1}", (_memory->grid()->innerGrid.end())->globalIndex());
+    // }
+
+    assert(static_cast<int>(serial_index)
+           >= _memory->grid()->innerGrid.begin()->globalIndex()
+           && static_cast<int>(serial_index)
+           <= (--_memory->grid()->innerGrid.end())->globalIndex());
+
+    bool isInternal
+      = (_preciceInterface->inquirePosition(
+           position.template cast<double>().data(), _bodyMeshSet)
+         != precice::constants::positionOutsideOfGeometry());
+    auto find_it = _velocitySet.template get<0>().find(serial_index);
 
     if (find_it == _velocitySet.template get<0>().end()) {
-      find_it = _forceSet.template get<0>().find(global_index);
+      find_it = _forceSet.template get<0>().find(serial_index);
 
       if (find_it == _forceSet.template get<0>().end()) {
         if (isInternal) {
           auto status = _forceSet.emplace(
-            std::make_shared<InterfaceCellType>(global_index, position));
+            std::make_shared<InterfaceCellType>(serial_index, position));
           (*status.first)->internalIds(dimension) = internal_id;
           ++internal_id;
 
           return status.first->get();
         } else {
           auto status = _velocitySet.emplace(
-            std::make_shared<InterfaceCellType>(global_index, position));
+            std::make_shared<InterfaceCellType>(serial_index, position));
 
           return status.first->get();
         }
@@ -512,6 +770,59 @@ private:
     }
   }
 
+  InterfaceCellType*
+  _insertReceiveForeignEulerianCell(unsigned const&     dimension,
+                                    int const&          rank,
+                                    unsigned const&     serial_index,
+                                    VectorDsType const& position) {
+    auto status = _foreignEulerianCells[dimension].emplace(
+      std::make_pair(rank, Set()));
+
+    auto cell = std::make_shared<InterfaceCellType>(serial_index, position);
+
+    auto cell_status = status.first->second.template get<0>().emplace(cell);
+
+    return cell_status.first->get();
+  }
+
+  InterfaceCellType*
+  _insertSendForeignEulerianCell(unsigned const& dimension,
+                                 int const&      rank,
+                                 unsigned const& serial_index,
+                                 unsigned&       internal_id) {
+    auto spatial_index
+      = _memory->parallelDistribution()
+        ->convertSerialIndexToUnindentedGlobal(rank,
+                                               serial_index);
+
+    VectorDsType position
+      = _memory->gridGeometry()->minCellWidth().cwiseProduct(
+      spatial_index.template cast<ScalarType>())
+        + 0.5 * _memory->gridGeometry()->minCellWidth();
+    position(dimension)
+      += 0.5 * _memory->gridGeometry()->minCellWidth(dimension);
+
+    return _insertEulerianCell(dimension,
+                               serial_index,
+                               internal_id,
+                               position);
+  }
+
+  InterfaceCellType*
+  _findSendForeignEulerianCell(unsigned const& serial_index) {
+    auto find_it = _velocitySet.template get<0>().find(serial_index);
+
+    if (find_it == _velocitySet.template get<0>().end()) {
+      find_it = _forceSet.template get<0>().find(serial_index);
+
+      if (find_it == _forceSet.template get<0>().end()) {
+        throwException("Wow this must never happen");
+      }
+    }
+
+    return find_it->get();
+  }
+
   void
   _resolveForces(unsigned const& dimension) {
     using Matrix = Eigen::Matrix<ScalarType, Eigen::Dynamic, Eigen::Dynamic>;
@@ -520,13 +831,11 @@ private:
     unsigned max_size = 0;
     unsigned mix_size = 1000000000;
 
-    for (auto& supports : _lagrangiansSupports[dimension]) {
+    for (auto& supports : _lagrangianNodesSupports[dimension]) {
       Matrix m(supports.size() + 1, supports.size() + 1);
 
-      max_size
-        = std::max(max_size, static_cast<unsigned>(supports.size()));
-      mix_size
-        = std::min(mix_size, static_cast<unsigned>(supports.size()));
+      max_size = std::max(max_size, static_cast<unsigned>(supports.size()));
+      mix_size = std::min(mix_size, static_cast<unsigned>(supports.size()));
 
       Vector b(supports.size() + 1);
 
@@ -551,6 +860,7 @@ private:
           supports.lagrangianNode()->position(),
           fluid_cell.cell()->position());
       }
+
       m.row(supports.size()).fill(1.0);
       m(supports.size(), supports.size()) = 0.0;
       b(supports.size())                  = 1.0;
@@ -560,34 +870,36 @@ private:
 
       for (unsigned j = 0; j < supports.size(); ++j) {
         supports[j].weight() = x(j);
-        // if (x(j) == 0.0) {
-        // }
       }
+
+      // if (x(j) == 0.0) {
+      // }
     }
 
     logInfo("Max in {1} is {2}", dimension, max_size);
     logInfo("Mix in {1} is {2}", dimension, mix_size);
+
+    _performMpiExchange(dimension);
 
     /*
      * Solve least-square problem
      */
 
     // Create right-hand side vector and vector of unknowns
-    logInfo("Create b = {1}", _lagrangians.size());
+    logInfo("Create b = {1}", _lagrangianNodes.size());
     Vec b, x;
     Vec bt;
-    VecCreate(_memory->parallelDistribution()->mpiCommunicator,
-              &b);
-    VecSetSizes(b, _lagrangians.size(), PETSC_DECIDE);
+    VecCreate(_memory->parallelDistribution()->mpiCommunicator, &b);
+    VecSetSizes(b, _lagrangianNodes.size(), PETSC_DECIDE);
     VecSetType(b, VECMPI);
-    VecCreate(_memory->parallelDistribution()->mpiCommunicator,
-              &bt);
-    VecSetSizes(bt, _interfaceCellsSize(dimension), PETSC_DECIDE);
+    VecCreate(_memory->parallelDistribution()->mpiCommunicator, &bt);
+    VecSetSizes(bt, _localEulerianCellSize(dimension), PETSC_DECIDE);
     VecSetType(bt, VECMPI);
-    logInfo("Create x = {1}", _interfaceCellsSize(dimension));
-    VecCreate(_memory->parallelDistribution()->mpiCommunicator,
-              &x);
-    VecSetSizes(x, _interfaceCellsSize(dimension), PETSC_DECIDE);
+    logInfo("Create on {1} x = {2}",
+            _memory->parallelDistribution()->rank(),
+            _localEulerianCellSize(dimension));
+    VecCreate(_memory->parallelDistribution()->mpiCommunicator, &x);
+    VecSetSizes(x, _localEulerianCellSize(dimension), PETSC_DECIDE);
     VecSetType(x, VECMPI);
 
     // Fill right-hand side;
@@ -596,7 +908,7 @@ private:
     double temp_norm_base   = 0;
     double temp_norm_base_b = 0;
 
-    for (auto& supports : _lagrangiansSupports[dimension]) {
+    for (auto& supports : _lagrangianNodesSupports[dimension]) {
       PetscScalar value = 0;
 
       for (auto& fluid_cell : supports) {
@@ -613,11 +925,14 @@ private:
           temp_row += fluid_cell.weight();
         }
       }
+
       value /= _memory->timeStepSize();
 
-      PetscInt global_index = supports.lagrangianNode()->id();
-      VecSetValues(b, 1, &global_index, &value, INSERT_VALUES);
+      PetscInt serial_index = supports.lagrangianNode()->id();
+      // logInfo("b({1}) = {2}", serial_index, value);
+      VecSetValues(b, 1, &serial_index, &value, INSERT_VALUES);
     }
+
     VecAssemblyBegin(b);
     VecAssemblyEnd(b);
 
@@ -627,13 +942,13 @@ private:
     logInfo("Create matrix");
     Mat global_matrix;
     Mat preconditioning_global_matrix;
-    MatCreate(_memory->parallelDistribution()->mpiCommunicator,
-              &global_matrix);
+    MatCreate(_memory->parallelDistribution()->mpiCommunicator, &global_matrix);
     MatSetSizes(global_matrix,
+                _lagrangianNodes.size(),
+                _localEulerianCellSize(dimension),
                 PETSC_DECIDE,
-                PETSC_DECIDE,
-                _lagrangiansSupports[dimension].size(),
-                _interfaceCellsSize(dimension));
+                PETSC_DECIDE);
+
     // MatSetType(global_matrix, MATMPIAIJ);
     MatSetType(global_matrix, MATAIJ);
     MatSetUp(global_matrix);
@@ -645,7 +960,7 @@ private:
 
     double temp_column = 0;
 
-    for (auto const& supports : _lagrangiansSupports[dimension]) {
+    for (auto const& supports : _lagrangianNodesSupports[dimension]) {
       PetscInt global_row = supports.lagrangianNode()->id();
 
       for (auto const& fluid_cell : supports) {
@@ -654,35 +969,38 @@ private:
         if (!fluid_cell.cell()->isInternal(dimension)) {
           continue;
         }
+
         PetscScalar value = fluid_cell.weight();
+
+        // logInfo("m({1}, {2}) = {3}", global_row, global_column, value);
+
         MatSetValues(global_matrix,
-                     1, &global_row,
-                     1, &global_column,
-                     &value, INSERT_VALUES);
+                     1,
+                     &global_row,
+                     1,
+                     &global_column,
+                     &value,
+                     INSERT_VALUES);
 
         if (global_column == 1) {
           temp_column += value;
         }
       }
     }
+
     MatAssemblyBegin(global_matrix, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(global_matrix, MAT_FINAL_ASSEMBLY);
 
-    logInfo("========= COLUMN {1}", temp_column);
+    // logInfo("========= COLUMN {1}", temp_column);
 
     KSP solver;
-    KSPCreate(_memory->parallelDistribution()->mpiCommunicator,
-              &solver);
+    KSPCreate(_memory->parallelDistribution()->mpiCommunicator, &solver);
     KSPSetType(solver, KSPGMRES);
     PC preconditioner;
     KSPGetPC(solver, &preconditioner);
-    // PCSetType(preconditioner, PCNONE);
-    PCSetType(preconditioner, PCLU);
-    KSPSetTolerances(solver,
-                     1e-21,
-                     1e-25,
-                     PETSC_DEFAULT,
-                     10000);
+    PCSetType(preconditioner, PCNONE);
+    // PCSetType(preconditioner, PCILU);
+    KSPSetTolerances(solver, 1e-21, 1e-25, PETSC_DEFAULT, 10000);
     MatTransposeMatMult(global_matrix,
                         global_matrix,
                         MAT_INITIAL_MATRIX,
@@ -710,12 +1028,12 @@ private:
     MatMultTranspose(global_matrix, b, bt);
     KSPSolve(solver, bt, x);
 
-    MatMult(global_matrix, x, b);
-    PetscScalar temp_norm;
-    VecNorm(x, NORM_1, &temp_norm);
-    logInfo("NOOOOOOOOOOOOORM1 {1}", temp_norm + temp_norm_base);
-    VecNorm(b, NORM_1, &temp_norm);
-    logInfo("NOOOOOOOOOOOOORM2 {1}", temp_norm + temp_norm_base_b);
+    // MatMult(global_matrix, x, b);
+    // PetscScalar temp_norm;
+    // VecNorm(x, NORM_1, &temp_norm);
+    // logInfo("NOOOOOOOOOOOOORM1 {1}", temp_norm + temp_norm_base);
+    // VecNorm(b, NORM_1, &temp_norm);
+    // logInfo("NOOOOOOOOOOOOORM2 {1}", temp_norm + temp_norm_base_b);
 
     PetscScalar global_norm;
     PetscInt    iteration_number;
@@ -734,7 +1052,14 @@ private:
 
     for (auto& cell : _forceSet) {
       if (cell->isInternal(dimension)) {
-        cell->data(dimension) = unknowns[cell->internalIds(dimension)];
+        // if ((_memory->parallelDistribution()->rank()) == 0) {
+        // logInfo("{1} {2}",
+        // unknowns[cell->internalIds(dimension) -
+        // _eulerianIdOffset[dimension]],
+        // cell->internalIds(dimension));
+        // }
+        cell->data(dimension)
+          = unknowns[cell->internalIds(dimension) - _eulerianIdOffset[dimension]];
       } else {
         cell->data(dimension) = 0.0;
       }
@@ -751,15 +1076,169 @@ private:
     KSPDestroy(&solver);
   }
 
+  void
+  _performMpiExchange(unsigned const& dimension) {
+    struct GridTraits {
+      using CellAccessorType
+              = Uni::StructuredGrid::Basic::GlobalMultiIndex
+                <void, void, Dimensions, GridTraits>;
+
+      using GridType
+              = Uni::StructuredGrid::Basic::Grid
+                <void, void, Dimensions, GridTraits>;
+    };
+
+    typename GridTraits::GridType neighbors;
+    neighbors.initialize(VectorDiType::Constant(3));
+
+    auto corner
+      = _memory->parallelDistribution()->index
+        - VectorDiType::Constant(1);
+
+    std::vector < std::vector < ScalarType >> send_velocities;
+    std::vector < std::vector < int >> send_internal_ids;
+
+    send_velocities.resize(send_size[dimension]);
+    send_internal_ids.resize(send_size[dimension]);
+
+    std::vector < std::vector < ScalarType >> receive_velocities;
+    std::vector < std::vector < int >> receive_internal_ids;
+
+    receive_velocities.resize(receive_size[dimension]);
+    receive_internal_ids.resize(receive_size[dimension]);
+
+    std::vector<MPI_Request> send_requests;
+    std::vector<MPI_Status>  statuses;
+    std::vector<MPI_Request> receive_requests;
+    send_requests.resize(2 * send_size[dimension]);
+    receive_requests.resize(2 * receive_size[dimension]);
+    statuses.resize(2 * send_size[dimension] + 2 * receive_size[dimension]);
+
+    unsigned send_index    = 0;
+    unsigned receive_index = 0;
+
+    for (auto const& neighbor : neighbors) {
+      int rank = _memory->parallelDistribution()
+                 ->getMpiRankFromSubdomainSpatialIndex(
+        corner + neighbor.index());
+
+      auto find_it = _foreignEulerianCells[dimension].find(rank);
+
+      if (find_it != _foreignEulerianCells[dimension].end()) {
+        receive_velocities[receive_index].resize(find_it->second.size());
+        receive_internal_ids[receive_index].resize(find_it->second.size());
+
+        MPI_Irecv(
+          receive_velocities[receive_index].data(),
+          find_it->second.size(),
+          Private::getMpiScalarType<ScalarType>(),
+          rank,
+          3,
+          _memory->parallelDistribution()->mpiCommunicator,
+          &receive_requests[receive_index]);
+
+        MPI_Irecv(
+          receive_internal_ids[receive_index].data(),
+          find_it->second.size(),
+          MPI_INT,
+          rank,
+          4,
+          _memory->parallelDistribution()->mpiCommunicator,
+          &receive_requests[receive_index +  receive_size[dimension]]);
+        ++receive_index;
+      }
+
+      auto const temp_receive_size
+        = receive_sizes[dimension][neighbor.globalIndex()];
+
+      if (temp_receive_size == 0) {
+        continue;
+      }
+
+      logInfo("{1} {2} {3}", send_index, temp_receive_size,
+              send_size[dimension]);
+
+      send_velocities[send_index].resize(temp_receive_size);
+      send_internal_ids[send_index].resize(temp_receive_size);
+
+      for (unsigned i = 0; i < temp_receive_size; ++i) {
+        auto cell = _findSendForeignEulerianCell(
+          receive_serial_indices[dimension][neighbor.globalIndex()][i]);
+
+        send_velocities[send_index][i]   = cell->data(dimension);
+        send_internal_ids[send_index][i] = cell->internalIds(dimension);
+      }
+
+      MPI_Isend(
+        send_velocities[send_index].data(),
+        temp_receive_size,
+        Private::getMpiScalarType<ScalarType>(),
+        rank,
+        3,
+        _memory->parallelDistribution()->mpiCommunicator,
+        &send_requests[send_index]);
+
+      MPI_Isend(
+        send_internal_ids[send_index].data(),
+        temp_receive_size,
+        MPI_INT,
+        rank,
+        4,
+        _memory->parallelDistribution()->mpiCommunicator,
+        &send_requests[send_index + send_size[dimension]]);
+      ++send_index;
+    }
+
+    MPI_Waitall(send_size[dimension],
+                send_requests.data(),
+                statuses.data());
+    MPI_Waitall(send_size[dimension],
+                send_requests.data() + send_size[dimension],
+                statuses.data() + send_size[dimension]);
+    MPI_Waitall(receive_size[dimension],
+                receive_requests.data(),
+                statuses.data() + 2 * send_size[dimension]);
+    MPI_Waitall(receive_size[dimension],
+                receive_requests.data() + receive_size[dimension],
+                statuses.data()
+                + 2 * send_size[dimension] + receive_size[dimension]);
+
+    receive_index = 0;
+
+    for (auto const& neighbor : neighbors) {
+      int rank = _memory->parallelDistribution()
+                 ->getMpiRankFromSubdomainSpatialIndex(
+        corner + neighbor.index());
+
+      auto find_it = _foreignEulerianCells[dimension].find(rank);
+
+      if (find_it != _foreignEulerianCells[dimension].end()) {
+        unsigned cell_index = 0;
+
+        for (auto const& cell : find_it->second) {
+          cell->data(dimension)
+            = receive_velocities[receive_index][cell_index];
+          cell->internalIds(dimension)
+            = receive_internal_ids[receive_index][cell_index];
+          logInfo("from {1} to {2} | velocity = {3} | id = {4}",
+                  _memory->parallelDistribution()->rank(),
+                  rank,
+                  cell->data(dimension),
+                  cell->internalIds(dimension));
+          ++cell_index;
+        }
+        ++receive_index;
+      }
+    }
+  }
+
   //
 
 public:
   class LagrangianNode {
 public:
-    LagrangianNode(unsigned const&     id,
-                   VectorDsType const& position)
-      : _id(id),
-      _position(position) {}
+    LagrangianNode(unsigned const& id, VectorDsType const& position)
+      : _id(id), _position(position) {}
 
     Uni_PublicProperty(unsigned,     id);
     Uni_PublicProperty(VectorDsType, position);
@@ -769,10 +1248,8 @@ public:
 public:
     class Support {
 public:
-      Support(InterfaceCellType const* cell,
-              ScalarType const&        weight)
-        : _cell(cell),
-        _weight(weight) {}
+      Support(InterfaceCellType const* cell, ScalarType const& weight)
+        : _cell(cell), _weight(weight) {}
 
       Uni_PublicProperty(InterfaceCellType const*, cell);
       Uni_PublicProperty(ScalarType,               weight);
@@ -788,34 +1265,24 @@ public:
     }
 
     typename Supports::iterator
-    begin() {
-      return _supports.begin();
-    }
+    begin() { return _supports.begin(); }
 
     typename Supports::const_iterator
-    end() const {
-      return _supports.end();
-    }
+    end() const { return _supports.end(); }
 
     typename Supports::iterator
-    end() {
-      return _supports.end();
-    }
+    end() { return _supports.end(); }
 
     std::size_t
-    size() const {
-      return _supports.size();
-    }
+    size() const { return _supports.size(); }
 
     void
-    addInterfaceCell(InterfaceCellType* cell) {
+    addEulerianCell(InterfaceCellType* cell) {
       _supports.emplace_back(cell, 0.0);
     }
 
     Support&
-    operator[](std::size_t const& index) {
-      return _supports[index];
-    }
+    operator[](std::size_t const& index) { return _supports[index]; }
 
     Uni_PublicProperty(LagrangianNode*, lagrangianNode);
     Uni_PublicProperty(Supports,        supports);
@@ -834,21 +1301,6 @@ private:
     return 1.0 / std::sqrt(1.0 + _imqShape * _imqShape * radius * radius);
   }
 
-  unsigned
-  computeGlobalIndex(VectorDiType const& global_space_index) const {
-    auto temp = global_space_index
-                + _memory->grid()->innerGrid.leftIndent();
-
-    unsigned global_index = temp(Dimensions - 1);
-
-    for (int d = Dimensions - 2; d >= 0; --d) {
-      global_index *= _memory->grid()->innerGrid.size(d);
-      global_index += temp(d);
-    }
-
-    return global_index;
-  }
-
   precice::SolverInterface* _preciceInterface;
   MemoryType const*         _memory;
 
@@ -859,14 +1311,24 @@ private:
   bool       _doComputeImqShape;
   ScalarType _imqShape;
 
-  Eigen::Matrix<unsigned, Dimensions, 1> _interfaceCellsSize;
+  Eigen::Matrix<unsigned, Dimensions, 1> _localEulerianCellSize;
+  Eigen::Matrix<unsigned, Dimensions, 1> _globalEulerianCellSize;
 
   Set _velocitySet;
   Set _forceSet;
 
-  std::vector<LagrangianNode> _lagrangians;
+  std::vector<LagrangianNode> _lagrangianNodes;
   std::array<std::vector<LagrangianNodeSupports>,
-             Dimensions> _lagrangiansSupports;
+             Dimensions> _lagrangianNodesSupports;
+
+  unsigned                                      _lagrangianIdOffset;
+  std::array<unsigned, Dimensions>              _eulerianIdOffset;
+  std::array<std::map<int, Set>, Dimensions>    _foreignEulerianCells;
+  std::array<std::vector<unsigned>, Dimensions> receive_sizes;
+  std::array < std::vector < std::vector<unsigned >>, Dimensions>
+  receive_serial_indices;
+  std::array<unsigned, Dimensions> send_size;
+  std::array<unsigned, Dimensions> receive_size;
 };
 }
 }

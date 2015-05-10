@@ -1,14 +1,30 @@
 #include "ParallelDistribution.hpp"
 
+#include <Uni/ExecutionControl/exception>
+#include <Uni/Logging/format>
+#include <Uni/Logging/macros>
+
+#include <cstdlib>
+
 namespace FsiSimulation {
 namespace FluidSimulation {
+template <unsigned T>
+int
+ParallelDistribution<T>::
+rankSize() const {
+  return processorSize.prod();
+}
+
 template <unsigned T>
 void
 ParallelDistribution<T>::
 initialize(VectorDi const& processorSize_,
-           VectorDi const& globalSize_) {
+           VectorDi const& globalSize_,
+           VectorDi const& indent_size) {
+  _indentSize = indent_size;
+
   int processCount;
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+  MPI_Comm_rank(PETSC_COMM_WORLD, &_rank);
   MPI_Comm_size(PETSC_COMM_WORLD, &processCount);
 
   if (processCount != processorSize_.prod()) {
@@ -25,7 +41,7 @@ initialize(VectorDi const& processorSize_,
   lastLocalCellSize    = uniformLocalCellSize;
   globalCellSize       = uniformLocalCellSize.cwiseProduct(processorSize);
 
-  auto tempDivRank = rank;
+  auto tempDivRank = _rank;
   int  tempDivSize = 1;
 
   for (unsigned i = 0; i < (Dimensions - 1); ++i) {
@@ -42,10 +58,10 @@ initialize(VectorDi const& processorSize_,
   for (unsigned d = 0; d < Dimensions; ++d) {
     auto tempIndex = index;
     tempIndex(d)   -= 1;
-    neighbors[d][0] = getRank(tempIndex);
+    neighbors[d][0] = getMpiRankFromSubdomainSpatialIndex(tempIndex);
     tempIndex       = index;
     tempIndex(d)   += 1;
-    neighbors[d][1] = getRank(tempIndex);
+    neighbors[d][1] = getMpiRankFromSubdomainSpatialIndex(tempIndex);
   }
 
   for (unsigned d = 0; d < Dimensions; ++d) {
@@ -65,19 +81,193 @@ initialize(VectorDi const& processorSize_,
 template <unsigned T>
 int
 ParallelDistribution<T>::
-getRank(VectorDi const& index_) const {
+getMpiRankFromSubdomainSpatialIndex(VectorDi const& index_) const {
   auto result   = 0;
   int  tempSize = 1;
 
-  for (unsigned i = 0; i < T; ++i) {
-    if (index_(i) < 0 || index_(i) >= processorSize(i)) {
+  for (unsigned d = 0; d < Dimensions; ++d) {
+    if (index_(d) < 0 || index_(d) >= processorSize(d)) {
       return -1;
     }
-    result   += index_(i) * tempSize;
-    tempSize *= processorSize(i);
+    result   += index_(d) * tempSize;
+    tempSize *= processorSize(d);
   }
 
   return result;
+}
+
+template <unsigned T>
+typename ParallelDistribution<T>::VectorDi
+ParallelDistribution<T>::
+getSubdomainSpatialIndexFromMpiRank(int const& rank) const {
+  VectorDi spatial_index;
+
+  std::div_t divt;
+  divt.quot = rank;
+
+  for (unsigned d = 0; d < Dimensions; ++d) {
+    divt             = std::div(divt.quot, processorSize(d));
+    spatial_index(d) = divt.rem;
+  }
+
+  return spatial_index;
+}
+
+template <unsigned T>
+bool
+ParallelDistribution<T>::
+convertUnindentedSpatialIndexFromGlobalToLocal(
+  VectorDi const& global_spatial_index,
+  int&            rank,
+  VectorDi&       local_spatial_index) const {
+  VectorDi subdomain_index
+    = global_spatial_index.cwiseQuotient(uniformLocalCellSize);
+
+  rank = getMpiRankFromSubdomainSpatialIndex(subdomain_index);
+
+  local_spatial_index
+    = global_spatial_index
+      - subdomain_index.cwiseProduct(uniformLocalCellSize);
+
+  return rank == _rank;
+}
+
+template <unsigned T>
+typename ParallelDistribution<T>::VectorDi
+ParallelDistribution<T>::
+convertSpatialIndexFromIndentedLocalToUnindentedGlobal(
+  VectorDi const& local_spatial_index) const {
+  return local_spatial_index - _indentSize + corner;
+}
+
+template <unsigned T>
+unsigned
+ParallelDistribution<T>::
+convertUnindentedLocalIndexFromSpatialToSerial(
+  VectorDi const& local_spatial_index) const {
+  auto indented_local_spatial_index = local_spatial_index + _indentSize;
+
+  unsigned local_serial_index = indented_local_spatial_index(Dimensions - 1);
+
+  for (int d = Dimensions - 2; d >= 0; --d) {
+    local_serial_index *= localCellSize(d) + 2 * _indentSize(d);
+    local_serial_index += indented_local_spatial_index(d);
+  }
+
+  return local_serial_index;
+}
+
+template <unsigned T>
+unsigned
+ParallelDistribution<T>::
+convertUnindentedLocalIndexFromSpatialToSerial(
+  int const&      rank,
+  VectorDi const& local_spatial_index) const {
+  VectorDi subdomain_spatial_index = getSubdomainSpatialIndexFromMpiRank(rank);
+
+  auto indented_local_spatial_index = local_spatial_index + _indentSize;
+
+  unsigned local_serial_index = indented_local_spatial_index(Dimensions - 1);
+
+  for (int d = Dimensions - 2; d >= 0; --d) {
+    if (subdomain_spatial_index(d) == (processorSize(d) - 1)) {
+      local_serial_index *= lastLocalCellSize(d) + 2 * _indentSize(d);
+      local_serial_index += indented_local_spatial_index(d);
+    } else {
+      local_serial_index *= uniformLocalCellSize(d) + 2 * _indentSize(d);
+      local_serial_index += indented_local_spatial_index(d);
+    }
+  }
+
+  return local_serial_index;
+}
+
+template <unsigned T>
+bool
+ParallelDistribution<T>::
+convertUnindentedGlobalIndexFromSpatialToSerial(
+  VectorDi const& global_spatial_index,
+  int&            rank,
+  unsigned&       serial_index) const {
+
+  assert((global_spatial_index.array() >= VectorDi::Zero().array()).all()
+        && (global_spatial_index.array() < globalCellSize.array()).all());
+  //
+
+  VectorDi subdomain_index
+    = global_spatial_index.cwiseQuotient(uniformLocalCellSize);
+
+  rank = getMpiRankFromSubdomainSpatialIndex(subdomain_index);
+
+  auto local_spatial_index
+    = global_spatial_index
+      - subdomain_index.cwiseProduct(uniformLocalCellSize);
+
+  bool is_current_domain = rank == _rank;
+
+  if (is_current_domain) {
+    serial_index = convertUnindentedLocalIndexFromSpatialToSerial(
+      local_spatial_index);
+  } else {
+    serial_index = convertUnindentedLocalIndexFromSpatialToSerial(
+      rank,
+      local_spatial_index);
+  }
+
+  return is_current_domain;
+}
+
+template <unsigned T>
+typename ParallelDistribution<T>::VectorDi
+ParallelDistribution<T>::
+convertSerialIndexToUnindentedLocal(
+  int const&      rank,
+  unsigned const& serial_index) const {
+  VectorDi subdomain_spatial_index = getSubdomainSpatialIndexFromMpiRank(rank);
+
+  VectorDi spatial_index;
+
+  std::div_t divt;
+  divt.quot = serial_index;
+
+  for (unsigned d = 0; d < Dimensions; ++d) {
+    if (subdomain_spatial_index(d) == (processorSize(d) - 1)) {
+      divt = std::div(divt.quot, lastLocalCellSize(d) + 2 * _indentSize(d));
+    } else {
+      divt = std::div(divt.quot, uniformLocalCellSize(d) + 2 * _indentSize(d));
+    }
+    spatial_index(d) = divt.rem;
+  }
+  spatial_index -= _indentSize;
+
+  return spatial_index;
+}
+
+template <unsigned T>
+typename ParallelDistribution<T>::VectorDi
+ParallelDistribution<T>::
+convertSerialIndexToUnindentedGlobal(
+  int const&      rank,
+  unsigned const& serial_index) const {
+  VectorDi subdomain_spatial_index = getSubdomainSpatialIndexFromMpiRank(rank);
+
+  VectorDi spatial_index;
+
+  std::div_t divt;
+  divt.quot = serial_index;
+
+  for (unsigned d = 0; d < Dimensions; ++d) {
+    if (subdomain_spatial_index(d) == (processorSize(d) - 1)) {
+      divt = std::div(divt.quot, lastLocalCellSize(d) + 2 * _indentSize(d));
+    } else {
+      divt = std::div(divt.quot, uniformLocalCellSize(d) + 2 * _indentSize(d));
+    }
+    spatial_index(d) = divt.rem;
+  }
+  spatial_index -= _indentSize;
+
+  return subdomain_spatial_index.cwiseProduct(uniformLocalCellSize)
+         + spatial_index;
 }
 
 template <unsigned T>
@@ -97,13 +287,14 @@ toString() const {
           "ParallelDistribution current index:    {5}\n"
           "ParallelDistribution corner:           {6}\n"
           "ParallelDistribution neighbors:        {7}\n",
-          this->rank,
+          this->_rank,
           this->processorSize.transpose(),
           this->globalCellSize.transpose(),
           this->localCellSize.transpose(),
           this->index.transpose(),
           this->corner.transpose(),
           neighbors);
+
   return "";
 }
 

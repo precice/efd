@@ -40,7 +40,7 @@ public:
     _locale         = boost::locale::generator().generate("en_US.UTF-8");
 
     _fileNamePrefix
-      += (Format(".{1}") % _memory->parallelDistribution()->rank).str(_locale);
+      += (Format(".{1}") % _memory->parallelDistribution()->rank()).str(_locale);
   }
 
   void

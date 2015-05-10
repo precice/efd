@@ -1,19 +1,19 @@
-#ifndef Fluid_Simulation_ParallelDistribution_hpp
-#define Fluid_Simulation_ParallelDistribution_hpp
+#pragma once
 
-#include <Uni/ExecutionControl/exception>
-#include <Uni/Logging/format>
-#include <Uni/Logging/macros>
+#include <Uni/Helpers/macros>
 
 #include <Eigen/Core>
 
 #include <petscsys.h>
 
 #include <array>
-#include <cstdlib>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+/**
+ * TODO:
+ * 1. Change name to DomainDecomposition
+ */
 template <unsigned TDimensions>
 class ParallelDistribution {
 public:
@@ -35,12 +35,54 @@ public:
   ParallelDistribution&
   operator=(ParallelDistribution const& other) = delete;
 
+  int
+  rankSize() const;
+
   void
   initialize(VectorDi const& processorSize_,
-             VectorDi const& globalSize_);
+             VectorDi const& globalSize_,
+             VectorDi const& indent_size);
 
   int
-  getRank(VectorDi const& index_) const;
+  getMpiRankFromSubdomainSpatialIndex(VectorDi const& index_) const;
+
+  VectorDi
+  getSubdomainSpatialIndexFromMpiRank(int const& rank) const;
+
+  bool
+  convertUnindentedSpatialIndexFromGlobalToLocal(
+    VectorDi const& global_spatial_index,
+    int&            rank,
+    VectorDi&       local_spatial_index) const;
+
+  VectorDi
+  convertSpatialIndexFromIndentedLocalToUnindentedGlobal(
+    VectorDi const& local_spatial_index) const;
+
+  unsigned
+  convertUnindentedLocalIndexFromSpatialToSerial(
+    VectorDi const& local_spatial_index) const;
+
+  unsigned
+  convertUnindentedLocalIndexFromSpatialToSerial(
+    int const&      rank,
+    VectorDi const& local_spatial_index) const;
+
+  bool
+  convertUnindentedGlobalIndexFromSpatialToSerial(
+    VectorDi const& global_spatial_index,
+    int&            rank,
+    unsigned&       serial_index) const;
+
+  VectorDi
+  convertSerialIndexToUnindentedLocal(
+    int const&            rank,
+    unsigned const&       serial_index) const;
+
+  VectorDi
+  convertSerialIndexToUnindentedGlobal(
+    int const&            rank,
+    unsigned const&       serial_index) const;
 
   std::string
   toString() const;
@@ -48,7 +90,8 @@ public:
   VectorDi processorSize;
   VectorDi globalCellSize;
 
-  int       rank;
+  Uni_PublicProperty(VectorDi, indentSize);
+  Uni_PublicProperty(int,      rank);
   VectorDi  localCellSize;
   VectorDi  uniformLocalCellSize;
   VectorDi  lastLocalCellSize;
@@ -61,4 +104,3 @@ extern template class ParallelDistribution<2>;
 extern template class ParallelDistribution<3>;
 }
 }
-#endif
