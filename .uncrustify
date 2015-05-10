@@ -2207,7 +2207,7 @@ pos_class_colon = trail
 #   @brief Try to limit code width.
 #    @type integer
 # @default 0
-code_width = 80
+code_width = 90
 # ------------------------------------------------------------------------------
 #   @brief Whether to fully split long `for` statements at `;`.
 #    @type boolean
