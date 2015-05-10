@@ -22,6 +22,9 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>
 
+#include <map>
+#include <vector>
+
 namespace FsiSimulation {
 namespace FluidSimulation {
 namespace ImmersedBoundary {
