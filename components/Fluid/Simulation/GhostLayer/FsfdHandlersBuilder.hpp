@@ -69,6 +69,18 @@ public:
     accessor.velocity(index) = value;
   }
 
+  inline static int*
+  getLocations(CellAccessorType const& accessor) {
+    return accessor.positionInRespectToGeometry().data();
+  }
+
+  inline static void
+  setLocations(CellAccessorType const& accessor,
+               int const&              index,
+               int const&              value) {
+    accessor.positionInRespectToGeometry(index) = value;
+  }
+
 public:
   FsfdHandlersBuilder(Configuration*, SolverType*);
 

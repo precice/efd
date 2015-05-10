@@ -18,6 +18,18 @@ getMpiScalarType() {
 
 template <>
 inline MPI_Datatype
+getMpiScalarType<int>() {
+  return MPI_INT;
+}
+
+template <>
+inline MPI_Datatype
+getMpiScalarType<unsigned>() {
+  return MPI_UNSIGNED;
+}
+
+template <>
+inline MPI_Datatype
 getMpiScalarType<float>() {
   return MPI_FLOAT;
 }
@@ -28,9 +40,15 @@ getMpiScalarType<double>() {
   return MPI_DOUBLE;
 }
 
+template <>
+inline MPI_Datatype
+getMpiScalarType<long double>() {
+  return MPI_LONG_DOUBLE;
+}
+
 template <typename TScalar>
 inline void
-mpiAllReduce(void*     sendbuf,
+mpiAllReduce(void*           sendbuf,
              void*           recvbuf,
              int const&      count,
              MPI_Op const&   op,

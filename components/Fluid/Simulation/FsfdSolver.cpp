@@ -129,6 +129,7 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
     _im->locateStructureFunction
       = [this] () {
           this->locateStructure();
+          this->_im->ghostHandlers.executeLocationsMpiExchange();
           _im->locateStructureFunction = [] () {};
         };
   }

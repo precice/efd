@@ -24,8 +24,8 @@ public:
           = MpiExchange::getEmptyFunctor<Dimensions>();
         mpiVelocityExchangeStack[d][d2]
           = MpiExchange::getEmptyFunctor<Dimensions>();
-        fghInitialization[d][d2]
-          = Initialization::getEmptyFunctor<Dimensions>();
+        mpiLocationsExchangeStack[d][d2]
+          = MpiExchange::getEmptyFunctor<Dimensions>();
 
         ppeStencilGeneratorStack[d][d2]
           = LsStencilGenerator::getEmptyFunctor<Dimensions>();
@@ -34,6 +34,8 @@ public:
         ppeRhsAcquiererStack[d][d2]
           = PetscExchange::getEmptyFunctor<Dimensions>();
 
+        fghInitialization[d][d2]
+          = Initialization::getEmptyFunctor<Dimensions>();
         velocityInitialization[d][d2]
           = Initialization::getEmptyFunctor<Dimensions>();
       }
@@ -62,6 +64,15 @@ public:
     for (int d = 0; d < Dimensions; ++d) {
       for (int d2 = 0; d2 < 2; ++d2) {
         mpiPressureExchangeStack[d][d2]();
+      }
+    }
+  }
+
+  void
+  executeLocationsMpiExchange() const {
+    for (int d = 0; d < Dimensions; ++d) {
+      for (int d2 = 0; d2 < 2; ++d2) {
+        mpiLocationsExchangeStack[d][d2]();
       }
     }
   }
@@ -97,6 +108,7 @@ public:
   MpiExchange::FunctorStack<Dimensions> mpiFghExchangeStack;
   MpiExchange::FunctorStack<Dimensions> mpiPressureExchangeStack;
   MpiExchange::FunctorStack<Dimensions> mpiVelocityExchangeStack;
+  MpiExchange::FunctorStack<Dimensions> mpiLocationsExchangeStack;
 
   Initialization::FunctorStack<Dimensions> fghInitialization;
 

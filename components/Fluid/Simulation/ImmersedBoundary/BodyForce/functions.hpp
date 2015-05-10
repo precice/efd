@@ -26,16 +26,16 @@ compute_neighbor_locations(TCellAccessor const& accessor) {
         direction_offset = +1;
       }
 
-      bool isOuside = true;
+      bool is_outside = true;
 
       for (unsigned d3 = 0; d3 <= TCellAccessor::Dimensions; ++d3) {
         if (accessor.positionInRespectToGeometry(d, direction_offset, d3) < 0) {
-          isOuside = false;
+          is_outside = false;
           break;
         }
       }
 
-      if (isOuside) {
+      if (is_outside) {
         locations(2 * d + d2) = 1;
       }
     }
@@ -193,7 +193,7 @@ compute_cell_force_turek(
       }
       Vector tangent = normal;
       tangent(0) = normal(1);
-      tangent(1) = normal(0);
+      tangent(1) = -normal(0);
 
       Vector grad_velocity;
 

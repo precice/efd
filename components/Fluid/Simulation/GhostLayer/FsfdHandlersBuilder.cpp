@@ -7,10 +7,10 @@
 #include "PetscExchangeHandler.hpp"
 #include "PressureStencilHanler.hpp"
 
-#include "SfsfdHandlersBuilder.hpp"
-#include "IfsfdHandlersBuilder.hpp"
 #include "IfsfdHandlers.hpp"
+#include "IfsfdHandlersBuilder.hpp"
 #include "SfsfdHandlers.hpp"
+#include "SfsfdHandlersBuilder.hpp"
 
 #include "Simulation/Configuration.hpp"
 #include "Simulation/FsfdSolver.hpp"
@@ -282,6 +282,16 @@ setAsMpiExchange() {
      Dimension,
      Direction>
     VelocityMpiExchangeHandler;
+  typedef
+    MpiExchange::Handler
+    <int,
+     Dimensions,
+     typename GridType::BaseType,
+     FsfdHandlersBuilder::getLocations,
+     FsfdHandlersBuilder::setLocations,
+     Dimension,
+     Direction>
+    LocationsMpiExchangeHandler;
 
   if (Direction == 0) {
     _solver->ghostHandlers()->mpiFghExchangeStack[Dimension][Direction]
@@ -307,6 +317,11 @@ setAsMpiExchange() {
 
   _solver->ghostHandlers()->mpiVelocityExchangeStack[Dimension][Direction]
     = VelocityMpiExchangeHandler::getExchangeHandler(
+    &_solver->memory()->grid()->innerGrid,
+    _solver->memory()->parallelDistribution());
+
+  _solver->ghostHandlers()->mpiLocationsExchangeStack[Dimension][Direction]
+    = LocationsMpiExchangeHandler::getExchangeHandler(
     &_solver->memory()->grid()->innerGrid,
     _solver->memory()->parallelDistribution());
 }
