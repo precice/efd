@@ -56,4 +56,4 @@ for root, dirs, files in os.walk(args.d[0]):
     fo = open(sh_file_name, "wb+")
     fo.write(template.format(basic_file_name, args.p));
     fo.close()
-    subprocess.call("sbatch {0} {1}".format(unknown_args, sh_file_name))
+    subprocess.call("sbatch {0} {1}".format(" ".join(unknown_args), sh_file_name), shell=True)
