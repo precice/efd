@@ -293,7 +293,7 @@ function proccedWithIterationResults(info) {
       return;
     }
 
-    var skipSize = 2;
+    var skipSize = 0;
     var hasForces = true;
     var weightCoeff = 1.0 / (data.length - skipSize);
 
@@ -359,6 +359,14 @@ function proccedWithIterationResults(info) {
         return [element.timeStepSize];
       }
     });
+    createIterationsTable(rows, hasForces);
+    timeSlice = Math.min(0.1 * rows[rows.length - 1].time, 0.1);
+    rows = rows.filter(function(obj) {
+      if (obj.time > timeSlice) {
+        return true;
+      }
+      return false;
+    });
     if (hasForces) {
       buildChart(rows, new function () {
         this.names = ["Direct Forcing(X)", "Direct Forcing(Y)", "Direct Forcing Norm 2"];
@@ -394,7 +402,5 @@ function proccedWithIterationResults(info) {
         }
       });
     }
-
-    createIterationsTable(rows, hasForces);
   });
 }
