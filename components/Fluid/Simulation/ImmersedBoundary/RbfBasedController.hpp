@@ -369,10 +369,10 @@ public:
                _memory->parallelDistribution()->mpiCommunicator);
     }
 
-    logInfo("Lagrangian offset {1} {2} {3}",
-            _memory->parallelDistribution()->rank(),
-            _lagrangianIdOffset,
-            body_id);
+    // logInfo("Lagrangian offset {1} {2} {3}",
+    // _memory->parallelDistribution()->rank(),
+    // _lagrangianIdOffset,
+    // body_id);
 
     for (auto& node : _lagrangianNodes) {
       node.id() += _lagrangianIdOffset;
@@ -479,7 +479,6 @@ private:
         unsigned           serial_index;
         InterfaceCellType* eulerian_cell;
 
-
         if (_memory->parallelDistribution()
             ->convertUnindentedGlobalIndexFromSpatialToSerial(
               global_spatial_index,
@@ -564,7 +563,6 @@ private:
 
     std::vector<unsigned> send_sizes;
 
-    send_sizes.clear();
     send_sizes.resize(neighbors.size().prod(), 0);
     receive_sizes[dimension].clear();
     receive_sizes[dimension].resize(neighbors.size().prod(), 0);
@@ -710,12 +708,12 @@ private:
                       unsigned&           internal_id,
                       VectorDsType const& position) {
     // if (static_cast<int>(serial_index)
-    //     < _memory->grid()->innerGrid.begin()->globalIndex()
-    //     || static_cast<int>(serial_index)
-    //     > (_memory->grid()->innerGrid.end())->globalIndex()) {
-    //   logInfo("{1}", serial_index);
-    //   logInfo("{1}", _memory->grid()->innerGrid.begin()->globalIndex());
-    //   logInfo("{1}", (_memory->grid()->innerGrid.end())->globalIndex());
+    // < _memory->grid()->innerGrid.begin()->globalIndex()
+    // || static_cast<int>(serial_index)
+    // > (_memory->grid()->innerGrid.end())->globalIndex()) {
+    // logInfo("{1}", serial_index);
+    // logInfo("{1}", _memory->grid()->innerGrid.begin()->globalIndex());
+    // logInfo("{1}", (_memory->grid()->innerGrid.end())->globalIndex());
     // }
 
     assert(static_cast<int>(serial_index)
@@ -828,14 +826,14 @@ private:
     using Matrix = Eigen::Matrix<ScalarType, Eigen::Dynamic, Eigen::Dynamic>;
     using Vector = Eigen::Matrix<ScalarType, Eigen::Dynamic, 1>;
 
-    unsigned max_size = 0;
-    unsigned mix_size = 1000000000;
+    // unsigned max_size = 0;
+    // unsigned mix_size = 1000000000;
 
     for (auto& supports : _lagrangianNodesSupports[dimension]) {
       Matrix m(supports.size() + 1, supports.size() + 1);
 
-      max_size = std::max(max_size, static_cast<unsigned>(supports.size()));
-      mix_size = std::min(mix_size, static_cast<unsigned>(supports.size()));
+      // max_size = std::max(max_size, static_cast<unsigned>(supports.size()));
+      // mix_size = std::min(mix_size, static_cast<unsigned>(supports.size()));
 
       Vector b(supports.size() + 1);
 
@@ -871,13 +869,10 @@ private:
       for (unsigned j = 0; j < supports.size(); ++j) {
         supports[j].weight() = x(j);
       }
-
-      // if (x(j) == 0.0) {
-      // }
     }
 
-    logInfo("Max in {1} is {2}", dimension, max_size);
-    logInfo("Mix in {1} is {2}", dimension, mix_size);
+    // logInfo("Max in {1} is {2}", dimension, max_size);
+    // logInfo("Mix in {1} is {2}", dimension, mix_size);
 
     _performMpiExchange(dimension);
 
@@ -886,7 +881,7 @@ private:
      */
 
     // Create right-hand side vector and vector of unknowns
-    logInfo("Create b = {1}", _lagrangianNodes.size());
+    // logInfo("Create b = {1}", _lagrangianNodes.size());
     Vec b, x;
     Vec bt;
     VecCreate(_memory->parallelDistribution()->mpiCommunicator, &b);
@@ -895,18 +890,18 @@ private:
     VecCreate(_memory->parallelDistribution()->mpiCommunicator, &bt);
     VecSetSizes(bt, _localEulerianCellSize(dimension), PETSC_DECIDE);
     VecSetType(bt, VECMPI);
-    logInfo("Create on {1} x = {2}",
-            _memory->parallelDistribution()->rank(),
-            _localEulerianCellSize(dimension));
+    // logInfo("Create on {1} x = {2}",
+    // _memory->parallelDistribution()->rank(),
+    // _localEulerianCellSize(dimension));
     VecCreate(_memory->parallelDistribution()->mpiCommunicator, &x);
     VecSetSizes(x, _localEulerianCellSize(dimension), PETSC_DECIDE);
     VecSetType(x, VECMPI);
 
     // Fill right-hand side;
 
-    double temp_row         = 0;
-    double temp_norm_base   = 0;
-    double temp_norm_base_b = 0;
+    // double temp_row         = 0;
+    // double temp_norm_base   = 0;
+    // double temp_norm_base_b = 0;
 
     for (auto& supports : _lagrangianNodesSupports[dimension]) {
       PetscScalar value = 0;
@@ -914,16 +909,16 @@ private:
       for (auto& fluid_cell : supports) {
         value -= fluid_cell.weight() * fluid_cell.cell()->data(dimension);
 
-        temp_norm_base += fluid_cell.cell()->data(dimension)
-                          / _memory->timeStepSize();
+        // temp_norm_base += fluid_cell.cell()->data(dimension)
+        /// _memory->timeStepSize();
 
-        temp_norm_base_b += fluid_cell.weight()
-                            * fluid_cell.cell()->data(dimension)
-                            / _memory->timeStepSize();
+        // temp_norm_base_b += fluid_cell.weight()
+        // * fluid_cell.cell()->data(dimension)
+        /// _memory->timeStepSize();
 
-        if (supports.lagrangianNode()->id() == 1) {
-          temp_row += fluid_cell.weight();
-        }
+        // if (supports.lagrangianNode()->id() == 1) {
+        // temp_row += fluid_cell.weight();
+        // }
       }
 
       value /= _memory->timeStepSize();
@@ -936,10 +931,10 @@ private:
     VecAssemblyBegin(b);
     VecAssemblyEnd(b);
 
-    logInfo("========= ROW {1}", temp_row);
+    // logInfo("========= ROW {1}", temp_row);
 
     // Create matrix
-    logInfo("Create matrix");
+    // logInfo("Create matrix");
     Mat global_matrix;
     Mat preconditioning_global_matrix;
     MatCreate(_memory->parallelDistribution()->mpiCommunicator, &global_matrix);
@@ -956,9 +951,9 @@ private:
     // Fill matrix
     // PetscInt end;
     // MatGetOwnershipRange(global_matrix, &first, &end);
-    logInfo("Fill matrix");
+    // logInfo("Fill matrix");
 
-    double temp_column = 0;
+    // double temp_column = 0;
 
     for (auto const& supports : _lagrangianNodesSupports[dimension]) {
       PetscInt global_row = supports.lagrangianNode()->id();
@@ -982,9 +977,9 @@ private:
                      &value,
                      INSERT_VALUES);
 
-        if (global_column == 1) {
-          temp_column += value;
-        }
+        // if (global_column == 1) {
+        // temp_column += value;
+        // }
       }
     }
 
@@ -995,12 +990,16 @@ private:
 
     KSP solver;
     KSPCreate(_memory->parallelDistribution()->mpiCommunicator, &solver);
-    KSPSetType(solver, KSPGMRES);
+    KSPSetType(solver, KSPFGMRES);
     PC preconditioner;
     KSPGetPC(solver, &preconditioner);
-    PCSetType(preconditioner, PCNONE);
+    PCSetType(preconditioner, PCKSP);
+    KSP preconditioner_solver;
+    PCKSPGetKSP(preconditioner, &preconditioner_solver);
+    KSPSetType(preconditioner_solver, KSPGMRES);
+    KSPSetTolerances(preconditioner_solver, 1e-21, 1e-25, PETSC_DEFAULT, 10);
     // PCSetType(preconditioner, PCILU);
-    KSPSetTolerances(solver, 1e-21, 1e-25, PETSC_DEFAULT, 10000);
+    KSPSetTolerances(solver,                1e-21, 1e-25, PETSC_DEFAULT, 10000);
     MatTransposeMatMult(global_matrix,
                         global_matrix,
                         MAT_INITIAL_MATRIX,
@@ -1022,9 +1021,9 @@ private:
                     SAME_PRECONDITIONER);
 #endif
 
-    logInfo("KSP Setup");
+    // logInfo("KSP Setup");
     KSPSetUp(solver);
-    logInfo("KSP Solve");
+    // logInfo("KSP Solve");
     MatMultTranspose(global_matrix, b, bt);
     KSPSolve(solver, bt, x);
 
@@ -1035,18 +1034,19 @@ private:
     // VecNorm(b, NORM_1, &temp_norm);
     // logInfo("NOOOOOOOOOOOOORM2 {1}", temp_norm + temp_norm_base_b);
 
+#if !defined (NDEBUG)
     PetscScalar global_norm;
     PetscInt    iteration_number;
     VecNorm(x, NORM_2, &global_norm);
     KSPGetIterationNumber(solver, &iteration_number);
 
-    PetscPrintf(_memory->parallelDistribution()->mpiCommunicator,
-                "Norm of vector %G iterations %D\n",
-                global_norm,
-                iteration_number);
+    if (_memory->parallelDistribution()->rank() == 0) {
+      logInfo("Norm of vector {1} iterations {2}", global_norm, iteration_number);
+    }
+#endif
 
     // Retrieve data
-    logInfo("Retrieve data");
+    // logInfo("Retrieve data");
     PetscScalar* unknowns;
     VecGetArray(x, &unknowns);
 
@@ -1067,7 +1067,7 @@ private:
 
     VecRestoreArray(x, &unknowns);
 
-    logInfo("Clean up");
+    // logInfo("Clean up");
     VecDestroy(&b);
     VecDestroy(&bt);
     VecDestroy(&x);
@@ -1155,9 +1155,6 @@ private:
         continue;
       }
 
-      logInfo("{1} {2} {3}", send_index, temp_receive_size,
-              send_size[dimension]);
-
       send_velocities[send_index].resize(temp_receive_size);
       send_internal_ids[send_index].resize(temp_receive_size);
 
@@ -1220,11 +1217,11 @@ private:
             = receive_velocities[receive_index][cell_index];
           cell->internalIds(dimension)
             = receive_internal_ids[receive_index][cell_index];
-          logInfo("from {1} to {2} | velocity = {3} | id = {4}",
-                  _memory->parallelDistribution()->rank(),
-                  rank,
-                  cell->data(dimension),
-                  cell->internalIds(dimension));
+          // logInfo("from {1} to {2} | velocity = {3} | id = {4}",
+          // _memory->parallelDistribution()->rank(),
+          // rank,
+          // cell->data(dimension),
+          // cell->internalIds(dimension));
           ++cell_index;
         }
         ++receive_index;

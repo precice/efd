@@ -218,6 +218,22 @@ convertUnindentedGlobalIndexFromSpatialToSerial(
 }
 
 template <unsigned T>
+bool
+ParallelDistribution<T>::
+convertIndentedLocalIndexFromSpatialToSerial(
+  VectorDi const& local_spatial_index,
+  int&            rank,
+  unsigned&       serial_index) const {
+  //
+  VectorDi global_spatial_index = local_spatial_index - _indentSize + corner;
+
+  return convertUnindentedGlobalIndexFromSpatialToSerial(
+         global_spatial_index,
+         rank,
+         serial_index);
+}
+
+template <unsigned T>
 typename ParallelDistribution<T>::VectorDi
 ParallelDistribution<T>::
 convertSerialIndexToUnindentedLocal(

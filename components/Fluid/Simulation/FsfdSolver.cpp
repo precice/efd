@@ -284,7 +284,9 @@ template <typename T>
 void
 FsfdSolver<T>::
 iterate() {
+  // logInfo("Locate structure ...");
   _im->locateStructureFunction();
+  // logInfo("Locate structure is finished");
   // this->locateStructure();
   _im->iterateFunction();
 }
@@ -462,11 +464,25 @@ template <typename T>
 void
 FsfdSolver<T>::
 advanceFsi() {
+  namespace pc = precice::constants;
+  std::string writeCheckpoint(pc::actionWriteIterationCheckpoint());
+  std::string readCheckpoint(pc::actionReadIterationCheckpoint());
+
+  if (_im->preciceInterface != nullptr) {
+    if (_im->preciceInterface->isActionRequired(writeCheckpoint)) {
+      _im->preciceInterface->fulfilledAction(writeCheckpoint);
+    }
+  }
+
   _im->ibController->processVelocities();
 
   // logInfo("Map data");
-  if (_im->preciceInterface) {
+  if (_im->preciceInterface != nullptr) {
     _im->preciceInterface->advance(_im->memory.timeStepSize());
+
+    if (_im->preciceInterface->isActionRequired(readCheckpoint)) {
+      _im->preciceInterface->fulfilledAction(readCheckpoint);
+    }
   }
   _im->ibController->processForces();
 }

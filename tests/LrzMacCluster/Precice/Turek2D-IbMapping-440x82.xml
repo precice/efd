@@ -34,6 +34,7 @@
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
+      <server:mpi/>
       <mapping:rbf-compact-tps-c2
         support-radius="0.01"
         constraint="consistent"

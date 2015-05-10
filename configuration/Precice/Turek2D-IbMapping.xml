@@ -7,7 +7,7 @@
   <log-filter
     component="precice"
     target="debug"
-    switch="off"/>
+    switch="on"/>
 
   <solver-interface
     dimensions="2"
@@ -28,21 +28,27 @@
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
-      <discretization-width value="0.001"/>
+      <discretization-width value="0.0025"/>
       <radius value="0.05"/>
       <offset value="0.2; 0.2"/>
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
+      <!-- <server:mpi-single/> -->
+      <server:mpi/>
+      <!-- <server:sockets -->
+      <!--   port="3391" -->
+      <!--   exchange-directory="." -->
+      <!--   network="lo"/> -->
       <mapping:rbf-compact-tps-c2
-        support-radius="0.02"
+        support-radius="0.01"
         constraint="consistent"
         direction="write"
         from="FluidMesh"
         to="BodyMesh"
         timing="initial"/>
       <mapping:rbf-compact-tps-c2
-        support-radius="0.02"
+        support-radius="0.01"
         constraint="consistent"
         direction="read"
         from="BodyMesh"

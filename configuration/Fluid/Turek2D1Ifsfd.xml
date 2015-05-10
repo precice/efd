@@ -8,8 +8,8 @@
   tau="0.5"
   gamma="0.5"
   width="2.2 0.41"
-  size="220 41"
-  parallelizationSize="1 1"
+  size="440 82"
+  parallelizationSize="2 2"
   environment="0 0"
   filename="Turek2D1"
   scalar="double"
@@ -24,7 +24,7 @@
   </walls>
   <immersed-boundary
     type="Rbf-Based"
-    full-prediction="on"
+    full-prediction="off"
     precice-configuration-path="../Precice/Turek2D-NoIbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>

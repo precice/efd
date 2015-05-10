@@ -286,13 +286,27 @@ run() {
     }
   }
 
-  while (_im->simulationController->iterate()) {
+  while (true) {
+    if (_im->preciceInterface) {
+      if (!_im->preciceInterface->isCouplingOngoing()) {
+        break;
+      }
+    }
+
+    if (!_im->simulationController->iterate()) {
+      break;
+    }
+
     if (_im->isMaster()) {
       logInfo("N = {1}; t = {2}",
               _im->simulationController->iterationNumber(),
               _im->simulationController->time());
     }
     _im->reporter->recordIteration();
+  }
+
+  if (_im->preciceInterface) {
+    _im->preciceInterface->finalize();
   }
   _im->reporter->release();
 }

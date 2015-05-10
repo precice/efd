@@ -74,6 +74,12 @@ public:
     int&            rank,
     unsigned&       serial_index) const;
 
+  bool
+  convertIndentedLocalIndexFromSpatialToSerial(
+    VectorDi const& local_spatial_index,
+    int&            rank,
+    unsigned&       serial_index) const;
+
   VectorDi
   convertSerialIndexToUnindentedLocal(
     int const&            rank,
