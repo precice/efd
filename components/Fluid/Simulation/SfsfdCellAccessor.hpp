@@ -87,6 +87,15 @@ public:
   }
 
   ScalarType
+  attribute(VectorDiType const& index,
+            int const&          attribute_index,
+            int const&          dimension = 0) const {
+    return _attribute(this->relativeGlobalIndex(index),
+                      attribute_index,
+                      dimension);
+  }
+
+  ScalarType
   centralizedAttribute(int const& attribute_index,
                        int const& dimension = 0) const {
     if (_memory->attributes()->at(attribute_index).doCentralize) {

@@ -2,6 +2,9 @@
 
 #include "Simulation/IterationResultWriter.hpp"
 
+#include <Uni/StructuredGrid/Basic/GlobalMultiIndex>
+#include <Uni/StructuredGrid/Basic/Grid>
+
 #include <boost/filesystem/fstream.hpp>
 #include <boost/locale.hpp>
 
@@ -20,6 +23,12 @@ public:
   };
 
   using GridType = typename MemoryType::GridType;
+
+  using CellAccessorType = typename MemoryType::CellAccessorType;
+
+  using VectorDiType = typename MemoryType::VectorDiType;
+
+  using ScalarType = typename MemoryType::ScalarType;
 
   using Path = boost::filesystem::path;
 
@@ -67,20 +76,20 @@ public:
 
     typedef typename GridType::SubgridType TempGrid;
 
-    TempGrid grid = _memory->grid()->innerGrid;
+    TempGrid point_grid = _memory->grid()->innerGrid;
 
-    grid.setIndents(grid.leftIndent(),
-                    grid.rightIndent() - TempGrid::VectorDi::Ones());
+    point_grid.setIndents(point_grid.leftIndent(),
+                          point_grid.rightIndent() - TempGrid::VectorDi::Ones());
 
     fileStream << (Format("DATASET STRUCTURED_GRID\n"
                           "DIMENSIONS {1}{2}\n"
                           "POINTS {3} float\n")
-                   % grid.innerSize().transpose()
+                   % point_grid.innerSize().transpose()
                    % (Dimensions == 2 ? " 1" : "")
-                   % grid.innerSize().prod()).str(_locale);
+                   % point_grid.innerSize().prod()).str(_locale);
     std::stringstream pointsStream;
 
-    for (auto const& accessor : grid) {
+    for (auto const& accessor : point_grid) {
       pointsStream << accessor.position() (0) << " "
                    << accessor.position() (1);
 
@@ -93,13 +102,101 @@ public:
     }
     fileStream << pointsStream.str() << std::endl;
 
-    fileStream << "\nCELL_DATA "
-               << _memory->grid()->innerGrid.innerSize().prod()
+    fileStream << "\nPOINT_DATA "
+               << point_grid.innerSize().prod()
                << std::endl;
 
     int index = 0;
 
     for (auto const& attribute : * _memory->attributes()) {
+      if (attribute.mode != AttributeType::DisplayMode::Points) {
+        ++index;
+        continue;
+      }
+      std::stringstream string_stream;
+      struct GridTraits {
+        using CellAccessorType
+                = Uni::StructuredGrid::Basic::GlobalMultiIndex
+                  <void, void, Dimensions, GridTraits>;
+
+        using GridType
+                = Uni::StructuredGrid::Basic::Grid
+                  <void, void, Dimensions, GridTraits>;
+      };
+
+      std::array<typename GridTraits::GridType, Dimensions + 1> neighbors;
+      std::array<ScalarType, Dimensions + 1>                    coeff;
+
+      for (unsigned d = 0; d < Dimensions; ++d) {
+        neighbors[d].initialize(VectorDiType::Constant(2),
+                                VectorDiType::Zero(),
+                                VectorDiType::Ones());
+        coeff[d] = 1.0 / std::pow(2.0, Dimensions - 1);
+      }
+      neighbors[Dimensions].initialize(VectorDiType::Constant(2));
+      coeff[Dimensions] = 1.0 / std::pow(2.0, Dimensions);
+
+      if (attribute.type == AttributeType::Type::Vector) {
+        fileStream << "\nVECTORS "
+                   << attribute.name
+                   << " float" << std::endl;
+
+        for (auto const& accessor : point_grid) {
+          for (int d = 0; d < 3; ++d) {
+            if (d != 0) {
+              string_stream << " ";
+            }
+
+            float temp_value = 0.0f;
+
+            if (d < Dimensions) {
+              ScalarType value = 0;
+
+              for (auto const& accessor2 : neighbors[d]) {
+                value += accessor.attribute(
+                  accessor2.index() - VectorDiType::Ones(),
+                  index,
+                  d);
+              }
+              temp_value = static_cast<float>(coeff[d] * value);
+            }
+            string_stream << temp_value;
+          }
+          string_stream << std::endl;
+        }
+      } else {
+        string_stream << "\nSCALARS "
+                      << attribute.name
+                      << " float 1" << std::endl
+                      << "LOOKUP_TABLE default" << std::endl;
+
+        for (auto const& accessor : point_grid) {
+          ScalarType value = 0;
+
+          for (auto const& accessor2 : neighbors[Dimensions]) {
+            value += accessor.attribute(
+              accessor2.index() - VectorDiType::Ones(),
+              index);
+          }
+          string_stream << static_cast<float>(coeff[Dimensions] * value);
+          string_stream << std::endl;
+        }
+      }
+      fileStream << string_stream.str() << std::endl;
+      ++index;
+    }
+
+    fileStream << "\nCELL_DATA "
+               << _memory->grid()->innerGrid.innerSize().prod()
+               << std::endl;
+
+    index = 0;
+
+    for (auto const& attribute : * _memory->attributes()) {
+      if (attribute.mode != AttributeType::DisplayMode::Cells) {
+        ++index;
+        continue;
+      }
       std::stringstream string_stream;
 
       if (attribute.type == AttributeType::Type::Vector) {
@@ -143,6 +240,33 @@ public:
   }
 
 private:
+  void
+  computeCentredPointData(CellAccessorType const& accessor,
+                          unsigned const&         attribute_index,
+                          unsigned const&         dimension) const {
+    VectorDiType offset = VectorDiType::Zero();
+    ScalarType   value  = accessor.attribute(attribute_index, dimension);
+
+    struct GridTraits {
+      using CellAccessorType
+              = Uni::StructuredGrid::Basic::GlobalMultiIndex
+                <void, void, Dimensions, GridTraits>;
+
+      using GridType
+              = Uni::StructuredGrid::Basic::Grid
+                <void, void, Dimensions, GridTraits>;
+    };
+
+    typename GridTraits::GridType neighbors;
+    neighbors.initialize(VectorDiType::Constant(3));
+
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      for (unsigned d2 = 0; d2 <= d; ++d2) {
+        //
+      }
+    }
+  }
+
   MemoryType const* _memory;
   std::locale       _locale;
   Path              _directoryPath;

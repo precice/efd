@@ -17,26 +17,36 @@ namespace FluidSimulation {
 class Attribute {
 public:
   enum class Type {
-    Vector = 0,
-    Scalar = 1
+    Vector,
+    Scalar
+  };
+
+  enum class DisplayMode {
+    Cells,
+    Points
   };
 
   Attribute() :
+    mode(DisplayMode::Cells),
     doCentralize(false) {}
 
-  Attribute(std::string name_,
-            Type const& type_)
+  Attribute(std::string        name_,
+            Type const&        type_,
+            DisplayMode const& mode_)
     : name(name_),
     type(type_),
+    mode(mode_),
     doCentralize(false) {}
 
   Attribute(Attribute const& other)
     : name(other.name),
     type(other.type),
+    mode(other.mode),
     doCentralize(other.doCentralize) {}
 
   std::string name;
   Type        type;
+  DisplayMode mode;
   bool        doCentralize;
 };
 
@@ -137,9 +147,11 @@ public:
 
     _attributes[0].name         = "velocity";
     _attributes[0].type         = AttributeType::Type::Vector;
+    // _attributes[0].mode         = AttributeType::DisplayMode::Points;
     _attributes[0].doCentralize = true;
     _attributes[1].name         = "pressure";
     _attributes[1].type         = AttributeType::Type::Scalar;
+    // _attributes[1].mode         = AttributeType::DisplayMode::Points;
 
     if (DebugLevel == 1) {
       _diffusion.reset(new VectorDsType[this->_grid.size().prod()]);

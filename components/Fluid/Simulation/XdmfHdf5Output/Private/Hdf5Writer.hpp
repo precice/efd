@@ -47,12 +47,12 @@ public:
   void
   initialize(MemoryType const* memory) {
     _memory = memory;
-    _corner =
-      _memory->parallelDistribution()->corner.template cast<hsize_t>();
-    _globalSize =
-      _memory->parallelDistribution()->globalCellSize.template cast<hsize_t>();
-    _localSize =
-      _memory->parallelDistribution()->localCellSize.template cast<hsize_t>();
+    _corner
+      = _memory->parallelDistribution()->corner.template cast<hsize_t>();
+    _globalSize
+      = _memory->parallelDistribution()->globalCellSize.template cast<hsize_t>();
+    _localSize
+      = _memory->parallelDistribution()->localCellSize.template cast<hsize_t>();
   }
 
   VectorDsize const&
@@ -263,7 +263,7 @@ public:
       }
 
       hid_t file_space = H5Screate_simple(1, &size, NULL);
-      hid_t dataset = H5Dcreate(
+      hid_t dataset    = H5Dcreate(
         file_id,
         (std::string("/") + dimension_names[d]).c_str(),
         H5T_NATIVE_FLOAT,
@@ -317,10 +317,12 @@ public:
       std::size_t data_index = 0;
 
       for (auto const& accessor : _memory->grid()->innerGrid) {
-        for (unsigned j = 0; j < attribute_size; ++j) {
+        for (int j = attribute_size - 1; j >= 0; --j) {
           if (j < Dimensions) {
             data[data_index]
-             = static_cast<float>(accessor.centralizedAttribute(attribute_index, j));
+              = static_cast<float>(accessor.centralizedAttribute(
+                                     attribute_index,
+                                     Dimensions - 1 - j));
           } else {
             data[data_index] = 0.0f;
           }
