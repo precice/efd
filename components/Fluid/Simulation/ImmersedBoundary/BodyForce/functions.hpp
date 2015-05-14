@@ -174,10 +174,10 @@ compute_cell_force_turek(
         continue;
       }
 
-      int normal_direction = +1.0;
+      int normal_direction = +1;
 
       if (d2 == 1) {
-        normal_direction = -1.0;
+        normal_direction = -1;
       }
 
       Vector normal = Vector::Zero();
@@ -227,7 +227,7 @@ compute_cell_force_turek(
       force(0)
         += (dvdn * normal(1) - pressure * normal(0)) * width;
       force(1)
-        -= (dvdn * normal(0) - pressure * normal(1)) * width;
+        -= (dvdn * normal(0) + pressure * normal(1)) * width;
     }
   }
 
