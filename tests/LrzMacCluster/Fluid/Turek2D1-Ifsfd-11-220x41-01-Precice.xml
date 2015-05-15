@@ -24,7 +24,7 @@
   </walls>
   <immersed-boundary
     type="Precice-Based"
-    precice-configuration-path="../Precice/Turek2D-IbMapping-440x82.xml"
+    precice-configuration-path="../Precice/Turek2D-IbMapping-220x41.xml"
     full-prediction="off"
     outerLayerSize="0"
     innerLayerSize="1"/>

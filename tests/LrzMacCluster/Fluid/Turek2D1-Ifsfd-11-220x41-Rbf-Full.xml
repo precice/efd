@@ -24,7 +24,7 @@
   </walls>
   <immersed-boundary
     type="Rbf-Based"
-    precice-configuration-path="../Precice/Turek2D-NoIbMapping-440x82.xml"
+    precice-configuration-path="../Precice/Turek2D-NoIbMapping-220x41.xml"
     full-prediction="on"/>
 </scenario>
 

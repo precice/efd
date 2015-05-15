@@ -8,6 +8,7 @@ export PRECICE_NUMPY_INC_PATH=$PYTHON_BASE/lib/python2.7/site-packages/numpy/cor
 export PRECICE_PYTHON_LIB_PATH=$PYTHON_BASE/lib
 export PRECICE_SOCKET_LIB=pthread
 
+module load emacs
 module load git
 module unload gcc
 module load gcc/4.9
