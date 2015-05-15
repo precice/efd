@@ -66,11 +66,10 @@ do_cell_force_computation(TCellAccessor const& accessor) {
 
 template <typename TCellAccessor>
 bool
-compute_cell_force(
-  TCellAccessor const&                      accessor,
-  typename TCellAccessor::ScalarType const& diffusion_multiplier,
-  typename TCellAccessor::ScalarType const& grad_pressure_multiplier,
-  typename TCellAccessor::VectorDsType&     force) {
+compute_cell_force(TCellAccessor const&                      accessor,
+                   typename TCellAccessor::ScalarType const& diffusion_multiplier,
+                   typename TCellAccessor::ScalarType const& grad_pressure_multiplier,
+                   typename TCellAccessor::VectorDsType&     force) {
   using Scalar = typename TCellAccessor::ScalarType;
 
   using Vector = typename TCellAccessor::VectorDsType;
@@ -119,10 +118,10 @@ compute_cell_force(
         continue;
       }
 
-      int normal_direction = +1.0;
+      int normal_direction = +1;
 
       if (d2 == 1) {
-        normal_direction = -1.0;
+        normal_direction = -1;
       }
 
       Vector normal = Vector::Zero();
@@ -141,8 +140,123 @@ compute_cell_force(
       matrix -= grad_pressure_multiplier * accessor.pressure()
                 * Matrix::Identity();
 
-      normal(d) *= width;
-      force     += matrix * normal;
+      force += (matrix * normal) * width;
+    }
+  }
+
+  return true;
+}
+
+namespace Private {
+template <unsigned TDimensions>
+struct DoCross {};
+
+template <>
+struct DoCross<2> {
+  template <typename TVector>
+  void
+  operator()(std::array<TVector, 2>& normals) const {
+    ((void)normals);
+  }
+};
+
+template <>
+struct DoCross<3> {
+  template <typename TVector>
+  void
+  operator()(std::array<TVector, 3>& normals) const {
+    normals[2] = normals[0].cross(normals[1]);
+  }
+};
+}
+
+template <typename TCellAccessor>
+bool
+compute_cell_force_v2(
+  TCellAccessor const&                      accessor,
+  typename TCellAccessor::ScalarType const& diffusion_multiplier,
+  typename TCellAccessor::ScalarType const& grad_pressure_multiplier,
+  typename TCellAccessor::VectorDsType&     force) {
+  using Scalar = typename TCellAccessor::ScalarType;
+
+  using Vector = typename TCellAccessor::VectorDsType;
+
+  if (!do_cell_force_computation(accessor)) {
+    return false;
+  }
+
+  auto locations = compute_neighbor_locations(accessor);
+
+  force = Vector::Zero();
+
+  for (unsigned d = 0; d < TCellAccessor::Dimensions; ++d) {
+    for (unsigned d2 = 0; d2 < 2; ++d2) {
+      if (locations(2 * d + d2) == 1) {
+        continue;
+      }
+
+      int normal_direction = +1;
+
+      if (d2 == 1) {
+        normal_direction = -1;
+      }
+
+      std::array<Vector, TCellAccessor::Dimensions> normals;
+
+      normals[0]    = Vector::Zero();
+      normals[0](d) = normal_direction;
+
+      Scalar width = 1.0;
+
+      for (unsigned d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
+        if (d3 != d) {
+          width *= accessor.width(d3);
+        }
+      }
+
+      normals[1]    = Vector::Zero();
+      normals[1](0) = normals[0](1);
+      normals[1](1) = -normals[0](0);
+
+      Private::DoCross<TCellAccessor::Dimensions>()(normals);
+
+      Vector temp_force;
+
+      for (unsigned d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
+        Vector grad_velocity;
+
+        for (unsigned d4 = 0; d4 < TCellAccessor::Dimensions; ++d4) {
+          if (locations(2 * d4 + 0) == 1
+              && locations(2 * d4 + 1) == 1) {
+            grad_velocity(d4)
+              = (accessor.velocity(d4, +1).dot(normals[d3])
+                 - accessor.velocity(d4, -1).dot(normals[d3]))
+                / (accessor.width(d4)
+                   + (accessor.width(d4, +1, d4)
+                      + accessor.width(d4, -1, d4)) / 2.0);
+          } else if (locations(2 * d4 + 0) == 1) {
+            grad_velocity(d4)
+              = (accessor.velocity().dot(normals[d3])
+                 - accessor.velocity(d4, -1).dot(normals[d3]))
+                / accessor.width(d4);
+          } else if (locations(2 * d4 + 1) == 1) {
+            grad_velocity(d4)
+              = (accessor.velocity(d4, +1).dot(normals[d3])
+                 - accessor.velocity().dot(normals[d3]))
+                / accessor.width(d4, +1, d4);
+          } else {
+            throwException("One of the neighboring cells in the dimension {1} "
+                           "must be ouside the body", d4);
+          }
+        }
+        temp_force(d3) = diffusion_multiplier * grad_velocity.dot(normals[0]);
+      }
+
+      temp_force(0) -= grad_pressure_multiplier * accessor.pressure();
+
+      for (unsigned d3 = 0; d3 < TCellAccessor::Dimensions; ++d3) {
+        force(d3) += temp_force.dot(normals[d3]) * width;
+      }
     }
   }
 

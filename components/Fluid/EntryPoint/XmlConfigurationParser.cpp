@@ -506,6 +506,27 @@ private:
     }
   }
 
+  void
+  parsePoints(xmlNodePtr node) const {
+    static boost::regex regexpr("[\\[({<]\\+([^\\])}>]*)[^\\])}>]\\+");
+    using Vector = Eigen::Matrix<long double, 3, 1>;
+    std::vector<Vector> points;
+
+    std::string content_string = reinterpret_cast<char const*>(node->children->content);
+
+    boost::sregex_iterator it
+      = boost::sregex_iterator(content_string.begin(), content_string.end(), regexpr);
+    boost::sregex_iterator it_end = boost::sregex_iterator();
+
+    for (; it != it_end; ++it) {
+      Vector coordinates;
+      Uni::Helpers::parse_floating_point_vector(
+        it->operator[](1).str(),
+        coordinates);
+      points.emplace_back(coordinates);
+    }
+  }
+
   FluidSimulation::Configuration* configuration;
   boost::filesystem::path         filePath;
 

@@ -48,11 +48,11 @@ getMpiScalarType<long double>() {
 
 template <typename TScalar>
 inline void
-mpiAllReduce(void*           sendbuf,
-             void*           recvbuf,
-             int const&      count,
-             MPI_Op const&   op,
-             MPI_Comm const& comm) {
+mpi_all_reduce(void*        sendbuf,
+               TScalar*        recvbuf,
+               int const&      count,
+               MPI_Op const&   op,
+               MPI_Comm const& comm) {
   MPI_Allreduce(sendbuf, recvbuf, count, getMpiScalarType<TScalar>(), op, comm);
 }
 }

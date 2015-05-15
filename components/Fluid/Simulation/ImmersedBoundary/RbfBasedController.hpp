@@ -20,7 +20,6 @@
 #include <Uni/ExecutionControl/exception>
 #include <Uni/Helpers/macros>
 
-#include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>

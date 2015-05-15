@@ -8,7 +8,15 @@
 #include <boost/interprocess/file_mapping.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index_container.hpp>
+
+#include <boost/multi_index/member.hpp>
+
 #include <iostream>
+#include <map>
 #include <vector>
 
 namespace FsiSimulation {
@@ -21,10 +29,28 @@ private:
 
   using FileStream = boost::filesystem::fstream;
 
+  struct Item {
+    std::string         name;
+    mutable std::string value;
+  };
+
+  using Set
+          = boost::multi_index_container<
+          Item,
+          boost::multi_index::indexed_by<
+            boost::multi_index::sequenced<>,
+            boost::multi_index::ordered_unique<
+              boost::multi_index::member<
+                Item, std::string, & Item::name>
+              >
+            >
+          >;
+
 public:
   using Path = boost::filesystem::path;
 
-  CsvReporter() : _isInitialized(false) {}
+  CsvReporter() : _isInitialized(false),
+    _isFirstIteration(true) {}
 
   CsvReporter(CsvReporter const&) = delete;
 
@@ -65,16 +91,17 @@ public:
   void
   setAt(std::string const& column_name,
         std::string const& value) {
-    _info.push_back(std::make_pair(column_name, value));
+    _info.insert(std::make_pair(column_name, value));
   }
 
   void
-  addAt(unsigned const& column, std::string const& value) {
-    if (_row.size() <= column) {
-      _row.resize(column + 1);
+  addAt(std::string const& column, std::string const& value) {
+    if (_isFirstIteration) {
+      _row.emplace_back(Item({ column, value }));
+    } else {
+      assert(_row.get<1>().find(column) != _row.get<1>().end());
+      _row.get<1>().find(column)->value =  value;
     }
-
-    _row[column] = value;
   }
 
   void
@@ -107,8 +134,14 @@ public:
 
   void
   recordIteration() {
-    std::string result = createRow(_row);
-    _row.clear();
+    std::string result;
+
+    if (_isFirstIteration) {
+      _isFirstIteration = false;
+      result            = createHeaderAndRow(_row);
+    } else {
+      result = createRow(_row);
+    }
 
     result += '\n';
     this->append(result);
@@ -123,6 +156,9 @@ public:
       _region        = std::move(MappedRegion());
       _isInitialized = false;
     }
+    _isFirstIteration = true;
+    _row.clear();
+    _info.clear();
   }
 
 private:
@@ -196,17 +232,57 @@ private:
   }
 
   inline std::string
-  createRow(std::vector < std::pair < std::string, std::string >> const& row) {
+  createRow(Set const& row) {
+    std::string result;
+
+    unsigned i = 0;
+
+    for (auto const& item : row) {
+      if (i != 0) {
+        result += ",";
+      }
+      result += item.value;
+      ++i;
+    }
+
+    return result;
+  }
+
+  inline std::string
+  createHeaderAndRow(Set const& row) {
     std::string result1;
     std::string result2;
 
-    for (unsigned i = 0; i < row.size(); ++i) {
+    unsigned i = 0;
+
+    for (auto const& item : row) {
       if (i != 0) {
         result1 += ",";
         result2 += ",";
       }
-      result1 += row[i].first;
-      result2 += row[i].second;
+      result1 += item.name;
+      result2 += item.value;
+      ++i;
+    }
+
+    return result1 + '\n' + result2;
+  }
+
+  inline std::string
+  createRow(std::map<std::string, std::string> const& row) {
+    std::string result1;
+    std::string result2;
+
+    unsigned i = 0;
+
+    for (auto const& pair : row) {
+      if (i != 0) {
+        result1 += ",";
+        result2 += ",";
+      }
+      result1 += pair.first;
+      result2 += pair.second;
+      ++i;
     }
 
     return result1 + '\n' + result2;
@@ -223,8 +299,9 @@ private:
 
   Path _infoFilePath;
 
-  std::vector<std::string> _row;
-  std::vector < std::pair < std::string, std::string >> _info;
+  bool                               _isFirstIteration;
+  Set                                _row;
+  std::map<std::string, std::string> _info;
 };
 }
 }

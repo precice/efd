@@ -49,11 +49,11 @@ compute_time_step_size(TScalar const& re,
   }
 
   TScalar globalMin = std::numeric_limits<TScalar>::max();
-  Private::mpiAllReduce<TScalar>(&localMin,
-                                 &globalMin,
-                                 1,
-                                 MPI_MIN,
-                                 PETSC_COMM_WORLD);
+  Private::mpi_all_reduce(&localMin,
+                          &globalMin,
+                          1,
+                          MPI_MIN,
+                          PETSC_COMM_WORLD);
 
   factor  = globalMin;
   factor *= tau;
@@ -261,22 +261,17 @@ initialize(precice::SolverInterface* precice_interface,
                        _im->memory.gridGeometry()->minCellWidth());
   _im->reporter->setAt("SolverId", SolverId);
 
-  _im->reporter->addAt(0, "IterationNumber");
-  _im->reporter->addAt(1, "Time");
-  _im->reporter->addAt(2, "TimeStepSize");
-  _im->reporter->addAt(3, "Force1");
-  _im->reporter->addAt(4, "Force2");
-  _im->reporter->addAt(5, "Force3");
-
-  _im->reporter->recordIteration();
-
-  _im->reporter->addAt(0, _im->memory.iterationNumber());
-  _im->reporter->addAt(1, _im->memory.time());
-  _im->reporter->addAt(2, _im->memory.timeStepSize());
-  _im->reporter->addAt(3, VectorDsType::Zero().eval());
-  _im->reporter->addAt(4, VectorDsType::Zero().eval());
-  _im->reporter->addAt(5, VectorDsType::Zero().eval());
-
+  _im->reporter->addAt("IterationNumber", _im->memory.iterationNumber());
+  _im->reporter->addAt("Time", _im->memory.time());
+  _im->reporter->addAt("TimeStepSize", _im->memory.timeStepSize());
+  _im->reporter->addAt("IbForceSum", VectorDsType::Zero().eval());
+  _im->reporter->addAt("Force1", VectorDsType::Zero().eval());
+  _im->reporter->addAt("Force2", VectorDsType::Zero().eval());
+  _im->reporter->addAt("Force3", VectorDsType::Zero().eval());
+  _im->reporter->addAt("MinVelocity", VectorDsType::Zero().eval());
+  _im->reporter->addAt("MaxVelocity", VectorDsType::Zero().eval());
+  _im->reporter->addAt("MinPressure", 0);
+  _im->reporter->addAt("MaxPressure", 0);
   _im->reporter->recordIteration();
 }
 
@@ -342,31 +337,36 @@ iterateWithFullIbVelocityPrediction() {
     updateFgh(accessor);
   }
 
-  std::unique_ptr<ScalarType[]> pressure_backup(
-    new ScalarType[_im->memory.grid()->size().prod()]);
+  _im->peSolver.executeVpe();
+  _im->ghostHandlers.executeFghMpiExchange();
 
-  std::memcpy(pressure_backup.get(),
-              _im->memory.pressure(),
-              _im->memory.grid()->size().prod() * sizeof (ScalarType));
+  // std::unique_ptr<ScalarType[]> pressure_backup(
+  //   new ScalarType[_im->memory.grid()->size().prod()]);
 
-  solvePoissonEquations();
+  // std::memcpy(pressure_backup.get(),
+  //             _im->memory.pressure(),
+  //             _im->memory.grid()->size().prod() * sizeof (ScalarType));
+
+  // solvePoissonEquations();
 
   for (auto& ib_fluid_cell : _im->ibController->getVelocityIterable()) {
     auto accessor = *_im->memory.grid()->begin();
     accessor.initialize(ib_fluid_cell.globalIndex());
 
-    VectorDsType grad_pressure
-      = PressureProcessing<SolverId>::grad(accessor);
+    ib_fluid_cell.data() = accessor.fgh();
 
-    ib_fluid_cell.data()
-      = accessor.fgh()
-        - _im->memory.timeStepSize()
-        * _im->memory.parameters()->gradPressureMultiplier() * grad_pressure;
+    // VectorDsType grad_pressure
+    //   = PressureProcessing<SolverId>::grad(accessor);
+
+    // ib_fluid_cell.data()
+    //   = accessor.fgh()
+    //     - _im->memory.timeStepSize()
+    //     * _im->memory.parameters()->gradPressureMultiplier() * grad_pressure;
   }
 
-  std::memcpy(_im->memory.pressure(),
-              pressure_backup.get(),
-              _im->memory.grid()->size().prod() * sizeof (ScalarType));
+  // std::memcpy(_im->memory.pressure(),
+  //             pressure_backup.get(),
+  //             _im->memory.grid()->size().prod() * sizeof (ScalarType));
 
   _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
@@ -510,13 +510,13 @@ addIbForces() {
 
     total_force += body_force;
   }
-  Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
-                                    total_force.data(),
-                                    Dimensions,
-                                    MPI_SUM,
-                                    PETSC_COMM_WORLD);
+  Private::mpi_all_reduce(MPI_IN_PLACE,
+                          total_force.data(),
+                          Dimensions,
+                          MPI_SUM,
+                          PETSC_COMM_WORLD);
 
-  _im->reporter->addAt(3, total_force);
+  _im->reporter->addAt("IbForceSum", total_force);
 }
 
 template <typename T>
@@ -536,6 +536,14 @@ template <typename T>
 void
 FsfdSolver<T>::
 updateVelocities() {
+  VectorDsType min_velocity
+    = VectorDsType::Constant(std::numeric_limits<ScalarType>::max());
+  VectorDsType max_velocity
+    = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
+
+  ScalarType min_pressure = std::numeric_limits<ScalarType>::max();
+  ScalarType max_pressure = std::numeric_limits<ScalarType>::min();
+
   for (auto& accessor : _im->memory.grid()->innerGrid) {
     VectorDsType grad_pressure
       = PressureProcessing<SolverId>::grad(accessor);
@@ -546,10 +554,43 @@ updateVelocities() {
         * _im->memory.parameters()->gradPressureMultiplier() * grad_pressure;
 
     compute_max_velocity(accessor, _im->memory.maxVelocity());
+
+    if ((accessor.positionInRespectToGeometry().array() > 0).all()) {
+      min_velocity = accessor.velocity().cwiseMin(min_velocity);
+      max_velocity = accessor.velocity().cwiseMax(max_velocity);
+      min_pressure = std::min(accessor.pressure(), min_pressure);
+      max_pressure = std::max(accessor.pressure(), max_pressure);
+    }
   }
+
+  Private::mpi_all_reduce(MPI_IN_PLACE,
+                          min_velocity.data(),
+                          Dimensions,
+                          MPI_MIN,
+                          _im->memory.parallelDistribution()->mpiCommunicator);
+  Private::mpi_all_reduce(MPI_IN_PLACE,
+                          max_velocity.data(),
+                          Dimensions,
+                          MPI_MAX,
+                          _im->memory.parallelDistribution()->mpiCommunicator);
+  Private::mpi_all_reduce(MPI_IN_PLACE,
+                          &min_pressure,
+                          1,
+                          MPI_MIN,
+                          _im->memory.parallelDistribution()->mpiCommunicator);
+  Private::mpi_all_reduce(MPI_IN_PLACE,
+                          &max_pressure,
+                          1,
+                          MPI_MAX,
+                          _im->memory.parallelDistribution()->mpiCommunicator);
 
   _im->ghostHandlers.executeVelocityInitialization();
   _im->ghostHandlers.executeVelocityMpiExchange();
+
+  _im->reporter->addAt("MinVelocity", min_velocity);
+  _im->reporter->addAt("MaxVelocity", max_velocity);
+  _im->reporter->addAt("MinPressure", min_pressure);
+  _im->reporter->addAt("MaxPressure", max_pressure);
 }
 
 template <typename T>
@@ -561,9 +602,9 @@ finalizeIteration() {
   _im->memory.time() += _im->memory.timeStepSize();
   ++_im->memory.iterationNumber();
 
-  _im->reporter->addAt(0, _im->memory.iterationNumber());
-  _im->reporter->addAt(1, _im->memory.time());
-  _im->reporter->addAt(2, _im->memory.timeStepSize());
+  _im->reporter->addAt("IterationNumber", _im->memory.iterationNumber());
+  _im->reporter->addAt("Time", _im->memory.time());
+  _im->reporter->addAt("TimeStepSize", _im->memory.timeStepSize());
 }
 
 template <typename T>
@@ -612,17 +653,24 @@ void
 FsfdSolver<T>::
 computeBodyForce() {
   VectorDsType total_force       = VectorDsType::Zero();
+  VectorDsType total_force_v2    = VectorDsType::Zero();
   VectorDsType total_force_turek = VectorDsType::Zero();
 
   for (auto const& accessor : _im->memory.grid()->innerGrid) {
     namespace fc = ImmersedBoundary::BodyForce;
     VectorDsType force       = VectorDsType::Zero();
+    VectorDsType force_v2    = VectorDsType::Zero();
     VectorDsType force_turek = VectorDsType::Zero();
     fc::compute_cell_force(
       accessor,
       _im->memory.parameters()->diffusionMultiplier(),
       _im->memory.parameters()->gradPressureMultiplier(),
       force);
+    fc::compute_cell_force_v2(
+      accessor,
+      _im->memory.parameters()->diffusionMultiplier(),
+      _im->memory.parameters()->gradPressureMultiplier(),
+      force_v2);
     fc::compute_cell_force_turek(
       accessor,
       _im->memory.parameters()->diffusionMultiplier(),
@@ -630,23 +678,31 @@ computeBodyForce() {
       force_turek);
     accessor.setBodyForce(force);
     total_force       += force;
+    total_force_v2    += force_v2;
     total_force_turek += force_turek;
   }
 
-  FluidSimulation::Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
-                                                     total_force.data(),
-                                                     Dimensions,
-                                                     MPI_SUM,
-                                                     PETSC_COMM_WORLD);
+  FluidSimulation::Private::mpi_all_reduce(MPI_IN_PLACE,
+                                           total_force.data(),
+                                           Dimensions,
+                                           MPI_SUM,
+                                           PETSC_COMM_WORLD);
 
-  FluidSimulation::Private::mpiAllReduce<ScalarType>(MPI_IN_PLACE,
-                                                     total_force_turek.data(),
-                                                     Dimensions,
-                                                     MPI_SUM,
-                                                     PETSC_COMM_WORLD);
+  FluidSimulation::Private::mpi_all_reduce(MPI_IN_PLACE,
+                                           total_force_v2.data(),
+                                           Dimensions,
+                                           MPI_SUM,
+                                           PETSC_COMM_WORLD);
 
-  _im->reporter->addAt(4, total_force);
-  _im->reporter->addAt(5, total_force_turek);
+  FluidSimulation::Private::mpi_all_reduce(MPI_IN_PLACE,
+                                           total_force_turek.data(),
+                                           Dimensions,
+                                           MPI_SUM,
+                                           PETSC_COMM_WORLD);
+
+  _im->reporter->addAt("Force1", total_force);
+  _im->reporter->addAt("Force2", total_force_v2);
+  _im->reporter->addAt("Force3", total_force_turek);
 }
 
 Fluid_InstantiateExternTemplates(FsfdSolver);

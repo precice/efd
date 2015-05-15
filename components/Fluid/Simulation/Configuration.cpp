@@ -3,6 +3,8 @@
 #include <Uni/Firewall/Interface>
 #include <Uni/Logging/format>
 
+#include <boost/regex.hpp>
+
 #include <map>
 
 using FsiSimulation::FluidSimulation::Configuration;

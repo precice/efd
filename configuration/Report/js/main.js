@@ -9,36 +9,71 @@ function vectorToString(vector) {
   var string = ""
   for (var i = 0; i < vector.length; ++i) {
     if (i != 0) {
-      string += ", ";
+      string += " | ";
     }
     string += fpfmt(vector[i]);
   }
   return string;
 }
 
-function Handler(name) {
+function Handler(name, time, iterationsNumber) {
   this.name = name;
+  this.time = time;
+  this.iterationsNumber = iterationsNumber;
+
   this.Turek2D1Handler = function(d) {
-    for (var i = 0; i < d.force2.length; ++i) {
+    for (var i = 0; i < d.ibForce.length; ++i) {
+      d.ibForce[i] = 500.0 * d.ibForce[i];
       d.force1[i] = 500.0 * d.force1[i];
       d.force2[i] = 500.0 * d.force2[i];
       d.force3[i] = 500.0 * d.force3[i];
     }
+    return true;
   };
   this.Turek2D2Handler = function(d) {
-    for (var i = 0; i < d.force2.length; ++i) {
+    for (var i = 0; i < d.ibForce.length; ++i) {
+      d.ibForce[i] = 20.0 * d.ibForce[i];
       d.force1[i] = 20.0 * d.force1[i];
       d.force2[i] = 20.0 * d.force2[i];
       d.force3[i] = 20.0 * d.force3[i];
     }
+    return true;
   };
-  this.handle = function(d) {}
+  this.handle = function(d) { return true; }
+
+  this.iterationNumberSlice = Math.floor(this.iterationsNumber / 11000);
+
+  this.globalFilter = function(obj) {
+    var doProcess = false;
+    if (obj.iterationNumber == this.iterationsNumber) {
+      doProcess = true;
+    } else if (this.iterationNumberSlice == 0) {
+      doProcess = true;
+    } else if (obj.iterationNumber % this.iterationNumberSlice == 0) {
+      doProcess = true;
+    }
+    if (doProcess) {
+      return this.handle(obj);
+    }
+    return false;
+  }
+
+  this.timeSlice = Math.min(0.1 * this.time, 0.1);
+
+  this.preChartFilter = function(obj) {
+    if (obj.time > this.timeSlice) {
+      return true;
+    }
+    return false;
+  }
 
   if (this.name == "Turek2D1"
       || this.name == "Template") {
     this.handle = this.Turek2D1Handler;
+    this.timeSlice = Math.min(0.6 * this.time, 0.6);
   } else if (this.name == "Turek2D2") {
     this.handle = this.Turek2D2Handler;
+    this.timeSlice = Math.min(0.6 * this.time, 0.6);
   }
 }
 
@@ -150,13 +185,26 @@ function createIterationsTable(data, hasForces) {
   theadTr.append("td").html("It. Num.");
   theadTr.append("td").html("t");
   theadTr.append("td").html("dt");
+  theadTr.append("td").html("Min Velocity");
+  theadTr.append("td").html("Max Velocity");
+  theadTr.append("td").html("Min Pressure");
+  theadTr.append("td").html("Max Pressure");
+  theadTr.append("td").html("IB Force");
+  theadTr.append("td").html("Force1");
+  theadTr.append("td").html("Force2");
+  theadTr.append("td").html("Force3");
 
   data.forEach(function(d) {
     var tr = tbody.append("tr");
     tr.append("td").html(d.iterationNumber);
     tr.append("td").html(d.time);
     tr.append("td").html(d.timeStepSize);
+    tr.append("td").html(vectorToString(d.minVelocity));
+    tr.append("td").html(vectorToString(d.maxVelocity));
+    tr.append("td").html(d.minPressure);
+    tr.append("td").html(d.maxPressure);
     if (hasForces) {
+      tr.append("td").html(vectorToString(d.ibForce));
       tr.append("td").html(vectorToString(d.force1));
       tr.append("td").html(vectorToString(d.force2));
       tr.append("td").html(vectorToString(d.force3));
@@ -281,7 +329,6 @@ function proccedWithIterationResults(info) {
   var url = window.location.pathname;
   var filename = url.substring(url.lastIndexOf('/') + 1);
   filename = filename.substring(0, filename.indexOf('.'));
-  var handler = new Handler(filename);
 
   info.iterationSize = 0;
 
@@ -306,7 +353,8 @@ function proccedWithIterationResults(info) {
 
     data.forEach(function(d, index) {
       if (index < 2) {
-        if (typeof d.Force1 === "undefined"
+        if (typeof d.IbForceSum === "undefined"
+            || typeof d.Force1 === "undefined"
             || typeof d.Force2 === "undefined"
             || typeof d.Force3 === "undefined") {
           hasForces = false;
@@ -328,7 +376,12 @@ function proccedWithIterationResults(info) {
       it.iterationNumber = iterationNubmer;
       it.time = parseFloat(d.Time);
       it.timeStepSize = parseFloat(d.TimeStepSize);
+      it.minVelocity = parseVector(d.MinVelocity);
+      it.maxVelocity = parseVector(d.MaxVelocity);
+      it.minPressure = parseFloat(d.MinPressure);
+      it.maxPressure = parseFloat(d.MaxPressure);
       if (hasForces) {
+        it.ibForce = parseVector(d.IbForceSum);
         it.force1 = parseVector(d.Force1);
         it.force2 = parseVector(d.Force2);
         it.force3 = parseVector(d.Force3);
@@ -340,15 +393,20 @@ function proccedWithIterationResults(info) {
         = Math.min(it.timeStepSize, info.minTimeStepSize);
       info.avrTimeStepSize += weightCoeff * it.timeStepSize;
 
-      handler.handle(it);
       rows.push(it);
-    }); 
+    });
 
     if (info != null) {
       info.iterationSize = rows[rows.length - 1].iterationNumber;
       info.time = rows[rows.length - 1].time;
       createInfoTable(info);
     }
+
+    var handler = new Handler(filename,
+                              rows[rows.length - 1].time,
+                              rows[rows.length - 1].iterationNumber);
+
+    rows = rows.filter(function(obj){return handler.globalFilter(obj);});
 
     buildChart(rows, new function () {
       this.names = ["Time Step Size"]
@@ -359,46 +417,88 @@ function proccedWithIterationResults(info) {
         return [element.timeStepSize];
       }
     });
+
     createIterationsTable(rows, hasForces);
-    timeSlice = Math.min(0.1 * rows[rows.length - 1].time, 0.1);
-    rows = rows.filter(function(obj) {
-      if (obj.time > timeSlice) {
-        return true;
-      }
-      return false;
-    });
+
+    rows = rows.filter(function(obj) {return handler.preChartFilter(obj);});
+
     if (hasForces) {
       buildChart(rows, new function () {
-        this.names = ["Direct Forcing(X)", "Direct Forcing(Y)", "Direct Forcing Norm 2"];
+        this.names = ["Max Velocity(X)", "Max Velocity(Y)"];
+        this.x = function(element) {
+          return element.iterationNumber;
+        }
+        this.y = function(element) {
+          return [element.maxVelocity[0],
+                  element.maxVelocity[1]];
+        }
+      });
+      buildChart(rows, new function () {
+        this.names = ["Min Velocity(X)", "Min Velocity(Y)"];
+        this.x = function(element) {
+          return element.iterationNumber;
+        }
+        this.y = function(element) {
+          return [element.minVelocity[0],
+                  element.minVelocity[1]];
+        }
+      });
+      buildChart(rows, new function () {
+        this.names = ["Max Pressure"];
+        this.x = function(element) {
+          return element.iterationNumber;
+        }
+        this.y = function(element) {
+          return [element.maxPressure];
+        }
+      });
+      buildChart(rows, new function () {
+        this.names = ["Min Pressure"];
+        this.x = function(element) {
+          return element.iterationNumber;
+        }
+        this.y = function(element) {
+          return [element.minPressure];
+        }
+      });
+      buildChart(rows, new function () {
+        this.names = ["Direct Forcing(X)", "Direct Forcing(Y)"];
+        this.x = function(element) {
+          return element.iterationNumber;
+        }
+        this.y = function(element) {
+          return [element.ibForce[0],
+                  element.ibForce[1]];
+        }
+      });
+      buildChart(rows, new function () {
+        this.names = ["Force1(X)", "Force1(Y)"];
         this.x = function(element) {
           return element.iterationNumber;
         }
         this.y = function(element) {
           return [element.force1[0],
-                  element.force1[1],
-                  computeVectorN2(element.force1)];
+                  element.force1[1]];
         }
       });
       buildChart(rows, new function () {
-        this.names = ["Force(X)", "Force(Y)", "Force Norm 2"];
+        this.names = ["Force2(X)", "Force2(Y)"];
         this.x = function(element) {
           return element.iterationNumber;
         }
         this.y = function(element) {
           return [element.force2[0],
-                  element.force2[1],
-                  computeVectorN2(element.force2)];
+                  element.force2[1]];
         }
       });
       buildChart(rows, new function () {
-        this.names = ["Turek Force(X)", "Turek Force(Y)", "Turek Force Norm 2"];
+        this.names = ["Force3(X)", "Force3(Y)"];
         this.x = function(element) {
           return element.iterationNumber;
         }
         this.y = function(element) {
           return [element.force3[0],
-                  element.force3[1],
-                  computeVectorN2(element.force3)];
+                  element.force3[1]];
         }
       });
     }

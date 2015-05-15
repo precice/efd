@@ -49,7 +49,7 @@ public:
 
   template <typename T, int D>
   void
-  addAt(unsigned const& column,
+  addAt(std::string const& column,
         Eigen::Matrix<T, D, 1> const& value,
         unsigned const& length = 0) {
     this->addAt(column, toString(value, length));
@@ -57,12 +57,12 @@ public:
 
   template <typename T>
   void
-  addAt(unsigned const& column, T const& value) {
+  addAt(std::string const& column, T const& value) {
     this->addAt(column, toString(value));
   }
 
   virtual void
-  addAt(unsigned const& column, std::string const& value) {
+  addAt(std::string const& column, std::string const& value) {
     ((void)column);
     ((void)value);
   }
