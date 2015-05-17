@@ -429,7 +429,7 @@ private:
     static xmlChar const* const full_prediction
       = (xmlChar const*)"full-prediction";
     static xmlChar const* const developing_structure
-      = (xmlChar const*)"developing_structure";
+      = (xmlChar const*)"developing-structure";
     static xmlChar const* const outerLayerSize
       = (xmlChar const*)"outerLayerSize";
     static xmlChar const* const innerLayerSize

@@ -1,6 +1,7 @@
 #include "XmlConfigurationParser.hpp"
 
 #include <Uni/ExecutionControl/exception>
+#include <Uni/Firewall/Interface>
 #include <Uni/Helpers/parsefromstring>
 #include <Uni/Logging/macros>
 
@@ -12,34 +13,81 @@
 #include <boost/regex.hpp>
 
 using Structure::XmlConfigurationParser;
-using Structure::Simulation;
 
 namespace Structure {
-namespace Private {
-template <typename T>
-inline void
-parse_in(xmlChar const* content, T& number) {
-  if (!Uni::Helpers::parse_integer_number(
-    std::string(reinterpret_cast<char const*>(content)),
-    number)) {
-    throwException("Failed to parse integer number "
-                   "'{1}'", content);
-  }
-}
+//
+// static inline bool
+// is_default(xmlChar const* content) {
+// std::string content_string
+// = reinterpret_cast<char const*>(content);
 
-template <typename T>
-inline void
-parse_fpn(xmlChar const* content, T& number) {
-  if (!Uni::Helpers::parse_floating_point_number(
-    std::string(reinterpret_cast<char const*>(content)),
-    number)) {
-    throwException("Failed to parse floating-point number "
-                   "'{1}'", content);
-  }
-}
+// static boost::regex default_regex("default", boost::regex::icase);
+
+// if (boost::regex_search(content_string, default_regex)) {
+// return true;
+// }
+
+// return false;
+// }
+
+// static inline bool
+// parse_bool(xmlChar const* content) {
+// static boost::regex on_regex("on|true|1", boost::regex::icase);
+// static boost::regex off_regex("off|false|0", boost::regex::icase);
+
+// std::string content_string
+// = reinterpret_cast<char const*>(content);
+
+// if (boost::regex_search(content_string, on_regex)) {
+// return true;
+// } else if (boost::regex_search(content_string, off_regex)) {
+// return false;
+// } else {
+// throwException("Failed to parse boolean value");
+
+// return false;
+// }
+// }
+
+// template <typename T>
+// static inline void
+// parse_in(xmlChar const* content, T& number) {
+// if (!Uni::Helpers::parse_integer_number(
+// std::string(reinterpret_cast<char const*>(content)),
+// number)) {
+// throwException("Failed to parse integer number '{1}'", content);
+// }
+// }
+
+// static inline int
+// parse_in(xmlChar const* content) {
+// int result;
+// parse_in(content, result);
+
+// return result;
+// }
+
+// template <typename T>
+// static inline void
+// parse_fpn(xmlChar const* content, T& number) {
+// if (!Uni::Helpers::parse_floating_point_number(
+// std::string(reinterpret_cast<char const*>(content)),
+// number)) {
+// throwException("Failed to parse floating-point number "
+// "'{1}'", content);
+// }
+// }
+
+// static inline long double
+// parse_fpn(xmlChar const* content) {
+// long double result;
+// parse_fpn(content, result);
+
+// return result;
+// }
 
 template <typename T, int D>
-inline int
+static inline int
 parse_iv(xmlChar const* content,
          Eigen::Matrix<T, D, 1>& vector) {
   int result;
@@ -55,7 +103,7 @@ parse_iv(xmlChar const* content,
 }
 
 template <typename T, int D>
-inline int
+static inline int
 parse_fpv(xmlChar const* content,
           Eigen::Matrix<T, D, 1>& vector) {
   int result;
@@ -70,78 +118,100 @@ parse_fpv(xmlChar const* content,
   return result;
 }
 
-static void
-parseScenarioParameters(xmlNodePtr  node,
-                        Simulation* configuration) {
-  static xmlChar* const type     = (xmlChar* const)"type";
-  static xmlChar* const velocity = (xmlChar* const)"velocity";
+class XmlConfigurationParserImplementation {
+private:
+  XmlConfigurationParserImplementation(XmlConfigurationParser* in)
+    : _in(in) {}
 
-  xmlAttrPtr attr = node->properties;
+  void
+  parse() const {
+    boost::filesystem::ifstream fileStream(filePath, std::ios_base::binary);
 
-  int dim = -1;
+    std::filebuf* fileBuf = fileStream.rdbuf();
 
-  while (attr) {
-    if (xmlStrcasecmp(attr->name, type) == 0) {
-      parse_in(attr->children->content, configuration->type());
-    } else if (xmlStrcasecmp(attr->name, velocity) == 0) {
-      int temp_dim = parse_fpv(attr->children->content,
-                               configuration->velocity());
+    auto fileSize = fileBuf->pubseekoff(0, fileStream.end, fileStream.in);
+    fileBuf->pubseekpos(0, fileStream.in);
 
-      if (dim == -1) {
-        dim = temp_dim;
-      } else if (temp_dim != dim) {
-        throwException("Inconsistent dimension size in velocity vector,"
-                       "'{1}', because there was already found "
-                       "dimension size of '{2}'",
-                       temp_dim, dim);
-      }
+    char* data = new char[fileSize];
+
+    fileBuf->sgetn(data, fileSize);
+
+    fileStream.close();
+
+    xmlDocPtr doc = xmlReadMemory(data,
+                                  fileSize,
+                                  filePath.c_str(),
+                                  "UTF-8",
+                                  0);
+
+    if (doc == 0) {
+      throwException("Failed to parse configuration");
     }
-    attr = attr->next;
+
+    xmlNodePtr root = xmlDocGetRootElement(doc);
+
+    if (xmlStrcasecmp(root->name, (xmlChar* const)"scenario") != 0) {
+      throwException("Failed to find root element");
+    }
+
+    parseScenarioParameters(root);
+
+    xmlFreeDoc(doc);
+
+    xmlCleanupParser();
   }
 
-  if (dim == -1) {
-    throwException("Unknown dimension size");
+  void
+  parseScenarioParameters(xmlNodePtr node) const {
+    static xmlChar* const       environment = (xmlChar* const)"environment";
+    static xmlChar const* const precice_configuration_path
+      = (xmlChar const*)"precice-configuration-path";
+
+    xmlAttrPtr attr = node->properties;
+
+    int dimensions = -1;
+
+    while (attr) {
+      if (xmlStrcasecmp(attr->name, environment) == 0) {
+        Eigen::Matrix<long double, 3, 1> environment_force;
+        dimensions = parse_fpv(attr->children->content, environment_force);
+        configuration->set("/EnvironmentForce", environment_force);
+      } else if (xmlStrcasecmp(attr->name, precice_configuration_path) == 0) {
+        boost::filesystem::path path(
+          reinterpret_cast<char const*>(attr->children->content));
+
+        if (path.is_relative()) {
+          path = filePath.parent_path() / path;
+        }
+
+        configuration->set("/PreciceConfigurationPath", path);
+      }
+      attr = attr->next;
+    }
+
+    if (dimensions < -1) {
+      throwException("Unknown dimension size");
+    }
+
+    configuration->set("/Dimensions", static_cast<unsigned>(dimensions));
   }
-}
-}
+
+  Configuration*          configuration;
+  boost::filesystem::path filePath;
+
+  Uni_Firewall_INTERFACE_LINK(XmlConfigurationParser);
+};
 }
 
-void
 XmlConfigurationParser::
-parse(std::unique_ptr<Simulation> const& configuration,
-      boost::filesystem::path const&        filePath) {
-  boost::filesystem::ifstream fileStream(filePath, std::ios_base::binary);
-
-  std::filebuf* fileBuf = fileStream.rdbuf();
-
-  auto fileSize = fileBuf->pubseekoff(0, fileStream.end, fileStream.in);
-  fileBuf->pubseekpos(0, fileStream.in);
-
-  char* data = new char[fileSize];
-
-  fileBuf->sgetn(data, fileSize);
-
-  fileStream.close();
-
-  xmlDocPtr doc = xmlReadMemory(data,
-                                fileSize,
-                                filePath.c_str(),
-                                "UTF-8",
-                                0);
-
-  if (doc == 0) {
-    throwException("Failed to parse configuration");
-  }
-
-  xmlNodePtr root = xmlDocGetRootElement(doc);
-
-  if (xmlStrcasecmp(root->name, (xmlChar* const)"scenario") != 0) {
-    throwException("Failed to find root element");
-  }
-
-  Private::parseScenarioParameters(root, configuration.get());
-
-  xmlFreeDoc(doc);
-
-  xmlCleanupParser();
+XmlConfigurationParser(
+  std::unique_ptr<Configuration> const& configuration,
+  boost::filesystem::path const&        file_path)
+  : _im(new XmlConfigurationParserImplementation(this)) {
+  _im->configuration = configuration.get();
+  _im->filePath      = file_path;
+  _im->parse();
 }
+
+XmlConfigurationParser::
+~XmlConfigurationParser() {}

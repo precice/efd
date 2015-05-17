@@ -43,8 +43,6 @@ template = (""
 "bin=$DIR/.install/Gcc/Release/bin\n"
 "conf=$DIR/tests/LrzMacCluster\n"
 "\n"
-"source $conf/environment-configuration.sh\n"
-"\n"
 "mpiexec -n {1} $bin/Fluid \\\n"
 "  -o {2} \\\n"
 "  -e $conf/Petsc/Basic.conf \\\n"
@@ -66,8 +64,6 @@ template2 = (""
 "DIR=$HOME/Project\n"
 "bin=$DIR/.install/Gcc/Release/bin\n"
 "conf=$DIR/tests/LrzMacCluster\n"
-"\n"
-"source $conf/environment-configuration.sh\n"
 "\n"
 "cwd=\"$(pwd)\"\n"
 "cd $conf/Precice\n"
@@ -100,4 +96,4 @@ for root, dirs, files in os.walk(args.d[0]):
         basic_file_name + args.s));
     fo.close()
     subprocess.call("sbatch {0} {1}".format(" ".join(unknown_args), sh_file_name), shell=True)
-    time.sleep(10)
+    # time.sleep(10)

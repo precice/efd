@@ -41,13 +41,11 @@ function Handler(name, time, iterationsNumber) {
   };
   this.handle = function(d) { return true; }
 
-  this.iterationNumberSlice = Math.floor(this.iterationsNumber / 11000);
+  this.iterationNumberSlice = Math.ceil(this.iterationsNumber / 11000);
 
   this.globalFilter = function(obj) {
     var doProcess = false;
     if (obj.iterationNumber == this.iterationsNumber) {
-      doProcess = true;
-    } else if (this.iterationNumberSlice == 0) {
       doProcess = true;
     } else if (obj.iterationNumber % this.iterationNumberSlice == 0) {
       doProcess = true;
@@ -71,9 +69,11 @@ function Handler(name, time, iterationsNumber) {
       || this.name == "Template") {
     this.handle = this.Turek2D1Handler;
     this.timeSlice = Math.min(0.6 * this.time, 0.6);
+    this.iterationNumberSlice = Math.ceil(this.iterationsNumber / 5000);
   } else if (this.name == "Turek2D2") {
     this.handle = this.Turek2D2Handler;
     this.timeSlice = Math.min(0.6 * this.time, 0.6);
+    this.iterationNumberSlice = Math.ceil(this.iterationsNumber / 5000);
   }
 }
 

@@ -31,7 +31,7 @@ class Structure::ApplicationPrivateImplementation {
                                    char**       argv_) : _in(in),
     argc(argc_),
     argv(argv_),
-    simulation(new Simulation()) {
+    structureConfiguration(new Configuration()) {
     namespace fs          = boost::filesystem;
     using LocaleGenerator = boost::locale::generator;
     globalLocale          = LocaleGenerator().generate("");
@@ -54,10 +54,11 @@ class Structure::ApplicationPrivateImplementation {
   Path        applicationPath;
 
   Path preciceConfigurationPath;
-  Path simulationConfigurationPath;
+  Path structureConfigurationPath;
 
-  UniquePreciceInterface      preciceInterface;
-  std::unique_ptr<Simulation> simulation;
+  std::unique_ptr<Configuration> structureConfiguration;
+  UniquePreciceInterface         preciceInterface;
+  std::unique_ptr<Simulation>    simulation;
 };
 
 Application::
@@ -77,12 +78,9 @@ parseArguments() {
   po::options_description optionDescription("Allowed options");
   optionDescription.add_options()
     ("help,h", "Produce help message")
-    ("precice,p",
+    ("structure,s",
     po::value<std::string>(),
-    "Set PreCiCe configuration path")
-    ("simulation,s",
-    po::value<std::string>(),
-    "Set simulation configuration path");
+    "Set structure configuration path");
 
   po::variables_map options;
   po::store(po::parse_command_line(_im->argc, _im->argv, optionDescription),
@@ -95,15 +93,8 @@ parseArguments() {
     return 1;
   }
 
-  if (options.count("precice")) {
-    _im->preciceConfigurationPath
-      = boost::filesystem::canonical(options["precice"].as<std::string>());
-  } else {
-    throwException("No precice configuration provided, try --help, -h");
-  }
-
-  if (options.count("simulation")) {
-    _im->simulationConfigurationPath = options["simulation"].as<std::string>();
+  if (options.count("structure")) {
+    _im->structureConfigurationPath = options["structure"].as<std::string>();
   } else {
     throwException("No configuration was provided, try --help, -h");
   }
@@ -114,15 +105,12 @@ parseArguments() {
 void
 Application::
 initialize() {
-  XmlConfigurationParser::parse(
-    _im->simulation,
-    _im->simulationConfigurationPath);
-
-  // Change current working directory of the application to overcome a Precice
-  // configuration issue with python modules paths.
-  boost::filesystem::current_path(_im->preciceConfigurationPath.parent_path());
+  XmlConfigurationParser(_im->structureConfiguration,
+                         _im->structureConfigurationPath);
 
   initializePrecice();
+
+  _im->simulation.reset(new Simulation(_im->structureConfiguration.get())),
 
   _im->simulation->initialize(_im->preciceInterface.get());
 }
@@ -141,15 +129,25 @@ Application::
 initializePrecice() {
   using namespace precice;
 
+  auto config_path
+    = _im->structureConfiguration->get<boost::filesystem::path>(
+    "/PreciceConfigurationPath");
+
+  config_path = boost::filesystem::canonical(config_path);
+
+  logInfo("{1}", config_path);
+
+  // Change current working directory of the application to overcome a Precice
+  // configuration issue with python modules paths.
+  boost::filesystem::current_path(config_path.parent_path());
+
   _im->preciceInterface.reset(
     new Implementation::PreciceInterface("Structure", 0, 1));
 
   auto preciceConfigurationPath
     = Uni::convertUtfPathToAnsi(
-    boost::filesystem::make_relative(
-      _im->preciceConfigurationPath).string(),
-    _im->globalLocale,
-    _im->ansiLocale);
+    boost::filesystem::make_relative(config_path).string(),
+    _im->globalLocale, _im->ansiLocale);
 
   _im->preciceInterface->configure(preciceConfigurationPath);
 }

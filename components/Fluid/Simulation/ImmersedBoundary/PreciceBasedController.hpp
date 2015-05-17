@@ -357,9 +357,8 @@ public:
                      " related to 'FluidMesh'");
     }
 
-    _fluidMeshVelocitiesId
-                       = _preciceInterface->getDataID("Velocities", _fluidMeshId);
-    _fluidMeshForcesId = _preciceInterface->getDataID("Forces", _fluidMeshId);
+    _fluidMeshVelocitiesId = _preciceInterface->getDataID("Velocities", _fluidMeshId);
+    _fluidMeshForcesId     = _preciceInterface->getDataID("Forces", _fluidMeshId);
   }
 
   void

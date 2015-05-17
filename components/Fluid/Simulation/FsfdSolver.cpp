@@ -112,8 +112,7 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
       = 1.0;
   }
 
-  if (configuration->is(
-        "/Ib/Features/FullVelocityPrediction")) {
+  if (configuration->is("/Ib/Features/FullVelocityPrediction")) {
     _im->iterateFunction
       = std::bind(&FsfdSolver::iterateWithFullIbVelocityPrediction, this);
   } else {
@@ -121,9 +120,8 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
       = std::bind(&FsfdSolver::iterateWithFastIbVelocityPrediction, this);
   }
 
-  if (configuration->is(
-        "/Ib/Features/DevelopingStructure")) {
-    _im->iterateFunction
+  if (configuration->is("/Ib/Features/DevelopingStructure")) {
+    _im->locateStructureFunction
       = std::bind(&FsfdSolver::locateStructure, this);
   } else {
     _im->locateStructureFunction
@@ -341,11 +339,11 @@ iterateWithFullIbVelocityPrediction() {
   _im->ghostHandlers.executeFghMpiExchange();
 
   // std::unique_ptr<ScalarType[]> pressure_backup(
-  //   new ScalarType[_im->memory.grid()->size().prod()]);
+  // new ScalarType[_im->memory.grid()->size().prod()]);
 
   // std::memcpy(pressure_backup.get(),
-  //             _im->memory.pressure(),
-  //             _im->memory.grid()->size().prod() * sizeof (ScalarType));
+  // _im->memory.pressure(),
+  // _im->memory.grid()->size().prod() * sizeof (ScalarType));
 
   // solvePoissonEquations();
 
@@ -356,17 +354,17 @@ iterateWithFullIbVelocityPrediction() {
     ib_fluid_cell.data() = accessor.fgh();
 
     // VectorDsType grad_pressure
-    //   = PressureProcessing<SolverId>::grad(accessor);
+    // = PressureProcessing<SolverId>::grad(accessor);
 
     // ib_fluid_cell.data()
-    //   = accessor.fgh()
-    //     - _im->memory.timeStepSize()
-    //     * _im->memory.parameters()->gradPressureMultiplier() * grad_pressure;
+    // = accessor.fgh()
+    // - _im->memory.timeStepSize()
+    // * _im->memory.parameters()->gradPressureMultiplier() * grad_pressure;
   }
 
   // std::memcpy(_im->memory.pressure(),
-  //             pressure_backup.get(),
-  //             _im->memory.grid()->size().prod() * sizeof (ScalarType));
+  // pressure_backup.get(),
+  // _im->memory.grid()->size().prod() * sizeof (ScalarType));
 
   _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());

@@ -370,15 +370,12 @@ initializePrecice() {
 
   // Change current working directory of the application to overcome a Precice
   // configuration issue with python modules paths.
-  boost::filesystem::current_path(
-    config_path.parent_path());
+  boost::filesystem::current_path(config_path.parent_path());
 
   auto preciceConfigurationPath
     = Uni::convertUtfPathToAnsi(
-    boost::filesystem::make_relative(
-      config_path).string(),
-    _im->globalLocale,
-    _im->ansiLocale);
+    boost::filesystem::make_relative(config_path).string(),
+    _im->globalLocale, _im->ansiLocale);
 
   _im->preciceInterface.reset(
     new Implementation::PreciceInterface("Fluid",

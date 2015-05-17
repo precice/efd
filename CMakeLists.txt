@@ -292,6 +292,11 @@ install(DIRECTORY "${PROJECT_DIR}/configuration/Fluid"
   FILES_MATCHING REGEX "(.*\\.xml)$"
   )
 
+install(DIRECTORY "${PROJECT_DIR}/configuration/Structure"
+  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
+  FILES_MATCHING REGEX "(.*\\.xml)$"
+  )
+
 install(DIRECTORY "${PROJECT_DIR}/configuration/Report"
   DESTINATION "${INSTALL_BINARY_DIR}/configuration"
   )

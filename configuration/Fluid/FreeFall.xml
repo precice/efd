@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<scenario
+  Re="6"
+  diffusion-multiplier="0.1"
+  timeLimit="5.0"
+  iterationLimit="0"
+  plotInterval="0.0"
+  tau="0.5"
+  gamma="0.5"
+  width="2 6"
+  size="50 150"
+  parallelizationSize="1 1"
+  environment="0 0"
+  filename="FreeFall"
+  scalar="double"
+  solver="Improved Fractional Step Finite Difference"
+  output="Xdmf"
+  >
+  <walls>
+    <left type="Output" velocity="0.0 0.0" />
+    <right type="Output"  velocity="0.0 0.0"/>
+    <bottom type="Output" velocity="0.0 0.0" />
+    <top type="Output" velocity="0.0 0.0" />
+  </walls>
+  <immersed-boundary
+    type="Rbf-Based"
+    full-prediction="on"
+    developing-structure="on"
+    precice-configuration-path="../Precice/FreeFall-NoIbMapping.xml"
+    outerLayerSize="0"
+    innerLayerSize="1"/>
+</scenario>

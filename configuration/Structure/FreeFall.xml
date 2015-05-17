@@ -1,0 +1,7 @@
+<?xml version = "1.0"?>
+<scenario
+  type = "0"
+  environment = "0.0 -9.8"
+  precice-configuration-path="../Precice/FreeFall-NoIbMapping.xml"
+  >
+</scenario>

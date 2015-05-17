@@ -14,12 +14,7 @@
     geometry-mode="1"
     restart-mode="0">
 
-    <data:vector name="Velocities"/>
-    <data:vector name="Forces"/>
-
     <mesh name="BodyMesh" flip-normals="0">
-      <use-data name="Velocities"/>
-      <use-data name="Forces"/>
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">

@@ -260,7 +260,9 @@ private:
 public:
   RbfBasedController(Configuration const* configuration,
                      MemoryType const*    memory)
-    : _memory(memory), _doComputeSupportRadius(true), _doComputeImqShape(true) {
+    : _memory(memory),
+    _doComputeSupportRadius(true),
+    _doComputeImqShape(true) {
     if (!configuration->isOfType<std::string>(
           "/Ib/Schemes/DirectForcing/RbfBased/SupportRadius")) {
       _doComputeSupportRadius = false;
@@ -275,6 +277,12 @@ public:
       _imqShape          = static_cast<ScalarType>(configuration->get<long
                                                                       double>(
                                                      "/Ib/Schemes/DirectForcing/RbfBased/ImqShape"));
+    }
+
+    if (configuration->is("/Ib/Features/DevelopingStructure")) {
+      _isDevelopingStructure = true;
+    } else {
+      _isDevelopingStructure = false;
     }
   }
 
@@ -293,6 +301,16 @@ public:
                   / _memory->gridGeometry()->maxCellWidth().maxCoeff();
     }
 
+    if (_isDevelopingStructure) {
+      if (!_preciceInterface->hasData("Displacements", *_bodyMeshSet.begin())) {
+        throwException("Precice configuration does not have 'Displacements' data"
+                       " related to 'BodyMesh'");
+      }
+
+      _displacementsId
+        = _preciceInterface->getDataID("Displacements", *_bodyMeshSet.begin());
+    }
+
     logInfo("RBF shape = {1}",      _imqShape);
     logInfo("Support radius = {1}", _suppportRadius);
   }
@@ -301,14 +319,32 @@ public:
   precompute() {
     logInfo("Locate Interface Cells has been starting ...");
 
-    auto     mesh_handle = _preciceInterface->getMeshHandle("BodyMesh");
-    unsigned body_id     = 0;
+    // precice::MeshHandle const& mesh_handle = _preciceInterface->getMeshHandle("BodyMesh");
+    unsigned                   body_id     = 0;
+
+    auto     body_mesh_id     = _preciceInterface->getMeshID("BodyMesh");
+    unsigned lagrangians_size = _preciceInterface->getMeshVertexSize(body_mesh_id);
+
+    std::vector<int>    ids;
+    std::vector<double> vertices;
+    ids.resize(lagrangians_size);
+    vertices.resize(Dimensions * lagrangians_size);
+
+    for (unsigned i = 0; i < lagrangians_size; ++i) {
+      ids[i] = i;
+    }
+
+    _preciceInterface->getMeshVertices(body_mesh_id,
+                                       lagrangians_size,
+                                       ids.data(),
+                                       vertices.data());
 
     // double                               max_temp = -1;
     // double                               mix_temp = 100000000000;
     // Eigen::Matrix<double, Dimensions, 1> temp_coords2;
 
     _lagrangianNodes.clear();
+    _lagrangianIds.clear();
     // _lagrangianNodes.reserve(mesh_handle.vertices().size());
 
     VectorDsType lower_boundary
@@ -319,10 +355,22 @@ public:
         + _memory->gridGeometry()->minCellWidth().cwiseProduct(
       _memory->parallelDistribution()->localCellSize.template cast<ScalarType>());
 
-    for (auto vertex = mesh_handle.vertices().begin();
-         vertex != mesh_handle.vertices().end();
-         vertex++) {
-      Eigen::Matrix<double, Dimensions, 1> temp_coords(vertex.vertexCoords());
+    // std::vector < Eigen::Matrix < double, Dimensions, 1 >> trash_coords;
+
+    for (unsigned i = 0; i < ids.size(); ++i) {
+      Eigen::Matrix<double, Dimensions, 1> temp_coords(&vertices[Dimensions * i]);
+
+      // for (unsigned i = 0; i < trash_coords.size(); ++i) {
+      //   if (((trash_coords[i] - temp_coords).cwiseAbs().eval().array()
+      //        <= 10.0 * std::numeric_limits<double>::epsilon()).all()) {
+      //     logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}", trash_coords[i].transpose());
+      //     logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}", temp_coords.transpose());
+      //     logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}", (trash_coords[i] -
+      //                                                      temp_coords).eval().transpose());
+      //     throwException("");
+      //   }
+      // }
+      // trash_coords.emplace_back(temp_coords);
 
       // if (max_temp != -1) {
       // max_temp = std::max(max_temp, (temp_coords - temp_coords2).norm());
@@ -339,6 +387,9 @@ public:
       if ((lagrangian_cell_position.array() <= upper_boundary.array()).all()
           && (lagrangian_cell_position.array() > lower_boundary.array()).all()) {
         _lagrangianNodes.emplace_back(body_id, lagrangian_cell_position);
+
+        _lagrangianIds.emplace_back(ids[i]);
+
         ++body_id;
       }
     }
@@ -392,6 +443,15 @@ public:
 
   void
   processForces() {
+    _lagrangianDisplacements.resize(Dimensions * _lagrangianIds.size(), 0.0);
+
+    if (_isDevelopingStructure) {
+      _preciceInterface->readBlockVectorData(_displacementsId,
+                                             _lagrangianIds.size(),
+                                             _lagrangianIds.data(),
+                                             _lagrangianDisplacements.data());
+    }
+
     for (unsigned d = 0; d < Dimensions; ++d) {
       _resolveForces(d);
     }
@@ -432,6 +492,8 @@ private:
          + VectorDsType::Ones()).template cast<int>();
 
     unsigned internal_id = 0;
+
+    logInfo("Size {1} ", _lagrangianNodes.size());
 
     for (auto& lagrangian_node : _lagrangianNodes) {
       _lagrangianNodesSupports[dimension].emplace_back(&lagrangian_node);
@@ -724,6 +786,7 @@ private:
       = (_preciceInterface->inquirePosition(
            position.template cast<double>().data(), _bodyMeshSet)
          != precice::constants::positionOutsideOfGeometry());
+
     auto find_it = _velocitySet.template get<0>().find(serial_index);
 
     if (find_it == _velocitySet.template get<0>().end()) {
@@ -902,8 +965,14 @@ private:
     // double temp_norm_base   = 0;
     // double temp_norm_base_b = 0;
 
+    unsigned index = 0;
+
     for (auto& supports : _lagrangianNodesSupports[dimension]) {
-      PetscScalar value = 0;
+      PetscScalar value
+        = _lagrangianDisplacements[Dimensions * index + dimension]
+          / _memory->timeStepSize();
+
+      logInfo("{1}", _lagrangianDisplacements[Dimensions * index + dimension]);
 
       for (auto& fluid_cell : supports) {
         value -= fluid_cell.weight() * fluid_cell.cell()->data(dimension);
@@ -925,6 +994,7 @@ private:
       PetscInt serial_index = supports.lagrangianNode()->id();
       // logInfo("b({1}) = {2}", serial_index, value);
       VecSetValues(b, 1, &serial_index, &value, INSERT_VALUES);
+      ++index;
     }
 
     VecAssemblyBegin(b);
@@ -1307,13 +1377,18 @@ private:
   bool       _doComputeImqShape;
   ScalarType _imqShape;
 
+  bool _isDevelopingStructure;
+
   Eigen::Matrix<unsigned, Dimensions, 1> _localEulerianCellSize;
   Eigen::Matrix<unsigned, Dimensions, 1> _globalEulerianCellSize;
 
   Set _velocitySet;
   Set _forceSet;
 
+  int                         _displacementsId;
   std::vector<LagrangianNode> _lagrangianNodes;
+  std::vector<int>            _lagrangianIds;
+  std::vector<ScalarType>     _lagrangianDisplacements;
   std::array<std::vector<LagrangianNodeSupports>,
              Dimensions> _lagrangianNodesSupports;
 
