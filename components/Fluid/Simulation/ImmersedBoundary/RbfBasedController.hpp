@@ -972,7 +972,7 @@ private:
         = _lagrangianDisplacements[Dimensions * index + dimension]
           / _memory->timeStepSize();
 
-      logInfo("{1}", _lagrangianDisplacements[Dimensions * index + dimension]);
+      // logInfo("{1}", _lagrangianDisplacements[Dimensions * index + dimension]);
 
       for (auto& fluid_cell : supports) {
         value -= fluid_cell.weight() * fluid_cell.cell()->data(dimension);

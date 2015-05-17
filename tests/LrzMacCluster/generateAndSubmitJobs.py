@@ -16,6 +16,7 @@ parser = ArgumentParser()
 
 parser.add_argument('-f', nargs='?', default=".*")
 parser.add_argument('-s', nargs='?', default="")
+parser.add_argument('-p', nargs='?', default="")
 parser.add_argument('-t', nargs='?', default="1")
 parser.add_argument('-m', nargs='?', default="1")
 parser.add_argument('--with-server', dest='with_server', action='store_true')
@@ -67,11 +68,11 @@ template2 = (""
 "\n"
 "cwd=\"$(pwd)\"\n"
 "cd $conf/Precice\n"
-"mpiexec -n 1 binprecice server Fluid Turek2D-IbMapping-440x82.xml &\n"
+"mpiexec -n 1 binprecice server Fluid {2}.xml &\n"
 "cd $cwd\n"
 "\n"
-"mpiexec -n {2} $bin/Fluid \\\n"
-"  -o {3} \\\n"
+"mpiexec -n {3} $bin/Fluid \\\n"
+"  -o {4} \\\n"
 "  -e $conf/Petsc/Basic.conf \\\n"
 "  -s $conf/Fluid/{0}.xml")
 
@@ -88,6 +89,7 @@ for root, dirs, files in os.walk(args.d[0]):
       fo.write(template2.format(
         basic_file_name,
         args.t,
+        args.p,
         args.m,
         basic_file_name + args.s));
     else:

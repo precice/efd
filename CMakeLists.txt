@@ -28,13 +28,22 @@ else()
   set(INSTALL_CMAKE_DIR lib/cmake)
 endif ()
 # ==============================================================================
-# }}} General
+# General }}}
+
+# Options {{{
+# ==============================================================================
+option(BUILD_WITH_MAX_OPTIMIZATIONS
+  "Add additional flags to the compiler to provide maximum optimizations" OFF)
+option(BUILD_WITH_MAX_DEBUGING_ANALYSIS
+  "Add additional flags to the compiler to provide maximum debuging analysis" OFF)
+# ==============================================================================
+# Options }}}
 
 # Modules {{{
 # ==============================================================================
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
 # ==============================================================================
-# }}} Modules
+# Modules }}}
 
 # Packages {{{
 # ==============================================================================
@@ -83,7 +92,7 @@ find_library(Hdf5_LIBRARY
   PATH_SUFFIXES lib
 )
 # ==============================================================================
-# }}} Packages
+# Packages }}}
 
 # Compilers {{{
 # ==============================================================================
@@ -100,12 +109,12 @@ else()
   message(FATAL "Unsopported toolchain")
 endif ()
 # ==============================================================================
-# }}} Compilers
+# Compilers }}}
 
 # {{{ General-purpose definitions
 # ==============================================================================
 # ==============================================================================
-# }}} General-purpose definitions
+# General-purpose definitions }}}
 
 # General-purpose flags {{{
 # ==============================================================================
@@ -116,7 +125,15 @@ if (COMPILER_IS_CLANG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
 elseif (COMPILER_IS_GCC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+elseif (COMPILER_IS_ICC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ip -ipo2 -ipo-jobs4")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -opt-prefetch=2")
 endif ()
+if (COMPILER_IS_CLANG OR COMPILER_IS_GCC)
+  if (BUILD_WITH_MAX_OPTIMIZATIONS)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
+  endif()
+endif()
 if (COMPILER_IS_CLANG OR COMPILER_IS_GCC OR COMPILER_IS_ICC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
@@ -124,47 +141,28 @@ if (COMPILER_IS_CLANG OR COMPILER_IS_GCC OR COMPILER_IS_ICC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-  # string(REPLACE "-O3" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-  # set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O0")
+  if (BUILD_WITH_MAX_OPTIMIZATIONS)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
+  else()
+    string(REPLACE "-O3" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O0")
+  endif()
 
-  #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
-  #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
-
-  # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-inline")
-  # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=memory")
-  # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
+  if (BUILD_WITH_MAX_DEBUGING_ANALYSIS)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-inline")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=memory")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
+endif()
 endif ()
 # ------------------------------------------------------------------------------
 if (LINKER_IS_LD)
-  if (WIN32)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
-  endif ()
-
-  # set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-O5")
-  # ----------------------------------------------------------------------------
-  if (WIN32)
-    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libgcc")
-    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libstdc++")
-    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static")
-  endif ()
-
-  # set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -Wl,-O5")
-  # ----------------------------------------------------------------------------
-  if (WIN32)
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libstdc++")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static")
-  endif ()
-
-  #set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,-O5")
-  # ----------------------------------------------------------------------------
-  #set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "${CMAKE_STATIC_LINKER_FLAGS_RELEASE} -Wl,-O5")
-elseif (LINKER_IS_ICC)
+  if (BUILD_WITH_MAX_OPTIMIZATIONS)
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-O5")
+  endif()
 endif ()
 # ==============================================================================
-# }}} General-purpose flags
+# General-purpose flags }}}
 
 # Targets {{{
 # ==============================================================================
@@ -234,14 +232,14 @@ target_link_libraries(Structure PRIVATE
   ${MPI_CXX_LIBRARIES}
   )
 # ==============================================================================
-# }}} Targets
+# Targets }}}
 
 # Targets' definitions {{{
 # ==============================================================================
 target_compile_definitions(Fluid PRIVATE ${Fluid_DEFINITIONS})
 target_compile_definitions(Structure PRIVATE ${LIBXML2_DEFINITIONS})
 # ==============================================================================
-# }}} Targets' definitions
+# Targets' definitions }}}
 
 # Targets' flags {{{
 # ==============================================================================
@@ -259,9 +257,9 @@ if(MPI_CXX_LINK_FLAGS)
     PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 endif()
 # ==============================================================================
-# }}} Targets' flags
+# Targets' flags }}}
 
-# {{{ Installation
+# Installation {{{
 # ==============================================================================
 install(
   TARGETS Fluid
@@ -301,4 +299,4 @@ install(DIRECTORY "${PROJECT_DIR}/configuration/Report"
   DESTINATION "${INSTALL_BINARY_DIR}/configuration"
   )
 # ==============================================================================
-# }}} Installation
+# Installation }}}

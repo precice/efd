@@ -66,6 +66,7 @@
 !/tests/LrzMacCluster
 !/tests/LrzMacCluster/environment-configuration.sh
 !/tests/LrzMacCluster/generateAndSubmitJobs.py
+!/tests/LrzMacCluster/generateAndSubmitTurek2D1.sh
 !/tests/LrzMacCluster/Fluid
 !/tests/LrzMacCluster/Petsc
 !/tests/LrzMacCluster/Precice

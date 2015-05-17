@@ -14,7 +14,8 @@
     geometry-mode="1"
     restart-mode="0">
 
-    <mesh name="BodyMesh" flip-normals="0"/>
+    <mesh name="BodyMesh" flip-normals="0">
+    </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
       <discretization-width value="0.005"/>
