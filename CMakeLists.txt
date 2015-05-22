@@ -226,6 +226,7 @@ target_include_directories(Structure SYSTEM PRIVATE
 target_link_libraries(Structure PRIVATE
   Uni
   ${Precice_LIBRARIES}
+  ${PETSC_LIBRARIES}
   ${Boost_LIBRARIES}
   ${LIBXML2_LIBRARIES}
   ${PYTHON_LIBRARIES}
