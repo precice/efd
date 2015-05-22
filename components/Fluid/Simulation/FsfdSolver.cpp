@@ -274,6 +274,28 @@ initialize(precice::SolverInterface* precice_interface,
 }
 
 template <typename T>
+typename FsfdSolver<T>::ScalarType
+FsfdSolver<T>::
+computeTimeStepSize() {
+  _im->memory.timeStepSize()
+    = compute_time_step_size(_im->memory.parameters()->re(),
+                             _im->memory.parameters()->tau(),
+                             _im->memory.gridGeometry()->minCellWidth(),
+                             _im->memory.maxVelocity());
+
+  if (_im->memory.parallelDistribution()->rank() == 0) {
+    logInfo("dt = {1}", _im->memory.timeStepSize());
+    logInfo("maxv = {1}",
+            _im->memory.maxVelocity().cwiseProduct(
+              _im->memory.gridGeometry()->minCellWidth()).transpose());
+  }
+  _im->memory.maxVelocity()
+    = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
+
+  return _im->memory.timeStepSize();
+}
+
+template <typename T>
 void
 FsfdSolver<T>::
 iterate() {
@@ -288,8 +310,6 @@ template <typename T>
 void
 FsfdSolver<T>::
 iterateWithFastIbVelocityPrediction() {
-  computeTimeStepSize();
-
   for (auto const& accessor : _im->memory.grid()->innerGrid) {
     auto parts = updateFgh(accessor);
 
@@ -328,8 +348,6 @@ void
 FsfdSolver<T>::
 iterateWithFullIbVelocityPrediction() {
   logInfo("Start Deep Ib velocity prediction ...");
-
-  computeTimeStepSize();
 
   for (auto const& accessor : _im->memory.grid()->innerGrid) {
     updateFgh(accessor);
@@ -390,26 +408,6 @@ iterateWithFullIbVelocityPrediction() {
   finalizeIteration();
 
   logInfo("Finish deep Ib velocity prediction");
-}
-
-template <typename T>
-void
-FsfdSolver<T>::
-computeTimeStepSize() {
-  _im->memory.timeStepSize()
-    = compute_time_step_size(_im->memory.parameters()->re(),
-                             _im->memory.parameters()->tau(),
-                             _im->memory.gridGeometry()->minCellWidth(),
-                             _im->memory.maxVelocity());
-
-  if (_im->memory.parallelDistribution()->rank() == 0) {
-    logInfo("dt = {1}", _im->memory.timeStepSize());
-    logInfo("maxv = {1}",
-            _im->memory.maxVelocity().cwiseProduct(
-              _im->memory.gridGeometry()->minCellWidth()).transpose());
-  }
-  _im->memory.maxVelocity()
-    = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
 }
 
 template <typename T>

@@ -87,6 +87,9 @@ public:
   initialize(precice::SolverInterface* precice_interface,
              Reporter*                 reporter);
 
+  ScalarType
+  computeTimeStepSize();
+
   void
   iterate();
 
@@ -96,9 +99,6 @@ private:
 
   void
   iterateWithFullIbVelocityPrediction();
-
-  void
-  computeTimeStepSize();
 
   std::array<VectorDsType, 3>
   updateFgh(CellAccessorType const& accessor);

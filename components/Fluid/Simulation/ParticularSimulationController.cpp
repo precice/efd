@@ -21,7 +21,8 @@ public:
     Interface*           in,
     Configuration const* configuration)
     : _in(in),
-    solver(configuration) {}
+    solver(configuration),
+    wasPlotted(false) {}
 
   Uni_Firewall_INTERFACE_LINK(ParticularSimulationController<TSolverTraits> );
 
@@ -31,6 +32,7 @@ public:
 
   long double lastTime;
   long double timeLimit;
+  bool        wasPlotted;
   long double lastPlotTimeStamp;
   typename Interface::ScalarType         plotInterval;
   unsigned long long iterationLimit;
@@ -185,7 +187,19 @@ iterate() {
   }
   _im->lastTime = _im->solver.memory()->time();
 
+  auto const time_step_size = _im->solver.computeTimeStepSize();
+
+  long double const new_time_stamp = _im->lastTime + time_step_size;
+
+  if (new_time_stamp > _im->timeLimit) {
+    if (!_im->wasPlotted) {
+      _im->resultWriter->writeAttributes();
+    }
+  }
+
   _im->solver.iterate();
+
+  _im->wasPlotted = false;
 
   if (_im->plotInterval >= 0) {
     if ((_im->solver.memory()->time() - _im->lastPlotTimeStamp)
@@ -193,6 +207,7 @@ iterate() {
       _im->lastPlotTimeStamp = _im->solver.memory()->time();
 
       _im->resultWriter->writeAttributes();
+      _im->wasPlotted = true;
     }
   }
 
