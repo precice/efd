@@ -44,10 +44,21 @@ template = (""
 "bin=$DIR/.install/Gcc/Release/bin\n"
 "conf=$DIR/tests/LrzMacCluster\n"
 "\n"
+"cwd=\"$(pwd)\"\n"
+"output=\"$(pwd)/{3}\"\n"
+"mkdir -p $output\n"
+"mkdir -p $output/Precice\n"
+"mkdir -p $output/Fluid\n"
+"mkdir -p $output/Petsc\n"
+"cp -f $conf/Precice/{2}.xml $output/Precice/{2}.xml\n"
+"cp -f $conf/Fluid/{0}.xml $output/Fluid/{0}.xml\n"
+"cp -f $conf/Petsc/Basic.conf $output/Petsc/Basic.conf\n"
+"cd $output\n"
+"\n"
 "mpiexec -n {1} $bin/Fluid \\\n"
-"  -o {2} \\\n"
-"  -e $conf/Petsc/Basic.conf \\\n"
-"  -s $conf/Fluid/{0}.xml")
+"  -o . \\\n"
+"  -e Petsc/Basic.conf \\\n"
+"  -s Fluid/{0}.xml")
 
 template2 = (""
 "#!/bin/bash\n"
@@ -67,14 +78,23 @@ template2 = (""
 "conf=$DIR/tests/LrzMacCluster\n"
 "\n"
 "cwd=\"$(pwd)\"\n"
-"cd $conf/Precice\n"
+"output=\"$(pwd)/{4}\"\n"
+"mkdir -p $output\n"
+"mkdir -p $output/Precice\n"
+"mkdir -p $output/Fluid\n"
+"mkdir -p $output/Petsc\n"
+"cp -f $conf/Precice/{2}.xml $output/Precice/{2}.xml\n"
+"cp -f $conf/Precice/GeometryModeDirectForcingAction.py $output/Precice/GeometryModeDirectForcingAction.py\n"
+"cp -f $conf/Fluid/{0}.xml $output/Fluid/{0}.xml\n"
+"cp -f $conf/Petsc/Basic.conf $output/Petsc/Basic.conf\n"
+"cd $output/Precice\n"
 "mpiexec -n 1 binprecice server Fluid {2}.xml &\n"
-"cd $cwd\n"
+"cd $output\n"
 "\n"
 "mpiexec -n {3} $bin/Fluid \\\n"
-"  -o {4} \\\n"
-"  -e $conf/Petsc/Basic.conf \\\n"
-"  -s $conf/Fluid/{0}.xml")
+"  -o . \\\n"
+"  -e Petsc/Basic.conf \\\n"
+"  -s Fluid/{0}.xml")
 
 for root, dirs, files in os.walk(args.d[0]):
   for file_name in files:
@@ -95,6 +115,7 @@ for root, dirs, files in os.walk(args.d[0]):
     else:
       fo.write(template.format(basic_file_name,
         args.t,
+        args.p,
         basic_file_name + args.s));
     fo.close()
     subprocess.call("sbatch {0} {1}".format(" ".join(unknown_args), sh_file_name), shell=True)
