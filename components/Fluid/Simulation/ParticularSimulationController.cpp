@@ -176,15 +176,14 @@ iterate() {
     return false;
   }
 
-  if (_im->timeLimit > 0
-      && _im->solver.memory()->time() >= _im->timeLimit) {
+  if (doFinishIterating()) {
+    if (!_im->wasPlotted && _im->plotInterval >= 0) {
+      _im->resultWriter->writeAttributes();
+    }
+
     return false;
   }
 
-  if (_im->iterationLimit > 0
-      && _im->solver.memory()->iterationNumber() >= _im->iterationLimit) {
-    return false;
-  }
   _im->lastTime = _im->solver.memory()->time();
 
   auto const time_step_size = _im->solver.computeTimeStepSize();
@@ -192,7 +191,7 @@ iterate() {
   long double const new_time_stamp = _im->lastTime + time_step_size;
 
   if (new_time_stamp > _im->timeLimit) {
-    if (!_im->wasPlotted) {
+    if (!_im->wasPlotted && _im->plotInterval >= 0) {
       _im->resultWriter->writeAttributes();
     }
   }
@@ -212,6 +211,23 @@ iterate() {
   }
 
   return true;
+}
+
+template <typename T>
+bool
+ParticularSimulationController<T>::
+doFinishIterating() const {
+  if (_im->timeLimit > 0
+      && _im->solver.memory()->time() >= _im->timeLimit) {
+    return true;
+  }
+
+  if (_im->iterationLimit > 0
+      && _im->solver.memory()->iterationNumber() >= _im->iterationLimit) {
+    return true;
+  }
+
+  return false;
 }
 
 Fluid_InstantiateExternTemplates(ParticularSimulationController);

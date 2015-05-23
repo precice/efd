@@ -113,6 +113,8 @@ public:
   iterate();
 
 private:
+  bool doFinishIterating() const;
+
   Uni_Firewall_IMPLEMENTATION_LINK(
     ParticularSimulationControllerImplementation<TSolverTraits> );
 };
