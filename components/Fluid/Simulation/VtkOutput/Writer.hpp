@@ -174,9 +174,7 @@ public:
           ScalarType value = 0;
 
           for (auto const& accessor2 : neighbors[Dimensions]) {
-            value += accessor.attribute(
-              accessor2.index() - VectorDiType::Ones(),
-              index);
+            value += accessor.attribute(accessor2.index() - VectorDiType::Ones(), index);
           }
           string_stream << static_cast<float>(coeff[Dimensions] * value);
           string_stream << std::endl;
