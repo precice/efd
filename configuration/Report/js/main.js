@@ -165,6 +165,20 @@ function createInfoTable(data) {
       createRow("Fron Wall Velocity", data["21WallVelocity"]);
     }
   }
+  if (data.Name == "Turek2D2") {
+    createRow("IB Force (X) min.", data.min_1_0 + "(" + data.min_i_1_0 + ")");
+    createRow("IB Force (Y) min.", data.min_1_1 + "(" + data.min_i_1_1 + ")");
+    createRow("IB Force (X) max.", data.max_1_0 + "(" + data.max_i_1_0 + ")");
+    createRow("IB Force (Y) max.", data.max_1_1 + "(" + data.max_i_1_1 + ")");
+    createRow("Force 1 (X) min.", data.min_2_0 + "(" + data.min_i_2_0 + ")");
+    createRow("Force 1 (Y) min.", data.min_2_1 + "(" + data.min_i_2_1 + ")");
+    createRow("Force 1 (X) max.", data.max_2_0 + "(" + data.max_i_2_0 + ")");
+    createRow("Force 1 (Y) max.", data.max_2_1 + "(" + data.max_i_2_1 + ")");
+    createRow("Force 2 (X) min.", data.min_3_0 + "(" + data.min_i_3_0 + ")");
+    createRow("Force 2 (Y) min.", data.min_3_1 + "(" + data.min_i_3_1 + ")");
+    createRow("Force 2 (X) max.", data.max_3_0 + "(" + data.max_i_3_0 + ")");
+    createRow("Force 2 (Y) max.", data.max_3_1 + "(" + data.max_i_3_1 + ")");
+  }
   tr = tbody.append("tr").append("td")
     .attr("colspan", 2)
     .attr("style", "text-align: center; font-weight: bold;")
@@ -396,17 +410,186 @@ function proccedWithIterationResults(info) {
       rows.push(it);
     });
 
-    if (info != null) {
-      info.iterationSize = rows[rows.length - 1].iterationNumber;
-      info.time = rows[rows.length - 1].time;
-      createInfoTable(info);
-    }
-
     var handler = new Handler(filename,
                               rows[rows.length - 1].time,
                               rows[rows.length - 1].iterationNumber);
 
     rows = rows.filter(function(obj){return handler.globalFilter(obj);});
+
+    if (filename == "Turek2D2") {
+      var min_1_0 = rows[rows.length - 1].ibForce[0];
+      var min_i_1_0 = rows.length - 1;
+
+      var min_1_1 = rows[rows.length - 1].ibForce[1];
+      var min_i_1_1 = rows.length - 1;
+
+      var max_1_0 = rows[rows.length - 1].ibForce[0];
+      var max_i_1_0 = rows.length - 1;
+
+      var max_1_1 = rows[rows.length - 1].ibForce[1];
+      var max_i_1_1 = rows.length - 1;
+
+      var min_2_0 = rows[rows.length - 1].force1[0];
+      var min_i_2_0 = rows.length - 1;
+
+      var min_2_1 = rows[rows.length - 1].force1[1];
+      var min_i_2_1 = rows.length - 1;
+
+      var max_2_0 = rows[rows.length - 1].force1[0];
+      var max_i_2_0 = rows.length - 1;
+
+      var max_2_1 = rows[rows.length - 1].force1[1];
+      var max_i_2_1 = rows.length - 1;
+
+      var min_3_0 = rows[rows.length - 1].force2[0];
+      var min_i_3_0 = rows.length - 1;
+
+      var min_3_1 = rows[rows.length - 1].force2[1];
+      var min_i_3_1 = rows.length - 1;
+
+      var max_3_0 = rows[rows.length - 1].force2[0];
+      var max_i_3_0 = rows.length - 1;
+
+      var max_3_1 = rows[rows.length - 1].force2[1];
+      var max_i_3_1 = rows.length - 1;
+
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].ibForce[0] > min_1_0) {
+          break;
+        } else {
+          min_1_0 = rows[i].ibForce[0];
+          min_i_1_0 = i;
+        }
+      }
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].ibForce[1] > min_1_1) {
+          break;
+        } else {
+          min_1_1 = rows[i].ibForce[1];
+          min_i_1_1 = i;
+        }
+      }
+
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].ibForce[0] < max_1_0) {
+          break;
+        } else {
+          max_1_0 = rows[i].ibForce[0];
+          max_i_1_0 = i;
+        }
+      }
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].ibForce[1] < max_1_1) {
+          break;
+        } else {
+          max_1_1 = rows[i].ibForce[1];
+          max_i_1_1 = i;
+        }
+      }
+
+
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].force1[0] > min_2_0) {
+          break;
+        } else {
+          min_2_0 = rows[i].force1[0];
+          min_i_2_0 = i;
+        }
+      }
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].force1[1] > min_2_1) {
+          break;
+        } else {
+          min_2_1 = rows[i].force1[1];
+          min_i_2_1 = i;
+        }
+      }
+
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].force1[0] < max_2_0) {
+          break;
+        } else {
+          max_2_0 = rows[i].force1[0];
+          max_i_2_0 = i;
+        }
+      }
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].force1[1] < max_2_1) {
+          break;
+        } else {
+          max_2_1 = rows[i].force1[1];
+          max_i_2_1 = i;
+        }
+      }
+
+
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].force2[0] > min_3_0) {
+          break;
+        } else {
+          min_3_0 = rows[i].force2[0];
+          min_i_3_0 = i;
+        }
+      }
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].force2[1] > min_3_1) {
+          break;
+        } else {
+          min_3_1 = rows[i].force2[1];
+          min_i_3_1 = i;
+        }
+      }
+
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].force2[0] < max_3_0) {
+          break;
+        } else {
+          max_3_0 = rows[i].force2[0];
+          max_i_3_0 = i;
+        }
+      }
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].force2[1] < max_3_1) {
+          break;
+        } else {
+          max_3_1 = rows[i].force2[1];
+          max_i_3_1 = i;
+        }
+      }
+
+      info.min_1_0 = min_1_0;
+      info.min_i_1_0 = min_i_1_0;
+      info.min_1_1 = min_1_1;
+      info.min_i_1_1 = min_i_1_1;
+      info.max_1_0 = max_1_0;
+      info.max_i_1_0 = max_i_1_0;
+      info.max_1_1 = max_1_1;
+      info.max_i_1_1 = max_i_1_1;
+
+      info.min_2_0 = min_2_0;
+      info.min_i_2_0 = min_i_2_0;
+      info.min_2_1 = min_2_1;
+      info.min_i_2_1 = min_i_2_1;
+      info.max_2_0 = max_2_0;
+      info.max_i_2_0 = max_i_2_0;
+      info.max_2_1 = max_2_1;
+      info.max_i_2_1 = max_i_2_1;
+
+      info.min_3_0 = min_3_0;
+      info.min_i_3_0 = min_i_3_0;
+      info.min_3_1 = min_3_1;
+      info.min_i_3_1 = min_i_3_1;
+      info.max_3_0 = max_3_0;
+      info.max_i_3_0 = max_i_3_0;
+      info.max_3_1 = max_3_1;
+      info.max_i_3_1 = max_i_3_1;
+    }
+
+    if (info != null) {
+      info.iterationSize = rows[rows.length - 1].iterationNumber;
+      info.time = rows[rows.length - 1].time;
+      createInfoTable(info);
+    }
 
     buildChart(rows, new function () {
       this.names = ["Time Step Size"]
