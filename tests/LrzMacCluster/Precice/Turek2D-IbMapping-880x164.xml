@@ -35,15 +35,15 @@
 
     <participant name="Fluid">
       <server:mpi/>
-      <mapping:rbf-compact-tps-c2
-        support-radius="0.0025"
+      <mapping:rbf-compact-polynomial-c6
+        support-radius="0.01"
         constraint="consistent"
         direction="write"
         from="FluidMesh"
         to="BodyMesh"
         timing="initial"/>
-      <mapping:rbf-compact-tps-c2
-        support-radius="0.0025"
+      <mapping:rbf-compact-polynomial-c6
+        support-radius="0.01"
         constraint="consistent"
         direction="read"
         from="BodyMesh"

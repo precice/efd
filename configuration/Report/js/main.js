@@ -453,34 +453,50 @@ function proccedWithIterationResults(info) {
       var max_3_1 = rows[rows.length - 1].force2[1];
       var max_i_3_1 = rows.length - 1;
 
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].ibForce[0] > min_1_0) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           min_1_0 = rows[i].ibForce[0];
           min_i_1_0 = i;
         }
       }
-      for (var i = rows.length-2; i >= 1; --i) {
-        if (rows[i].ibForce[1] > min_1_1) {
-          break;
-        } else {
-          min_1_1 = rows[i].ibForce[1];
-          min_i_1_1 = i;
-        }
-      }
-
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].ibForce[0] < max_1_0) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           max_1_0 = rows[i].ibForce[0];
           max_i_1_0 = i;
         }
       }
+
+      var w = 0;
+      for (var i = rows.length-2; i >= 1; --i) {
+        if (rows[i].ibForce[1] > min_1_1) {
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
+        } else {
+          min_1_1 = rows[i].ibForce[1];
+          min_i_1_1 = i;
+        }
+      }
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].ibForce[1] < max_1_1) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           max_1_1 = rows[i].ibForce[1];
           max_i_1_1 = i;
@@ -488,34 +504,50 @@ function proccedWithIterationResults(info) {
       }
 
 
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force1[0] > min_2_0) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           min_2_0 = rows[i].force1[0];
           min_i_2_0 = i;
         }
       }
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force1[1] > min_2_1) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           min_2_1 = rows[i].force1[1];
           min_i_2_1 = i;
         }
       }
 
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force1[0] < max_2_0) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           max_2_0 = rows[i].force1[0];
           max_i_2_0 = i;
         }
       }
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force1[1] < max_2_1) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           max_2_1 = rows[i].force1[1];
           max_i_2_1 = i;
@@ -523,34 +555,50 @@ function proccedWithIterationResults(info) {
       }
 
 
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force2[0] > min_3_0) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           min_3_0 = rows[i].force2[0];
           min_i_3_0 = i;
         }
       }
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force2[1] > min_3_1) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           min_3_1 = rows[i].force2[1];
           min_i_3_1 = i;
         }
       }
 
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force2[0] < max_3_0) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           max_3_0 = rows[i].force2[0];
           max_i_3_0 = i;
         }
       }
+      var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force2[1] < max_3_1) {
-          break;
+          if (w == 1) {
+            break;
+          }
+          w = w + 1;
         } else {
           max_3_1 = rows[i].force2[1];
           max_i_3_1 = i;
