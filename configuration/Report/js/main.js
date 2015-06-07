@@ -456,11 +456,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].ibForce[0] > min_1_0) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           min_1_0 = rows[i].ibForce[0];
           min_i_1_0 = i;
         }
@@ -468,11 +468,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].ibForce[0] < max_1_0) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           max_1_0 = rows[i].ibForce[0];
           max_i_1_0 = i;
         }
@@ -493,11 +493,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].ibForce[1] < max_1_1) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           max_1_1 = rows[i].ibForce[1];
           max_i_1_1 = i;
         }
@@ -507,11 +507,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force1[0] > min_2_0) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           min_2_0 = rows[i].force1[0];
           min_i_2_0 = i;
         }
@@ -519,11 +519,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force1[1] > min_2_1) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           min_2_1 = rows[i].force1[1];
           min_i_2_1 = i;
         }
@@ -532,11 +532,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force1[0] < max_2_0) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           max_2_0 = rows[i].force1[0];
           max_i_2_0 = i;
         }
@@ -544,11 +544,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force1[1] < max_2_1) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           max_2_1 = rows[i].force1[1];
           max_i_2_1 = i;
         }
@@ -558,11 +558,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force2[0] > min_3_0) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           min_3_0 = rows[i].force2[0];
           min_i_3_0 = i;
         }
@@ -570,11 +570,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force2[1] > min_3_1) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           min_3_1 = rows[i].force2[1];
           min_i_3_1 = i;
         }
@@ -583,11 +583,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force2[0] < max_3_0) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           max_3_0 = rows[i].force2[0];
           max_i_3_0 = i;
         }
@@ -595,11 +595,11 @@ function proccedWithIterationResults(info) {
       var w = 0;
       for (var i = rows.length-2; i >= 1; --i) {
         if (rows[i].force2[1] < max_3_1) {
-          if (w == 1) {
+          if (w > 0) {
             break;
           }
-          w = w + 1;
         } else {
+          w = w + 1;
           max_3_1 = rows[i].force2[1];
           max_i_3_1 = i;
         }
