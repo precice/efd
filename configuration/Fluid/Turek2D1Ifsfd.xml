@@ -2,14 +2,14 @@
 <scenario
   Re="20"
   diffusion-multiplier="0.001"
-  timeLimit="1.0"
+  timeLimit="0.034"
   iterationLimit="0"
-  plotInterval="0.0"
-  tau="0.5"
+  plotInterval="0.03"
+  tau="0.9"
   gamma="0.5"
   width="2.2 0.41"
-  size="440 82"
-  parallelizationSize="2 2"
+  size="220 41"
+  parallelizationSize="1 1"
   environment="0 0"
   filename="Turek2D1"
   scalar="double"
@@ -23,9 +23,10 @@
     <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
-    type="Rbf-Based"
+    type="Precice-Based"
     full-prediction="off"
-    precice-configuration-path="../Precice/Turek2D-NoIbMapping.xml"
+    developing-structure="off"
+    precice-configuration-path="../Precice/Turek2D-IbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>
 </scenario>

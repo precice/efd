@@ -8,20 +8,18 @@
     component="precice"
     target="debug"
     switch="on"/>
-  <log-filter
-    component="com"
-    target="debug"
-    switch="on"/>
 
   <solver-interface
     dimensions="2"
-    geometry-mode="1"
+    geometry-mode="0"
     restart-mode="0">
 
+    <data:vector name="Displacements"/>
     <data:vector name="Velocities"/>
     <data:vector name="Forces"/>
 
     <mesh name="BodyMesh" flip-normals="0">
+      <use-data name="Displacements"/>
       <use-data name="Velocities"/>
       <use-data name="Forces"/>
     </mesh>
@@ -38,11 +36,7 @@
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
-      <!-- <server:mpi-single/> -->
       <server:mpi/>
-      <!-- <server:sockets -->
-        <!-- exchange-directory="." -->
-        <!-- network="lo"/> -->
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.02"
         constraint="consistent"
@@ -63,13 +57,35 @@
 
       <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
+      <read-data mesh="BodyMesh" name="Displacements"/>
 
       <action:python mesh="BodyMesh" timing="regular-post">
         <path name="."/>
-        <module name="GeometryModeDirectForcingAction"/>
+        <module name="CouplingModeDirectForcingAction"/>
         <source-data name="Velocities"/>
         <target-data name="Forces"/>
       </action:python>
+      <action:add-to-coordinates mesh="BodyMesh" timing="regular-post">
+        <source-data name="Displacements"/>
+      </action:add-to-coordinates>
     </participant>
+
+    <participant name="Structure">
+      <server:mpi/>
+
+      <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
+      <write-data mesh="BodyMesh" name="Displacements"/>
+      <write-data mesh="BodyMesh" name="Forces"/>
+    </participant>
+
+    <communication:mpi from="Fluid" to="Structure"/>
+
+    <coupling-scheme:serial-explicit>
+      <max-time value="1000000"/>
+      <max-timesteps value="1000000"/>
+      <timestep-length method="first-participant"/>
+      <participants first="Fluid" second="Structure"/>
+      <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
+    </coupling-scheme:serial-explicit>
   </solver-interface>
 </precice-configuration>

@@ -2,30 +2,32 @@
 <scenario
   Re="100"
   diffusion-multiplier="0.001"
-  timeLimit="8.0"
+  timeLimit="15.0"
   iterationLimit="0"
   plotInterval="0.0"
-  tau="0.5"
+  tau="0.9"
   gamma="0.5"
   width="2.2 0.41"
-  size="440 82"
-  parallelizationSize="2 2"
+  size="220 41"
+  parallelizationSize="1 1"
   environment="0 0"
-  filename="Turek2D2"
+  filename="Turek2D1"
   scalar="double"
   solver="Improved Fractional Step Finite Difference"
   output="Xdmf"
   >
   <walls>
-    <left type="ParabolicInput" velocity="1.5 0.0" />
+    <left type="Output" />
     <right type="Output" />
-    <bottom type="Input" velocity="0.0 0.0" />
-    <top type="Input" velocity="0.0 0.0" />
+    <bottom type="Output" />
+    <top type="Output" />
   </walls>
   <immersed-boundary
     type="Precice-Based"
-    full-prediction="on"
-    precice-configuration-path="../Precice/Turek2D-IbMapping.xml"
+    full-prediction="off"
+    developing-structure="on"
+    precice-configuration-path="../Precice/MovingCircle-IbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>
 </scenario>
+
