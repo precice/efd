@@ -28,7 +28,7 @@
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
-      <discretization-width value="0.0008"/>
+      <discretization-width value="0.0012"/>
       <radius value="0.05"/>
       <offset value="0.2; 0.2"/>
     </geometry:builtin-sphere>
@@ -36,14 +36,14 @@
     <participant name="Fluid">
       <server:mpi/>
       <mapping:rbf-compact-polynomial-c6
-        support-radius="0.01"
+        support-radius="0.02"
         constraint="consistent"
         direction="write"
         from="FluidMesh"
         to="BodyMesh"
         timing="initial"/>
       <mapping:rbf-compact-polynomial-c6
-        support-radius="0.01"
+        support-radius="0.02"
         constraint="consistent"
         direction="read"
         from="BodyMesh"
