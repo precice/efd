@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<scenario
+  Re="100"
+  diffusion-multiplier="0.001"
+  timeLimit="15.0"
+  iterationLimit="0"
+  plotInterval="0.1"
+  tau="0.9"
+  gamma="0.5"
+  width="2.2 0.41"
+  size="440 82"
+  parallelizationSize="8 2"
+  environment="0 0"
+  filename="Turek2D1"
+  scalar="double"
+  solver="Improved Fractional Step Finite Difference"
+  output="Xdmf"
+  >
+  <walls>
+    <left type="Output" />
+    <right type="Output" />
+    <bottom type="Output" />
+    <top type="Output" />
+  </walls>
+  <immersed-boundary
+    type="Rbf-Based"
+    full-prediction="off"
+    developing-structure="on"
+    precice-configuration-path="../Precice/MovingCircle-NoIbMapping.xml"
+    outerLayerSize="0"
+    innerLayerSize="1"/>
+</scenario>
+

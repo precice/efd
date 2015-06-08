@@ -64,14 +64,14 @@
 
 !/tests
 !/tests/LrzMacCluster
-!/tests/LrzMacCluster/environment-configuration.sh
-!/tests/LrzMacCluster/generateAndSubmitJobs.py
-!/tests/LrzMacCluster/generateAndSubmitTurek2D1.sh
-!/tests/LrzMacCluster/generateAndSubmitTurek2D2.sh
+!/tests/LrzMacCluster/*.sh
+!/tests/LrzMacCluster/*.py
 !/tests/LrzMacCluster/Fluid
+!/tests/LrzMacCluster/Structure
 !/tests/LrzMacCluster/Petsc
 !/tests/LrzMacCluster/Precice
 !/tests/LrzMacCluster/Fluid/*.xml
+!/tests/LrzMacCluster/Structure/*.xml
 !/tests/LrzMacCluster/Petsc/*.conf
 !/tests/LrzMacCluster/Precice/*.xml
 !/tests/LrzMacCluster/Precice/*.py

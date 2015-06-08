@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<precice-configuration>
+  <log-filter
+    component=""
+    target="info"
+    switch="on"/>
+  <log-filter
+    component="precice"
+    target="debug"
+    switch="on"/>
+
+  <solver-interface
+    dimensions="2"
+    geometry-mode="0"
+    restart-mode="0">
+
+    <data:vector name="Displacements"/>
+
+    <mesh name="BodyMesh" flip-normals="0">
+      <use-data name="Displacements"/>
+    </mesh>
+
+    <geometry:builtin-sphere of-mesh="BodyMesh">
+      <discretization-width value="0.005"/>
+      <radius value="0.05"/>
+      <offset value="0.2; 0.2"/>
+    </geometry:builtin-sphere>
+
+    <participant name="Fluid">
+      <server:mpi/>
+      <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
+      <read-data mesh="BodyMesh" name="Displacements"/>
+
+      <action:add-to-coordinates mesh="BodyMesh" timing="regular-post">
+        <source-data name="Displacements"/>
+      </action:add-to-coordinates>
+    </participant>
+
+    <participant name="Structure">
+      <server:mpi/>
+      <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
+      <write-data mesh="BodyMesh" name="Displacements"/>
+    </participant>
+
+    <communication:mpi from="Fluid" to="Structure"/>
+
+    <coupling-scheme:serial-explicit>
+      <max-time value="1000000"/>
+      <max-timesteps value="1000000"/>
+      <timestep-length method="first-participant"/>
+      <participants first="Fluid" second="Structure"/>
+      <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
+    </coupling-scheme:serial-explicit>
+  </solver-interface>
+</precice-configuration>
