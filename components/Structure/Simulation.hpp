@@ -99,8 +99,8 @@ public:
 
       for (unsigned d = 0; d < _dimensions; ++d) {
         _velocity(d)
-          = _environmentForce(d) * 0.9
-            * std::sin(PI * _currentPosition(d) / 1.8) + _environmentForce(d) * 0.1;
+          = _environmentForce(d);// * 0.9
+            // * std::sin(PI * _currentPosition(d) / 1.7) + _environmentForce(d) * 0.1;
 
         if (_type1Direction) {
           newPosition(d) = _currentPosition(d) + _velocity(d) * _dt;
@@ -108,12 +108,18 @@ public:
           newPosition(d) = _currentPosition(d) - _velocity(d) * _dt;
         }
 
-        if (newPosition(d) >= 1.8) {
+        if (newPosition(d) >= 1.7) {
           _type1Direction = false;
         }
 
         if (newPosition(d) <= 0.0) {
           _type1Direction = true;
+        }
+
+        if (_type1Direction) {
+          newPosition(d) = _currentPosition(d) + _velocity(d) * _dt;
+        } else {
+          newPosition(d) = _currentPosition(d) - _velocity(d) * _dt;
         }
       }
 
