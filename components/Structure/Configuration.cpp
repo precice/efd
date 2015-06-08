@@ -55,6 +55,8 @@ reset() {
   _set("/EnvironmentForce", false);
   _set("/Dimensions", false);
   _set("/PreciceConfigurationPath", false);
+  _set("/Type", 0u);
+  _set("/PreciceMode", false);
 }
 
 std::string

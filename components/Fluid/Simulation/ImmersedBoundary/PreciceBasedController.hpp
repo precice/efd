@@ -359,6 +359,8 @@ public:
 
     _fluidMeshVelocitiesId = _preciceInterface->getDataID("Velocities", _fluidMeshId);
     _fluidMeshForcesId     = _preciceInterface->getDataID("Forces", _fluidMeshId);
+
+    _doResetMesh = false;
   }
 
   void
@@ -366,7 +368,11 @@ public:
     // logInfo("Precice-based IB controller's precomutaions has started ...");
     _set.clear();
     _foreignCells.clear();
-    // _preciceInterface->resetMesh(_fluidMeshId);
+    if (_doResetMesh) {
+       _preciceInterface->resetMesh(_fluidMeshId);
+    } else {
+      _doResetMesh = true;
+    }
 
     for (auto const& accessor : _memory->grid()->innerGrid) {
       bool doAdd
@@ -1006,6 +1012,7 @@ private:
   int _bodyMeshId;
   int _fluidMeshVelocitiesId;
   int _fluidMeshForcesId;
+  bool _doResetMesh;
 
   Set _set;
 

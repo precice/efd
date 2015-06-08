@@ -20,44 +20,44 @@ namespace Structure {
 // is_default(xmlChar const* content) {
 // std::string content_string
 // = reinterpret_cast<char const*>(content);
-
+//
 // static boost::regex default_regex("default", boost::regex::icase);
-
+//
 // if (boost::regex_search(content_string, default_regex)) {
 // return true;
 // }
-
+//
 // return false;
 // }
 
-// static inline bool
-// parse_bool(xmlChar const* content) {
-// static boost::regex on_regex("on|true|1", boost::regex::icase);
-// static boost::regex off_regex("off|false|0", boost::regex::icase);
+static inline bool
+parse_bool(xmlChar const* content) {
+  static boost::regex on_regex("on|true|1", boost::regex::icase);
+  static boost::regex off_regex("off|false|0", boost::regex::icase);
 
-// std::string content_string
-// = reinterpret_cast<char const*>(content);
+  std::string content_string
+    = reinterpret_cast<char const*>(content);
 
-// if (boost::regex_search(content_string, on_regex)) {
-// return true;
-// } else if (boost::regex_search(content_string, off_regex)) {
-// return false;
-// } else {
-// throwException("Failed to parse boolean value");
+  if (boost::regex_search(content_string, on_regex)) {
+    return true;
+  } else if (boost::regex_search(content_string, off_regex)) {
+    return false;
+  } else {
+    throwException("Failed to parse boolean value");
 
-// return false;
-// }
-// }
+    return false;
+  }
+}
 
-// template <typename T>
-// static inline void
-// parse_in(xmlChar const* content, T& number) {
-// if (!Uni::Helpers::parse_integer_number(
-// std::string(reinterpret_cast<char const*>(content)),
-// number)) {
-// throwException("Failed to parse integer number '{1}'", content);
-// }
-// }
+template <typename T>
+static inline void
+parse_in(xmlChar const* content, T& number) {
+  if (!Uni::Helpers::parse_integer_number(
+        std::string(reinterpret_cast<char const*>(content)),
+        number)) {
+    throwException("Failed to parse integer number '{1}'", content);
+  }
+}
 
 // static inline int
 // parse_in(xmlChar const* content) {
@@ -163,7 +163,9 @@ private:
 
   void
   parseScenarioParameters(xmlNodePtr node) const {
-    static xmlChar* const       environment = (xmlChar* const)"environment";
+    static xmlChar* const       type         = (xmlChar* const)"type";
+    static xmlChar* const       precice_mode = (xmlChar* const)"precice-mode";
+    static xmlChar* const       environment  = (xmlChar* const)"environment";
     static xmlChar const* const precice_configuration_path
       = (xmlChar const*)"precice-configuration-path";
 
@@ -172,7 +174,14 @@ private:
     int dimensions = -1;
 
     while (attr) {
-      if (xmlStrcasecmp(attr->name, environment) == 0) {
+      if (xmlStrcasecmp(attr->name, type) == 0) {
+        unsigned type_value;
+        parse_in(attr->children->content, type_value);
+        configuration->set("/Type", type_value);
+      } else if (xmlStrcasecmp(attr->name, precice_mode) == 0) {
+        bool is_on = parse_bool(attr->children->content);
+        configuration->set("/PreciceMode", is_on);
+      } else if (xmlStrcasecmp(attr->name, environment) == 0) {
         Eigen::Matrix<long double, 3, 1> environment_force;
         dimensions = parse_fpv(attr->children->content, environment_force);
         configuration->set("/EnvironmentForce", environment_force);
