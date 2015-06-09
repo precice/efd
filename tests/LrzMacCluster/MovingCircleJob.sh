@@ -19,14 +19,15 @@ output="$(pwd)/MovingCircleRbf"
 mkdir -p $output
 mkdir -p $output/Precice
 mkdir -p $output/Fluid
+mkdir -p $output/Structure
 mkdir -p $output/Petsc
 cp -f $conf/Precice/MovingCircle-NoIbMapping.xml $output/Precice/MovingCircle-NoIbMapping.xml
 cp -f $conf/Fluid/MovingCircleRbf.xml $output/Fluid/MovingCircleRbf.xml
 cp -f $conf/Structure/UnsteadyMovingCircle.xml $output/Structure/UnsteadyMovingCircle.xml
 cp -f $conf/Petsc/Basic.conf $output/Petsc/Basic.conf
 cd $output/Precice
-mpiexec -n 1 binprecice server Fluid MovingCircle-NoIbMapping &
-mpiexec -n 1 binprecice server Structure MovingCircleRbf-NoIbMapping.xml &
+mpiexec -n 1 binprecice server Fluid MovingCircle-NoIbMapping.xml &
+mpiexec -n 1 binprecice server Structure MovingCircle-NoIbMapping.xml &
 cd $output
 
 mpiexec -n 1 $bin/Structure \
