@@ -1,0 +1,8 @@
+<?xml version = "1.0"?>
+<scenario
+  type = "1"
+  environment = "0.3 0.0"
+  precice-configuration-path="../Precice/MovingCircle-IbMapping.xml"
+  precice-mode = "on"
+  >
+</scenario>

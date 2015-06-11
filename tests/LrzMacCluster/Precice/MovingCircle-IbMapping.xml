@@ -38,19 +38,19 @@
     <participant name="Fluid">
       <server:mpi/>
       <mapping:rbf-compact-polynomial-c6
-        support-radius="0.02"
+        support-radius="0.01"
         constraint="consistent"
         direction="write"
         from="FluidMesh"
         to="BodyMesh"
-        timing="initial"/>
+        timing="ondemand"/>
       <mapping:rbf-compact-polynomial-c6
-        support-radius="0.02"
+        support-radius="0.01"
         constraint="consistent"
         direction="read"
         from="BodyMesh"
         to="FluidMesh"
-        timing="initial"/>
+        timing="ondemand"/>
 
       <write-data mesh="FluidMesh" name="Velocities"/>
       <read-data mesh="FluidMesh" name="Forces"/>

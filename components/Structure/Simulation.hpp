@@ -94,7 +94,7 @@ public:
                                               _displacements.data());
       // logInfo("Write data {1}", _vertexIds.size());
     } else if (_type == 1) {
-      const double PI = 3.141592653589793238463;
+      // const double PI = 3.141592653589793238463;
       VectorDs     newPosition;
 
       for (unsigned d = 0; d < _dimensions; ++d) {
