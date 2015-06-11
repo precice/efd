@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #SBATCH -J UnsteadyMovingCircle-Precice
-#SBATCH -o /home/hpc/pr63so/ga39puw2/jobs/logs/UnsteadyMovingCircle-Rbf.%j.%N.out
+#SBATCH -o /home/hpc/pr63so/ga39puw2/jobs/logs/UnsteadyMovingCircle-Precice.%j.%N.out
 #SBATCH -D  /home/hpc/pr63so/ga39puw2/jobs/output
 #SBATCH --mail-type=end
 #SBATCH --mail-user=SlavaMikerov@gmail.com
