@@ -2,6 +2,7 @@
 #!/us# encoding: utf-8
 mySourceData = 0
 myTargetData = 0
+myTime = 0.0
 
 #
 # This function is called first at configured timing. It can be omitted, if not 
@@ -13,11 +14,12 @@ def performAction(time, sourceData, targetData):
   # Usage example 1:
   global mySourceData
   global myTargetData
+  global myTime
   mySourceData = sourceData # store (reference to) sourceData for later use
   myTargetData = targetData # store (reference to) targetData for later use
   for i in range(mySourceData.size):
-    myTargetData[i] = myTargetData[i] - mySourceData[i]
-    
+    myTargetData[i] = myTargetData[i]
+  myTime = time
 #
 # This function is called for every vertex in the configured mesh. It is called
 # after performAction, and can also be omitted.

@@ -43,14 +43,14 @@
         direction="write"
         from="FluidMesh"
         to="BodyMesh"
-        timing="initial"/>
+        timing="ondemand"/>
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.02"
         constraint="consistent"
         direction="read"
         from="BodyMesh"
         to="FluidMesh"
-        timing="initial"/>
+        timing="ondemand"/>
 
       <write-data mesh="FluidMesh" name="Velocities"/>
       <read-data mesh="FluidMesh" name="Forces"/>
@@ -85,6 +85,7 @@
       <max-timesteps value="1000000"/>
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
+      <exchange data="Forces" from="Structure" mesh="BodyMesh"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
     </coupling-scheme:serial-explicit>
   </solver-interface>

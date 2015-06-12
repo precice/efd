@@ -131,8 +131,7 @@ public:
                                   index);
         };
 
-    _grid.initialize(computational_local_size,
-                     cell_accessor_factory);
+    _grid.initialize(computational_local_size, cell_accessor_factory);
 
     _velocity.reset(new VectorDsType[_grid.size().prod()]);
     _pressure.reset(new ScalarType[_grid.size().prod()]);

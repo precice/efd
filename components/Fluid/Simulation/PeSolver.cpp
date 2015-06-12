@@ -83,6 +83,9 @@ initialize(MemoryType const*        memory,
 
   std::unique_ptr<VzpeSolverType> vzpeSolver(new VzpeSolverType());
 
+  vzpeSolver->stencilGenerator.initialize(memory->parallelDistribution(),
+                                          memory->parameters(),
+                                          &memory->timeStepSize());
   vzpeSolver->initialize(memory->grid(),
                          memory->parallelDistribution(),
                          &ghost_handlers->vpeStencilGeneratorStack[2],
@@ -187,8 +190,7 @@ initialize(MemoryType const*        memory,
                          &ghost_handlers->vpeRhsAcquiererStack[1]);
   _vypeSolver.reset(vypeSolver.release());
 
-  _vzpeSolver.initialize(memory,
-                         ghost_handlers);
+  _vzpeSolver.initialize(memory, ghost_handlers);
 
   _vxpeAbsoluteTolerance = _vxpeSolver->absoluteTolerance();
   _vxpeRelativeTolerance = _vxpeSolver->relativeTolerance();

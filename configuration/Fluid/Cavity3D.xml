@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <scenario
   Re="500"
-  timeLimit="0.0"
-  iterationLimit="1"
+  timeLimit="10.0"
+  iterationLimit="0"
   plotInterval="0.0"
-  tau="0.5"
+  tau="0.7"
   gamma="0.5"
   width="1.0 1.0 1.0"
-  size="20 20 20"
-  parallelizationSize="1 1 1"
+  size="40 40 40"
+  parallelizationSize="2 2 2"
   environment="0 0 0"
-  filename="Cavity2D"
+  filename="Cavity3D"
   scalar="double"
-  solver="Simple Fractional Step Finite Difference"
+  solver="Improved Fractional Step Finite Difference"
   output="Xdmf"
   >
   <walls>

@@ -46,59 +46,62 @@ public:
 
 public:
   CornerVelocityHandler(
-    SubgridType const*             grid,
+    SubgridType const*              grid,
     ParallelDistributionType const* parallel_distribution)
     : _grid(grid),
     _parallelDistribution(parallel_distribution),
     _dimension(-1) {
     int size = 1;
-    int i    = 0;
 
-    for (int d = 0; d < Dimensions; ++d) {
-      if (d != TDimension1
-          && d != TDimension2) {
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      if (d != TDimension1 && d != TDimension2) {
         size      *= _grid->innerSize(d);
         _dimension = d;
-        ++i;
+        break;
       }
     }
 
-    _rowMemorySize = size * TDataElementSize
-                     * _grid->indent(TDirection1)(TDimension1);
-    _rowMemory.reset(new ScalarType[_rowMemorySize]);
+    _rowMemory.resize(size * TDataElementSize);
 
-    VectorDiType communication_index
-      = _parallelDistribution->index;
+    _ghostIndex    = _grid->leftIndent();
+    _boundaryIndex = _grid->leftIndent();
+    VectorDiType communication_index = _parallelDistribution->index;
     composeIndexAndOffset(TDimension1, TDirection1, communication_index);
     composeIndexAndOffset(TDimension2, TDirection2, communication_index);
     _communicationRank
-            = _parallelDistribution->getMpiRankFromSubdomainSpatialIndex(communication_index);
+      = _parallelDistribution->getMpiRankFromSubdomainSpatialIndex(communication_index);
 
-    if (_communicationRank < 0) {
-      return;
-    }
+    // if (_communicationRank >= 0) {
+    //   logInfo("@@@@@@@@@@ {1} {2} {3} | {4} {5}",
+    //         TDimension1,
+    //         TDimension2,
+    //         _dimension,
+    //         parallel_distribution->rank(),
+    //         _communicationRank);
+    // }
   }
 
   void
-  computeCornerVelocity() const {
+  computeCornerVelocity() {
     if (_communicationRank < 0) {
       return;
     }
+    // logInfo("Enter");
 
-    auto accessor    = *_grid->at(_boundaryIndex);
-    int  index = 0;
+    auto accessor = *_grid->at(_boundaryIndex);
+    int  index    = 0;
 
     if (_dimension == -1) {
       for (unsigned i = 0; i < TDataElementSize; ++i) {
-        _rowMemory.get()[index] = accessor.velocity(i);
+        _rowMemory[index] = accessor.velocity(i);
         ++index;
       }
     } else {
       for (; accessor.indexValue(_dimension)
-           < _grid->end()->indexValue(_dimension);
-           accessor.index(_dimension) += 1) {
+           < _grid->innerLimit(_dimension);
+           ++accessor.index(_dimension)) {
         for (unsigned i = 0; i < TDataElementSize; ++i) {
-          _rowMemory.get()[index] = accessor.velocity(i);
+          _rowMemory[index] = accessor.velocity(i);
           ++index;
         }
       }
@@ -106,8 +109,8 @@ public:
 
     MPI_Status mpi_status;
     MPI_Sendrecv_replace(
-      _rowMemory.get(),
-      _rowMemorySize,
+      _rowMemory.data(),
+      _rowMemory.size(),
       Private::getMpiScalarType<TDataElement>(),
       _communicationRank,
       1003,
@@ -116,24 +119,28 @@ public:
       _parallelDistribution->mpiCommunicator,
       &mpi_status);
 
-    accessor    = *_grid->at(_ghostIndex);
-    index = 0;
+    accessor = *_grid->at(_ghostIndex);
+    index    = 0;
 
     if (_dimension == -1) {
       for (unsigned i = 0; i < TDataElementSize; ++i) {
-        accessor.velocity(i) = _rowMemory.get()[index];
+        accessor.velocity(i) = _rowMemory[index];
         ++index;
       }
     } else {
       for (; accessor.indexValue(_dimension)
-           < _grid->end()->indexValue(_dimension);
-           accessor.index(_dimension) += 1) {
+           < _grid->innerLimit(_dimension);
+           ++accessor.index(_dimension)) {
         for (unsigned i = 0; i < TDataElementSize; ++i) {
-          accessor.velocity(i) = _rowMemory.get()[index];
+          // logInfo("{1} {2} {3}", _parallelDistribution->rank(),
+          //         accessor.indexValue(_dimension),
+          //         _rowMemory[index]);
+          accessor.velocity(i) = _rowMemory[index];
           ++index;
         }
       }
     }
+    // logInfo("Exit");
   }
 
 private:
@@ -158,12 +165,11 @@ private:
     }
   }
 
-  SubgridType const*             _grid;
+  SubgridType const*              _grid;
   ParallelDistributionType const* _parallelDistribution;
   int                             _dimension;
   int                             _communicationRank;
-  std::unique_ptr<ScalarType[]>     _rowMemory;
-  unsigned long long              _rowMemorySize;
+  std::vector<ScalarType>         _rowMemory;
   VectorDiType                    _ghostIndex;
   VectorDiType                    _boundaryIndex;
 };
@@ -184,13 +190,13 @@ struct CornerVelocityHandlers<TSolverTraits, 2> {
           = typename SolverTraitsType::ParallelDistributionType;
 
   using ScalarType = typename SolverTraitsType::ScalarType;
-  CornerVelocityHandlers(SubgridType const*             grid,
+  CornerVelocityHandlers(SubgridType const*              grid,
                          ParallelDistributionType const* parallel_distribution)
     : _rb(grid, parallel_distribution),
     _lt(grid, parallel_distribution) {}
 
   void
-  execute() const {
+  execute() {
     _rb.computeCornerVelocity();
     _lt.computeCornerVelocity();
   }
@@ -213,38 +219,45 @@ struct CornerVelocityHandlers<TSolverTraits, 3> {
 
   using ScalarType = typename SolverTraitsType::ScalarType;
 
-  CornerVelocityHandlers(SubgridType const*             grid,
+  CornerVelocityHandlers(SubgridType const*              grid,
                          ParallelDistributionType const* parallel_distribution)
-    : _rightBottom(grid, parallel_distribution),
-    _rightBack(grid, parallel_distribution),
-    _topLeft(grid, parallel_distribution),
-    _topBack(grid, parallel_distribution),
-    _frontLeft(grid, parallel_distribution),
-    _frontBottom(grid, parallel_distribution) {}
+    // :
+    // _rightBottom(grid, parallel_distribution),
+    // _topLeft(grid, parallel_distribution)
+    // _rightBack(grid, parallel_distribution),
+    // _topBack(grid, parallel_distribution),
+    // _frontLeft(grid, parallel_distribution),
+    // _frontBottom(grid, parallel_distribution) 
+    {
+      (void)grid;
+      (void)parallel_distribution;
+    }
 
   void
-  execute() const {
-    _rightBottom.computeCornerVelocity();
-    _rightBack.computeCornerVelocity();
-    _topLeft.computeCornerVelocity();
-    _topBack.computeCornerVelocity();
-    _frontLeft.computeCornerVelocity();
-    _frontBottom.computeCornerVelocity();
+  execute() {
+    // _rightBottom.computeCornerVelocity();
+    // _topLeft.computeCornerVelocity();
+    
+    // _rightBack.computeCornerVelocity();
+    // _frontLeft.computeCornerVelocity();
+
+    // _topBack.computeCornerVelocity();
+    // _frontBottom.computeCornerVelocity();
   }
 
 private:
-  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 0, 1, 1, 0>
-  _rightBottom;
-  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 0, 1, 2, 0>
-  _rightBack;
-  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 1, 1, 0, 0>
-  _topLeft;
-  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 1, 1, 2, 0>
-  _topBack;
-  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 2, 1, 0, 0>
-  _frontLeft;
-  CornerVelocityHandler<ScalarType, 3, TSolverTraits, 2, 1, 1, 0>
-  _frontBottom;
+  // CornerVelocityHandler<ScalarType, 3, TSolverTraits, 0, 1, 1, 0>
+  // _rightBottom;
+  // CornerVelocityHandler<ScalarType, 3, TSolverTraits, 1, 1, 0, 0>
+  // _topLeft;
+  // CornerVelocityHandler<ScalarType, 3, TSolverTraits, 0, 1, 2, 0>
+  // _rightBack;
+  // CornerVelocityHandler<ScalarType, 3, TSolverTraits, 1, 1, 2, 0>
+  // _topBack;
+  // CornerVelocityHandler<ScalarType, 3, TSolverTraits, 2, 1, 0, 0>
+  // _frontLeft;
+  // CornerVelocityHandler<ScalarType, 3, TSolverTraits, 2, 1, 1, 0>
+  // _frontBottom;
 };
 }
 }
