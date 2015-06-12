@@ -52,6 +52,7 @@ public:
     _displacementsID = _preciceInterface->getDataID("Displacements", _meshId);
 
     if (_isPreciceMode) {
+      logInfo("Precice mode is on");
       _forcesID = _preciceInterface->getDataID("Forces", _meshId);
       _forces.resize(_dimensions * vertices_size);
     }
@@ -140,6 +141,7 @@ public:
                                               _displacements.data());
 
       if (_isPreciceMode) {
+        logInfo("Write forces");
         _preciceInterface->writeBlockVectorData(_forcesID,
                                                 _vertexIds.size(),
                                                 _vertexIds.data(),

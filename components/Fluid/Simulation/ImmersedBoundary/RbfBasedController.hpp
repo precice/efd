@@ -319,8 +319,9 @@ public:
   precompute() {
     logInfo("Locate Interface Cells has been starting ...");
 
-    // precice::MeshHandle const& mesh_handle = _preciceInterface->getMeshHandle("BodyMesh");
-    unsigned                   body_id     = 0;
+    // precice::MeshHandle const& mesh_handle =
+    // _preciceInterface->getMeshHandle("BodyMesh");
+    unsigned body_id = 0;
 
     auto     body_mesh_id     = _preciceInterface->getMeshID("BodyMesh");
     unsigned lagrangians_size = _preciceInterface->getMeshVertexSize(body_mesh_id);
@@ -361,14 +362,16 @@ public:
       Eigen::Matrix<double, Dimensions, 1> temp_coords(&vertices[Dimensions * i]);
 
       // for (unsigned i = 0; i < trash_coords.size(); ++i) {
-      //   if (((trash_coords[i] - temp_coords).cwiseAbs().eval().array()
-      //        <= 10.0 * std::numeric_limits<double>::epsilon()).all()) {
-      //     logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}", trash_coords[i].transpose());
-      //     logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}", temp_coords.transpose());
-      //     logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}", (trash_coords[i] -
-      //                                                      temp_coords).eval().transpose());
-      //     throwException("");
-      //   }
+      // if (((trash_coords[i] - temp_coords).cwiseAbs().eval().array()
+      // <= 10.0 * std::numeric_limits<double>::epsilon()).all()) {
+      // logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}",
+      // trash_coords[i].transpose());
+      // logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}",
+      // temp_coords.transpose());
+      // logInfo("@@@@@@!!!!!!!!!!!!!!!!!!!!!!!!!! {1}", (trash_coords[i] -
+      // temp_coords).eval().transpose());
+      // throwException("");
+      // }
       // }
       // trash_coords.emplace_back(temp_coords);
 
@@ -618,9 +621,7 @@ private:
     typename GridTraits::GridType neighbors;
     neighbors.initialize(VectorDiType::Constant(3));
 
-    auto corner
-      = _memory->parallelDistribution()->index
-        - VectorDiType::Constant(1);
+    auto corner = _memory->parallelDistribution()->index - VectorDiType::Constant(1);
 
     std::vector<unsigned> send_sizes;
 
@@ -679,7 +680,7 @@ private:
                 statuses.data() +  neighbors.size().prod());
 
     std::vector < std::vector < unsigned >> send_serial_indices;
-    send_serial_indices.resize(_foreignEulerianCells.size());
+    send_serial_indices.resize(_foreignEulerianCells[dimension].size());
     receive_serial_indices[dimension].clear();
     receive_serial_indices[dimension].resize(neighbors.size().prod());
 
@@ -972,7 +973,8 @@ private:
         = _lagrangianDisplacements[Dimensions * index + dimension]
           / _memory->timeStepSize();
 
-      // logInfo("{1}", _lagrangianDisplacements[Dimensions * index + dimension]);
+      // logInfo("{1}", _lagrangianDisplacements[Dimensions * index +
+      // dimension]);
 
       for (auto& fluid_cell : supports) {
         value -= fluid_cell.weight() * fluid_cell.cell()->data(dimension);
