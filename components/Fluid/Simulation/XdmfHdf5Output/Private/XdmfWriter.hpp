@@ -134,17 +134,21 @@ public:
   writeGeometry(std::string const&              geometry_hdf_name,
                 std::vector<std::string> const& dimension_names,
                 VectorDiType const&             dimensions) {
-    for (int d = Dimensions - 1; d >= 0; --d) {
-      auto& item = geometry.data_items[Dimensions - 1 - d];
+    if (Dimensions == 2) {
+      for (int d = Dimensions - 1; d >= 0; --d) {
+        auto& item = geometry.data_items[Dimensions - 1 - d];
 
-      if (d < Dimensions) {
         topology.dimensions.push_back(dimensions(d) + 1);
         item.dimensions.push_back(dimensions(d) + 1);
-      } else {
-        // topology.dimensions.push_back(1);
-        item.dimensions.push_back(1);
+        item.data = geometry_hdf_name + ":/" + dimension_names[d];
       }
-      item.data = geometry_hdf_name + ":/" + dimension_names[d];
+    } else {
+      for (int d = 0; d < Dimensions; ++d) {
+        topology.dimensions.push_back(dimensions(Dimensions - 1 - d) + 1);
+        auto& item = geometry.data_items[d];
+        item.dimensions.push_back(dimensions(d) + 1);
+        item.data = geometry_hdf_name + ":/" + dimension_names[d];
+      }
     }
 
     for (auto const& attribute : * _memory->attributes()) {
