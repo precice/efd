@@ -33,7 +33,8 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TVector>
 inline typename TVector::Scalar
-compute_cfl(TVector const& maxVelocity) {
+compute_cfl( TVector const& minCellWidth,
+    TVector const& maxVelocity) {
   using Scalar = typename TVector::Scalar;
 
   Scalar localMin    = std::numeric_limits<Scalar>::max();
@@ -47,7 +48,7 @@ compute_cfl(TVector const& maxVelocity) {
   }
 
   if (!is_computed) {
-    return 0.0;
+    return minCellWidth.minCoeff();
   }
 
   return localMin;
@@ -63,7 +64,7 @@ compute_explicit_time_step_size(TScalar const& re,
 
   TScalar localMin = (TScalar)(re / (2.0 * factor));
 
-  localMin = std::min(localMin, compute_cfl(maxVelocity));
+  localMin = std::min(localMin, compute_cfl(minCellWidth, maxVelocity));
 
   TScalar globalMin = std::numeric_limits<TScalar>::max();
   Private::mpi_all_reduce(&localMin,
@@ -81,10 +82,11 @@ compute_explicit_time_step_size(TScalar const& re,
 template <typename TVector>
 inline typename TVector::Scalar
 compute_implicit_time_step_size(typename TVector::Scalar const& tau,
+                                TVector const& minCellWidth,
                                 TVector const&                  maxVelocity) {
   using Scalar = typename TVector::Scalar;
 
-  Scalar localMin = compute_cfl(maxVelocity);
+  Scalar localMin = compute_cfl(minCellWidth, maxVelocity);
 
   Scalar globalMin = std::numeric_limits<Scalar>::max();
   Private::mpi_all_reduce(&localMin,
@@ -323,6 +325,7 @@ computeTimeStepSize() {
   } else {
     _im->memory.timeStepSize()
       = compute_implicit_time_step_size(_im->memory.parameters()->tau(),
+                                        _im->memory.gridGeometry()->minCellWidth(),
                                         _im->memory.maxVelocity());
   }
 
