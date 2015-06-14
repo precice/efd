@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <scenario
-  Re="100"
+  Re="200"
   diffusion-multiplier="0.001"
   timeLimit="15.0"
   iterationLimit="0"

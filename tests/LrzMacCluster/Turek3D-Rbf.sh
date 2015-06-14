@@ -20,7 +20,7 @@ mkdir -p $output
 mkdir -p $output/Precice
 mkdir -p $output/Fluid
 mkdir -p $output/Petsc
-cp -f $conf/Precice/MovingCircle-NoIbMapping.xml $output/Precice/MovingCircle-NoIbMapping.xml
+cp -f $conf/Precice/Turek3D-NoIbMapping.xml $output/Precice/Turek3D-NoIbMapping.xml
 cp -f $conf/Fluid/Turek3D-Rbf.xml $output/Fluid/Turek3D-Rbf.xml
 cp -f $conf/Petsc/Basic.conf $output/Petsc/Basic.conf
 cd $output/Precice
