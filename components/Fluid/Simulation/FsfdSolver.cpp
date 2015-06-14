@@ -31,22 +31,39 @@
 
 namespace FsiSimulation {
 namespace FluidSimulation {
+template <typename TVector>
+inline typename TVector::Scalar
+compute_cfl(TVector const& maxVelocity) {
+  using Scalar = typename TVector::Scalar;
+
+  Scalar localMin    = std::numeric_limits<Scalar>::max();
+  bool   is_computed = false;
+
+  for (unsigned d = 0; d < TVector::RowsAtCompileTime; ++d) {
+    if (std::abs(maxVelocity(d)) > std::numeric_limits<Scalar>::epsilon()) {
+      localMin    = std::min(localMin, 1.0 / maxVelocity(d));
+      is_computed = true;
+    }
+  }
+
+  if (!is_computed) {
+    return 0.0;
+  }
+
+  return localMin;
+}
+
 template <typename TScalar, typename TVector>
 inline TScalar
-compute_time_step_size(TScalar const& re,
-                       TScalar const& tau,
-                       TVector const& minCellWidth,
-                       TVector const& maxVelocity) {
+compute_explicit_time_step_size(TScalar const& re,
+                                TScalar const& tau,
+                                TVector const& minCellWidth,
+                                TVector const& maxVelocity) {
   TScalar factor = minCellWidth.cwiseProduct(minCellWidth).cwiseInverse().sum();
 
   TScalar localMin = (TScalar)(re / (2.0 * factor));
 
-  for (unsigned d = 0; d < TVector::RowsAtCompileTime; ++d) {
-    if (std::abs(maxVelocity(d)) > std::numeric_limits<TScalar>::epsilon()) {
-      localMin = std::min(localMin,
-                          1.0 / maxVelocity(d));
-    }
-  }
+  localMin = std::min(localMin, compute_cfl(maxVelocity));
 
   TScalar globalMin = std::numeric_limits<TScalar>::max();
   Private::mpi_all_reduce(&localMin,
@@ -59,6 +76,26 @@ compute_time_step_size(TScalar const& re,
   factor *= tau;
 
   return factor;
+}
+
+template <typename TVector>
+inline typename TVector::Scalar
+compute_implicit_time_step_size(typename TVector::Scalar const& tau,
+                                TVector const&                  maxVelocity) {
+  using Scalar = typename TVector::Scalar;
+
+  Scalar localMin = compute_cfl(maxVelocity);
+
+  Scalar globalMin = std::numeric_limits<Scalar>::max();
+  Private::mpi_all_reduce(&localMin,
+                          &globalMin,
+                          1,
+                          MPI_MIN,
+                          PETSC_COMM_WORLD);
+
+  globalMin *= tau;
+
+  return globalMin;
 }
 
 template <typename TSolverTraits>
@@ -277,11 +314,17 @@ template <typename T>
 typename FsfdSolver<T>::ScalarType
 FsfdSolver<T>::
 computeTimeStepSize() {
-  _im->memory.timeStepSize()
-    = compute_time_step_size(_im->memory.parameters()->re(),
-                             _im->memory.parameters()->tau(),
-                             _im->memory.gridGeometry()->minCellWidth(),
-                             _im->memory.maxVelocity());
+  if (SolverId == 0) {
+    _im->memory.timeStepSize()
+      = compute_explicit_time_step_size(_im->memory.parameters()->re(),
+                                        _im->memory.parameters()->tau(),
+                                        _im->memory.gridGeometry()->minCellWidth(),
+                                        _im->memory.maxVelocity());
+  } else {
+    _im->memory.timeStepSize()
+      = compute_implicit_time_step_size(_im->memory.parameters()->tau(),
+                                        _im->memory.maxVelocity());
+  }
 
   if (_im->memory.parallelDistribution()->rank() == 0) {
     logInfo("dt = {1}", _im->memory.timeStepSize());
