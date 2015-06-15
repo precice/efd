@@ -24,6 +24,7 @@ public:
     ("/EnvironmentForce");
     _type          = configuration->get<unsigned>("/Type");
     _isPreciceMode = configuration->get<bool>("/PreciceMode");
+    _positionLimit = configuration->get<VectorDs>("/PositionLimit");
   }
 
   Simulation(Simulation const&) = delete;
@@ -96,33 +97,34 @@ public:
       // logInfo("Write data {1}", _vertexIds.size());
     } else if (_type == 1) {
       // const double PI = 3.141592653589793238463;
-      VectorDs     newPosition;
+      VectorDs newPosition;
 
       for (unsigned d = 0; d < _dimensions; ++d) {
         _velocity(d)
-          = _environmentForce(d);// * 0.9
-            // * std::sin(PI * _currentPosition(d) / 1.7) + _environmentForce(d) * 0.1;
+          = _environmentForce(d); // * 0.9
+        // * std::sin(PI * _currentPosition(d) / 1.7) + _environmentForce(d) *
+        // 0.1;
 
-        if (_type1Direction) {
-          newPosition(d) = _currentPosition(d) + _velocity(d) * _dt;
-        } else {
-          newPosition(d) = _currentPosition(d) - _velocity(d) * _dt;
+        if (!_type1Direction) {
+          _velocity(d) *= -1;
         }
 
-        if (newPosition(d) >= 1.7) {
+        newPosition(d) = _currentPosition(d) + _velocity(d) * _dt;
+
+        if (newPosition(d) > _positionLimit(d)) {
           _type1Direction = false;
+          _velocity(d)   *= -1;
+          newPosition(d)  = _currentPosition(d) + _velocity(d) * _dt;
         }
 
-        if (newPosition(d) <= 0.0) {
+        if (newPosition(d) < 0.0) {
           _type1Direction = true;
-        }
-
-        if (_type1Direction) {
-          newPosition(d) = _currentPosition(d) + _velocity(d) * _dt;
-        } else {
-          newPosition(d) = _currentPosition(d) - _velocity(d) * _dt;
+          _velocity(d)   *= -1;
+          newPosition(d)  = _currentPosition(d) + _velocity(d) * _dt;
         }
       }
+
+      logInfo("{1} {2} {3}", newPosition(0), _currentPosition(0), _velocity(0));
 
       for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
         for (unsigned d = 0; d < _dimensions; ++d) {
@@ -159,18 +161,19 @@ public:
   Uni_PublicProperty(VectorDs, velocity)
 
 private:
-  unsigned                         _dimensions;
-  Eigen::Matrix<long double, 3, 1> _environmentForce;
-  Eigen::Matrix<long double, 3, 1> _lastPosition;
-  Eigen::Matrix<long double, 3, 1> _currentPosition;
-  double                           _dt;
-  bool                             _type1Direction;
-  precice::SolverInterface*        _preciceInterface;
-  std::vector<int>                 _vertexIds;
-  std::vector<double>              _displacements;
-  std::vector<double>              _forces;
-  int                              _meshId;
-  int                              _displacementsID;
-  int                              _forcesID;
+  unsigned                  _dimensions;
+  VectorDs                  _environmentForce;
+  VectorDs                  _positionLimit;
+  VectorDs                  _lastPosition;
+  VectorDs                  _currentPosition;
+  double                    _dt;
+  bool                      _type1Direction;
+  precice::SolverInterface* _preciceInterface;
+  std::vector<int>          _vertexIds;
+  std::vector<double>       _displacements;
+  std::vector<double>       _forces;
+  int                       _meshId;
+  int                       _displacementsID;
+  int                       _forcesID;
 };
 }

@@ -168,6 +168,8 @@ private:
     static xmlChar* const       environment  = (xmlChar* const)"environment";
     static xmlChar const* const precice_configuration_path
       = (xmlChar const*)"precice-configuration-path";
+    static xmlChar* const position_limit
+      = (xmlChar* const)"position-limit";
 
     xmlAttrPtr attr = node->properties;
 
@@ -194,6 +196,10 @@ private:
         }
 
         configuration->set("/PreciceConfigurationPath", path);
+      } else if (xmlStrcasecmp(attr->name, position_limit) == 0) {
+        Eigen::Matrix<long double, 3, 1> vector;
+        dimensions = parse_fpv(attr->children->content, vector);
+        configuration->set("/PositionLimit", vector);
       }
       attr = attr->next;
     }

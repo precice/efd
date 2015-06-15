@@ -57,6 +57,7 @@ reset() {
   _set("/PreciceConfigurationPath", false);
   _set("/Type", 0u);
   _set("/PreciceMode", false);
+  _set("/PositionLimit", VectorDsType::Zero());
 }
 
 std::string
