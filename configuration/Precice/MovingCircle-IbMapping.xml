@@ -36,7 +36,7 @@
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
-      <server:mpi/>
+      <!-- <server:mpi/> -->
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.02"
         constraint="consistent"
@@ -71,7 +71,7 @@
     </participant>
 
     <participant name="Structure">
-      <server:mpi/>
+      <!-- <server:mpi/> -->
 
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <write-data mesh="BodyMesh" name="Displacements"/>

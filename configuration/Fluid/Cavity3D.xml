@@ -2,13 +2,13 @@
 <scenario
   Re="500"
   timeLimit="10.0"
-  iterationLimit="0"
+  iterationLimit="10"
   plotInterval="0.0"
   tau="0.7"
   gamma="0.5"
   width="1.0 1.0 1.0"
-  size="40 40 40"
-  parallelizationSize="2 2 2"
+  size="10 10 10"
+  parallelizationSize="1 1 1"
   environment="0 0 0"
   filename="Cavity3D"
   scalar="double"
@@ -16,9 +16,18 @@
   output="Xdmf"
   >
   <walls>
-    <left type="Input" velocity="0.0 0.0 0.0" />
-    <right type="Input" velocity="0.0 0.0 0.0" />
+    <left type="Input" velocity="2.0 0.0 0.0" />
+    <right type="Output" velocity="0.0 0.0 0.0" />
     <bottom type="Input" velocity="0.0 0.0 0.0" />
-    <top type="Input" velocity="1.0 0.0 0.0" />
+    <top type="Input" velocity="0.0 0.0 0.0" />
+    <back type="Input" velocity="0.0 0.0 0.0" />
+    <front type="Input" velocity="0.0 0.0 0.0" />
   </walls>
+  <immersed-boundary
+    type="Rbf-Based"
+    full-prediction="off"
+    developing-structure="off"
+    precice-configuration-path="../Precice/Cavity3D-NoIbMapping.xml"
+    outerLayerSize="0"
+    innerLayerSize="1"/>
 </scenario>

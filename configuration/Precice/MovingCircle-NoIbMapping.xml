@@ -34,6 +34,12 @@
       <action:add-to-coordinates mesh="BodyMesh" timing="regular-post">
         <source-data name="Displacements"/>
       </action:add-to-coordinates>
+      <export:vtk
+        timestep-interval="0.1"
+        directory="/home/qwert/Downloads/Fsi/trashMoving/"
+        every-iteration="1"
+        normals="0"
+        trigger-solver="0"/>
     </participant>
 
     <participant name="Structure">
