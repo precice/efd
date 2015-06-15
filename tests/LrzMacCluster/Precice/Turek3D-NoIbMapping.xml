@@ -17,11 +17,17 @@
     <mesh name="BodyMesh" flip-normals="0">
     </mesh>
 
-    <geometry:builtin-cuboid of-mesh="BodyMesh">
+    <!-- <geometry:builtin-cuboid of-mesh="BodyMesh"> -->
+    <!--   <discretization-width value="0.0025"/> -->
+    <!--   <length value="0.1; 0.1; 0.41"/> -->
+    <!--   <offset value="0.5; 0.2; 0.205"/> -->
+    <!-- </geometry:builtin-cuboid> -->
+
+    <geometry:builtin-sphere of-mesh="BodyMesh">
       <discretization-width value="0.0025"/>
-      <length value="0.1; 0.1; 0.41"/>
+      <radius value="0.1"/>
       <offset value="0.5; 0.2; 0.205"/>
-    </geometry:builtin-cuboid>
+    </geometry:builtin-sphere>
 
     <participant name="Fluid">
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
