@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <scenario
   Re="800"
-  diffusion-multiplier="0.001"
+  diffusion-multiplier="0.000125"
   timeLimit="15.0"
   iterationLimit="0"
   plotInterval="0.1"
@@ -19,8 +19,8 @@
   <walls>
     <left type="Output" />
     <right type="Output" />
-    <bottom type="Output" />
-    <top type="Output" />
+    <bottom type="Input" velocity="0.0 0.0" />
+    <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
     type="Rbf-Based"
