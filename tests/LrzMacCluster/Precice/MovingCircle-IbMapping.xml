@@ -80,12 +80,13 @@
 
     <communication:mpi from="Fluid" to="Structure"/>
 
-    <coupling-scheme:serial-explicit>
+    <coupling-scheme:parallel-explicit>
       <max-time value="1000000"/>
       <max-timesteps value="1000000"/>
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
+      <exchange data="Forces" from="Structure" mesh="BodyMesh"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
-    </coupling-scheme:serial-explicit>
+    </coupling-scheme:parallel-explicit>
   </solver-interface>
 </precice-configuration>

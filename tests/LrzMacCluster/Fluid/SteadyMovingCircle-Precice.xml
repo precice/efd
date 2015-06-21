@@ -19,8 +19,8 @@
   <walls>
     <left type="Output" />
     <right type="Output" />
-    <bottom type="Output" />
-    <top type="Output" />
+    <bottom type="Input" velocity="0.0 0.0" />
+    <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
     type="Precice-Based"

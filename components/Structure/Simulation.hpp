@@ -39,6 +39,9 @@ public:
     // _type = type;
     _preciceInterface = precice_interface;
     _dt               = _preciceInterface->initialize();
+    _dt = 0.0;
+
+    _preciceInterface->initializeData();
 
     if (!_preciceInterface->hasMesh("BodyMesh")) {
       throwException("Precice does not have 'BodyMesh' in its configuration");
@@ -53,7 +56,7 @@ public:
     _displacementsID = _preciceInterface->getDataID("Displacements", _meshId);
 
     if (_isPreciceMode) {
-      logInfo("Precice mode is on");
+      // logInfo("Precice mode is on");
       _forcesID = _preciceInterface->getDataID("Forces", _meshId);
       _forces.resize(_dimensions * vertices_size);
     }
@@ -72,9 +75,12 @@ public:
 
   bool
   iterate() {
+    // logInfo("Start of iteration");
     if (!_preciceInterface->isCouplingOngoing()) {
       return false;
     }
+
+    // logInfo("Start of iteration");
 
     if (_type == 0) {
       VectorDs newPosition = _environmentForce * _dt * _dt
@@ -124,7 +130,7 @@ public:
         }
       }
 
-      logInfo("{1} {2} {3}", newPosition(0), _currentPosition(0), _velocity(0));
+      // logInfo("{1} {2} {3}", newPosition(0), _currentPosition(0), _velocity(0));
 
       for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
         for (unsigned d = 0; d < _dimensions; ++d) {
@@ -143,7 +149,7 @@ public:
                                               _displacements.data());
 
       if (_isPreciceMode) {
-        logInfo("Write forces");
+        logInfo("Write forces {1}", _velocity.transpose());
         _preciceInterface->writeBlockVectorData(_forcesID,
                                                 _vertexIds.size(),
                                                 _vertexIds.data(),
@@ -151,7 +157,23 @@ public:
       }
     }
 
+    // logInfo("PreCICE's advance methods is being invoked ...");
+
+    namespace pc = precice::constants;
+    std::string writeCheckpoint(pc::actionWriteIterationCheckpoint());
+    std::string readCheckpoint(pc::actionReadIterationCheckpoint());
+
+    if (_preciceInterface->isActionRequired(writeCheckpoint)) {
+      _preciceInterface->fulfilledAction(writeCheckpoint);
+    }
+
     _dt = _preciceInterface->advance(_dt);
+
+    if (_preciceInterface->isActionRequired(readCheckpoint)) {
+      _preciceInterface->fulfilledAction(readCheckpoint);
+    }
+
+    // logInfo("End of iteration");
 
     return true;
   }

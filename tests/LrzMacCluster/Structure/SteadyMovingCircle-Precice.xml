@@ -2,6 +2,7 @@
 <scenario
   type = "1"
   environment = "0.3 0.0"
+  position-limit = "1.7 0.0"
   precice-configuration-path="../Precice/MovingCircle-IbMapping.xml"
   precice-mode = "on"
   >

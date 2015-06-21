@@ -389,6 +389,8 @@ public:
 
     _locateForeignCells();
     _locateForeignCells();
+
+    // logInfo("Finished Precice-based IB controller's precomutaions");
   }
 
   void
@@ -986,7 +988,8 @@ public:
 
         force(d) += cell->force(d);
       }
-      interface_cell->data() = force / (2.0 * _memory->timeStepSize());
+      // interface_cell->data() = force / (2.0 * _memory->timeStepSize());
+      interface_cell->data() = force / (2.0);
     }
   }
 

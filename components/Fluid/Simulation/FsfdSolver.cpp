@@ -518,14 +518,16 @@ advanceFsi() {
 
   _im->ibController->processVelocities();
 
-  // logInfo("Map data");
+  // logInfo("Invoking PreCICE's advance");
   if (_im->preciceInterface != nullptr) {
     _im->preciceInterface->advance(_im->memory.timeStepSize());
+    // logInfo("Finished PreCICE's advance invokation");
 
     if (_im->preciceInterface->isActionRequired(readCheckpoint)) {
       _im->preciceInterface->fulfilledAction(readCheckpoint);
     }
   }
+  // logInfo("Finished PreCICE's advance invokation");
   _im->ibController->processForces();
 }
 
@@ -665,7 +667,10 @@ locateStructure() {
 
   std::set<int> mesh_set({ _im->preciceInterface->getMeshID("BodyMesh") });
 
+  // logInfo("Start computing distance of cells from structure surface");
+
   for (auto const& accessor : * _im->memory.grid()) {
+    // logInfo("Compute distance for one cell is being started ...");
     for (unsigned d = 0; d < Dimensions; ++d) {
       accessor.positionInRespectToGeometry(d)
         = ib::convert_precice_position(
@@ -679,6 +684,8 @@ locateStructure() {
         accessor.pressurePosition().template cast<double>().data(),
         mesh_set));
   }
+
+  // logInfo("End computing distance of cells from structure surface");
 
   for (auto const& accessor : * _im->memory.grid()) {
     ib::set_cell_neighbors_along_geometry_interface(
