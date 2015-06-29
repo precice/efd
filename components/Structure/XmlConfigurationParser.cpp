@@ -67,16 +67,16 @@ parse_in(xmlChar const* content, T& number) {
 // return result;
 // }
 
-// template <typename T>
-// static inline void
-// parse_fpn(xmlChar const* content, T& number) {
-// if (!Uni::Helpers::parse_floating_point_number(
-// std::string(reinterpret_cast<char const*>(content)),
-// number)) {
-// throwException("Failed to parse floating-point number "
-// "'{1}'", content);
-// }
-// }
+template <typename T>
+static inline void
+parse_fpn(xmlChar const* content, T& number) {
+  if (!Uni::Helpers::parse_floating_point_number(
+        std::string(reinterpret_cast<char const*>(content)),
+        number)) {
+    throwException("Failed to parse floating-point number "
+                   "'{1}'", content);
+  }
+}
 
 // static inline long double
 // parse_fpn(xmlChar const* content) {
@@ -164,6 +164,7 @@ private:
   void
   parseScenarioParameters(xmlNodePtr node) const {
     static xmlChar* const       type         = (xmlChar* const)"type";
+    static xmlChar* const       mass         = (xmlChar* const)"mass";
     static xmlChar* const       precice_mode = (xmlChar* const)"precice-mode";
     static xmlChar* const       environment  = (xmlChar* const)"environment";
     static xmlChar const* const precice_configuration_path
@@ -180,6 +181,10 @@ private:
         unsigned type_value;
         parse_in(attr->children->content, type_value);
         configuration->set("/Type", type_value);
+      } else if (xmlStrcasecmp(attr->name, mass) == 0) {
+        typename Configuration::ScalarType mass_value;
+        parse_fpn(attr->children->content, mass_value);
+        configuration->set("/Mass", mass_value);
       } else if (xmlStrcasecmp(attr->name, precice_mode) == 0) {
         bool is_on = parse_bool(attr->children->content);
         configuration->set("/PreciceMode", is_on);
@@ -204,8 +209,9 @@ private:
       attr = attr->next;
     }
 
-    if (dimensions < -1) {
-      throwException("Unknown dimension size");
+    if (dimensions <= -1) {
+      // throwException("Unknown dimension size");
+      dimensions = 0;
     }
 
     configuration->set("/Dimensions", static_cast<unsigned>(dimensions));

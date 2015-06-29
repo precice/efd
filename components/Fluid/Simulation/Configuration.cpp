@@ -84,9 +84,11 @@ reset() {
 
   _set("/Ib/PreciceConfigurationPath",           false);
 
+  _set("/Ib/Features/FullVelocityPrediction",    false);
+
   _set("/Ib/Features/DevelopingStructure",       false);
 
-  _set("/Ib/Features/FullVelocityPrediction",    false);
+  _set("/Ib/Features/Coupling",       false);
 
   _set("/Ib/Schemes/DirectForcing/PreciceBased", false);
   _set(

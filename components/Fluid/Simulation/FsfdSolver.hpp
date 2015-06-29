@@ -13,7 +13,7 @@ namespace FluidSimulation {
 class Configuration;
 
 namespace ImmersedBoundary {
-template<typename TVector>
+template <typename TVector>
 class Controller;
 }
 
@@ -120,6 +120,9 @@ private:
 
   void
   locateStructure();
+
+  void
+  sendCouplingData();
 
   void
   computeBodyForce();

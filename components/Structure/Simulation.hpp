@@ -14,15 +14,23 @@
 namespace Structure {
 class Simulation {
 public:
-  using VectorDd = Eigen::Matrix<long double, 3, 1>;
-  using VectorDs = Eigen::Matrix<long double, 3, 1>;
+  using Scalar = long double;
+
+  using VectorDd = Eigen::Matrix<double, 3, 1>;
+
+  using VectorDs = Eigen::Matrix<Scalar, 3, 1>;
 
 public:
   Simulation(Configuration const* configuration) {
-    _dimensions       = configuration->get<unsigned>("/Dimensions");
-    _environmentForce = configuration->get < Eigen::Matrix < long double, 3, 1 >>
-    ("/EnvironmentForce");
+    _dimensions = configuration->get<unsigned>("/Dimensions");
+
+    if (!configuration->isOfType<bool>("/EnvironmentForce")) {
+      _environmentForce = configuration->get<VectorDs>("/EnvironmentForce");
+    } else {
+      _environmentForce = VectorDs::Zero();
+    }
     _type          = configuration->get<unsigned>("/Type");
+    _mass          = configuration->get<Scalar>("/Mass");
     _isPreciceMode = configuration->get<bool>("/PreciceMode");
     _positionLimit = configuration->get<VectorDs>("/PositionLimit");
   }
@@ -38,10 +46,22 @@ public:
   initialize(precice::SolverInterface* precice_interface) {
     // _type = type;
     _preciceInterface = precice_interface;
-    _dt               = _preciceInterface->initialize();
+    // logInfo("PreCICE's initialize methods is being invoked ...");
+    _dt = _preciceInterface->initialize();
+    // logInfo("PreCICE's initialize methods has been finished");
     _dt = 0.0;
 
-    _preciceInterface->initializeData();
+    if (_dimensions == 0u) {
+      _dimensions = _preciceInterface->getDimensions();
+    }
+
+    if (static_cast<int>(_dimensions) != _preciceInterface->getDimensions()) {
+      throwException("Inconsistent dimension size of the problem: "
+                     "structure's configuration dimensions ('{1}') is not equal to "
+                     "PreCICE's configuration dimensions ('{2}')",
+                     _dimensions,
+                     _preciceInterface->getDimensions());
+    }
 
     if (!_preciceInterface->hasMesh("BodyMesh")) {
       throwException("Precice does not have 'BodyMesh' in its configuration");
@@ -83,13 +103,40 @@ public:
     // logInfo("Start of iteration");
 
     if (_type == 0) {
-      VectorDs newPosition = _environmentForce * _dt * _dt
-                             + 2.0 * _currentPosition -  _lastPosition;
+      if (!_preciceInterface->hasData("CouplingStresses", _meshId)) {
+        throwException("Precice configuration does not have 'CouplingStresses' data"
+                       " related to 'BodyMesh'");
+      }
+      auto const stressesId = _preciceInterface->getDataID("CouplingStresses", _meshId);
+
+      unsigned vertices_size = _preciceInterface->getMeshVertexSize(_meshId);
+
+      std::vector<double> stresses;
+      stresses.resize(_dimensions * vertices_size);
+
+      _preciceInterface->readBlockVectorData(stressesId,
+                                             _vertexIds.size(),
+                                             _vertexIds.data(),
+                                             stresses.data());
+
+      VectorDs force = _environmentForce;
 
       for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
         for (unsigned d = 0; d < _dimensions; ++d) {
-          _displacements[i * _dimensions + d]
-            = newPosition(d) - _currentPosition(d);
+          // logInfo("Stresses = {1}", stresses[i * _dimensions + d]);
+          force(d) += stresses[i * _dimensions + d];
+        }
+      }
+
+      VectorDs newPosition = force / _mass * _dt * _dt
+                             + 2.0 * _currentPosition - _lastPosition;
+
+      logInfo("Force = {1}", force.transpose());
+      logInfo("Position = {1}", newPosition.transpose());
+
+      for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
+        for (unsigned d = 0; d < _dimensions; ++d) {
+          _displacements[i * _dimensions + d] = newPosition(d) - _currentPosition(d);
         }
       }
 
@@ -100,7 +147,6 @@ public:
                                               _vertexIds.size(),
                                               _vertexIds.data(),
                                               _displacements.data());
-      // logInfo("Write data {1}", _vertexIds.size());
     } else if (_type == 1) {
       // const double PI = 3.141592653589793238463;
       VectorDs newPosition;
@@ -130,7 +176,8 @@ public:
         }
       }
 
-      // logInfo("{1} {2} {3}", newPosition(0), _currentPosition(0), _velocity(0));
+      // logInfo("{1} {2} {3}", newPosition(0), _currentPosition(0),
+      // _velocity(0));
 
       for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
         for (unsigned d = 0; d < _dimensions; ++d) {
@@ -155,9 +202,26 @@ public:
                                                 _vertexIds.data(),
                                                 _forces.data());
       }
-    }
+    } else if (_type == 1) {
+      VectorDs newPosition = _environmentForce * _dt * _dt
+                             + 2.0 * _currentPosition -  _lastPosition;
 
-    // logInfo("PreCICE's advance methods is being invoked ...");
+      for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
+        for (unsigned d = 0; d < _dimensions; ++d) {
+          _displacements[i * _dimensions + d]
+            = newPosition(d) - _currentPosition(d);
+        }
+      }
+
+      _lastPosition    = _currentPosition;
+      _currentPosition = newPosition;
+
+      _preciceInterface->writeBlockVectorData(_displacementsID,
+                                              _vertexIds.size(),
+                                              _vertexIds.data(),
+                                              _displacements.data());
+      // logInfo("Write data {1}", _vertexIds.size());
+    }
 
     namespace pc = precice::constants;
     std::string writeCheckpoint(pc::actionWriteIterationCheckpoint());
@@ -167,7 +231,9 @@ public:
       _preciceInterface->fulfilledAction(writeCheckpoint);
     }
 
+    // logInfo("PreCICE's advance methods is being invoked ...");
     _dt = _preciceInterface->advance(_dt);
+    // logInfo("PreCICE's advance methods has been finished");
 
     if (_preciceInterface->isActionRequired(readCheckpoint)) {
       _preciceInterface->fulfilledAction(readCheckpoint);
@@ -188,7 +254,8 @@ private:
   VectorDs                  _positionLimit;
   VectorDs                  _lastPosition;
   VectorDs                  _currentPosition;
-  double                    _dt;
+  Scalar                    _mass;
+  Scalar                    _dt;
   bool                      _type1Direction;
   precice::SolverInterface* _preciceInterface;
   std::vector<int>          _vertexIds;

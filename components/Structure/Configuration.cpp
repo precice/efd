@@ -56,8 +56,9 @@ reset() {
   _set("/Dimensions", false);
   _set("/PreciceConfigurationPath", false);
   _set("/Type", 0u);
+  _set("/Mass", static_cast<ScalarType>(0.0));
   _set("/PreciceMode", false);
-  _set("/PositionLimit", VectorDsType::Zero());
+  _set("/PositionLimit", VectorDsType::Zero().eval());
 }
 
 std::string

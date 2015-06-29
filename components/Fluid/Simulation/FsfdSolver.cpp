@@ -13,6 +13,7 @@
 #include "ImmersedBoundary/PreciceBasedController.hpp"
 #include "ImmersedBoundary/RbfBasedController.hpp"
 #include "ImmersedBoundary/functions.hpp"
+#include "ImmersedBoundary/processcoupling.hpp"
 #include "PeSolver.hpp"
 #include "Private/mpigenerics.hpp"
 #include "Reporter.hpp"
@@ -33,8 +34,8 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TVector>
 inline typename TVector::Scalar
-compute_cfl( TVector const& minCellWidth,
-    TVector const& maxVelocity) {
+compute_cfl(TVector const& minCellWidth,
+            TVector const& maxVelocity) {
   using Scalar = typename TVector::Scalar;
 
   Scalar localMin    = std::numeric_limits<Scalar>::max();
@@ -82,7 +83,7 @@ compute_explicit_time_step_size(TScalar const& re,
 template <typename TVector>
 inline typename TVector::Scalar
 compute_implicit_time_step_size(typename TVector::Scalar const& tau,
-                                TVector const& minCellWidth,
+                                TVector const&                  minCellWidth,
                                 TVector const&                  maxVelocity) {
   using Scalar = typename TVector::Scalar;
 
@@ -108,7 +109,8 @@ public:
   FsfdSolverImplementation(Interface* in)
     : _in(in),
     preciceInterface(nullptr),
-    maxLayerSize(0) {}
+    maxLayerSize(0),
+    doCoupling(false) {}
 
   Uni_Firewall_INTERFACE_LINK(FsfdSolver<TSolverTraits> );
 
@@ -121,6 +123,7 @@ public:
 
   std::unique_ptr<typename Interface::IbControllerType> ibController;
   unsigned                                              maxLayerSize;
+  bool                                                  doCoupling;
 
   Reporter* reporter;
 };
@@ -166,9 +169,12 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
     _im->locateStructureFunction
       = [this] () {
           this->locateStructure();
-          this->_im->ghostHandlers.executeLocationsMpiExchange();
           _im->locateStructureFunction = [] () {};
         };
+  }
+
+  if (configuration->is("/Ib/Features/Coupling")) {
+    _im->doCoupling = true;
   }
 
   if (configuration->is("/Ib/Schemes/DirectForcing/PreciceBased")) {
@@ -348,7 +354,6 @@ iterate() {
   // logInfo("Locate structure ...");
   _im->locateStructureFunction();
   // logInfo("Locate structure is finished");
-  // this->locateStructure();
   _im->iterateFunction();
 }
 
@@ -515,6 +520,8 @@ advanceFsi() {
       _im->preciceInterface->fulfilledAction(writeCheckpoint);
     }
   }
+
+  sendCouplingData();
 
   _im->ibController->processVelocities();
 
@@ -685,6 +692,8 @@ locateStructure() {
         mesh_set));
   }
 
+  this->_im->ghostHandlers.executeLocationsMpiExchange();
+
   // logInfo("End computing distance of cells from structure surface");
 
   for (auto const& accessor : * _im->memory.grid()) {
@@ -695,6 +704,35 @@ locateStructure() {
       _im->maxLayerSize);
   }
   _im->ibController->precompute();
+
+  // Coupling mesh construction
+
+  if (!_im->doCoupling) {
+    return;
+  }
+  namespace ib = ImmersedBoundary;
+
+  ib::create_coupling_mesh(_im->memory.grid()->innerGrid,
+                           _im->preciceInterface);
+}
+
+template <typename T>
+void
+FsfdSolver<T>::
+sendCouplingData() {
+  if (_im->preciceInterface == nullptr) {
+    return;
+  }
+
+  if (!_im->doCoupling) {
+    return;
+  }
+  namespace ib = ImmersedBoundary;
+
+  ib::send_coupling_stresses(_im->memory.grid()->innerGrid,
+                             _im->preciceInterface,
+                             _im->memory.parameters()->diffusionMultiplier(),
+                             _im->memory.parameters()->gradPressureMultiplier());
 }
 
 template <typename T>

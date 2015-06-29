@@ -17,6 +17,7 @@ class ConfigurationImplementation;
 class Configuration {
 public:
   typedef long double                     ScalarType;
+
   typedef Eigen::Matrix<int, 3, 1>        VectorDiType;
   typedef Eigen::Matrix<ScalarType, 3, 1> VectorDsType;
 

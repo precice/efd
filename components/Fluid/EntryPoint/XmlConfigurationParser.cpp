@@ -430,6 +430,8 @@ private:
       = (xmlChar const*)"full-prediction";
     static xmlChar const* const developing_structure
       = (xmlChar const*)"developing-structure";
+    static xmlChar const* const coupling
+      = (xmlChar const*)"coupling";
     static xmlChar const* const outerLayerSize
       = (xmlChar const*)"outerLayerSize";
     static xmlChar const* const innerLayerSize
@@ -472,6 +474,9 @@ private:
                            parse_bool(attr->children->content));
       } else if (xmlStrcasecmp(attr->name, developing_structure) == 0) {
         configuration->set("/Ib/Features/DevelopingStructure",
+                           parse_bool(attr->children->content));
+      } else if (xmlStrcasecmp(attr->name, coupling) == 0) {
+        configuration->set("/Ib/Features/Coupling",
                            parse_bool(attr->children->content));
       } else if (xmlStrcasecmp(attr->name, outerLayerSize) == 0) {
         configuration->set(
