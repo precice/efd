@@ -1,0 +1,9 @@
+<?xml version = "1.0"?>
+<scenario
+  type = "0"
+  mass = "1.0"
+  precice-configuration-path="../Precice/InflowCircle-NoIbMapping.xml"
+  precice-mode = "off"
+  >
+</scenario>
+
