@@ -36,7 +36,7 @@
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
-      <server:mpi/>
+      <!-- <server:mpi/> -->
 
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.01"

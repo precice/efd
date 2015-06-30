@@ -405,7 +405,7 @@ iterateWithFastIbVelocityPrediction() {
 
     accessor.convection() = parts[0];
   }
-  logInfo("{1}", _im->memory.parameters()->g());
+  // logInfo("{1}", _im->memory.parameters()->g());
 
   advanceFsi();
 

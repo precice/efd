@@ -8,7 +8,7 @@
 #SBATCH --time=24:00:00
 #SBATCH --get-user-env
 #SBATCH --partition=bdz
-#SBATCH --ntasks=18
+#SBATCH --ntasks=3
 
 DIR=$HOME/Project
 bin=$DIR/.install/Gcc/Release/bin
@@ -27,13 +27,13 @@ cp -f $conf/Fluid/UnsteadyMovingCircle-Precice.xml $output/Fluid/UnsteadyMovingC
 cp -f $conf/Structure/UnsteadyMovingCircle-Precice.xml $output/Structure/UnsteadyMovingCircle-Precice.xml
 cp -f $conf/Petsc/Basic.conf $output/Petsc/Basic.conf
 cd $output/Precice
-mpiexec -n 1 binprecice server Fluid MovingCircle-IbMapping.xml &
+# mpiexec -n 1 binprecice server Fluid MovingCircle-IbMapping.xml &
 cd $output
 
 mpiexec -n 1 $bin/Structure \
   -s Structure/UnsteadyMovingCircle-Precice.xml &
 
-mpiexec -n 16 $bin/Fluid \
+mpiexec -n 1 $bin/Fluid \
   -o . \
   -e Petsc/Basic.conf \
   -s Fluid/UnsteadyMovingCircle-Precice.xml
