@@ -75,11 +75,11 @@ create_coupling_mesh(TSubgrid const&           subgrid,
 
   using Vector = typename CellAccessor::VectorDsType;
 
-  if (!preciceInterface->hasMesh("CouplingFluidMesh")) {
-    throwException("Precice configuration does not have 'CouplingFluidMesh'");
+  if (!preciceInterface->hasMesh("FluidMesh")) {
+    throwException("Precice configuration does not have 'FluidMesh'");
   }
 
-  auto const fluidMeshId = preciceInterface->getMeshID("CouplingFluidMesh");
+  auto const fluidMeshId = preciceInterface->getMeshID("FluidMesh");
 
   preciceInterface->resetMesh(fluidMeshId);
 
@@ -125,14 +125,14 @@ send_coupling_stresses(
                                TSubgrid::Dimensions,
                                TSubgrid::Dimensions>;
 
-  if (!preciceInterface->hasMesh("CouplingFluidMesh")) {
-    throwException("Precice configuration does not have 'CouplingFluidMesh'");
+  if (!preciceInterface->hasMesh("FluidMesh")) {
+    throwException("Precice configuration does not have 'FluidMesh'");
   }
-  auto const fluidMeshId = preciceInterface->getMeshID("CouplingFluidMesh");
+  auto const fluidMeshId = preciceInterface->getMeshID("FluidMesh");
 
   if (!preciceInterface->hasData("CouplingStresses", fluidMeshId)) {
     throwException("Precice configuration does not have 'CouplingStresses' data"
-                   " related to 'CouplingFluidMesh'");
+                   " related to 'FluidMesh'");
   }
 
   auto const fluidMeshStressesId = preciceInterface->getDataID("CouplingStresses",

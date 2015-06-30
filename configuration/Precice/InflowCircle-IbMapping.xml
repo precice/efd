@@ -39,11 +39,12 @@
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
+      <server:mpi/>
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.02"
         constraint="consistent"
         direction="write"
-        from="CouplingFluidMesh"
+        from="FluidMesh"
         to="BodyMesh"
         timing="onadvance"/>
       <mapping:rbf-compact-polynomial-c6

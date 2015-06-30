@@ -212,6 +212,7 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
 
     _im->ibController.reset(temp.release());
   } else if (configuration->is("/Ib/Schemes/DirectForcing/RbfBased")) {
+
     _im->ibController.reset(
       new ImmersedBoundary::RbfBasedController<SolverTraitsType>(
         configuration,

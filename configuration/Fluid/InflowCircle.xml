@@ -24,11 +24,11 @@
     <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
-    type="Rbf-Based"
+    type="Precice-Based"
     full-prediction="off"
     developing-structure="on"
     coupling="on"
-    precice-configuration-path="../Precice/InflowCircle-NoIbMapping.xml"
+    precice-configuration-path="../Precice/InflowCircle-IbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>
 </scenario>

@@ -3,8 +3,8 @@
   type="0"
   mass="1.0"
   position-limit="0.14 1.8"
-  precice-configuration-path="../Precice/InflowCircle-NoIbMapping.xml"
-  precice-mode = "off"
+  precice-configuration-path="../Precice/InflowCircle-IbMapping.xml"
+  precice-mode = "on"
   >
 </scenario>
 
