@@ -7,7 +7,7 @@
   <log-filter
     component="precice"
     target="debug"
-    switch="on"/>
+    switch="off"/>
 
   <solver-interface
     dimensions="2"
@@ -36,7 +36,10 @@
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
+      <!-- <server:sockets port="32942"/> -->
       <!-- <server:mpi/> -->
+      <!-- <master:mpi-single/> -->
+
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.02"
         constraint="consistent"
@@ -78,15 +81,16 @@
       <write-data mesh="BodyMesh" name="Forces"/>
     </participant>
 
-    <communication:mpi from="Fluid" to="Structure"/>
+    <!-- <m2n:sockets port="32943" from="Fluid" to="Structure"/> -->
+    <communication:mpi from="Fluid" to="Structure" exchange-directory="."/>
 
-    <coupling-scheme:parallel-explicit>
+    <coupling-scheme:serial-explicit>
       <max-time value="1000000"/>
       <max-timesteps value="1000000"/>
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
       <exchange data="Forces" from="Structure" mesh="BodyMesh"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
-    </coupling-scheme:parallel-explicit>
+    </coupling-scheme:serial-explicit>
   </solver-interface>
 </precice-configuration>

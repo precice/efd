@@ -14,22 +14,38 @@
     geometry-mode="0"
     restart-mode="0">
 
+    <data:vector name="CouplingStresses"/>
     <data:vector name="Displacements"/>
 
     <mesh name="BodyMesh" flip-normals="0">
       <use-data name="Displacements"/>
+      <use-data name="CouplingStresses"/>
+    </mesh>
+
+    <mesh name="CouplingFluidMesh" flip-normals="0">
+      <use-data name="CouplingStresses"/>
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
-      <discretization-width value="0.02"/>
+      <discretization-width value="0.027"/>
       <radius value="0.125"/>
       <offset value="1; 4"/>
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
-      <server:mpi/>
+      <mapping:rbf-compact-polynomial-c6
+        support-radius="0.04"
+        constraint="consistent"
+        direction="write"
+        from="CouplingFluidMesh"
+        to="BodyMesh"
+        timing="onadvance"/>
+
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <read-data mesh="BodyMesh" name="Displacements"/>
+
+      <use-mesh name="CouplingFluidMesh" provide="1" offset="0; 0; 0"/>
+      <write-data mesh="CouplingFluidMesh" name="CouplingStresses"/>
 
       <action:add-to-coordinates mesh="BodyMesh" timing="regular-post">
         <source-data name="Displacements"/>
@@ -37,9 +53,13 @@
     </participant>
 
     <participant name="Structure">
-      <server:mpi/>
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <write-data mesh="BodyMesh" name="Displacements"/>
+      <read-data mesh="BodyMesh" name="CouplingStresses"/>
+
+      <action:multiply-by-area mesh="BodyMesh" timing="regular-post">
+        <target-data name="CouplingStresses"/>
+      </action:multiply-by-area>
     </participant>
 
     <communication:mpi from="Fluid" to="Structure"/>
@@ -50,6 +70,7 @@
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
+      <exchange data="CouplingStresses" from="Fluid" mesh="BodyMesh"/>
     </coupling-scheme:serial-explicit>
   </solver-interface>
 </precice-configuration>

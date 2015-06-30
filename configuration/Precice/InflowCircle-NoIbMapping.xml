@@ -57,9 +57,9 @@
       <write-data mesh="BodyMesh" name="Displacements"/>
       <read-data mesh="BodyMesh" name="CouplingStresses"/>
 
-      <action:multiply-by-area mesh="BodyMesh" timing="regular-post">
-        <target-data name="CouplingStresses"/>
-      </action:multiply-by-area>
+      <!-- <action:multiply-by-area mesh="BodyMesh" timing="regular-post"> -->
+      <!--   <target-data name="CouplingStresses"/> -->
+      <!-- </action:multiply-by-area> -->
     </participant>
 
     <communication:mpi from="Fluid" to="Structure"/>

@@ -37,7 +37,6 @@
     </participant>
 
     <participant name="Structure">
-      <server:mpi/>
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <write-data mesh="BodyMesh" name="Displacements"/>
     </participant>

@@ -9,7 +9,7 @@
   gamma="0.5"
   width="2.2 0.41"
   size="440 82"
-  parallelizationSize="8 2"
+  parallelizationSize="4 2"
   environment="0 0"
   filename="Turek2D1"
   scalar="double"
@@ -17,17 +17,17 @@
   output="Xdmf"
   >
   <walls>
-    <left type="Output" />
+    <left type="ParabolicInput" velocity="0.3 0.0" />
     <right type="Output" />
     <bottom type="Input" velocity="0.0 0.0" />
     <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
-    type="Precice-Based"
+    type="Rbf-Based"
     full-prediction="off"
     developing-structure="on"
-    precice-configuration-path="../Precice/MovingCircle-IbMapping.xml"
+    coupling="on"
+    precice-configuration-path="../Precice/InflowCircle-NoIbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>
 </scenario>
-

@@ -24,7 +24,7 @@
     <top type="Output" />
   </walls>
   <immersed-boundary
-    type="Precice-Based"
+    type="Rbf-Based"
     full-prediction="off"
     developing-structure="on"
     precice-configuration-path="../Precice/MovingCircle-IbMapping.xml"

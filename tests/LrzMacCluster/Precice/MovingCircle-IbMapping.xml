@@ -7,7 +7,7 @@
   <log-filter
     component="precice"
     target="debug"
-    switch="on"/>
+    switch="off"/>
 
   <solver-interface
     dimensions="2"
@@ -37,20 +37,21 @@
 
     <participant name="Fluid">
       <server:mpi/>
+
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.01"
         constraint="consistent"
         direction="write"
         from="FluidMesh"
         to="BodyMesh"
-        timing="ondemand"/>
+        timing="onadvance"/>
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.01"
         constraint="consistent"
         direction="read"
         from="BodyMesh"
         to="FluidMesh"
-        timing="ondemand"/>
+        timing="onadvance"/>
 
       <write-data mesh="FluidMesh" name="Velocities"/>
       <read-data mesh="FluidMesh" name="Forces"/>
@@ -71,22 +72,20 @@
     </participant>
 
     <participant name="Structure">
-      <server:mpi/>
-
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <write-data mesh="BodyMesh" name="Displacements"/>
       <write-data mesh="BodyMesh" name="Forces"/>
     </participant>
 
-    <communication:mpi from="Fluid" to="Structure"/>
+    <communication:mpi from="Fluid" to="Structure" exchange-directory="."/>
 
-    <coupling-scheme:parallel-explicit>
+    <coupling-scheme:serial-explicit>
       <max-time value="1000000"/>
       <max-timesteps value="1000000"/>
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
       <exchange data="Forces" from="Structure" mesh="BodyMesh"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
-    </coupling-scheme:parallel-explicit>
+    </coupling-scheme:serial-explicit>
   </solver-interface>
 </precice-configuration>

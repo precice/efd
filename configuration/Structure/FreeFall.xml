@@ -1,7 +1,10 @@
 <?xml version = "1.0"?>
 <scenario
   type = "0"
-  environment = "0.0 -9.8"
+  mass = "613.5923152"
+  environment = "0.0 -6019.340611663"
+  position-limit= "0.3 3.8"
   precice-configuration-path="../Precice/FreeFall-NoIbMapping.xml"
+  precice-mode = "off"
   >
 </scenario>

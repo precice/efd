@@ -8,7 +8,7 @@
 #SBATCH --time=24:00:00
 #SBATCH --get-user-env
 #SBATCH --partition=bdz
-#SBATCH --ntasks=19
+#SBATCH --ntasks=18
 
 DIR=$HOME/Project
 bin=$DIR/.install/Gcc/Release/bin
