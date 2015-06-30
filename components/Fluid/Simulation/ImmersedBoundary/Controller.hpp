@@ -346,6 +346,11 @@ public:
 
   virtual unsigned
   globalIndex() const = 0;
+
+  virtual int
+  id() const {
+    return 0;
+  }
 };
 
 template <typename TVector>

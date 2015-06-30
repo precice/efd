@@ -71,6 +71,11 @@ public:
     return _force(dimension);
   }
 
+  virtual int
+  id() const {
+    return _vertexId;
+  }
+
 private:
   unsigned _globalIndex;
   Uni_PrivateProperty(int,    vertexId);

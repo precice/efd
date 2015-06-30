@@ -9,8 +9,8 @@
   tau="0.9"
   gamma="0.5"
   width="2.2 0.41"
-  size="220 41"
-  parallelizationSize="1 1"
+  size="440 82"
+  parallelizationSize="2 2"
   environment="0 0"
   filename="Turek2D1"
   scalar="double"
@@ -20,14 +20,14 @@
   <walls>
     <left type="Output" />
     <right type="Output" />
-    <bottom type="Output" />
-    <top type="Output" />
+    <bottom type="Input" velocity="0.0 0.0" />
+    <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
     type="Rbf-Based"
     full-prediction="off"
     developing-structure="on"
-    precice-configuration-path="../Precice/MovingCircle-IbMapping.xml"
+    precice-configuration-path="../Precice/MovingCircle-NoIbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>
 </scenario>

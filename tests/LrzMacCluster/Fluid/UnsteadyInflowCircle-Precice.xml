@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <scenario
-  Re="20"
+  Re="100"
   diffusion-multiplier="0.001"
   timeLimit="10.0"
   iterationLimit="0"
@@ -17,17 +17,17 @@
   output="Xdmf"
   >
   <walls>
-    <left type="ParabolicInput" velocity="0.3 0.0" />
+    <left type="ParabolicInput" velocity="1.5 0.0" />
     <right type="Output" />
     <bottom type="Input" velocity="0.0 0.0" />
     <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
-    type="Rbf-Based"
+    type="Precice-Based"
     full-prediction="off"
     developing-structure="on"
     coupling="on"
-    precice-configuration-path="../Precice/InflowCircle-NoIbMapping.xml"
+    precice-configuration-path="../Precice/InflowCircle-IbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>
 </scenario>

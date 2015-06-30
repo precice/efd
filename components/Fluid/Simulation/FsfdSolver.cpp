@@ -115,6 +115,7 @@ public:
   FsfdSolverImplementation(Interface* in)
     : _in(in),
     preciceInterface(nullptr),
+    isPreciceIbMethod(false),
     maxLayerSize(0),
     doCoupling(false) {}
 
@@ -127,6 +128,7 @@ public:
   typename Interface::GhostHandlersType              ghostHandlers;
   precice::SolverInterface* preciceInterface;
 
+  bool                                                  isPreciceIbMethod;
   unsigned                                              timeStepSizeMethod;
   std::unique_ptr<typename Interface::IbControllerType> ibController;
   unsigned                                              maxLayerSize;
@@ -205,6 +207,8 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
     using UniquePreciceBasedControllerType
             = std::unique_ptr<PreciceBasedControllerType>;
 
+    _im->isPreciceIbMethod = true;
+
     UniquePreciceBasedControllerType temp(
       new PreciceBasedControllerType(configuration, &_im->memory));
 
@@ -212,6 +216,7 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
 
     _im->ibController.reset(temp.release());
   } else if (configuration->is("/Ib/Schemes/DirectForcing/RbfBased")) {
+    _im->isPreciceIbMethod = false;
 
     _im->ibController.reset(
       new ImmersedBoundary::RbfBasedController<SolverTraitsType>(
@@ -737,8 +742,10 @@ locateStructure() {
   }
   namespace ib = ImmersedBoundary;
 
-  ib::create_coupling_mesh(_im->memory.grid()->innerGrid,
-                           _im->preciceInterface);
+  // if (!_im->isPreciceIbMethod) {
+    ib::create_coupling_mesh(_im->memory.grid()->innerGrid,
+                             _im->preciceInterface);
+  // }
 }
 
 template <typename T>
@@ -754,10 +761,19 @@ sendCouplingData() {
   }
   namespace ib = ImmersedBoundary;
 
-  ib::send_coupling_stresses(_im->memory.grid()->innerGrid,
-                             _im->preciceInterface,
-                             _im->memory.parameters()->diffusionMultiplier(),
-                             _im->memory.parameters()->gradPressureMultiplier());
+  // if (_im->isPreciceIbMethod) {
+  //   ib::send_coupling_stresses_precice(
+  //     _im->ibController->getForceIterable(),
+  //     &_im->memory,
+  //     _im->preciceInterface,
+  //     _im->memory.parameters()->diffusionMultiplier(),
+  //     _im->memory.parameters()->gradPressureMultiplier());
+  // } else {
+    ib::send_coupling_stresses(_im->memory.grid()->innerGrid,
+                               _im->preciceInterface,
+                               _im->memory.parameters()->diffusionMultiplier(),
+                               _im->memory.parameters()->gradPressureMultiplier());
+  // }
 }
 
 template <typename T>

@@ -22,7 +22,7 @@
       <use-data name="CouplingStresses"/>
     </mesh>
 
-    <mesh name="FluidMesh" flip-normals="0">
+    <mesh name="CouplingFluidMesh" flip-normals="0">
       <use-data name="CouplingStresses"/>
     </mesh>
 
@@ -33,20 +33,20 @@
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
-      <server:mpi/>
+      <!-- <server:mpi/> -->
       <mapping:rbf-compact-polynomial-c6
         support-radius="0.01"
         constraint="consistent"
         direction="write"
-        from="FluidMesh"
+        from="CouplingFluidMesh"
         to="BodyMesh"
         timing="onadvance"/>
 
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <read-data mesh="BodyMesh" name="Displacements"/>
 
-      <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
-      <write-data mesh="FluidMesh" name="CouplingStresses"/>
+      <use-mesh name="CouplingFluidMesh" provide="1" offset="0; 0; 0"/>
+      <write-data mesh="CouplingFluidMesh" name="CouplingStresses"/>
 
       <action:add-to-coordinates mesh="BodyMesh" timing="regular-post">
         <source-data name="Displacements"/>

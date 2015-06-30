@@ -4,7 +4,6 @@
   mass="1.0"
   position-limit="0.14 1.8"
   precice-configuration-path="../Precice/InflowCircle-IbMapping.xml"
-  precice-mode="on"
+  precice-mode = "on"
   >
 </scenario>
-

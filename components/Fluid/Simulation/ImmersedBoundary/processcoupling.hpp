@@ -1,6 +1,7 @@
 #pragma once
 
 #include "functions.hpp"
+#include "Controller.hpp"
 
 #include "Simulation/functions.hpp"
 
@@ -75,11 +76,11 @@ create_coupling_mesh(TSubgrid const&           subgrid,
 
   using Vector = typename CellAccessor::VectorDsType;
 
-  if (!preciceInterface->hasMesh("FluidMesh")) {
-    throwException("Precice configuration does not have 'FluidMesh'");
+  if (!preciceInterface->hasMesh("CouplingFluidMesh")) {
+    throwException("Precice configuration does not have 'CouplingFluidMesh'");
   }
 
-  auto const fluidMeshId = preciceInterface->getMeshID("FluidMesh");
+  auto const fluidMeshId = preciceInterface->getMeshID("CouplingFluidMesh");
 
   preciceInterface->resetMesh(fluidMeshId);
 
@@ -108,44 +109,22 @@ create_coupling_mesh(TSubgrid const&           subgrid,
   // logInfo("Vertices {1} {2}", id, vertex_ids.size());
 }
 
-template <typename TSubgrid>
-void
-send_coupling_stresses(
-  TSubgrid const&                                    subgrid,
-  precice::SolverInterface*                          preciceInterface,
-  typename TSubgrid::CellAccessor::ScalarType const& diffusion_multiplier,
-  typename TSubgrid::CellAccessor::ScalarType const& grad_pressure_multiplier) {
-  using CellAccessor = typename TSubgrid::CellAccessor;
+template <typename TCellAccessor>
+typename TCellAccessor::VectorDsType
+compute_coupling_stress(
+  TCellAccessor const&                                    accessor,
+  typename TCellAccessor::ScalarType const& diffusion_multiplier,
+  typename TCellAccessor::ScalarType const& grad_pressure_multiplier) {
+  using CellAccessor =  TCellAccessor;
 
   using Scalar = typename CellAccessor::ScalarType;
 
   using Vector = typename CellAccessor::VectorDsType;
 
   using Matrix = Eigen::Matrix<Scalar,
-                               TSubgrid::Dimensions,
-                               TSubgrid::Dimensions>;
-
-  if (!preciceInterface->hasMesh("FluidMesh")) {
-    throwException("Precice configuration does not have 'FluidMesh'");
-  }
-  auto const fluidMeshId = preciceInterface->getMeshID("FluidMesh");
-
-  if (!preciceInterface->hasData("CouplingStresses", fluidMeshId)) {
-    throwException("Precice configuration does not have 'CouplingStresses' data"
-                   " related to 'FluidMesh'");
-  }
-
-  auto const fluidMeshStressesId = preciceInterface->getDataID("CouplingStresses",
-                                                               fluidMeshId);
-
-  unsigned id = 0;
-
-  for (auto const& accessor : subgrid) {
-    if (!do_cell_force_computation(accessor)) {
-      continue;
-    }
-
-    auto locations = compute_neighbor_locations(accessor);
+                               CellAccessor::Dimensions,
+                               CellAccessor::Dimensions>;
+  auto locations = compute_neighbor_locations(accessor);
 
     Matrix matrix;
 
@@ -197,6 +176,102 @@ send_coupling_stresses(
         force += matrix * normal;
       }
     }
+
+    return force;
+}
+
+template <typename TInterfaceCell, typename TMemory>
+void
+send_coupling_stresses_precice(
+  Iterable<TInterfaceCell>                                    iterable,
+  TMemory const* memory,
+  precice::SolverInterface*                          preciceInterface,
+  typename TInterfaceCell::Scalar const& diffusion_multiplier,
+  typename TInterfaceCell::Scalar const& grad_pressure_multiplier) {
+  using InterfaceCellType = TInterfaceCell;
+
+  using Scalar = typename InterfaceCellType::Scalar;
+
+  using Vector = typename InterfaceCellType::Vector;
+
+  using Matrix = Eigen::Matrix<Scalar,
+                               InterfaceCellType::Dimensions,
+                               InterfaceCellType::Dimensions>;
+
+  if (!preciceInterface->hasMesh("CouplingFluidMesh")) {
+    throwException("Precice configuration does not have 'CouplingFluidMesh'");
+  }
+  auto const fluidMeshId = preciceInterface->getMeshID("CouplingFluidMesh");
+
+  if (!preciceInterface->hasData("CouplingStresses", fluidMeshId)) {
+    throwException("Precice configuration does not have 'CouplingStresses' data"
+                   " related to 'CouplingFluidMesh'");
+  }
+
+  auto const fluidMeshStressesId = preciceInterface->getDataID("CouplingStresses",
+                                                               fluidMeshId);
+
+  for (auto const& interface_cell : iterable) {
+    auto accessor = *memory->grid()->innerGrid.begin();
+    accessor.initialize(interface_cell.globalIndex());
+
+    if (!do_cell_force_computation(accessor)) {
+      continue;
+    }
+
+    auto const force = compute_coupling_stress(accessor,
+                                               diffusion_multiplier,
+                                               grad_pressure_multiplier);
+  
+    auto const temp_force = force.template cast<double>().eval();
+    preciceInterface->writeVectorData(fluidMeshStressesId,
+                                      interface_cell.id(),
+                                      temp_force.data());
+    logInfo("{1} {2}", interface_cell.id(), temp_force.transpose());
+  }
+}
+
+template <typename TSubgrid>
+void
+send_coupling_stresses(
+  TSubgrid const&                                    subgrid,
+  precice::SolverInterface*                          preciceInterface,
+  typename TSubgrid::CellAccessor::ScalarType const& diffusion_multiplier,
+  typename TSubgrid::CellAccessor::ScalarType const& grad_pressure_multiplier) {
+  using CellAccessor = typename TSubgrid::CellAccessor;
+
+  using Scalar = typename CellAccessor::ScalarType;
+
+  using Vector = typename CellAccessor::VectorDsType;
+
+  using Matrix = Eigen::Matrix<Scalar,
+                               TSubgrid::Dimensions,
+                               TSubgrid::Dimensions>;
+
+  if (!preciceInterface->hasMesh("CouplingFluidMesh")) {
+    throwException("Precice configuration does not have 'CouplingFluidMesh'");
+  }
+  auto const fluidMeshId = preciceInterface->getMeshID("CouplingFluidMesh");
+
+  if (!preciceInterface->hasData("CouplingStresses", fluidMeshId)) {
+    throwException("Precice configuration does not have 'CouplingStresses' data"
+                   " related to 'CouplingFluidMesh'");
+  }
+
+  auto const fluidMeshStressesId = preciceInterface->getDataID("CouplingStresses",
+                                                               fluidMeshId);
+
+  unsigned id = 0;
+
+  for (auto const& accessor : subgrid) {
+    if (!do_cell_force_computation(accessor)) {
+      continue;
+    }
+
+    auto const force = compute_coupling_stress(accessor,
+                                               diffusion_multiplier,
+                                               grad_pressure_multiplier);
+  
     auto const temp_force = force.template cast<double>().eval();
     preciceInterface->writeVectorData(fluidMeshStressesId,
                                       id++,

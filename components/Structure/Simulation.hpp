@@ -67,17 +67,26 @@ public:
       throwException("Precice does not have 'BodyMesh' in its configuration");
     }
 
-    _meshId = _preciceInterface->getMeshID("BodyMesh");
+    _ibMeshId = _preciceInterface->getMeshID("BodyMesh");
 
-    unsigned vertices_size = _preciceInterface->getMeshVertexSize(_meshId);
+    if (_isPreciceMode) {
+      if (!_preciceInterface->hasMesh("CouplingBodyMesh")) {
+        throwException("Precice does not have 'CouplingBodyMesh' in its configuration");
+      }
+      _couplingMeshId = _preciceInterface->getMeshID("CouplingBodyMesh");
+    } else {
+      _couplingMeshId = _preciceInterface->getMeshID("BodyMesh");
+    }
+
+    unsigned vertices_size = _preciceInterface->getMeshVertexSize(_ibMeshId);
 
     _vertexIds.resize(vertices_size);
     _displacements.resize(_dimensions * vertices_size);
-    _displacementsID = _preciceInterface->getDataID("Displacements", _meshId);
+    _displacementsID = _preciceInterface->getDataID("Displacements", _ibMeshId);
 
     if (_isPreciceMode) {
       // logInfo("Precice mode is on");
-      _forcesID = _preciceInterface->getDataID("Forces", _meshId);
+      _forcesID = _preciceInterface->getDataID("Forces", _ibMeshId);
       _forces.resize(_dimensions * vertices_size);
     }
 
@@ -103,17 +112,19 @@ public:
     // logInfo("Start of iteration");
 
     if (_type == 0) {
-      if ((_currentPosition.cwiseAbs().array() > _positionLimit.cwiseAbs().array()).any()) {
+      if ((_currentPosition.cwiseAbs().array()
+           > _positionLimit.cwiseAbs().array()).any()) {
         return false;
       }
 
-      if (!_preciceInterface->hasData("CouplingStresses", _meshId)) {
+      if (!_preciceInterface->hasData("CouplingStresses", _couplingMeshId)) {
         throwException("Precice configuration does not have 'CouplingStresses' data"
                        " related to 'BodyMesh'");
       }
-      auto const stressesId = _preciceInterface->getDataID("CouplingStresses", _meshId);
+      auto const stressesId = _preciceInterface->getDataID("CouplingStresses",
+                                                           _couplingMeshId);
 
-      unsigned vertices_size = _preciceInterface->getMeshVertexSize(_meshId);
+      unsigned vertices_size = _preciceInterface->getMeshVertexSize(_couplingMeshId);
 
       std::vector<double> stresses;
       stresses.resize(_dimensions * vertices_size);
@@ -151,6 +162,19 @@ public:
                                               _vertexIds.size(),
                                               _vertexIds.data(),
                                               _displacements.data());
+
+      if (_isPreciceMode) {
+        if (!_preciceInterface->hasData("Displacements", _couplingMeshId)) {
+          throwException("Precice configuration does not have 'Displacements' data"
+                         " related to 'CouplingBodyMesh'");
+        }
+        auto const coupling_mesh_displacements_id
+          = _preciceInterface->getDataID("Displacements", _couplingMeshId);
+        _preciceInterface->writeBlockVectorData(coupling_mesh_displacements_id,
+                                                _vertexIds.size(),
+                                                _vertexIds.data(),
+                                                _displacements.data());
+      }
     } else if (_type == 1) {
       // const double PI = 3.141592653589793238463;
       VectorDs newPosition;
@@ -265,7 +289,8 @@ private:
   std::vector<int>          _vertexIds;
   std::vector<double>       _displacements;
   std::vector<double>       _forces;
-  int                       _meshId;
+  int                       _ibMeshId;
+  int                       _couplingMeshId;
   int                       _displacementsID;
   int                       _forcesID;
 };
