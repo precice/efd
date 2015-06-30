@@ -75,22 +75,21 @@ reset() {
 
   _im->properties.clear();
 
-  _set("/Equations/Ins/ReynoldsNumber",
-       (long double)(1));
-  _set("/Equations/Ins/DiffusionMultiplier",
-       std::string("default"));
-  _set("/Equations/Ins/PressureGradientMultiplier",
-       std::string("default"));
+  _set("/Equations/Ins/ReynoldsNumber",             (long double)(1));
+  _set("/Equations/Ins/DiffusionMultiplier",        std::string("default"));
+  _set("/Equations/Ins/PressureGradientMultiplier", std::string("default"));
 
-  _set("/Ib/PreciceConfigurationPath",           false);
+  _set("/Equations/Fsfd/TimeStepSizeMethod",       std::string("default"));
 
-  _set("/Ib/Features/FullVelocityPrediction",    false);
+  _set("/Ib/PreciceConfigurationPath",              false);
 
-  _set("/Ib/Features/DevelopingStructure",       false);
+  _set("/Ib/Features/FullVelocityPrediction",       false);
 
-  _set("/Ib/Features/Coupling",       false);
+  _set("/Ib/Features/DevelopingStructure",          false);
 
-  _set("/Ib/Schemes/DirectForcing/PreciceBased", false);
+  _set("/Ib/Features/Coupling",                     false);
+
+  _set("/Ib/Schemes/DirectForcing/PreciceBased",    false);
   _set(
     "/Ib/Schemes/DirectForcing/PreciceBased/OuterLayerSize",
     (unsigned)(0));

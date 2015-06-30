@@ -176,17 +176,18 @@ private:
       = (xmlChar* const)"diffusion-multiplier";
     static xmlChar* const grad_pressure_multiplier
       = (xmlChar* const)"pressure-gradient-multiplier";
-    static xmlChar* const timeLimit      = (xmlChar* const)"timeLimit";
-    static xmlChar* const iterationLimit = (xmlChar* const)"iterationLimit";
-    static xmlChar* const plotInterval   = (xmlChar* const)"plotInterval";
-    static xmlChar* const tau            = (xmlChar* const)"tau";
-    static xmlChar* const gamma          = (xmlChar* const)"gamma";
-    static xmlChar* const width          = (xmlChar* const)"width";
-    static xmlChar* const size           = (xmlChar* const)"size";
-    static xmlChar* const filename       = (xmlChar* const)"filename";
-    static xmlChar* const scalarType     = (xmlChar* const)"scalar";
-    static xmlChar* const solverType     = (xmlChar* const)"solver";
-    static xmlChar* const outputType     = (xmlChar* const)"output";
+    static xmlChar* const timeLimit             = (xmlChar* const)"timeLimit";
+    static xmlChar* const iterationLimit        = (xmlChar* const)"iterationLimit";
+    static xmlChar* const plotInterval          = (xmlChar* const)"plotInterval";
+    static xmlChar* const tau                   = (xmlChar* const)"tau";
+    static xmlChar* const time_step_size_method = (xmlChar* const)"time-step-size-method";
+    static xmlChar* const gamma                 = (xmlChar* const)"gamma";
+    static xmlChar* const width                 = (xmlChar* const)"width";
+    static xmlChar* const size                  = (xmlChar* const)"size";
+    static xmlChar* const filename              = (xmlChar* const)"filename";
+    static xmlChar* const scalarType            = (xmlChar* const)"scalar";
+    static xmlChar* const solverType            = (xmlChar* const)"solver";
+    static xmlChar* const outputType            = (xmlChar* const)"output";
     static xmlChar* const parallelizationSize
       = (xmlChar* const)"parallelizationSize";
     static xmlChar* const environment = (xmlChar* const)"environment";
@@ -232,6 +233,8 @@ private:
       } else if (xmlStrcasecmp(attr->name, tau) == 0) {
         parse_fpn(attr->children->content,
                   configuration->tau);
+      } else if (xmlStrcasecmp(attr->name, time_step_size_method) == 0) {
+        parseTimeStepSizeMethod(reinterpret_cast<char const*>(attr->children->content));
       } else if (xmlStrcasecmp(attr->name, gamma) == 0) {
         parse_fpn(attr->children->content,
                   configuration->gamma);
@@ -291,6 +294,21 @@ private:
     }
 
     configuration->dimensions = dim;
+  }
+
+  void
+  parseTimeStepSizeMethod(std::string type_string) const {
+    static boost::regex type1_regex("explicit", boost::regex::icase);
+
+    static boost::regex type2_regex("implicit", boost::regex::icase);
+
+    if (boost::regex_search(type_string, type1_regex)) {
+      configuration->set("/Equations/Fsfd/TimeStepSizeMethod",
+                         std::string("explicit"));
+    } else if (boost::regex_search(type_string, type2_regex)) {
+      configuration->set("/Equations/Fsfd/TimeStepSizeMethod",
+                         std::string("implicit"));
+    }
   }
 
   void
@@ -526,7 +544,8 @@ private:
     for (; it != it_end; ++it) {
       Vector coordinates;
       Uni::Helpers::parse_floating_point_vector(
-        it->operator[](1).str(),
+        it->
+        operator[](1).str(),
         coordinates);
       points.emplace_back(coordinates);
     }

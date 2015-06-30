@@ -34,8 +34,9 @@ namespace FsiSimulation {
 namespace FluidSimulation {
 template <typename TVector>
 inline typename TVector::Scalar
-compute_cfl(TVector const& minCellWidth,
-            TVector const& maxVelocity) {
+compute_cfl(typename TVector::Scalar const& re,
+            TVector const&                  minCellWidth,
+            TVector const&                  maxVelocity) {
   using Scalar = typename TVector::Scalar;
 
   Scalar localMin    = std::numeric_limits<Scalar>::max();
@@ -49,7 +50,11 @@ compute_cfl(TVector const& minCellWidth,
   }
 
   if (!is_computed) {
-    return minCellWidth.minCoeff();
+    Scalar factor = minCellWidth.cwiseProduct(minCellWidth).cwiseInverse().sum();
+
+    Scalar localMin = re / (2.0 * factor);
+
+    return localMin;
   }
 
   return localMin;
@@ -63,9 +68,9 @@ compute_explicit_time_step_size(TScalar const& re,
                                 TVector const& maxVelocity) {
   TScalar factor = minCellWidth.cwiseProduct(minCellWidth).cwiseInverse().sum();
 
-  TScalar localMin = (TScalar)(re / (2.0 * factor));
+  TScalar localMin = re / (2.0 * factor);
 
-  localMin = std::min(localMin, compute_cfl(minCellWidth, maxVelocity));
+  localMin = std::min(localMin, compute_cfl(re, minCellWidth, maxVelocity));
 
   TScalar globalMin = std::numeric_limits<TScalar>::max();
   Private::mpi_all_reduce(&localMin,
@@ -82,12 +87,13 @@ compute_explicit_time_step_size(TScalar const& re,
 
 template <typename TVector>
 inline typename TVector::Scalar
-compute_implicit_time_step_size(typename TVector::Scalar const& tau,
+compute_implicit_time_step_size(typename TVector::Scalar const& re,
+                                typename TVector::Scalar const& tau,
                                 TVector const&                  minCellWidth,
                                 TVector const&                  maxVelocity) {
   using Scalar = typename TVector::Scalar;
 
-  Scalar localMin = compute_cfl(minCellWidth, maxVelocity);
+  Scalar localMin = compute_cfl(re, minCellWidth, maxVelocity);
 
   Scalar globalMin = std::numeric_limits<Scalar>::max();
   Private::mpi_all_reduce(&localMin,
@@ -121,6 +127,7 @@ public:
   typename Interface::GhostHandlersType              ghostHandlers;
   precice::SolverInterface* preciceInterface;
 
+  unsigned                                              timeStepSizeMethod;
   std::unique_ptr<typename Interface::IbControllerType> ibController;
   unsigned                                              maxLayerSize;
   bool                                                  doCoupling;
@@ -152,6 +159,21 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
   } else {
     _im->memory.parameters()->gradPressureMultiplier()
       = 1.0;
+  }
+
+  std::string time_step_size_method
+    = configuration->get<std::string>("/Equations/Fsfd/TimeStepSizeMethod");
+
+  if (time_step_size_method == "default") {
+    if (SolverId == 0) {
+      _im->timeStepSizeMethod = 0;
+    } else {
+      _im->timeStepSizeMethod = 1;
+    }
+  } else if (time_step_size_method == "explicit") {
+    _im->timeStepSizeMethod = 0;
+  } else if (time_step_size_method == "implicit") {
+    _im->timeStepSizeMethod = 1;
   }
 
   if (configuration->is("/Ib/Features/FullVelocityPrediction")) {
@@ -322,7 +344,7 @@ template <typename T>
 typename FsfdSolver<T>::ScalarType
 FsfdSolver<T>::
 computeTimeStepSize() {
-  if (SolverId == 0) {
+  if (_im->timeStepSizeMethod == 0) {
     _im->memory.timeStepSize()
       = compute_explicit_time_step_size(_im->memory.parameters()->re(),
                                         _im->memory.parameters()->tau(),
@@ -330,7 +352,8 @@ computeTimeStepSize() {
                                         _im->memory.maxVelocity());
   } else {
     _im->memory.timeStepSize()
-      = compute_implicit_time_step_size(_im->memory.parameters()->tau(),
+      = compute_implicit_time_step_size(_im->memory.parameters()->re(),
+                                        _im->memory.parameters()->tau(),
                                         _im->memory.gridGeometry()->minCellWidth(),
                                         _im->memory.maxVelocity());
   }
@@ -382,6 +405,7 @@ iterateWithFastIbVelocityPrediction() {
 
     accessor.convection() = parts[0];
   }
+  logInfo("{1}", _im->memory.parameters()->g());
 
   advanceFsi();
 

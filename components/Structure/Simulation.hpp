@@ -103,6 +103,10 @@ public:
     // logInfo("Start of iteration");
 
     if (_type == 0) {
+      if ((_currentPosition.cwiseAbs().array() > _positionLimit.cwiseAbs().array()).any()) {
+        return false;
+      }
+
       if (!_preciceInterface->hasData("CouplingStresses", _meshId)) {
         throwException("Precice configuration does not have 'CouplingStresses' data"
                        " related to 'BodyMesh'");
@@ -131,8 +135,8 @@ public:
       VectorDs newPosition = force / _mass * _dt * _dt
                              + 2.0 * _currentPosition - _lastPosition;
 
-      logInfo("Force = {1}", force.transpose());
-      logInfo("Position = {1}", newPosition.transpose());
+      logInfo("Force = {1} {2}", force.transpose(), _mass);
+      logInfo("Position = {1}",  newPosition.transpose());
 
       for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
         for (unsigned d = 0; d < _dimensions; ++d) {
@@ -202,7 +206,7 @@ public:
                                                 _vertexIds.data(),
                                                 _forces.data());
       }
-    } else if (_type == 1) {
+    } else if (_type == 2) {
       VectorDs newPosition = _environmentForce * _dt * _dt
                              + 2.0 * _currentPosition -  _lastPosition;
 
