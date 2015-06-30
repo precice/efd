@@ -9,7 +9,7 @@
   gamma="0.5"
   width="2.2 0.41"
   size="440 82"
-  parallelizationSize="4 2"
+  parallelizationSize="8 2"
   environment="0 0"
   filename="Turek2D1"
   scalar="double"

@@ -311,13 +311,13 @@ public:
         = _preciceInterface->getDataID("Displacements", *_bodyMeshSet.begin());
     }
 
-    logInfo("RBF shape = {1}",      _imqShape);
-    logInfo("Support radius = {1}", _suppportRadius);
+    // logInfo("RBF shape = {1}",      _imqShape);
+    // logInfo("Support radius = {1}", _suppportRadius);
   }
 
   void
   precompute() {
-    logInfo("Locate Interface Cells has been starting ...");
+    // logInfo("Locate Interface Cells has been starting ...");
 
     // precice::MeshHandle const& mesh_handle =
     // _preciceInterface->getMeshHandle("BodyMesh");
@@ -438,7 +438,7 @@ public:
       _locateEulerianCells(d);
     }
 
-    logInfo("Locate Interface Cells has finished");
+    // logInfo("Locate Interface Cells has finished");
   }
 
   void
@@ -496,7 +496,7 @@ private:
 
     unsigned internal_id = 0;
 
-    logInfo("Size {1} ", _lagrangianNodes.size());
+    // logInfo("Size {1} ", _lagrangianNodes.size());
 
     for (auto& lagrangian_node : _lagrangianNodes) {
       _lagrangianNodesSupports[dimension].emplace_back(&lagrangian_node);

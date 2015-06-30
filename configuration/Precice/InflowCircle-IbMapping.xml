@@ -16,14 +16,20 @@
 
     <data:vector name="CouplingStresses"/>
     <data:vector name="Displacements"/>
+    <data:vector name="Velocities"/>
+    <data:vector name="Forces"/>
 
     <mesh name="BodyMesh" flip-normals="0">
       <use-data name="Displacements"/>
       <use-data name="CouplingStresses"/>
+      <use-data name="Velocities"/>
+      <use-data name="Forces"/>
     </mesh>
 
-    <mesh name="CouplingFluidMesh" flip-normals="0">
+    <mesh name="FluidMesh" flip-normals="0">
       <use-data name="CouplingStresses"/>
+      <use-data name="Velocities"/>
+      <use-data name="Forces"/>
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
@@ -40,13 +46,28 @@
         from="CouplingFluidMesh"
         to="BodyMesh"
         timing="onadvance"/>
+      <mapping:rbf-compact-polynomial-c6
+        support-radius="0.02"
+        constraint="consistent"
+        direction="read"
+        from="BodyMesh"
+        to="FluidMesh"
+        timing="onadvance"/>
+
+      <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
+      <write-data mesh="FluidMesh" name="Velocities"/>
+      <write-data mesh="FluidMesh" name="CouplingStresses"/>
+      <read-data mesh="FluidMesh" name="Forces"/>
 
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <read-data mesh="BodyMesh" name="Displacements"/>
 
-      <use-mesh name="CouplingFluidMesh" provide="1" offset="0; 0; 0"/>
-      <write-data mesh="CouplingFluidMesh" name="CouplingStresses"/>
-
+      <action:python mesh="BodyMesh" timing="regular-post">
+        <path name="."/>
+        <module name="CouplingModeDirectForcingAction"/>
+        <source-data name="Velocities"/>
+        <target-data name="Forces"/>
+      </action:python>
       <action:add-to-coordinates mesh="BodyMesh" timing="regular-post">
         <source-data name="Displacements"/>
       </action:add-to-coordinates>
@@ -69,6 +90,7 @@
       <max-timesteps value="1000000"/>
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
+      <exchange data="Forces" from="Structure" mesh="BodyMesh"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
       <exchange data="CouplingStresses" from="Fluid" mesh="BodyMesh"/>
     </coupling-scheme:serial-explicit>

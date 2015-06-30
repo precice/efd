@@ -55,10 +55,10 @@
         to="FluidMesh"
         timing="onadvance"/>
 
+      <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
       <write-data mesh="FluidMesh" name="Velocities"/>
       <read-data mesh="FluidMesh" name="Forces"/>
 
-      <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <read-data mesh="BodyMesh" name="Displacements"/>
 
