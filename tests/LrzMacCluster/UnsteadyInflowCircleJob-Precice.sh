@@ -22,6 +22,7 @@ mkdir -p $output/Fluid
 mkdir -p $output/Structure
 mkdir -p $output/Petsc
 cp -f $conf/Precice/InflowCircle-IbMapping.xml $output/Precice/InflowCircle-IbMapping.xml
+cp -f $conf/Precice/CouplingModeDirectForcingAction.py $output/Precice/CouplingModeDirectForcingAction.py
 cp -f $conf/Fluid/UnsteadyInflowCircle-Precice.xml $output/Fluid/UnsteadyInflowCircle-Precice.xml
 cp -f $conf/Structure/InflowCircle-Precice.xml $output/Structure/InflowCircle-Precice.xml
 cp -f $conf/Petsc/Basic.conf $output/Petsc/Basic.conf
