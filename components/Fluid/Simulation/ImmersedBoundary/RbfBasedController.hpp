@@ -284,13 +284,18 @@ public:
     } else {
       _isDevelopingStructure = false;
     }
+
+    _meshName
+      = configuration->get<std::string>("/Ib/Options/StructureMeshName");
+    _displacementsName
+      = configuration->get<std::string>("/Ib/Options/StructureDisplacementsName");
   }
 
   void
   initialize(precice::SolverInterface* precice_interface) {
     _preciceInterface = precice_interface;
 
-    _bodyMeshSet.insert(_preciceInterface->getMeshID("BodyMesh"));
+    _bodyMeshSet.insert(_preciceInterface->getMeshID(_meshName));
 
     if (_doComputeSupportRadius) {
       _suppportRadius = _memory->gridGeometry()->maxCellWidth().maxCoeff();
@@ -302,13 +307,14 @@ public:
     }
 
     if (_isDevelopingStructure) {
-      if (!_preciceInterface->hasData("Displacements", *_bodyMeshSet.begin())) {
-        throwException("Precice configuration does not have 'Displacements' data"
-                       " related to 'BodyMesh'");
+      if (!_preciceInterface->hasData(_displacementsName, *_bodyMeshSet.begin())) {
+        throwException("Precice configuration does not have '{1}' data"
+                       " related to '{2}'",
+                       _displacementsName, _meshName);
       }
 
       _displacementsId
-        = _preciceInterface->getDataID("Displacements", *_bodyMeshSet.begin());
+        = _preciceInterface->getDataID(_displacementsName, *_bodyMeshSet.begin());
     }
 
     // logInfo("RBF shape = {1}",      _imqShape);
@@ -448,7 +454,7 @@ public:
   processForces() {
     _lagrangianDisplacements.resize(Dimensions * _lagrangianIds.size(), 0.0);
 
-    if (_isDevelopingStructure) {
+    if (_isDevelopingStructure && _lagrangianIds.size() > 0) {
       _preciceInterface->readBlockVectorData(_displacementsId,
                                              _lagrangianIds.size(),
                                              _lagrangianIds.data(),
@@ -1371,6 +1377,8 @@ private:
 
   precice::SolverInterface* _preciceInterface;
   MemoryType const*         _memory;
+  std::string               _meshName;
+  std::string               _displacementsName;
 
   std::set<int> _bodyMeshSet;
 

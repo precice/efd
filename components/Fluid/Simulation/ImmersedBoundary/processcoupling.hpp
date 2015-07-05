@@ -1,8 +1,9 @@
 #pragma once
 
-#include "functions.hpp"
 #include "Controller.hpp"
+#include "functions.hpp"
 
+#include "Simulation/Configuration.hpp"
 #include "Simulation/functions.hpp"
 
 #include <precice/SolverInterface.hpp>
@@ -10,6 +11,8 @@
 #include <Uni/Logging/macros>
 
 #include <Eigen/Core>
+
+#include <mpi.h>
 
 namespace FsiSimulation {
 namespace FluidSimulation {
@@ -66,53 +69,10 @@ do_cell_force_computation(TCellAccessor const& accessor) {
   return doAccept;
 }
 
-template <typename TSubgrid>
-void
-create_coupling_mesh(TSubgrid const&           subgrid,
-                     precice::SolverInterface* preciceInterface) {
-  using CellAccessor = typename TSubgrid::CellAccessor;
-
-  using Scalar = typename CellAccessor::ScalarType;
-
-  using Vector = typename CellAccessor::VectorDsType;
-
-  if (!preciceInterface->hasMesh("CouplingFluidMesh")) {
-    throwException("Precice configuration does not have 'CouplingFluidMesh'");
-  }
-
-  auto const fluidMeshId = preciceInterface->getMeshID("CouplingFluidMesh");
-
-  preciceInterface->resetMesh(fluidMeshId);
-
-  std::vector<int>    vertex_ids;
-  std::vector<double> vertex_coords;
-
-  unsigned id = 0;
-
-  for (auto const& accessor : subgrid) {
-    if (!do_cell_force_computation(accessor)) {
-      continue;
-    }
-
-    auto position = accessor.pressurePosition().template cast<double>();
-
-    for (unsigned d = 0; d < CellAccessor::Dimensions; ++d) {
-      vertex_coords.push_back(position(d));
-    }
-    vertex_ids.push_back(id++);
-  }
-  preciceInterface->setMeshVertices(
-    fluidMeshId,
-    vertex_ids.size(),
-    vertex_coords.data(),
-    vertex_ids.data());
-  // logInfo("Vertices {1} {2}", id, vertex_ids.size());
-}
-
 template <typename TCellAccessor>
 typename TCellAccessor::VectorDsType
 compute_coupling_stress(
-  TCellAccessor const&                                    accessor,
+  TCellAccessor const&                      accessor,
   typename TCellAccessor::ScalarType const& diffusion_multiplier,
   typename TCellAccessor::ScalarType const& grad_pressure_multiplier) {
   using CellAccessor =  TCellAccessor;
@@ -126,159 +86,226 @@ compute_coupling_stress(
                                CellAccessor::Dimensions>;
   auto locations = compute_neighbor_locations(accessor);
 
-    Matrix matrix;
+  Matrix matrix;
 
-    for (unsigned d = 0; d < CellAccessor::Dimensions; ++d) {
-      for (unsigned d2 = 0; d2 < CellAccessor::Dimensions; ++d2) {
-        if (locations(2 * d2 + 0) == 1
-            && locations(2 * d2 + 1) == 1) {
-          matrix(d, d2)
-            = (accessor.velocity(d2, +1, d) - accessor.velocity(d2, -1, d))
-              / (accessor.width(d2)
-                 + (accessor.width(d2, +1, d2) + accessor.width(d2, -1, d2))
-                 / 2.0);
-        } else if (locations(2 * d2 + 0) == 1) {
-          matrix(d, d2)
-            = (accessor.velocity(d) - accessor.velocity(d2, -1, d))
-              / accessor.width(d2);
-        } else if (locations(2 * d2 + 1) == 1) {
-          matrix(d, d2)
-            = (accessor.velocity(d2, +1, d) - accessor.velocity(d))
-              / accessor.width(d2, +1, d2);
-        } else {
-          throwException("One of the neighboring cells in the dimension {1} "
-                         "must be ouside the body", d2);
-        }
+  for (unsigned d = 0; d < CellAccessor::Dimensions; ++d) {
+    for (unsigned d2 = 0; d2 < CellAccessor::Dimensions; ++d2) {
+      if (locations(2 * d2 + 0) == 1
+          && locations(2 * d2 + 1) == 1) {
+        matrix(d, d2)
+          = (accessor.velocity(d2, +1, d) - accessor.velocity(d2, -1, d))
+            / (accessor.width(d2)
+               + (accessor.width(d2, +1, d2) + accessor.width(d2, -1, d2))
+               / 2.0);
+      } else if (locations(2 * d2 + 0) == 1) {
+        matrix(d, d2)
+          = (accessor.velocity(d) - accessor.velocity(d2, -1, d))
+            / accessor.width(d2);
+      } else if (locations(2 * d2 + 1) == 1) {
+        matrix(d, d2)
+          = (accessor.velocity(d2, +1, d) - accessor.velocity(d))
+            / accessor.width(d2, +1, d2);
+      } else {
+        throwException("One of the neighboring cells in the dimension {1} "
+                       "must be ouside the body", d2);
       }
     }
+  }
 
-    Vector force = Vector::Zero();
+  Vector force = Vector::Zero();
 
-    for (int d = 0; d < CellAccessor::Dimensions; ++d) {
-      for (int d2 = 0; d2 < 2; ++d2) {
-        if (locations(2 * d + d2) == 1) {
-          continue;
-        }
-
-        int normal_direction = +1;
-
-        if (d2 == 1) {
-          normal_direction = -1;
-        }
-
-        Vector normal = Vector::Zero();
-
-        normal(d) = normal_direction;
-
-        matrix  = diffusion_multiplier * (matrix + matrix.transpose());
-        matrix -= grad_pressure_multiplier * accessor.pressure() * Matrix::Identity();
-
-        force += matrix * normal;
+  for (int d = 0; d < CellAccessor::Dimensions; ++d) {
+    for (int d2 = 0; d2 < 2; ++d2) {
+      if (locations(2 * d + d2) == 1) {
+        continue;
       }
-    }
 
-    return force;
+      int normal_direction = +1;
+
+      if (d2 == 1) {
+        normal_direction = -1;
+      }
+
+      Vector normal = Vector::Zero();
+
+      normal(d) = normal_direction;
+
+      Scalar width = 1.0;
+
+      for (int d4 = 0; d4 < TCellAccessor::Dimensions; ++d4) {
+        if (d4 != d) {
+          width *= accessor.width(d4);
+        }
+      }
+
+      matrix  = diffusion_multiplier * (matrix + matrix.transpose());
+      matrix -= grad_pressure_multiplier * accessor.pressure() * Matrix::Identity();
+
+      force += (matrix * normal) * width;
+    }
+  }
+
+  return force;
 }
 
-template <typename TInterfaceCell, typename TMemory>
-void
-send_coupling_stresses_precice(
-  Iterable<TInterfaceCell>                                    iterable,
-  TMemory const* memory,
-  precice::SolverInterface*                          preciceInterface,
-  typename TInterfaceCell::Scalar const& diffusion_multiplier,
-  typename TInterfaceCell::Scalar const& grad_pressure_multiplier) {
-  using InterfaceCellType = TInterfaceCell;
+template <typename TSolverTraits>
+class CouplingController {
+public:
+  using SolverTraitsType = TSolverTraits;
 
-  using Scalar = typename InterfaceCellType::Scalar;
+  enum {Dimensions = SolverTraitsType::Dimensions};
 
-  using Vector = typename InterfaceCellType::Vector;
+  using MemoryType = typename SolverTraitsType::MemoryType;
 
-  using Matrix = Eigen::Matrix<Scalar,
-                               InterfaceCellType::Dimensions,
-                               InterfaceCellType::Dimensions>;
+  using CellAccessorType = typename SolverTraitsType::CellAccessorType;
 
-  if (!preciceInterface->hasMesh("CouplingFluidMesh")) {
-    throwException("Precice configuration does not have 'CouplingFluidMesh'");
-  }
-  auto const fluidMeshId = preciceInterface->getMeshID("CouplingFluidMesh");
+  using GridType = typename SolverTraitsType::GridType;
 
-  if (!preciceInterface->hasData("CouplingStresses", fluidMeshId)) {
-    throwException("Precice configuration does not have 'CouplingStresses' data"
-                   " related to 'CouplingFluidMesh'");
+  using VectorDsType = typename SolverTraitsType::VectorDsType;
+
+  using VectorDiType = typename SolverTraitsType::VectorDiType;
+
+  using ScalarType = typename SolverTraitsType::ScalarType;
+
+public:
+  CouplingController(
+    typename FluidSimulation::Configuration const* configuration) {
+    _couplingForcesName
+      = configuration->get<std::string>("/Ib/Options/CouplingForcesName");
   }
 
-  auto const fluidMeshStressesId = preciceInterface->getDataID("CouplingStresses",
-                                                               fluidMeshId);
+  CouplingController(CouplingController const&) = delete;
 
-  for (auto const& interface_cell : iterable) {
-    auto accessor = *memory->grid()->innerGrid.begin();
-    accessor.initialize(interface_cell.globalIndex());
+  ~CouplingController() {}
 
-    if (!do_cell_force_computation(accessor)) {
-      continue;
+  CouplingController&
+  operator=(CouplingController const&) = delete;
+
+  void
+  initialize(MemoryType const*         memory,
+             precice::SolverInterface* precice_interface) {
+    _memory           = memory;
+    _preciceInterface = precice_interface;
+
+    if (!_preciceInterface->hasMesh("CouplingFluidMesh")) {
+      throwException("Precice configuration does not have 'CouplingFluidMesh'");
+    }
+    _fluidMeshId = _preciceInterface->getMeshID("CouplingFluidMesh");
+
+    if (!_preciceInterface->hasData(_couplingForcesName, _fluidMeshId)) {
+      throwException("Precice configuration does not have '{1}' data"
+                     " related to 'CouplingFluidMesh'",
+                     _couplingForcesName);
     }
 
-    auto const force = compute_coupling_stress(accessor,
-                                               diffusion_multiplier,
-                                               grad_pressure_multiplier);
-  
-    auto const temp_force = force.template cast<double>().eval();
-    preciceInterface->writeVectorData(fluidMeshStressesId,
-                                      interface_cell.id(),
-                                      temp_force.data());
-    logInfo("{1} {2}", interface_cell.id(), temp_force.transpose());
-  }
-}
-
-template <typename TSubgrid>
-void
-send_coupling_stresses(
-  TSubgrid const&                                    subgrid,
-  precice::SolverInterface*                          preciceInterface,
-  typename TSubgrid::CellAccessor::ScalarType const& diffusion_multiplier,
-  typename TSubgrid::CellAccessor::ScalarType const& grad_pressure_multiplier) {
-  using CellAccessor = typename TSubgrid::CellAccessor;
-
-  using Scalar = typename CellAccessor::ScalarType;
-
-  using Vector = typename CellAccessor::VectorDsType;
-
-  using Matrix = Eigen::Matrix<Scalar,
-                               TSubgrid::Dimensions,
-                               TSubgrid::Dimensions>;
-
-  if (!preciceInterface->hasMesh("CouplingFluidMesh")) {
-    throwException("Precice configuration does not have 'CouplingFluidMesh'");
-  }
-  auto const fluidMeshId = preciceInterface->getMeshID("CouplingFluidMesh");
-
-  if (!preciceInterface->hasData("CouplingStresses", fluidMeshId)) {
-    throwException("Precice configuration does not have 'CouplingStresses' data"
-                   " related to 'CouplingFluidMesh'");
+    _fluidMeshForcesId = _preciceInterface->getDataID(_couplingForcesName, _fluidMeshId);
   }
 
-  auto const fluidMeshStressesId = preciceInterface->getDataID("CouplingStresses",
-                                                               fluidMeshId);
+  void
+  createMesh() {
+    _preciceInterface->resetMesh(_fluidMeshId);
+    _vertexIds.clear();
 
-  unsigned id = 0;
+    std::vector<double> vertex_coords;
 
-  for (auto const& accessor : subgrid) {
-    if (!do_cell_force_computation(accessor)) {
-      continue;
+    unsigned index = 0;
+
+    for (auto const& accessor : _memory->grid()->innerGrid) {
+      if (!do_cell_force_computation(accessor)) {
+        continue;
+      }
+
+      auto position = accessor.pressurePosition().template cast<double>();
+
+      for (unsigned d = 0; d < Dimensions; ++d) {
+        vertex_coords.push_back(position(d));
+      }
+      // _vertexIds.push_back(id++);
+      ++index;
     }
 
-    auto const force = compute_coupling_stress(accessor,
-                                               diffusion_multiplier,
-                                               grad_pressure_multiplier);
-  
-    auto const temp_force = force.template cast<double>().eval();
-    preciceInterface->writeVectorData(fluidMeshStressesId,
-                                      id++,
-                                      temp_force.data());
-    // logInfo("{1} {2}", id, temp_force.transpose());
+    // unsigned id_offset = 0;
+
+    // if ((_memory->parallelDistribution()->rank() - 1) >= 0) {
+    // MPI_Status status;
+    // MPI_Recv(&id_offset,
+    // 1,
+    // MPI_UNSIGNED,
+    // (_memory->parallelDistribution()->rank() - 1),
+    // 50,
+    // _memory->parallelDistribution()->mpiCommunicator,
+    // &status);
+    // }
+
+    // if ((_memory->parallelDistribution()->rank() + 1)
+    // < _memory->parallelDistribution()->rankSize()) {
+    // unsigned next_id_offset = id_offset + _vertexIds.size();
+
+    // MPI_Send(&next_id_offset,
+    // 1,
+    // MPI_UNSIGNED,
+    // (_memory->parallelDistribution()->rank() + 1),
+    // 50,
+    // _memory->parallelDistribution()->mpiCommunicator);
+    // }
+
+    // for (unsigned i = 0; i < _vertexIds.size(); ++i) {
+    // _vertexIds[i] += id_offset;
+    // }
+
+    _vertexIds.resize(index);
+
+    if (index > 0) {
+      _preciceInterface->setMeshVertices(
+        _fluidMeshId,
+        index,
+        vertex_coords.data(),
+        _vertexIds.data());
+    }
+
+    // logInfo("Vertices {1} {2}", id, vertex_ids.size());
   }
-}
+
+  void
+  sendStresses() {
+    std::vector<double> stresses;
+    stresses.resize(Dimensions * _vertexIds.size());
+
+    unsigned index = 0;
+
+    for (auto const& accessor : _memory->grid()->innerGrid) {
+      if (!do_cell_force_computation(accessor)) {
+        continue;
+      }
+
+      auto const force = compute_coupling_stress(
+        accessor,
+        _memory->parameters()->diffusionMultiplier(),
+        _memory->parameters()->gradPressureMultiplier());
+
+      for (unsigned d = 0; d < Dimensions; ++d) {
+        stresses[index++] = static_cast<double>(force(d));
+      }
+      // logInfo("{1} {2}", id, temp_force.transpose());
+    }
+
+    if (_vertexIds.size() > 0) {
+      _preciceInterface->writeBlockVectorData(_fluidMeshForcesId,
+                                              _vertexIds.size(),
+                                              _vertexIds.data(),
+                                              stresses.data());
+    }
+  }
+
+private:
+  MemoryType const*         _memory;
+  precice::SolverInterface* _preciceInterface;
+  std::string               _couplingForcesName;
+  int                       _fluidMeshId;
+  int                       _fluidMeshForcesId;
+
+  std::vector<int> _vertexIds;
+};
 }
 }
 }

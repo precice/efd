@@ -458,6 +458,12 @@ private:
       = (xmlChar const*)"support-radius";
     static xmlChar const* const imq_shape
       = (xmlChar const*)"imq-shape";
+    static xmlChar const* const coupling_forces_name
+      = (xmlChar const*)"coupling-forces-name";
+    static xmlChar const* const structure_mesh_name
+      = (xmlChar const*)"structure-mesh-name";
+    static xmlChar const* const structure_displacements_name
+      = (xmlChar const*)"structure-dispacements-name";
 
     static boost::regex type1_regex("Precice[\\-\\s]*Based",
                                     boost::regex::icase);
@@ -524,6 +530,18 @@ private:
             "/Ib/Schemes/DirectForcing/RbfBased/ImqShape",
             (long double)(parse_fpn(attr->children->content)));
         }
+      } else if (xmlStrcasecmp(attr->name, coupling_forces_name) == 0) {
+          configuration->set(
+            "/Ib/Options/CouplingForcesName",
+            std::string(reinterpret_cast<char const*>(attr->children->content)));
+      } else if (xmlStrcasecmp(attr->name, structure_mesh_name) == 0) {
+          configuration->set(
+            "/Ib/Options/StructureMeshName",
+            std::string(reinterpret_cast<char const*>(attr->children->content)));
+      } else if (xmlStrcasecmp(attr->name, structure_displacements_name) == 0) {
+          configuration->set(
+            "/Ib/Options/StructureDisplacementsName",
+            std::string(reinterpret_cast<char const*>(attr->children->content)));
       }
       attr = attr->next;
     }

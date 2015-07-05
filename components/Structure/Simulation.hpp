@@ -86,15 +86,15 @@ public:
 
     if (_isPreciceMode) {
       // logInfo("Precice mode is on");
-      _forcesID = _preciceInterface->getDataID("Forces", _ibMeshId);
-      _forces.resize(_dimensions * vertices_size);
+      // _forcesID = _preciceInterface->getDataID("Forces", _ibMeshId);
+      // _forces.resize(_dimensions * vertices_size);
     }
 
     for (unsigned i = 0; i < vertices_size; ++i) {
       _vertexIds[i] = i;
     }
-    _lastPosition    = VectorDs::Zero();
-    _currentPosition = VectorDs::Zero();
+    _previousPosition = VectorDs::Zero();
+    _currentPosition  = VectorDs::Zero();
 
     if (_type == 1) {
       _velocity       = _environmentForce * 0.1;
@@ -104,170 +104,183 @@ public:
 
   bool
   iterate() {
-    // logInfo("Start of iteration");
+    namespace pc = precice::constants;
+    static std::string const writeCheckpoint(pc::actionWriteIterationCheckpoint());
+    static std::string const readCheckpoint(pc::actionReadIterationCheckpoint());
+
     if (!_preciceInterface->isCouplingOngoing()) {
       return false;
     }
 
-    // logInfo("Start of iteration");
+    while (_preciceInterface->isCouplingOngoing()) {
+      VectorDs previous_position;
+      VectorDs current_position;
+      bool     type_1_direction;
 
-    if (_type == 0) {
-      if ((_currentPosition.cwiseAbs().array()
-           > _positionLimit.cwiseAbs().array()).any()) {
-        return false;
+      if (_preciceInterface->isActionRequired(writeCheckpoint)) {
+        previous_position = _previousPosition;
+        current_position  = _currentPosition;
+        type_1_direction  = _type1Direction;
+        _preciceInterface->fulfilledAction(writeCheckpoint);
       }
 
-      if (!_preciceInterface->hasData("CouplingStresses", _couplingMeshId)) {
-        throwException("Precice configuration does not have 'CouplingStresses' data"
-                       " related to 'BodyMesh'");
-      }
-      auto const stressesId = _preciceInterface->getDataID("CouplingStresses",
-                                                           _couplingMeshId);
+      // logInfo("Start of iteration");
 
-      unsigned vertices_size = _preciceInterface->getMeshVertexSize(_couplingMeshId);
-
-      std::vector<double> stresses;
-      stresses.resize(_dimensions * vertices_size);
-
-      _preciceInterface->readBlockVectorData(stressesId,
-                                             _vertexIds.size(),
-                                             _vertexIds.data(),
-                                             stresses.data());
-
-      VectorDs force = _environmentForce;
-
-      for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
-        for (unsigned d = 0; d < _dimensions; ++d) {
-          // logInfo("Stresses = {1}", stresses[i * _dimensions + d]);
-          force(d) += stresses[i * _dimensions + d];
+      if (_type == 0) {
+        if ((_currentPosition.cwiseAbs().array()
+             > _positionLimit.cwiseAbs().array()).any()) {
+          return false;
         }
-      }
 
-      VectorDs newPosition = force / _mass * _dt * _dt
-                             + 2.0 * _currentPosition - _lastPosition;
-
-      logInfo("Force = {1} {2}", force.transpose(), _mass);
-      logInfo("Position = {1}",  newPosition.transpose());
-
-      for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
-        for (unsigned d = 0; d < _dimensions; ++d) {
-          _displacements[i * _dimensions + d] = newPosition(d) - _currentPosition(d);
+        if (!_preciceInterface->hasData("CouplingForces", _couplingMeshId)) {
+          throwException("Precice configuration does not have 'CouplingForces' data"
+                         " related to 'BodyMesh'");
         }
-      }
+        auto const stressesId = _preciceInterface->getDataID("CouplingForces",
+                                                             _couplingMeshId);
 
-      _lastPosition    = _currentPosition;
-      _currentPosition = newPosition;
+        unsigned vertices_size = _preciceInterface->getMeshVertexSize(_couplingMeshId);
 
-      _preciceInterface->writeBlockVectorData(_displacementsID,
-                                              _vertexIds.size(),
-                                              _vertexIds.data(),
-                                              _displacements.data());
+        std::vector<double> stresses;
+        stresses.resize(_dimensions * vertices_size);
 
-      if (_isPreciceMode) {
-        if (!_preciceInterface->hasData("Displacements", _couplingMeshId)) {
-          throwException("Precice configuration does not have 'Displacements' data"
-                         " related to 'CouplingBodyMesh'");
+        _preciceInterface->readBlockVectorData(stressesId,
+                                               _vertexIds.size(),
+                                               _vertexIds.data(),
+                                               stresses.data());
+
+        VectorDs force = _environmentForce;
+
+        for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
+          for (unsigned d = 0; d < _dimensions; ++d) {
+            // logInfo("Stresses = {1}", stresses[i * _dimensions + d]);
+            force(d) += stresses[i * _dimensions + d];
+          }
         }
-        auto const coupling_mesh_displacements_id
-          = _preciceInterface->getDataID("Displacements", _couplingMeshId);
-        _preciceInterface->writeBlockVectorData(coupling_mesh_displacements_id,
+
+        VectorDs newPosition = force / _mass * _dt * _dt
+                               + 2.0 * _currentPosition - _previousPosition;
+
+        logInfo("Force = {1} {2}", force.transpose(), _mass);
+        logInfo("Position = {1}",  newPosition.transpose());
+
+        for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
+          for (unsigned d = 0; d < _dimensions; ++d) {
+            _displacements[i * _dimensions + d] = newPosition(d) - _currentPosition(d);
+          }
+        }
+
+        _previousPosition = _currentPosition;
+        _currentPosition  = newPosition;
+
+        _preciceInterface->writeBlockVectorData(_displacementsID,
                                                 _vertexIds.size(),
                                                 _vertexIds.data(),
                                                 _displacements.data());
-      }
-    } else if (_type == 1) {
-      // const double PI = 3.141592653589793238463;
-      VectorDs newPosition;
 
-      for (unsigned d = 0; d < _dimensions; ++d) {
-        _velocity(d)
-          = _environmentForce(d); // * 0.9
-        // * std::sin(PI * _currentPosition(d) / 1.7) + _environmentForce(d) *
-        // 0.1;
-
-        if (!_type1Direction) {
-          _velocity(d) *= -1;
+        if (_isPreciceMode) {
+          if (!_preciceInterface->hasData("Displacements", _couplingMeshId)) {
+            throwException("Precice configuration does not have 'Displacements' data"
+                           " related to 'CouplingBodyMesh'");
+          }
+          auto const coupling_mesh_displacements_id
+            = _preciceInterface->getDataID("Displacements", _couplingMeshId);
+          _preciceInterface->writeBlockVectorData(coupling_mesh_displacements_id,
+                                                  _vertexIds.size(),
+                                                  _vertexIds.data(),
+                                                  _displacements.data());
         }
+      } else if (_type == 1) {
+        // const double PI = 3.141592653589793238463;
+        VectorDs newPosition;
 
-        newPosition(d) = _currentPosition(d) + _velocity(d) * _dt;
-
-        if (newPosition(d) > _positionLimit(d)) {
-          _type1Direction = false;
-          _velocity(d)   *= -1;
-          newPosition(d)  = _currentPosition(d) + _velocity(d) * _dt;
-        }
-
-        if (newPosition(d) < 0.0) {
-          _type1Direction = true;
-          _velocity(d)   *= -1;
-          newPosition(d)  = _currentPosition(d) + _velocity(d) * _dt;
-        }
-      }
-
-      // logInfo("{1} {2} {3}", newPosition(0), _currentPosition(0),
-      // _velocity(0));
-
-      for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
         for (unsigned d = 0; d < _dimensions; ++d) {
-          _displacements[i * _dimensions + d] = newPosition(d) - _currentPosition(d);
+          _velocity(d)
+            = _environmentForce(d); // * 0.9
+          // * std::sin(PI * _currentPosition(d) / 1.7) + _environmentForce(d) *
+          // 0.1;
 
-          if (_isPreciceMode) {
-            _forces[i * _dimensions + d] = _velocity(d);
+          if (!_type1Direction) {
+            _velocity(d) *= -1;
+          }
+
+          newPosition(d) = _currentPosition(d) + _velocity(d) * _dt;
+
+          if (newPosition(d) > _positionLimit(d)) {
+            _type1Direction = false;
+            _velocity(d)   *= -1;
+            newPosition(d)  = _currentPosition(d) + _velocity(d) * _dt;
+          }
+
+          if (newPosition(d) < 0.0) {
+            _type1Direction = true;
+            _velocity(d)   *= -1;
+            newPosition(d)  = _currentPosition(d) + _velocity(d) * _dt;
           }
         }
-      }
-      _currentPosition = newPosition;
 
-      _preciceInterface->writeBlockVectorData(_displacementsID,
-                                              _vertexIds.size(),
-                                              _vertexIds.data(),
-                                              _displacements.data());
+        // logInfo("{1} {2} {3}", newPosition(0), _currentPosition(0),
+        // _velocity(0));
 
-      if (_isPreciceMode) {
-        logInfo("Write forces {1}", _velocity.transpose());
-        _preciceInterface->writeBlockVectorData(_forcesID,
+        for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
+          for (unsigned d = 0; d < _dimensions; ++d) {
+            _displacements[i * _dimensions + d] = newPosition(d) - _currentPosition(d);
+
+            if (_isPreciceMode) {
+              _forces[i * _dimensions + d] = _velocity(d);
+            }
+          }
+        }
+        _currentPosition = newPosition;
+
+        _preciceInterface->writeBlockVectorData(_displacementsID,
                                                 _vertexIds.size(),
                                                 _vertexIds.data(),
-                                                _forces.data());
-      }
-    } else if (_type == 2) {
-      VectorDs newPosition = _environmentForce * _dt * _dt
-                             + 2.0 * _currentPosition -  _lastPosition;
+                                                _displacements.data());
 
-      for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
-        for (unsigned d = 0; d < _dimensions; ++d) {
-          _displacements[i * _dimensions + d]
-            = newPosition(d) - _currentPosition(d);
+        // if (_isPreciceMode) {
+        // logInfo("Write forces {1}", _velocity.transpose());
+        // _preciceInterface->writeBlockVectorData(_forcesID,
+        // _vertexIds.size(),
+        // _vertexIds.data(),
+        // _forces.data());
+        // }
+      } else if (_type == 2) {
+        VectorDs newPosition = _environmentForce * _dt * _dt
+                               + 2.0 * _currentPosition -  _previousPosition;
+
+        for (std::size_t i = 0; i < _vertexIds.size(); ++i) {
+          for (unsigned d = 0; d < _dimensions; ++d) {
+            _displacements[i * _dimensions + d]
+              = newPosition(d) - _currentPosition(d);
+          }
         }
+
+        _previousPosition = _currentPosition;
+        _currentPosition  = newPosition;
+
+        _preciceInterface->writeBlockVectorData(_displacementsID,
+                                                _vertexIds.size(),
+                                                _vertexIds.data(),
+                                                _displacements.data());
+        // logInfo("Write data {1}", _vertexIds.size());
       }
 
-      _lastPosition    = _currentPosition;
-      _currentPosition = newPosition;
+      // logInfo("PreCICE's advance methods is being invoked ...");
+      _dt = _preciceInterface->advance(_dt);
+      // logInfo("PreCICE's advance methods has been finished");
 
-      _preciceInterface->writeBlockVectorData(_displacementsID,
-                                              _vertexIds.size(),
-                                              _vertexIds.data(),
-                                              _displacements.data());
-      // logInfo("Write data {1}", _vertexIds.size());
+      if (_preciceInterface->isActionRequired(readCheckpoint)) {
+        _previousPosition = previous_position;
+        _currentPosition  = current_position;
+        _type1Direction   = type_1_direction;
+        _preciceInterface->fulfilledAction(readCheckpoint);
+      } else {
+        break;
+      }
+
+      // logInfo("End of iteration");
     }
-
-    namespace pc = precice::constants;
-    std::string writeCheckpoint(pc::actionWriteIterationCheckpoint());
-    std::string readCheckpoint(pc::actionReadIterationCheckpoint());
-
-    if (_preciceInterface->isActionRequired(writeCheckpoint)) {
-      _preciceInterface->fulfilledAction(writeCheckpoint);
-    }
-
-    // logInfo("PreCICE's advance methods is being invoked ...");
-    _dt = _preciceInterface->advance(_dt);
-    // logInfo("PreCICE's advance methods has been finished");
-
-    if (_preciceInterface->isActionRequired(readCheckpoint)) {
-      _preciceInterface->fulfilledAction(readCheckpoint);
-    }
-
-    // logInfo("End of iteration");
 
     return true;
   }
@@ -280,7 +293,7 @@ private:
   unsigned                  _dimensions;
   VectorDs                  _environmentForce;
   VectorDs                  _positionLimit;
-  VectorDs                  _lastPosition;
+  VectorDs                  _previousPosition;
   VectorDs                  _currentPosition;
   Scalar                    _mass;
   Scalar                    _dt;
@@ -292,6 +305,6 @@ private:
   int                       _ibMeshId;
   int                       _couplingMeshId;
   int                       _displacementsID;
-  int                       _forcesID;
+  // int                       _forcesID;
 };
 }

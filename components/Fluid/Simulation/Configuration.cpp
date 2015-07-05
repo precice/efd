@@ -103,6 +103,10 @@ reset() {
        std::string("default"));
   _set("/Ib/Schemes/DirectForcing/RbfBased/ImqShape",
        std::string("default"));
+
+  _set("/Ib/Options/CouplingForcesName", std::string("CouplingForces"));
+  _set("/Ib/Options/StructureMeshName", std::string("BodyMesh"));
+  _set("/Ib/Options/StructureDisplacementsName", std::string("Displacements"));
 }
 
 std::string

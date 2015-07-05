@@ -115,9 +115,7 @@ public:
   FsfdSolverImplementation(Interface* in)
     : _in(in),
     preciceInterface(nullptr),
-    isPreciceIbMethod(false),
-    maxLayerSize(0),
-    doCoupling(false) {}
+    maxLayerSize(0) {}
 
   Uni_Firewall_INTERFACE_LINK(FsfdSolver<TSolverTraits> );
 
@@ -126,13 +124,16 @@ public:
   typename Interface::MemoryType                     memory;
   typename Interface::PeSolverType                   peSolver;
   typename Interface::GhostHandlersType              ghostHandlers;
+  double                    preciceDt;
   precice::SolverInterface* preciceInterface;
+  std::string               meshName;
 
-  bool                                                  isPreciceIbMethod;
   unsigned                                              timeStepSizeMethod;
   std::unique_ptr<typename Interface::IbControllerType> ibController;
   unsigned                                              maxLayerSize;
-  bool                                                  doCoupling;
+  std::unique_ptr
+  < ImmersedBoundary::CouplingController
+  < typename Interface::SolverTraitsType >> couplingController;
 
   Reporter* reporter;
 };
@@ -198,7 +199,8 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
   }
 
   if (configuration->is("/Ib/Features/Coupling")) {
-    _im->doCoupling = true;
+    _im->couplingController.reset(
+      new ImmersedBoundary::CouplingController<SolverTraitsType>(configuration));
   }
 
   if (configuration->is("/Ib/Schemes/DirectForcing/PreciceBased")) {
@@ -207,8 +209,6 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
     using UniquePreciceBasedControllerType
             = std::unique_ptr<PreciceBasedControllerType>;
 
-    _im->isPreciceIbMethod = true;
-
     UniquePreciceBasedControllerType temp(
       new PreciceBasedControllerType(configuration, &_im->memory));
 
@@ -216,8 +216,6 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
 
     _im->ibController.reset(temp.release());
   } else if (configuration->is("/Ib/Schemes/DirectForcing/RbfBased")) {
-    _im->isPreciceIbMethod = false;
-
     _im->ibController.reset(
       new ImmersedBoundary::RbfBasedController<SolverTraitsType>(
         configuration,
@@ -226,6 +224,8 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
     _im->ibController.reset(
       new ImmersedBoundary::EmptyController<VectorDsType> );
   }
+
+  _im->meshName = configuration->get<std::string>("/Ib/Options/StructureMeshName");
 }
 
 template <typename T>
@@ -275,6 +275,10 @@ initialize(precice::SolverInterface* precice_interface,
   }
 
   _im->ibController->initialize(_im->preciceInterface);
+
+  if (_im->couplingController) {
+    _im->couplingController->initialize(&_im->memory, _im->preciceInterface);
+  }
 
   _im->reporter = reporter;
 
@@ -380,10 +384,68 @@ template <typename T>
 void
 FsfdSolver<T>::
 iterate() {
-  // logInfo("Locate structure ...");
-  _im->locateStructureFunction();
-  // logInfo("Locate structure is finished");
-  _im->iterateFunction();
+  namespace pc = precice::constants;
+  static std::string const writeCheckpoint(pc::actionWriteIterationCheckpoint());
+  static std::string const readCheckpoint(pc::actionReadIterationCheckpoint());
+
+  if (_im->preciceInterface != nullptr) {
+    _im->preciceDt = std::numeric_limits<double>::max();
+
+    std::vector<VectorDsType> velocity;
+    std::vector<ScalarType>   pressure;
+
+    while (_im->preciceInterface->isCouplingOngoing()) {
+      VectorDsType max_velocity;
+
+      if (_im->preciceInterface->isActionRequired(writeCheckpoint)) {
+        // logInfo("@@@@@@@@@@     Save State");
+        velocity.resize(_im->memory.grid()->size().prod());
+        pressure.resize(_im->memory.grid()->size().prod());
+
+        std::memcpy(velocity.data(),
+                    _im->memory.velocity(),
+                    sizeof (VectorDsType) * _im->memory.grid()->size().prod());
+        std::memcpy(pressure.data(),
+                    _im->memory.pressure(),
+                    sizeof (ScalarType) * _im->memory.grid()->size().prod());
+
+        max_velocity = _im->memory.maxVelocity();
+
+        _im->preciceInterface->fulfilledAction(writeCheckpoint);
+      }
+      // logInfo("Locate structure ...");
+      _im->locateStructureFunction();
+      // logInfo("Locate structure is finished");
+      _im->iterateFunction();
+
+      if (_im->preciceInterface->isActionRequired(readCheckpoint)) {
+        std::memcpy(_im->memory.velocity(),
+                    velocity.data(),
+                    sizeof (VectorDsType) * _im->memory.grid()->size().prod());
+        std::memcpy(_im->memory.pressure(),
+                    pressure.data(),
+                    sizeof (ScalarType) * _im->memory.grid()->size().prod());
+
+        _im->memory.maxVelocity() =  max_velocity;
+
+        // _im->memory.timeStepSize() = std::min(computeTimeStepSize(),
+        // _im->preciceDt);
+        // logInfo("@@@@@@@@@@  {1}    Resotre State",
+        // _im->memory.timeStepSize());
+
+        _im->preciceInterface->fulfilledAction(readCheckpoint);
+      } else {
+        finalizeIteration();
+        break;
+      }
+    }
+  } else {
+    // logInfo("Locate structure ...");
+    _im->locateStructureFunction();
+    // logInfo("Locate structure is finished");
+    _im->iterateFunction();
+    finalizeIteration();
+  }
 }
 
 template <typename T>
@@ -420,15 +482,13 @@ iterateWithFastIbVelocityPrediction() {
   solvePoissonEquations();
 
   updateVelocities();
-
-  finalizeIteration();
 }
 
 template <typename T>
 void
 FsfdSolver<T>::
 iterateWithFullIbVelocityPrediction() {
-  logInfo("Start Deep Ib velocity prediction ...");
+  // logInfo("Start Deep Ib velocity prediction ...");
 
   for (auto const& accessor : _im->memory.grid()->innerGrid) {
     updateFgh(accessor);
@@ -468,9 +528,9 @@ iterateWithFullIbVelocityPrediction() {
   _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
 
-  logInfo("Finish the prediction phase");
+  // logInfo("Finish the prediction phase");
 
-  logInfo("Start solving phase ...");
+  // logInfo("Start solving phase ...");
 
   for (auto const& accessor : _im->memory.grid()->innerGrid) {
     auto parts = updateFgh(accessor);
@@ -486,9 +546,7 @@ iterateWithFullIbVelocityPrediction() {
 
   updateVelocities();
 
-  finalizeIteration();
-
-  logInfo("Finish deep Ib velocity prediction");
+  // logInfo("Finish deep Ib velocity prediction");
 }
 
 template <typename T>
@@ -541,31 +599,17 @@ template <typename T>
 void
 FsfdSolver<T>::
 advanceFsi() {
-  namespace pc = precice::constants;
-  std::string writeCheckpoint(pc::actionWriteIterationCheckpoint());
-  std::string readCheckpoint(pc::actionReadIterationCheckpoint());
-
   if (_im->preciceInterface != nullptr) {
-    if (_im->preciceInterface->isActionRequired(writeCheckpoint)) {
-      _im->preciceInterface->fulfilledAction(writeCheckpoint);
-    }
+    sendCouplingData();
+
+    _im->ibController->processVelocities();
+
+    // logInfo("Invoking PreCICE's advance");
+    _im->preciceDt = _im->preciceInterface->advance(_im->memory.timeStepSize());
+    // logInfo("Finished PreCICE's advance invokation {1}", _im->preciceDt);
+
+    _im->ibController->processForces();
   }
-
-  sendCouplingData();
-
-  _im->ibController->processVelocities();
-
-  // logInfo("Invoking PreCICE's advance");
-  if (_im->preciceInterface != nullptr) {
-    _im->preciceInterface->advance(_im->memory.timeStepSize());
-    // logInfo("Finished PreCICE's advance invokation");
-
-    if (_im->preciceInterface->isActionRequired(readCheckpoint)) {
-      _im->preciceInterface->fulfilledAction(readCheckpoint);
-    }
-  }
-  // logInfo("Finished PreCICE's advance invokation");
-  _im->ibController->processForces();
 }
 
 template <typename T>
@@ -698,8 +742,9 @@ locateStructure() {
     return;
   }
 
-  if (!_im->preciceInterface->hasMesh("BodyMesh")) {
-    throwException("Precice configuration does not have 'BodyMesh'");
+  if (!_im->preciceInterface->hasMesh(_im->meshName)) {
+    throwException("Precice configuration does not have '{1}'",
+                   _im->meshName);
   }
 
   std::set<int> mesh_set({ _im->preciceInterface->getMeshID("BodyMesh") });
@@ -737,15 +782,9 @@ locateStructure() {
 
   // Coupling mesh construction
 
-  if (!_im->doCoupling) {
-    return;
+  if (_im->couplingController) {
+    _im->couplingController->createMesh();
   }
-  namespace ib = ImmersedBoundary;
-
-  // if (!_im->isPreciceIbMethod) {
-    ib::create_coupling_mesh(_im->memory.grid()->innerGrid,
-                             _im->preciceInterface);
-  // }
 }
 
 template <typename T>
@@ -756,24 +795,9 @@ sendCouplingData() {
     return;
   }
 
-  if (!_im->doCoupling) {
-    return;
+  if (_im->couplingController) {
+    _im->couplingController->sendStresses();
   }
-  namespace ib = ImmersedBoundary;
-
-  // if (_im->isPreciceIbMethod) {
-  //   ib::send_coupling_stresses_precice(
-  //     _im->ibController->getForceIterable(),
-  //     &_im->memory,
-  //     _im->preciceInterface,
-  //     _im->memory.parameters()->diffusionMultiplier(),
-  //     _im->memory.parameters()->gradPressureMultiplier());
-  // } else {
-    ib::send_coupling_stresses(_im->memory.grid()->innerGrid,
-                               _im->preciceInterface,
-                               _im->memory.parameters()->diffusionMultiplier(),
-                               _im->memory.parameters()->gradPressureMultiplier());
-  // }
 }
 
 template <typename T>
