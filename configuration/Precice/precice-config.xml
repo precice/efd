@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<precice-configuration>
+  <log-filter
+    component=""
+    target="info"
+    switch="on"/>
+  <log-filter
+    component="precice"
+    target="debug"
+    switch="off"/>
+
+  <solver-interface
+    dimensions="2"
+    geometry-mode="0"
+    restart-mode="0">
+
+    <data:vector name="Forces"/>
+    <data:vector name="Displacements"/>
+    <data:vector name="DisplacementDeltas"/>
+
+    <mesh name="SOLIDZ_Mesh">
+      <use-data name="Displacements"/>
+      <use-data name="DisplacementDeltas"/>
+      <use-data name="Forces"/>
+    </mesh>
+
+    <mesh name="CouplingFluidMesh" flip-normals="0">
+      <use-data name="Forces"/>
+    </mesh>
+
+    <participant name="Fluid">
+      <!-- <server:mpi/> -->
+      <mapping:rbf-thin-plate-splines
+        constraint="conservative"
+        direction="write"
+        from="CouplingFluidMesh"
+        to="SOLIDZ_Mesh"
+        timing="onadvance"/>
+
+      <use-mesh name="SOLIDZ_Mesh" from="SOLIDZ"/>
+      <read-data mesh="SOLIDZ_Mesh" name="Displacements"/>
+
+      <use-mesh name="CouplingFluidMesh" provide="1" offset="0; 0; 0"/>
+      <write-data mesh="CouplingFluidMesh" name="Forces"/>
+    </participant>
+
+    <participant name="SOLIDZ">
+       <!-- <server:sockets port="51236"/> -->
+       <use-mesh name="SOLIDZ_Mesh" provide="yes"/>
+       <write-data name="Displacements" mesh="SOLIDZ_Mesh"/>
+       <write-data name="DisplacementDeltas" mesh="SOLIDZ_Mesh"/>
+       <read-data  name="Forces" mesh="SOLIDZ_Mesh"/>
+    </participant>
+
+    <communication:mpi from="Fluid" to="SOLIDZ" exchange-directory="../"/>
+
+    <coupling-scheme:serial-explicit>
+      <max-time value="1000000"/>
+      <max-timesteps value="1000000"/>
+      <timestep-length method="first-participant"/>
+      <participants first="Fluid" second="SOLIDZ"/>
+      <exchange data="Displacements" from="SOLIDZ" mesh="SOLIDZ_Mesh"/>
+      <exchange data="Forces" from="Fluid" mesh="SOLIDZ_Mesh"/>
+    </coupling-scheme:serial-explicit>
+
+  </solver-interface>
+</precice-configuration>
+

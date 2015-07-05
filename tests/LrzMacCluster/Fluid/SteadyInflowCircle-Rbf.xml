@@ -24,7 +24,7 @@
   </walls>
   <immersed-boundary
     type="Rbf-Based"
-    full-prediction="off"
+    full-prediction="on"
     developing-structure="on"
     coupling="on"
     precice-configuration-path="../Precice/InflowCircle-NoIbMapping.xml"

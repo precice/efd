@@ -3,7 +3,7 @@
   type = "1"
   environment = "1.5 0.0"
   position-limit = "1.7 0.0"
-  precice-configuration-path="../Precice/MovingCircle-IbMapping.xml"
-  precice-mode = "on"
+  precice-configuration-path="../Precice/MovingCircle-NoIbMapping.xml"
+  precice-mode = "off"
   >
 </scenario>

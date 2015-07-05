@@ -13,20 +13,20 @@
     geometry-mode="0"
     restart-mode="0">
 
-    <data:vector name="CouplingStresses"/>
+    <data:vector name="CouplingForces"/>
     <data:vector name="Displacements"/>
     <data:vector name="Velocities"/>
     <data:vector name="Forces"/>
 
     <mesh name="BodyMesh" flip-normals="0">
       <use-data name="Displacements"/>
-      <use-data name="CouplingStresses"/>
+      <use-data name="CouplingForces"/>
       <use-data name="Velocities"/>
       <use-data name="Forces"/>
     </mesh>
 
     <mesh name="CouplingBodyMesh" flip-normals="0">
-      <use-data name="CouplingStresses"/>
+      <use-data name="CouplingForces"/>
       <use-data name="Displacements"/>
     </mesh>
 
@@ -36,17 +36,17 @@
     </mesh>
 
     <mesh name="CouplingFluidMesh" flip-normals="0">
-      <use-data name="CouplingStresses"/>
+      <use-data name="CouplingForces"/>
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
-      <discretization-width value="0.0025"/>
+      <discretization-width value="0.005"/>
       <radius value="0.05"/>
       <offset value="0.2; 0.2"/>
     </geometry:builtin-sphere>
 
     <geometry:builtin-sphere of-mesh="CouplingBodyMesh">
-      <discretization-width value="0.0025"/>
+      <discretization-width value="0.005"/>
       <radius value="0.05"/>
       <offset value="0.2; 0.2"/>
     </geometry:builtin-sphere>
@@ -54,21 +54,20 @@
     <participant name="Fluid">
       <!-- <server:mpi/> -->
       <mapping:rbf-compact-polynomial-c6
-        support-radius="0.01"
+        support-radius="0.02"
         constraint="consistent"
         direction="write"
         from="FluidMesh"
         to="BodyMesh"
         timing="onadvance"/>
-      <mapping:rbf-compact-polynomial-c6
-        support-radius="0.01"
-        constraint="consistent"
+      <mapping:rbf-thin-plate-splines
+        constraint="conservative"
         direction="write"
         from="CouplingFluidMesh"
         to="CouplingBodyMesh"
         timing="onadvance"/>
       <mapping:rbf-compact-polynomial-c6
-        support-radius="0.01"
+        support-radius="0.02"
         constraint="consistent"
         direction="read"
         from="BodyMesh"
@@ -80,11 +79,17 @@
       <read-data mesh="FluidMesh" name="Forces"/>
 
       <use-mesh name="CouplingFluidMesh" provide="1" offset="0; 0; 0"/>
-      <write-data mesh="CouplingFluidMesh" name="CouplingStresses"/>
+      <write-data mesh="CouplingFluidMesh" name="CouplingForces"/>
 
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <use-mesh name="CouplingBodyMesh" provide="0" offset="0; 0; 0"/>
 
+      <action:python mesh="BodyMesh" timing="regular-post">
+        <path name="."/>
+        <module name="ComputeForcesAction"/>
+        <source-data name="Displacements"/>
+        <target-data name="Forces"/>
+      </action:python>
       <action:python mesh="BodyMesh" timing="regular-post">
         <path name="."/>
         <module name="CouplingModeDirectForcingAction"/>
@@ -104,24 +109,18 @@
       <write-data mesh="BodyMesh" name="Displacements"/>
 
       <use-mesh name="CouplingBodyMesh" provide="0" offset="0; 0; 0"/>
-      <read-data mesh="CouplingBodyMesh" name="CouplingStresses"/>
+      <read-data mesh="CouplingBodyMesh" name="CouplingForces"/>
       <write-data mesh="CouplingBodyMesh" name="Displacements"/>
-
-      <action:multiply-by-area mesh="CouplingBodyMesh" timing="regular-post">
-        <target-data name="CouplingStresses"/>
-      </action:multiply-by-area>
     </participant>
 
     <communication:mpi from="Fluid" to="Structure"/>
 
     <coupling-scheme:serial-explicit>
-      <max-time value="1000000"/>
-      <max-timesteps value="1000000"/>
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
       <exchange data="Forces" from="Structure" mesh="BodyMesh"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
-      <exchange data="CouplingStresses" from="Fluid" mesh="CouplingBodyMesh"/>
+      <exchange data="CouplingForces" from="Fluid" mesh="CouplingBodyMesh"/>
     </coupling-scheme:serial-explicit>
   </solver-interface>
 </precice-configuration>

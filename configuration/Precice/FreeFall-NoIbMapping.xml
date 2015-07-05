@@ -27,15 +27,14 @@
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
-      <discretization-width value="0.027"/>
+      <discretization-width value="0.025"/>
       <radius value="0.125"/>
       <offset value="1; 4"/>
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
-      <mapping:rbf-compact-polynomial-c6
-        support-radius="0.04"
-        constraint="consistent"
+      <mapping:rbf-thin-plate-splines
+        constraint="conservative"
         direction="write"
         from="CouplingFluidMesh"
         to="BodyMesh"
@@ -57,20 +56,44 @@
       <write-data mesh="BodyMesh" name="Displacements"/>
       <read-data mesh="BodyMesh" name="CouplingStresses"/>
 
-      <action:multiply-by-area mesh="BodyMesh" timing="regular-post">
-        <target-data name="CouplingStresses"/>
-      </action:multiply-by-area>
+      <!-- <action:multiply-by-area mesh="BodyMesh" timing="regular-post"> -->
+      <!--   <target-data name="CouplingStresses"/> -->
+      <!-- </action:multiply-by-area> -->
     </participant>
 
     <communication:mpi from="Fluid" to="Structure"/>
 
-    <coupling-scheme:serial-explicit>
-      <max-time value="1000000"/>
-      <max-timesteps value="1000000"/>
-      <timestep-length method="first-participant"/>
-      <participants first="Fluid" second="Structure"/>
-      <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
-      <exchange data="CouplingStresses" from="Fluid" mesh="BodyMesh"/>
-    </coupling-scheme:serial-explicit>
+    <!-- <coupling-scheme:serial-explicit> -->
+    <!--   <max-time value="1000000"/> -->
+    <!--   <max-timesteps value="1000000"/> -->
+    <!--   <timestep-length method="first-participant"/> -->
+    <!--   <participants first="Fluid" second="Structure"/> -->
+    <!--   <exchange data="Displacements" from="Structure" mesh="BodyMesh"/> -->
+    <!--   <exchange data="CouplingStresses" from="Fluid" mesh="BodyMesh"/> -->
+    <!-- </coupling-scheme:serial-explicit> -->
+
+    <coupling-scheme:serial-implicit>
+       <!-- <max-time value="2e-5"/> -->
+       <max-iterations value="100"/>
+       <timestep-length method="first-participant"/>
+       <participants first="Fluid" second="Structure"/>
+       <exchange data="Displacements" mesh="BodyMesh" from="Structure"/>
+       <exchange data="CouplingStresses" mesh="BodyMesh" from="Fluid"/>
+       <absolute-convergence-measure data="Displacements" mesh="BodyMesh" limit="1e-5"/>
+       <relative-convergence-measure data="Displacements" mesh="BodyMesh" limit="1e-3"/>
+       <!-- <relative-convergence-measure data="CouplingStresses" mesh="BodyMesh" limit="1e-3"/> -->
+       <!-- <extrapolation-order value="2"/> -->
+       <!--<checkpoint timestep-interval="5">-->
+       <post-processing:constant>
+          <!--<data name="Forces" mesh="SOLIDZ_Mesh" scaling="1e3">
+          <initial-relaxation value="0.1"/>
+          <max-used-iterations value="50"/>
+          <timesteps-reused value="5"/>
+          <singularity-limit value="1e-12"/>-->
+          <relaxation value="0.5"/>
+          <!-- <initial-relaxation value="0.5"/> -->
+          <data name="Displacements" mesh="BodyMesh">
+       </post-processing:constant>
+    </coupling-scheme:serial-implicit>
   </solver-interface>
 </precice-configuration>

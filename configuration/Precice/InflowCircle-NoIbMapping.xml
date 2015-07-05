@@ -7,37 +7,36 @@
   <log-filter
     component="precice"
     target="debug"
-    switch="on"/>
+    switch="off"/>
 
   <solver-interface
     dimensions="2"
     geometry-mode="0"
     restart-mode="0">
 
-    <data:vector name="CouplingStresses"/>
+    <data:vector name="CouplingForces"/>
     <data:vector name="Displacements"/>
 
     <mesh name="BodyMesh" flip-normals="0">
       <use-data name="Displacements"/>
-      <use-data name="CouplingStresses"/>
+      <use-data name="CouplingForces"/>
     </mesh>
 
     <mesh name="CouplingFluidMesh" flip-normals="0">
-      <use-data name="CouplingStresses"/>
+      <use-data name="CouplingForces"/>
     </mesh>
 
     <geometry:builtin-sphere of-mesh="BodyMesh">
-      <!-- <discretization-width value="0.005"/> -->
-      <discretization-width value="0.0025"/>
+      <discretization-width value="0.005"/>
+      <!-- <discretization-width value="0.0025"/> -->
       <radius value="0.05"/>
       <offset value="0.2; 0.2"/>
     </geometry:builtin-sphere>
 
     <participant name="Fluid">
       <!-- <server:mpi/> -->
-      <mapping:rbf-compact-polynomial-c6
-        support-radius="0.01"
-        constraint="consistent"
+      <mapping:rbf-thin-plate-splines
+        constraint="conservative"
         direction="write"
         from="CouplingFluidMesh"
         to="BodyMesh"
@@ -47,7 +46,7 @@
       <read-data mesh="BodyMesh" name="Displacements"/>
 
       <use-mesh name="CouplingFluidMesh" provide="1" offset="0; 0; 0"/>
-      <write-data mesh="CouplingFluidMesh" name="CouplingStresses"/>
+      <write-data mesh="CouplingFluidMesh" name="CouplingForces"/>
 
       <action:add-to-coordinates mesh="BodyMesh" timing="regular-post">
         <source-data name="Displacements"/>
@@ -57,22 +56,17 @@
     <participant name="Structure">
       <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
       <write-data mesh="BodyMesh" name="Displacements"/>
-      <read-data mesh="BodyMesh" name="CouplingStresses"/>
-
-      <action:multiply-by-area mesh="BodyMesh" timing="regular-post">
-        <target-data name="CouplingStresses"/>
-      </action:multiply-by-area>
+      <read-data mesh="BodyMesh" name="CouplingForces"/>
     </participant>
 
     <communication:mpi from="Fluid" to="Structure"/>
 
-    <coupling-scheme:parallel-explicit>
-      <max-time value="1000000"/>
-      <max-timesteps value="1000000"/>
+    <coupling-scheme:serial-explicit>
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>
-      <exchange data="CouplingStresses" from="Fluid" mesh="BodyMesh"/>
-    </coupling-scheme:parallel-explicit>
+      <exchange data="CouplingForces" from="Fluid" mesh="BodyMesh"/>
+    </coupling-scheme:serial-explicit>
+
   </solver-interface>
 </precice-configuration>
