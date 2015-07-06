@@ -106,7 +106,9 @@ reset() {
 
   _set("/Ib/Options/CouplingForcesName", std::string("CouplingForces"));
   _set("/Ib/Options/StructureMeshName", std::string("BodyMesh"));
+  _set("/Ib/Options/IbStructureMeshName", std::string("BodyMesh"));
   _set("/Ib/Options/StructureDisplacementsName", std::string("Displacements"));
+  _set("/Ib/Options/ForcesName", std::string("Forces"));
 }
 
 std::string

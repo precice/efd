@@ -272,6 +272,11 @@ initialize(precice::SolverInterface* precice_interface,
   if (!precice_interface) {
     _im->ibController.reset(
       new ImmersedBoundary::EmptyController<VectorDsType> );
+  } else {
+    // logInfo("Invoking PreCICE's initialize");
+    _im->preciceDt = _im->preciceInterface->initialize();
+    // logInfo("Finished invoking PreCICE's initialize");
+    // _im->preciceInterface->initializeData();
   }
 
   _im->ibController->initialize(_im->preciceInterface);
@@ -377,6 +382,8 @@ computeTimeStepSize() {
   _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
 
+  _im->memory.timeStepSize() = std::min(_im->memory.timeStepSize(), _im->preciceDt);
+
   return _im->memory.timeStepSize();
 }
 
@@ -389,7 +396,7 @@ iterate() {
   static std::string const readCheckpoint(pc::actionReadIterationCheckpoint());
 
   if (_im->preciceInterface != nullptr) {
-    _im->preciceDt = std::numeric_limits<double>::max();
+    // _im->preciceDt = std::numeric_limits<double>::max();
 
     std::vector<VectorDsType> velocity;
     std::vector<ScalarType>   pressure;
@@ -428,14 +435,12 @@ iterate() {
 
         _im->memory.maxVelocity() =  max_velocity;
 
-        // _im->memory.timeStepSize() = std::min(computeTimeStepSize(),
-        // _im->preciceDt);
+        computeTimeStepSize();
         // logInfo("@@@@@@@@@@  {1}    Resotre State",
         // _im->memory.timeStepSize());
 
         _im->preciceInterface->fulfilledAction(readCheckpoint);
       } else {
-        finalizeIteration();
         break;
       }
     }
@@ -444,8 +449,8 @@ iterate() {
     _im->locateStructureFunction();
     // logInfo("Locate structure is finished");
     _im->iterateFunction();
-    finalizeIteration();
   }
+  finalizeIteration();
 }
 
 template <typename T>
@@ -747,9 +752,9 @@ locateStructure() {
                    _im->meshName);
   }
 
-  std::set<int> mesh_set({ _im->preciceInterface->getMeshID("BodyMesh") });
+  std::set<int> mesh_set({ _im->preciceInterface->getMeshID(_im->meshName) });
 
-  // logInfo("Start computing distance of cells from structure surface");
+  logInfo("Start computing distance of cells from structure surface '{1}'", _im->meshName);
 
   for (auto const& accessor : * _im->memory.grid()) {
     // logInfo("Compute distance for one cell is being started ...");

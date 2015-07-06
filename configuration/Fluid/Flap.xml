@@ -21,17 +21,19 @@
   <walls>
     <left type="Input" velocity="100.0 0.0" />
     <right type="Output"  velocity="0.0 0.0"/>
-    <bottom type="Output" velocity="0.0 0.0" />
-    <top type="Output" velocity="0.0 0.0" />
+    <bottom type="Input" velocity="0.0 0.0" />
+    <top type="Input" velocity="0.0 0.0" />
   </walls>
   <immersed-boundary
-    type="Rbf-Based"
+    type="Precice-Based"
     full-prediction="on"
     developing-structure="on"
     coupling="on"
     structure-mesh-name="SOLIDZ_Mesh"
+    ib-structure-mesh-name="SOLIDZ_Mesh2"
     coupling-forces-name="Forces"
     structure-dispacements-name="DisplacementDeltas"
+    immersed-boundary-forces-name="IbForces"
     precice-configuration-path="../Precice/precice-config.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>

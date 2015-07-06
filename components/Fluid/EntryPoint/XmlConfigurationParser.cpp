@@ -462,8 +462,12 @@ private:
       = (xmlChar const*)"coupling-forces-name";
     static xmlChar const* const structure_mesh_name
       = (xmlChar const*)"structure-mesh-name";
+    static xmlChar const* const ib_structure_mesh_name
+      = (xmlChar const*)"ib-structure-mesh-name";
     static xmlChar const* const structure_displacements_name
       = (xmlChar const*)"structure-dispacements-name";
+    static xmlChar const* const ib_forces_name
+      = (xmlChar const*)"immersed-boundary-forces-name";
 
     static boost::regex type1_regex("Precice[\\-\\s]*Based",
                                     boost::regex::icase);
@@ -538,9 +542,17 @@ private:
           configuration->set(
             "/Ib/Options/StructureMeshName",
             std::string(reinterpret_cast<char const*>(attr->children->content)));
+      } else if (xmlStrcasecmp(attr->name, ib_structure_mesh_name) == 0) {
+          configuration->set(
+            "/Ib/Options/IbStructureMeshName",
+            std::string(reinterpret_cast<char const*>(attr->children->content)));
       } else if (xmlStrcasecmp(attr->name, structure_displacements_name) == 0) {
           configuration->set(
             "/Ib/Options/StructureDisplacementsName",
+            std::string(reinterpret_cast<char const*>(attr->children->content)));
+      } else if (xmlStrcasecmp(attr->name, ib_forces_name) == 0) {
+          configuration->set(
+            "/Ib/Options/ForcesName",
             std::string(reinterpret_cast<char const*>(attr->children->content)));
       }
       attr = attr->next;

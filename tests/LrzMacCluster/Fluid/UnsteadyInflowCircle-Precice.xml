@@ -27,6 +27,8 @@
     full-prediction="on"
     developing-structure="on"
     coupling="on"
+    structure-mesh-name="CouplingBodyMesh"
+    ib-structure-mesh-name="BodyMesh"
     precice-configuration-path="../Precice/InflowCircle-IbMapping.xml"
     outerLayerSize="0"
     innerLayerSize="1"/>

@@ -14,14 +14,27 @@
     geometry-mode="0"
     restart-mode="0">
 
+    <data:vector name="Velocities"/>
+    <data:vector name="IbForces"/>
     <data:vector name="Forces"/>
     <data:vector name="Displacements"/>
     <data:vector name="DisplacementDeltas"/>
+
+    <mesh name="SOLIDZ_Mesh2">
+      <use-data name="DisplacementDeltas"/>
+      <use-data name="IbForces"/>
+      <use-data name="Velocities"/>
+    </mesh>
 
     <mesh name="SOLIDZ_Mesh">
       <use-data name="Displacements"/>
       <use-data name="DisplacementDeltas"/>
       <use-data name="Forces"/>
+    </mesh>
+
+    <mesh name="FluidMesh" flip-normals="0">
+      <use-data name="Velocities"/>
+      <use-data name="IbForces"/>
     </mesh>
 
     <mesh name="CouplingFluidMesh" flip-normals="0">
@@ -30,18 +43,58 @@
 
     <participant name="Fluid">
       <!-- <server:mpi/> -->
+      <mapping:rbf-compact-polynomial-c6
+        support-radius="0.10"
+        constraint="consistent"
+        direction="write"
+        from="FluidMesh"
+        to="SOLIDZ_Mesh2"
+        timing="onadvance"/>
       <mapping:rbf-thin-plate-splines
         constraint="conservative"
         direction="write"
         from="CouplingFluidMesh"
         to="SOLIDZ_Mesh"
         timing="onadvance"/>
+      <mapping:rbf-compact-polynomial-c6
+        support-radius="0.10"
+        constraint="consistent"
+        direction="read"
+        from="SOLIDZ_Mesh2"
+        to="FluidMesh"
+        timing="onadvance"/>
 
-      <use-mesh name="SOLIDZ_Mesh" from="SOLIDZ"/>
-      <read-data mesh="SOLIDZ_Mesh" name="Displacements"/>
+      <use-mesh name="FluidMesh" provide="1" offset="0; 0; 0"/>
+      <write-data mesh="FluidMesh" name="Velocities"/>
+      <read-data mesh="FluidMesh" name="IbForces"/>
 
       <use-mesh name="CouplingFluidMesh" provide="1" offset="0; 0; 0"/>
       <write-data mesh="CouplingFluidMesh" name="Forces"/>
+
+      <use-mesh name="SOLIDZ_Mesh" from="SOLIDZ"/>
+      <read-data mesh="SOLIDZ_Mesh" name="DisplacementDeltas"/>
+
+      <use-mesh name="SOLIDZ_Mesh2" from="SOLIDZ"/>
+      <read-data mesh="SOLIDZ_Mesh2" name="DisplacementDeltas"/>
+
+      <action:python mesh="SOLIDZ_Mesh2" timing="regular-post">
+        <path name="."/>
+        <module name="ComputeForcesAction"/>
+        <source-data name="DisplacementDeltas"/>
+        <target-data name="IbForces"/>
+      </action:python>
+      <action:python mesh="SOLIDZ_Mesh2" timing="regular-post">
+        <path name="."/>
+        <module name="CouplingModeDirectForcingAction"/>
+        <source-data name="Velocities"/>
+        <target-data name="IbForces"/>
+      </action:python>
+      <action:add-to-coordinates mesh="SOLIDZ_Mesh2" timing="regular-post">
+        <source-data name="DisplacementDeltas"/>
+      </action:add-to-coordinates>
+      <action:add-to-coordinates mesh="SOLIDZ_Mesh" timing="regular-post">
+        <source-data name="DisplacementDeltas"/>
+      </action:add-to-coordinates>
     </participant>
 
     <participant name="SOLIDZ">
@@ -50,19 +103,45 @@
        <write-data name="Displacements" mesh="SOLIDZ_Mesh"/>
        <write-data name="DisplacementDeltas" mesh="SOLIDZ_Mesh"/>
        <read-data  name="Forces" mesh="SOLIDZ_Mesh"/>
+
+       <use-mesh name="SOLIDZ_Mesh2" provide="yes"/>
+       <write-data name="DisplacementDeltas" mesh="SOLIDZ_Mesh2"/>
     </participant>
 
     <communication:mpi from="Fluid" to="SOLIDZ" exchange-directory="../"/>
 
-    <coupling-scheme:serial-explicit>
-      <max-time value="1000000"/>
-      <max-timesteps value="1000000"/>
-      <timestep-length method="first-participant"/>
-      <participants first="Fluid" second="SOLIDZ"/>
-      <exchange data="Displacements" from="SOLIDZ" mesh="SOLIDZ_Mesh"/>
-      <exchange data="Forces" from="Fluid" mesh="SOLIDZ_Mesh"/>
-    </coupling-scheme:serial-explicit>
+    <!-- <coupling-scheme:serial-explicit> -->
+    <!--   <max-time value="1000000"/> -->
+    <!--   <max-timesteps value="1000000"/> -->
+    <!--   <timestep-length method="first-participant"/> -->
+    <!--   <participants first="Fluid" second="SOLIDZ"/> -->
+    <!--   <exchange data="DisplacementDeltas" from="SOLIDZ" mesh="SOLIDZ_Mesh2"/> -->
+    <!--   <exchange data="DisplacementDeltas" from="SOLIDZ" mesh="SOLIDZ_Mesh"/> -->
+    <!--   <exchange data="Forces" from="Fluid" mesh="SOLIDZ_Mesh"/> -->
+    <!-- </coupling-scheme:serial-explicit> -->
 
+    <coupling-scheme:serial-implicit>
+       <participants first="Fluid" second="SOLIDZ"/>
+       <max-time value="40.0"/>
+       <timestep-length value="1e-4" valid-digits="8"/> 
+       <exchange data="Forces"        mesh="SOLIDZ_Mesh" from="Fluid" /> 
+       <exchange data="Displacements" mesh="SOLIDZ_Mesh" from="SOLIDZ" />
+       <exchange data="DisplacementDeltas" mesh="SOLIDZ_Mesh" from="SOLIDZ" />
+       <exchange data="DisplacementDeltas" mesh="SOLIDZ_Mesh2" from="SOLIDZ" />
+       <max-iterations value="50"/>
+       <relative-convergence-measure data="Displacements" 
+                 mesh="SOLIDZ_Mesh" limit="1e-3"/>
+       <relative-convergence-measure data="Forces" 
+                 mesh="SOLIDZ_Mesh" limit="1e-3"/>
+       <extrapolation-order value="2"/>
+       <post-processing:IQN-ILS>
+          <data name="DisplacementDeltas" mesh="SOLIDZ_Mesh">
+          <initial-relaxation value="1.0"/>
+          <max-used-iterations value="50"/>
+          <timesteps-reused value="5"/>
+          <singularity-limit value="1e-12"/>
+       </post-processing:IQN-ILS>
+    </coupling-scheme:serial-implicit>
   </solver-interface>
 </precice-configuration>
 

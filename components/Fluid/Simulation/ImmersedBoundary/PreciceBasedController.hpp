@@ -332,6 +332,10 @@ public:
       "/Ib/Schemes/DirectForcing/PreciceBased/OuterLayerSize");
     _innerLayerSize = configuration->get<unsigned>(
       "/Ib/Schemes/DirectForcing/PreciceBased/InnerLayerSize");
+    // _structureMeshName = configuration->get<std::string>(
+    //   "/Ib/Options/StructureMeshName");
+    _forcesName = configuration->get<std::string>(
+      "/Ib/Options/ForcesName");
   }
 
   unsigned
@@ -350,20 +354,20 @@ public:
     }
 
     _fluidMeshId = _preciceInterface->getMeshID("FluidMesh");
-    _bodyMeshId  = _preciceInterface->getMeshID("BodyMesh");
+    // _bodyMeshId  = _preciceInterface->getMeshID(_structureMeshName);
 
     if (!_preciceInterface->hasData("Velocities", _fluidMeshId)) {
       throwException("Precice configuration does not have 'Velocities' data"
                      " related to 'FluidMesh'");
     }
 
-    if (!_preciceInterface->hasData("Forces", _fluidMeshId)) {
-      throwException("Precice configuration does not have 'Forces' data"
-                     " related to 'FluidMesh'");
+    if (!_preciceInterface->hasData(_forcesName, _fluidMeshId)) {
+      throwException("Precice configuration does not have '{1}' data"
+                     " related to 'FluidMesh'", _forcesName);
     }
 
     _fluidMeshVelocitiesId = _preciceInterface->getDataID("Velocities", _fluidMeshId);
-    _fluidMeshForcesId     = _preciceInterface->getDataID("Forces", _fluidMeshId);
+    _fluidMeshForcesId     = _preciceInterface->getDataID(_forcesName, _fluidMeshId);
 
     _doResetMesh = false;
   }
@@ -373,8 +377,9 @@ public:
     // logInfo("Precice-based IB controller's precomutaions has started ...");
     _set.clear();
     _foreignCells.clear();
+
     if (_doResetMesh) {
-       _preciceInterface->resetMesh(_fluidMeshId);
+      _preciceInterface->resetMesh(_fluidMeshId);
     } else {
       _doResetMesh = true;
     }
@@ -1015,11 +1020,13 @@ private:
   MemoryType const*         _memory;
   unsigned                  _outerLayerSize;
   unsigned                  _innerLayerSize;
+  std::string               _forcesName;
+  // std::string               _structureMeshName;
 
-  int _fluidMeshId;
-  int _bodyMeshId;
-  int _fluidMeshVelocitiesId;
-  int _fluidMeshForcesId;
+  int  _fluidMeshId;
+  // int  _bodyMeshId;
+  int  _fluidMeshVelocitiesId;
+  int  _fluidMeshForcesId;
   bool _doResetMesh;
 
   Set _set;

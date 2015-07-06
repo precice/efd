@@ -66,8 +66,6 @@
     <communication:mpi from="Fluid" to="Structure"/>
 
     <coupling-scheme:serial-explicit>
-      <max-time value="1000000"/>
-      <max-timesteps value="1000000"/>
       <timestep-length method="first-participant"/>
       <participants first="Fluid" second="Structure"/>
       <exchange data="Displacements" from="Structure" mesh="BodyMesh"/>

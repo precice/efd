@@ -382,9 +382,4 @@ initializePrecice() {
                                          _im->rank,
                                          _im->processCount));
   _im->preciceInterface->configure(preciceConfigurationPath);
-
-  // logInfo("Invoking PreCICE's initialize");
-  _im->preciceInterface->initialize();
-  // logInfo("Finished invoking PreCICE's initialize");
-  // _im->preciceInterface->initializeData();
 }
