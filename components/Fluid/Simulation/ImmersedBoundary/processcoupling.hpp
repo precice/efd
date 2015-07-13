@@ -106,8 +106,11 @@ compute_coupling_stress(
           = (accessor.velocity(d2, +1, d) - accessor.velocity(d))
             / accessor.width(d2, +1, d2);
       } else {
-        throwException("One of the neighboring cells in the dimension {1} "
-                       "must be ouside the body", d2);
+        matrix(d, d2) = 0.0;
+        logWarning("One of the neighboring cells in the dimension {1} "
+                   "must be ouside the body; position {2}",
+                   d2,
+                   accessor.pressurePosition().transpose());
       }
     }
   }
@@ -224,6 +227,26 @@ public:
       ++index;
     }
 
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      for (unsigned d2 = 0; d2 < 2; ++d2) {
+        for (auto const& accessor : _memory->grid()->indentedBoundaries[d][d2]) {
+          auto const positions = accessor.positionInRespectToGeometry();
+
+          if (positions(Dimensions) != +1) {
+            continue;
+          }
+
+          auto position = accessor.pressurePosition().template cast<double>();
+
+          for (unsigned d3 = 0; d3 < Dimensions; ++d3) {
+            vertex_coords.push_back(position(d3));
+          }
+          // _vertexIds.push_back(id++);
+          ++index;
+        }
+      }
+    }
+
     // unsigned id_offset = 0;
 
     // if ((_memory->parallelDistribution()->rank() - 1) >= 0) {
@@ -287,6 +310,24 @@ public:
         stresses[index++] = static_cast<double>(force(d));
       }
       // logInfo("{1} {2}", id, temp_force.transpose());
+    }
+
+    for (unsigned d = 0; d < Dimensions; ++d) {
+      for (unsigned d2 = 0; d2 < 2; ++d2) {
+        for (auto const& accessor : _memory->grid()->indentedBoundaries[d][d2]) {
+          auto const positions = accessor.positionInRespectToGeometry();
+
+          if (positions(Dimensions) != +1) {
+            continue;
+          }
+
+          // logInfo("{1}", accessor.pressurePosition());
+
+          for (unsigned d3 = 0; d3 < Dimensions; ++d3) {
+            stresses[index++] = 0.0;
+          }
+        }
+      }
     }
 
     if (_vertexIds.size() > 0) {

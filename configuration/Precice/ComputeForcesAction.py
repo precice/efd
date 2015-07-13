@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#!/us# encoding: utf-8
+# encoding: utf-8
 globalSourceData = 0
 globalTargetData = 0
 globalTime = 0.0

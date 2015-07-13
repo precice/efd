@@ -104,7 +104,8 @@ compute_cell_force(TCellAccessor const&                      accessor,
           = (accessor.velocity(d2, +1, d) - accessor.velocity(d))
             / accessor.width(d2, +1, d2);
       } else {
-        throwException("One of the neighboring cells in the dimension {1} "
+        matrix(d, d2) = 0.0;
+        logWarning("One of the neighboring cells in the dimension {1} "
                        "must be ouside the body", d2);
       }
     }
@@ -245,7 +246,8 @@ compute_cell_force_v2(
                  - accessor.velocity().dot(normals[d3]))
                 / accessor.width(d4, +1, d4);
           } else {
-            throwException("One of the neighboring cells in the dimension {1} "
+            grad_velocity(d4) = 0.0;
+            logWarning("One of the neighboring cells in the dimension {1} "
                            "must be ouside the body", d4);
           }
         }
@@ -331,7 +333,8 @@ compute_cell_force_turek(
                - accessor.velocity().dot(tangent))
               / accessor.width(d3, +1, d3);
         } else {
-          throwException("One of the neighboring cells in the dimension {1} "
+          grad_velocity(d3) = 0.0;
+          logWarning("One of the neighboring cells in the dimension {1} "
                          "must be ouside the body", d3);
         }
       }

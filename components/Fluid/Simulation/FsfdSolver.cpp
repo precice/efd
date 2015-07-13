@@ -115,6 +115,7 @@ public:
   FsfdSolverImplementation(Interface* in)
     : _in(in),
     preciceInterface(nullptr),
+    preciceDt(std::numeric_limits<double>::max()),
     maxLayerSize(0) {}
 
   Uni_Firewall_INTERFACE_LINK(FsfdSolver<TSolverTraits> );
@@ -124,9 +125,10 @@ public:
   typename Interface::MemoryType                     memory;
   typename Interface::PeSolverType                   peSolver;
   typename Interface::GhostHandlersType              ghostHandlers;
-  double                    preciceDt;
   precice::SolverInterface* preciceInterface;
+  double                    preciceDt;
   std::string               meshName;
+  unsigned                  ibStartIteration;
 
   unsigned                                              timeStepSizeMethod;
   std::unique_ptr<typename Interface::IbControllerType> ibController;
@@ -164,6 +166,11 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
       = 1.0;
   }
 
+  logInfo("{1} {2}", _im->memory.parameters()->diffusionMultiplier(),
+          _im->memory.parameters()->gradPressureMultiplier());
+  // logInfo(" !!!!!!!!!!#@!@#      {1}",
+  // _im->memory.parameters()->gradPressureMultiplier());
+
   std::string time_step_size_method
     = configuration->get<std::string>("/Equations/Fsfd/TimeStepSizeMethod");
 
@@ -193,8 +200,9 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
   } else {
     _im->locateStructureFunction
       = [this] () {
-          this->locateStructure();
-          _im->locateStructureFunction = [] () {};
+          if (this->locateStructure()) {
+            _im->locateStructureFunction = [] () {};
+          }
         };
   }
 
@@ -226,6 +234,8 @@ FsfdSolver(Configuration const* configuration) : _im(new Implementation(this)) {
   }
 
   _im->meshName = configuration->get<std::string>("/Ib/Options/StructureMeshName");
+
+  _im->ibStartIteration = configuration->get<unsigned>("/Ib/Options/StartIteration");
 }
 
 template <typename T>
@@ -272,10 +282,12 @@ initialize(precice::SolverInterface* precice_interface,
   if (!precice_interface) {
     _im->ibController.reset(
       new ImmersedBoundary::EmptyController<VectorDsType> );
+
+    _im->preciceDt = std::numeric_limits<double>::max();
   } else {
     // logInfo("Invoking PreCICE's initialize");
     _im->preciceDt = _im->preciceInterface->initialize();
-    // logInfo("Finished invoking PreCICE's initialize");
+    // logInfo("Finished invoking PreCICE's initialize '{1}'", _im->preciceDt);
     // _im->preciceInterface->initializeData();
   }
 
@@ -373,6 +385,9 @@ computeTimeStepSize() {
                                         _im->memory.maxVelocity());
   }
 
+  _im->memory.timeStepSize() = std::min(_im->memory.timeStepSize(), _im->preciceDt);
+  // logInfo("@@@@@@@@@@@@@@@@@@@@ '{1}'", _im->preciceDt);
+
   if (_im->memory.parallelDistribution()->rank() == 0) {
     logInfo("dt = {1}", _im->memory.timeStepSize());
     logInfo("maxv = {1}",
@@ -381,8 +396,6 @@ computeTimeStepSize() {
   }
   _im->memory.maxVelocity()
     = VectorDsType::Constant(std::numeric_limits<ScalarType>::min());
-
-  _im->memory.timeStepSize() = std::min(_im->memory.timeStepSize(), _im->preciceDt);
 
   return _im->memory.timeStepSize();
 }
@@ -395,28 +408,33 @@ iterate() {
   static std::string const writeCheckpoint(pc::actionWriteIterationCheckpoint());
   static std::string const readCheckpoint(pc::actionReadIterationCheckpoint());
 
-  if (_im->preciceInterface != nullptr) {
+  if (_im->preciceInterface != nullptr
+      && _im->memory.iterationNumber() >= _im->ibStartIteration) {
     // _im->preciceDt = std::numeric_limits<double>::max();
 
     std::vector<VectorDsType> velocity;
+    std::vector<VectorDsType> convection;
     std::vector<ScalarType>   pressure;
+    // VectorDsType max_velocity;
 
     while (_im->preciceInterface->isCouplingOngoing()) {
-      VectorDsType max_velocity;
-
       if (_im->preciceInterface->isActionRequired(writeCheckpoint)) {
         // logInfo("@@@@@@@@@@     Save State");
         velocity.resize(_im->memory.grid()->size().prod());
+        convection.resize(_im->memory.grid()->size().prod());
         pressure.resize(_im->memory.grid()->size().prod());
 
         std::memcpy(velocity.data(),
                     _im->memory.velocity(),
                     sizeof (VectorDsType) * _im->memory.grid()->size().prod());
+        std::memcpy(convection.data(),
+                    _im->memory.convection(),
+                    sizeof (VectorDsType) * _im->memory.grid()->size().prod());
         std::memcpy(pressure.data(),
                     _im->memory.pressure(),
                     sizeof (ScalarType) * _im->memory.grid()->size().prod());
 
-        max_velocity = _im->memory.maxVelocity();
+        // max_velocity = _im->memory.maxVelocity();
 
         _im->preciceInterface->fulfilledAction(writeCheckpoint);
       }
@@ -429,15 +447,17 @@ iterate() {
         std::memcpy(_im->memory.velocity(),
                     velocity.data(),
                     sizeof (VectorDsType) * _im->memory.grid()->size().prod());
+        std::memcpy(_im->memory.convection(),
+                    convection.data(),
+                    sizeof (VectorDsType) * _im->memory.grid()->size().prod());
         std::memcpy(_im->memory.pressure(),
                     pressure.data(),
                     sizeof (ScalarType) * _im->memory.grid()->size().prod());
 
-        _im->memory.maxVelocity() =  max_velocity;
+        // _im->memory.maxVelocity() =  max_velocity;
 
         computeTimeStepSize();
-        // logInfo("@@@@@@@@@@  {1}    Resotre State",
-        // _im->memory.timeStepSize());
+        // logInfo("@@@@@@@@@@  {1}    Resotre State", _im->memory.timeStepSize());
 
         _im->preciceInterface->fulfilledAction(readCheckpoint);
       } else {
@@ -604,25 +624,38 @@ template <typename T>
 void
 FsfdSolver<T>::
 advanceFsi() {
-  if (_im->preciceInterface != nullptr) {
-    sendCouplingData();
-
-    _im->ibController->processVelocities();
-
-    // logInfo("Invoking PreCICE's advance");
-    _im->preciceDt = _im->preciceInterface->advance(_im->memory.timeStepSize());
-    // logInfo("Finished PreCICE's advance invokation {1}", _im->preciceDt);
-
-    _im->ibController->processForces();
+  if (_im->preciceInterface == nullptr) {
+    return;
   }
+
+  if (_im->memory.iterationNumber() < _im->ibStartIteration) {
+    return;
+  }
+
+  sendCouplingData();
+
+  _im->ibController->processVelocities();
+
+  // logInfo("Invoking PreCICE's advance");
+  _im->preciceDt = _im->preciceInterface->advance(_im->memory.timeStepSize());
+  // logInfo("Finished PreCICE's advance invokation {1}", _im->preciceDt);
+
+  _im->ibController->processForces();
 }
 
 template <typename T>
 void
 FsfdSolver<T>::
 addIbForces() {
-  // logInfo("Read data");
   VectorDsType total_force = VectorDsType::Zero();
+
+  if (_im->memory.iterationNumber() < _im->ibStartIteration) {
+    _im->reporter->addAt("IbForceSum", total_force);
+
+    return;
+  }
+
+  // logInfo("Read data");
 
   for (auto& ib_fluid_cell : _im->ibController->getForceIterable()) {
     _im->memory.fgh()[ib_fluid_cell.globalIndex()]
@@ -738,13 +771,17 @@ finalizeIteration() {
 }
 
 template <typename T>
-void
+bool
 FsfdSolver<T>::
 locateStructure() {
   namespace ib = ImmersedBoundary;
 
   if (_im->preciceInterface == nullptr) {
-    return;
+    return true;
+  }
+
+  if (_im->memory.iterationNumber() < _im->ibStartIteration) {
+    return false;
   }
 
   if (!_im->preciceInterface->hasMesh(_im->meshName)) {
@@ -754,7 +791,8 @@ locateStructure() {
 
   std::set<int> mesh_set({ _im->preciceInterface->getMeshID(_im->meshName) });
 
-  logInfo("Start computing distance of cells from structure surface '{1}'", _im->meshName);
+  // logInfo("Start computing distance of cells from structure surface '{1}'",
+  // _im->meshName);
 
   for (auto const& accessor : * _im->memory.grid()) {
     // logInfo("Compute distance for one cell is being started ...");
@@ -782,6 +820,11 @@ locateStructure() {
       _im->preciceInterface,
       mesh_set,
       _im->maxLayerSize);
+
+    // if (accessor.pressurePosition()(1) == -0.025
+    // && accessor.pressurePosition()(0) >= 2.75) {
+    // logInfo("{1}", accessor.positionInRespectToGeometry(Dimensions));
+    // }
   }
   _im->ibController->precompute();
 
@@ -790,6 +833,8 @@ locateStructure() {
   if (_im->couplingController) {
     _im->couplingController->createMesh();
   }
+
+  return true;
 }
 
 template <typename T>

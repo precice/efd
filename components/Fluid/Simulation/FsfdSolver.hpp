@@ -118,7 +118,7 @@ private:
   void
   finalizeIteration();
 
-  void
+  bool
   locateStructure();
 
   void

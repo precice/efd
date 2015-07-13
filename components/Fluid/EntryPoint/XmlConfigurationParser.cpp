@@ -440,6 +440,8 @@ private:
 
   void
   parseImmersedBoundary(xmlNodePtr node) const {
+    static xmlChar const* const start_iteration
+      = (xmlChar const*)"start-iteration";
     static xmlChar const* const type
       = (xmlChar const*)"type";
     static xmlChar const* const precice_configuration_path
@@ -476,7 +478,11 @@ private:
     xmlAttrPtr attr = node->properties;
 
     while (attr) {
-      if (xmlStrcasecmp(attr->name, type) == 0) {
+      if (xmlStrcasecmp(attr->name, start_iteration) == 0) {
+        unsigned value;
+        parse_in(attr->children->content, value);
+        configuration->set("/Ib/Options/StartIteration", value);
+      } else if (xmlStrcasecmp(attr->name, type) == 0) {
         std::string type_string
           = reinterpret_cast<char const*>(attr->children->content);
 
