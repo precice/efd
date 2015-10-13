@@ -12,42 +12,32 @@ currentDir = os.path.dirname(os.path.realpath(
 
 projectDir = currentDir
 
-# Add and parse arguments {{{
-# -----------------------------------------------------------------------------
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
 
-parser.add_argument('-G', nargs='?', default='Ninja')
+parser.add_argument('-G', nargs='?', default='Unix Makefiles')
 parser.add_argument('flags', nargs='*')
-# 'c' means 'configuration type'
-parser.add_argument('-p', default='Clang')
+
+parser.add_argument('-p', default='Gcc')
 parser.add_argument('-c', default='Release')
 parser.add_argument('-prefix')
 
 args = parser.parse_args()
 
-if args.prefix is None:
-  installDir = os.path.join(projectDir, '.install', args.p, args.c)
-else:
-  installDir = os.path.normpath(args.prefix)
-# -----------------------------------------------------------------------------
-# }}}
-
-# Filter arguments {{{
-# -----------------------------------------------------------------------------
 args.G = args.G.strip()
 args.p = args.p.strip()
 args.c = args.c.strip()
 
+if args.prefix is None:
+  installDir = os.path.join(projectDir, 'install', args.p, args.c)
+else:
+  installDir = os.path.normpath(args.prefix)
+
 flags = ""
 for flag in args.flags:
   flags += "-D%s " % flag
-# -----------------------------------------------------------------------------
-# }}}
 
-# Prepare CMake arguments {{{
-# -----------------------------------------------------------------------------
 command = (
     ("cmake -G \"{0}\" "
      "{1} "
@@ -60,12 +50,7 @@ command = (
       installDir,
       projectDir))
 
-# -----------------------------------------------------------------------------
-# }}}
-
-# Invoke CMake {{{
-# -----------------------------------------------------------------------------
-variantDir = os.path.join(projectDir, '.build', args.p, args.c)
+variantDir = os.path.join(projectDir, 'build', args.p, args.c)
 
 if os.path.isdir(variantDir):
     shutil.rmtree(variantDir)
@@ -73,7 +58,3 @@ if os.path.isdir(variantDir):
 os.makedirs(variantDir)
 
 subprocess.call(command, cwd=variantDir, shell=True)
-# -----------------------------------------------------------------------------
-# }}}
-
-# vim:ft=python:fenc=utf-8:ff=unix:ts=2:sw=2:tw=80:et:

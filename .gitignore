@@ -1,66 +1,47 @@
 *
 
-!/build
+!/compile
 !/clean
 !/CMakeLists.txt
 !/configure
 !/.gitignore
-!/install
 !/Readme.md
 !/.uncrustify
 
 !/3rdParty
+!/3rdParty/Uni
+!/3rdParty/Uni/**/*
 
 !/cmake
 !/cmake/modules
 !/cmake/modules/*.cmake
 
-!/configuration
-!/configuration/Fluid
-!/configuration/Petsc
-!/configuration/Precice
-!/configuration/Report
-!/configuration/Report/js
-!/configuration/Structure
-!/configuration/Fluid/*.xml
-!/configuration/Petsc/*.conf
-!/configuration/Precice/*.xml
-!/configuration/Precice/*.py
-!/configuration/Report/*.html
-!/configuration/Report/*.cst
-!/configuration/Report/js/*.js
-!/configuration/Structure/*.xml
+!/scenarios
+!/scenarios/*
+!/scenarios/**/*.py
+!/scenarios/**/*.xml
+!/scenarios/**/*.conf
 
 !/documentation
-!/documentation/development
-!/documentation/development/backlogs
-!/documentation/development/backlogs/Bugs.md
-!/documentation/development/backlogs/Features.md
-!/documentation/development/backlogs/KnowledgeAcquisition.md
-!/documentation/development/backlogs/TechnicalWork.md
-!/documentation/user
-!/documentation/user/BuildGuide.md
-!/documentation/user/UsageGuide.md
+!/documentation/
+!/documentation/BuildGuide.md
+!/documentation/UsageGuide.md
 
-!/components
-!/components/Fluid
-!/components/Fluid/EntryPoint
-!/components/Fluid/Simulation
-!/components/Fluid/Simulation/GhostLayer
-!/components/Fluid/Simulation/GhostLayer/Private
-!/components/Fluid/Simulation/ImmersedBoundary
-!/components/Fluid/Simulation/ImmersedBoundary/BodyForce
-!/components/Fluid/Simulation/ImmersedBoundary/Fadlun
-!/components/Fluid/Simulation/ImmersedBoundary/FeedbackForcing
-!/components/Fluid/Simulation/Private
-!/components/Fluid/Simulation/VtkOutput
-!/components/Fluid/Simulation/XdmfHdf5Output
-!/components/Fluid/Simulation/XdmfHdf5Output/Private
-!/components/Structure
-!/components/Fluid/**/*.cpp
-!/components/Fluid/**/*.hpp
-!/components/Structure/**/*.cpp
-!/components/Structure/**/*.hpp
+!/source
+!/source/EntryPoint
+!/source/Simulation
+!/source/Simulation/GhostLayer
+!/source/Simulation/GhostLayer/Private
+!/source/Simulation/ImmersedBoundary
+!/source/Simulation/ImmersedBoundary/BodyForce
+!/source/Simulation/ImmersedBoundary/Fadlun
+!/source/Simulation/ImmersedBoundary/FeedbackForcing
+!/source/Simulation/Private
+!/source/Simulation/VtkOutput
+!/source/Simulation/XdmfHdf5Output
+!/source/Simulation/XdmfHdf5Output/Private
+!/sourceture
+!/source/**/*.[ch]pp
 
 !/tests
 !/tests/LrzMacCluster
@@ -76,8 +57,21 @@
 !/tests/LrzMacCluster/Precice/*.xml
 !/tests/LrzMacCluster/Precice/*.py
 
+!/tools
+!/tools/Report
+!/tools/Report/*.csv
+!/tools/Report/*.html
+!/tools/Report/js
+!/tools/Report/js/*.js
+!/tools/RigidBody
+!/tools/RigidBody/scenarios
+!/tools/RigidBody/scenarios/*.xml
+!/tools/RigidBody/source
+!/tools/RigidBody/source/*.[ch]pp
+
 *.*.*
 *.*.*.*
 !d3.v3.min.js
 
 !/.ycm_extra_conf_template.py
+!/.clang-format_template.py

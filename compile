@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+import inspect
+import os
+import subprocess
+import sys
+
+currentDir = os.path.dirname(os.path.realpath(
+    os.path.abspath(inspect.getfile(inspect.currentframe()))))
+
+projectDir = currentDir
+
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+
+parser.add_argument('builder', nargs='?', default='make')
+parser.add_argument('-p', default='Gcc')
+parser.add_argument('-c', default='Release')
+
+args, unknown_args = parser.parse_known_args()
+
+args.p = args.p.strip()
+args.c = args.c.strip()
+
+variantDir = os.path.join(projectDir, 'build', args.p, args.c)
+
+command = "%s %s" % (args.builder,
+      " ".join(unknown_args))
+
+subprocess.call(command, cwd=variantDir, shell=True)

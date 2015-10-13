@@ -1,30 +1,10 @@
-# Fluid-Structure Interaction (FSI) Simulation
+# A Fixed-Grid Flow Solver for Fluid-Structure Interaction with The Coupling Library PreCICE
 
-# Functional characteristics
+* The fluid motion is modeled by the incompressible Navier-Stokes equations.
+* For the temporal descritization the projection schemes are used.
+* A finite-differnce on a Cartesian grid is used for the spatial descritization.
+* Two- and three-dimensional scenarios are available
+* The application produces Paraview-readable simulation results.
+* The solver can run in series and in parallel.
 
-1. Simulate FSI scenarios.
-    1. Provide 2D, 3D simulations.
-    2. The simulation is fixed-grid.
-    3. The fluid solver is finite-difference discretization of the
-       incompressible Navier-Stokes equations.
-    4. Use different structure solvers:
-        1. The rigid-body solver, Structure0815.
-        2. *(under consideration)* OpenFOAM solver;
-        3. *(under consideration)* COMSOL solver;
-        4. *(under consideration)* Alya SOLIDZ solver;
-        5. *(under consideration)* CARAT solver.
-    5. Continuously resolve boundaries, employ a second-order method.
-2. Produce Paraview-readable simulation results.
-
-# Non-functional characteristics
-
-1. Have capability to run in massive parallelization.
-2. Have capability to run in sequence.
-3. Run on the Linux platform.
-
-# Detailed documentation
-
-- For user documentation, go to the 'documentation/user' directory of the
-  project.
-- For development documentation, go to the 'documentation/development'
-  directory of the project.
+For more information see the 'documentation' directory.

@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<precice-configuration>
+  <log-filter
+    component=""
+    target="info"
+    switch="on"/>
+  <log-filter
+    component="precice"
+    target="debug"
+    switch="off"/>
+
+  <solver-interface
+    dimensions="2"
+    geometry-mode="1"
+    restart-mode="0">
+
+    <mesh name="BodyMesh" flip-normals="0">
+    </mesh>
+
+    <!-- <geometry:builtin-sphere of-mesh="BodyMesh"> -->
+    <!--   <discretization-width value="0.005"/> -->
+    <!--   <radius value="0.05"/> -->
+    <!--   <offset value="0.2; 0.2"/> -->
+    <!-- </geometry:builtin-sphere> -->
+
+    <geometry:builtin-cuboid of-mesh="BodyMesh">
+      <discretization-width value="0.005"/>
+      <length value="0.1; 0.1"/>
+      <offset value="0.15; 0.15"/>
+    </geometry:builtin-cuboid>
+
+    <participant name="Fluid">
+      <use-mesh name="BodyMesh" provide="0" offset="0; 0; 0"/>
+      <export:vtk
+        timestep-interval="0.1"
+        directory="/home/qwert/Downloads/Fsi/T/"
+        every-iteration="1"
+        normals="0"
+        trigger-solver="0"/>
+    </participant>
+  </solver-interface>
+</precice-configuration>

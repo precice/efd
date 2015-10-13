@@ -10,16 +10,12 @@ currentDir = os.path.dirname(os.path.realpath(
 
 projectDir = currentDir
 
-# Clean {{{
-# -----------------------------------------------------------------------------
-buildDir = os.path.join(projectDir, '.build')
+buildDir = os.path.join(projectDir, 'build')
 
 if os.path.isdir(buildDir):
     shutil.rmtree(buildDir)
 
-installDir = os.path.join(projectDir, '.install')
+installDir = os.path.join(projectDir, 'install')
 
 if os.path.isdir(installDir):
     shutil.rmtree(installDir)
-# -----------------------------------------------------------------------------
-# }}}

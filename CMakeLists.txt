@@ -32,6 +32,8 @@ endif ()
 
 # Options {{{
 # ==============================================================================
+option(RIGID_BODY
+  "Compiles rigid body solver from 'tools/RigidBody'" OFF)
 option(BUILD_WITH_MAX_OPTIMIZATIONS
   "Add additional flags to the compiler to provide maximum optimizations" OFF)
 option(BUILD_WITH_MAX_DEBUGING_ANALYSIS
@@ -67,20 +69,7 @@ find_package(Boost 1.57
   thread # Required for precice
   REQUIRED)
 find_package(Eigen REQUIRED)
-find_package(Uni REQUIRED)
 find_package(LibXml2 REQUIRED)
-# find_path(Xdmf_INCLUDE_DIR
-#   NAMES Xdmf.hpp
-#   PATHS ${XDMF_INCLUDE_DIRS}
-#   HINTS $ENV{XDMF_ROOT}
-#   PATH_SUFFIXES include
-#   )
-# find_library(Xdmf_LIBRARY
-#   NAMES Xdmf
-#   PATHS ${XDMF_LIBRARY_DIRS}
-#   HINTS $ENV{XDMF_ROOT}
-#   PATH_SUFFIXES lib
-#   )
 find_path(Hdf5_INCLUDE_DIR
   hdf5.h
   HINTS $ENV{HDF5_ROOT}
@@ -166,13 +155,18 @@ endif ()
 
 # Targets {{{
 # ==============================================================================
+file(GLOB_RECURSE UNI_CPP_FILES "${PROJECT_DIR}/3rdParty/Uni/source/*.cpp")
+add_library(Uni STATIC ${UNI_CPP_FILES})
+target_include_directories(Uni PUBLIC "${PROJECT_DIR}/3rdParty/Uni/include")
+target_include_directories(Uni SYSTEM PRIVATE ${Boost_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
+target_link_libraries(Uni PRIVATE ${Boost_LIBRARIES})
 
 file(GLOB_RECURSE FLUID_CPP_FILES
-  "${PROJECT_DIR}/components/Fluid/*.cpp"
+  "${PROJECT_DIR}/source/*.cpp"
   )
 
-set(Fluid_Private_INCLUDES
-  "${PROJECT_DIR}/components/Fluid"
+set(Fluid_Private_INCLUDE_DIRS
+  "${PROJECT_DIR}/source"
   )
 
 set(Fluid_INCLUDES
@@ -195,7 +189,7 @@ set(Fluid_COMPILE_FLAGS
   ${MPI_CXX_COMPILE_FLAGS}
   )
 add_executable(Fluid ${FLUID_CPP_FILES})
-target_include_directories(Fluid PRIVATE ${Fluid_Private_INCLUDES})
+target_include_directories(Fluid PRIVATE ${Fluid_Private_INCLUDE_DIRS})
 target_include_directories(Fluid SYSTEM PRIVATE ${Fluid_INCLUDES})
 target_link_libraries(Fluid PRIVATE
   Uni
@@ -207,38 +201,37 @@ target_link_libraries(Fluid PRIVATE
   ${Hdf5_LIBRARY}
   )
 
-file(GLOB_RECURSE STRUCTURE_CPP_FILES
-  "${PROJECT_DIR}/components/Structure/*.cpp"
-  "${PROJECT_DIR}/components/Structure/*.hpp"
-  )
-add_executable(Structure ${STRUCTURE_CPP_FILES})
-target_include_directories(Structure PRIVATE
-  "${PROJECT_DIR}/components/Structure"
-  )
-target_include_directories(Structure SYSTEM PRIVATE
-  ${Precice_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
-  ${LIBXML2_INCLUDE_DIR}
-  ${PYTHON_INCLUDE_DIRS}
-  ${MPI_CXX_INCLUDE_PATH}
-  )
-target_link_libraries(Structure PRIVATE
+if (RIGID_BODY)
+  file(GLOB_RECURSE STRUCTURE_CPP_FILES "${PROJECT_DIR}/tools/RigidBody/source/*.cpp")
+  add_executable(Structure ${STRUCTURE_CPP_FILES})
+  target_include_directories(Structure PRIVATE "${PROJECT_DIR}/tools/RigidBody/source")
+  target_include_directories(Structure SYSTEM PRIVATE
+    ${Precice_INCLUDE_DIRS}
+    ${Eigen_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    ${LIBXML2_INCLUDE_DIR}
+    ${PYTHON_INCLUDE_DIRS}
+    ${MPI_CXX_INCLUDE_PATH}
+    )
+  target_link_libraries(Structure PRIVATE
   Uni
-  ${Precice_LIBRARIES}
-  ${PETSC_LIBRARIES}
-  ${Boost_LIBRARIES}
-  ${LIBXML2_LIBRARIES}
-  ${PYTHON_LIBRARIES}
-  ${MPI_CXX_LIBRARIES}
-  )
+    ${Precice_LIBRARIES}
+    ${PETSC_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${LIBXML2_LIBRARIES}
+    ${PYTHON_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+    )
+endif()
 # ==============================================================================
 # Targets }}}
 
 # Targets' definitions {{{
 # ==============================================================================
 target_compile_definitions(Fluid PRIVATE ${Fluid_DEFINITIONS})
-target_compile_definitions(Structure PRIVATE ${LIBXML2_DEFINITIONS})
+if (RIGID_BODY)
+  target_compile_definitions(Structure PRIVATE ${LIBXML2_DEFINITIONS})
+endif()
 # ==============================================================================
 # Targets' definitions }}}
 
@@ -247,15 +240,19 @@ target_compile_definitions(Structure PRIVATE ${LIBXML2_DEFINITIONS})
 if(MPI_CXX_COMPILE_FLAGS)
   set_target_properties(Fluid
     PROPERTIES COMPILE_FLAGS ${Fluid_COMPILE_FLAGS})
-  set_target_properties(Structure
-    PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
+  if (RIGID_BODY)
+    set_target_properties(Structure
+      PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
+  endif()
 endif()
 
 if(MPI_CXX_LINK_FLAGS)
   set_target_properties(Fluid
     PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-  set_target_properties(Structure
-    PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+  if (RIGID_BODY)
+    set_target_properties(Structure
+      PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+  endif()
 endif()
 # ==============================================================================
 # Targets' flags }}}
@@ -269,35 +266,13 @@ install(
   RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
   )
 
-install(
-  TARGETS Structure
-  ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}
-  LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
-  RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
-  )
-
-install(DIRECTORY "${PROJECT_DIR}/configuration/Petsc"
-  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
-  FILES_MATCHING REGEX "(.*\\.conf)$"
-  )
-
-install(DIRECTORY "${PROJECT_DIR}/configuration/Precice"
-  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
-  FILES_MATCHING REGEX "(.*\\.(xml|py))$"
-  )
-
-install(DIRECTORY "${PROJECT_DIR}/configuration/Fluid"
-  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
-  FILES_MATCHING REGEX "(.*\\.xml)$"
-  )
-
-install(DIRECTORY "${PROJECT_DIR}/configuration/Structure"
-  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
-  FILES_MATCHING REGEX "(.*\\.xml)$"
-  )
-
-install(DIRECTORY "${PROJECT_DIR}/configuration/Report"
-  DESTINATION "${INSTALL_BINARY_DIR}/configuration"
-  )
+if (RIGID_BODY)
+  install(
+    TARGETS Structure
+    ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
+    RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
+    )
+endif()
 # ==============================================================================
 # Installation }}}
