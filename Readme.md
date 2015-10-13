@@ -28,4 +28,3 @@
   project.
 - For development documentation, go to the 'documentation/development'
   directory of the project.
-
