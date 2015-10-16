@@ -261,30 +261,38 @@ initialize() {
 void
 Application::
 run() {
-  _im->reporter->recordInfo();
-
-  auto report_template_path
-    = _im->applicationPath / "configuration" / "Report";
-
   namespace fs = boost::filesystem;
 
-  fs::copy_file(
-    report_template_path / "Template.html",
-    _im->outputDirectoryPath / (_im->outputFileNamePrefix + ".html"),
-    fs::copy_option::overwrite_if_exists);
+  auto report_template_path
+    = _im->applicationPath / "Report";
 
-  fs::create_directory(_im->outputDirectoryPath / "js");
-  auto it     = fs::recursive_directory_iterator(report_template_path / "js");
-  auto end_it = fs::recursive_directory_iterator();
+  bool do_html_report = false;
 
-  for (; it != end_it; ++it) {
-    if (it->status().type() == fs::file_type::regular_file) {
-      fs::copy_file(
-        it->path(),
-        _im->outputDirectoryPath / "js" / it->path().filename(),
-        fs::copy_option::overwrite_if_exists);
+  if (fs::is_directory(report_template_path)) {
+    do_html_report = true;
+  }
+
+  if (do_html_report) {
+    fs::copy_file(
+      report_template_path / "Template.html",
+      _im->outputDirectoryPath / (_im->outputFileNamePrefix + ".html"),
+      fs::copy_option::overwrite_if_exists);
+
+    fs::create_directory(_im->outputDirectoryPath / "js");
+    auto it     = fs::recursive_directory_iterator(report_template_path / "js");
+    auto end_it = fs::recursive_directory_iterator();
+
+    for (; it != end_it; ++it) {
+      if (it->status().type() == fs::file_type::regular_file) {
+        fs::copy_file(
+          it->path(),
+          _im->outputDirectoryPath / "js" / it->path().filename(),
+          fs::copy_option::overwrite_if_exists);
+      }
     }
   }
+
+  _im->reporter->recordInfo();
 
   while (true) {
     if (_im->preciceInterface) {
@@ -302,12 +310,14 @@ run() {
               _im->simulationController->iterationNumber(),
               _im->simulationController->time());
     }
+
     _im->reporter->recordIteration();
   }
 
   if (_im->preciceInterface) {
     _im->preciceInterface->finalize();
   }
+
   _im->reporter->release();
 }
 
