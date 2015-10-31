@@ -8,7 +8,7 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(SEND_ERROR "In-source builds are not allowed.")
 endif ()
 # ------------------------------------------------------------------------------
-project("Fluid-Structure Interations Simulation" CXX C)
+project("Fluid-RigidBody Interations Simulation" CXX C)
 # ------------------------------------------------------------------------------
 set(CMAKE_ERROR_DEPRECATED ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -70,16 +70,7 @@ find_package(Boost 1.57
   REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_path(Hdf5_INCLUDE_DIR
-  hdf5.h
-  HINTS $ENV{HDF5_ROOT}
-  PATH_SUFFIXES include
-)
-find_library(Hdf5_LIBRARY
-  hdf5
-  HINTS $ENV{HDF5_ROOT}
-  PATH_SUFFIXES lib
-)
+find_package(Hdf5 REQUIRED)
 # ==============================================================================
 # Packages }}}
 
@@ -203,9 +194,9 @@ target_link_libraries(Fluid PRIVATE
 
 if (RIGID_BODY)
   file(GLOB_RECURSE STRUCTURE_CPP_FILES "${PROJECT_DIR}/tools/RigidBody/source/*.cpp")
-  add_executable(Structure ${STRUCTURE_CPP_FILES})
-  target_include_directories(Structure PRIVATE "${PROJECT_DIR}/tools/RigidBody/source")
-  target_include_directories(Structure SYSTEM PRIVATE
+  add_executable(RigidBody ${STRUCTURE_CPP_FILES})
+  target_include_directories(RigidBody PRIVATE "${PROJECT_DIR}/tools/RigidBody/source")
+  target_include_directories(RigidBody SYSTEM PRIVATE
     ${Precice_INCLUDE_DIRS}
     ${Eigen_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
@@ -213,7 +204,7 @@ if (RIGID_BODY)
     ${PYTHON_INCLUDE_DIRS}
     ${MPI_CXX_INCLUDE_PATH}
     )
-  target_link_libraries(Structure PRIVATE
+  target_link_libraries(RigidBody PRIVATE
   Uni
     ${Precice_LIBRARIES}
     ${PETSC_LIBRARIES}
@@ -230,7 +221,7 @@ endif()
 # ==============================================================================
 target_compile_definitions(Fluid PRIVATE ${Fluid_DEFINITIONS})
 if (RIGID_BODY)
-  target_compile_definitions(Structure PRIVATE ${LIBXML2_DEFINITIONS})
+  target_compile_definitions(RigidBody PRIVATE ${LIBXML2_DEFINITIONS})
 endif()
 # ==============================================================================
 # Targets' definitions }}}
@@ -241,7 +232,7 @@ if(MPI_CXX_COMPILE_FLAGS)
   set_target_properties(Fluid
     PROPERTIES COMPILE_FLAGS ${Fluid_COMPILE_FLAGS})
   if (RIGID_BODY)
-    set_target_properties(Structure
+    set_target_properties(RigidBody
       PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
   endif()
 endif()
@@ -250,7 +241,7 @@ if(MPI_CXX_LINK_FLAGS)
   set_target_properties(Fluid
     PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   if (RIGID_BODY)
-    set_target_properties(Structure
+    set_target_properties(RigidBody
       PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   endif()
 endif()
@@ -268,7 +259,7 @@ install(
 
 if (RIGID_BODY)
   install(
-    TARGETS Structure
+    TARGETS RigidBody
     ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
     RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
