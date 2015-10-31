@@ -114,25 +114,25 @@ Application::
 parseArguments() {
   namespace po = boost::program_options;
 
-  po::options_description optionDescription("Allowed options");
+  po::options_description optionDescription("Fluid Solver Arguments");
   optionDescription.add_options()
-    ("help,h", "Produce help message")
+    ("debug,d",
+    "enable extra debug output from the fluid solver")
+    ("help,h", "produce a help message and leave the program")
+    ("no-immersed-boundary,n",
+    "disable immersed-boundary computation, i.e. disable PreCiCe usage")
     ("output-directory,o",
     po::value<std::string>()->default_value("output"),
-    "Set output directory path")
-    ("no-immersed-boundary,n",
-    "Do not compute immersed-boundary, disable PreCiCe usage")
-    ("precice,p",
-    po::value<std::string>()->default_value("precice-config.xml"),
-    "Set PreCiCe configuration path")
-    ("simulation,s",
-    po::value<std::string>()->default_value("fluid-config.xml"),
-    "Set fluid simulation configuration path")
+    "output directory path")
     ("petsc,e",
     po::value<std::string>()->default_value("petsc-config.conf"),
-    "Set PETSc configuration path")
-    ("debug,d",
-    "Provide additional debug output from the fluid solver");
+    "PETSc configuration path")
+    ("precice,p",
+    po::value<std::string>()->default_value("precice-config.xml"),
+    "PreCICE configuration path")
+    ("simulation,s",
+    po::value<std::string>()->default_value("fluid-config.xml"),
+    "fluid solver simulation configuration path");
 
   po::variables_map options;
   po::store(po::parse_command_line(_im->argc, _im->argv, optionDescription),
@@ -161,7 +161,7 @@ parseArguments() {
     _im->fluidConfiguration->doImmersedBoundary = true;
 
     _im->preciceConfigurationPath
-      = boost::filesystem::canonical(options["precice"].as<std::string>());
+      = boost::filesystem::absolute(options["precice"].as<std::string>());
   }
 
   if (options.count("no-immersed-boundary")) {
@@ -357,16 +357,18 @@ createOutputDirectory() {
 void
 Application::
 initializePrecice() {
+  using fs = boost::filesystem;
   using namespace precice;
 
   if (!_im->fluidConfiguration->doImmersedBoundary) {
     return;
   }
 
-  bool                    has_path = false;
-  boost::filesystem::path config_path;
+  bool     has_path = false;
+  fs::path config_path;
 
-  if (_im->preciceConfigurationPath.empty()) {
+  if (!fs::is_regular_file(_im->preciceConfigurationPath)
+      && !fs::is_symlink(_im->preciceConfigurationPath)) {
     try {
       config_path
         = _im->fluidConfiguration->tryToGet<boost::filesystem::path>(
