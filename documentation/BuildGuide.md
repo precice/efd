@@ -1,23 +1,89 @@
 # Build Guide
 
-# Main Instructions
-
-## Prerequisites
+# Prerequisites
 
 * For running the build:
-    1. GCC 4.8.0 >=; Clang 3.5 >= (recommended);
-    1. CMake: version 2.8.8 >=;
-    2. Any building tool able to use CMake generated scripts.
+    1. GCC 4.9.0 >=; Clang 3.5 >= (recommended);
+    2. CMake: version 2.8.8 >=;
 * For compiling:
     1. PreCiCe;
     2. PETSc: version 3.3, with enabled MPI support.
     3. Eigen: version 3.2 >=
-    4. Boost: version 1.57 >=; with locale, filesystem, program_options, regex, system,
-       thread (required for PreCiCe)
+    4. Boost: version 1.57 >=; with locale, filesystem, program_options, regex, system, thread 
     5. Python libraries: version 2.7
     6. LibXml2
     7. MPI
     8. HDF5
+
+# Quick Instructions
+
+## Building instructions
+
+Here a few Python wrappers are used to simplify CMake usage.
+
+### Steps
+
+1.  Execute CMake configuration with `configure` command.
+    - By default generates Unix Makefiles scripts, could be changed with `-G
+      <generator>`.
+    - By default uses 'build' directory in the `configure` script directory as a
+      build directory.
+    - By default configures 'install' directory in the `configure` script
+      directory as an install directory, could be changed with `-prefix
+      <installation path>`
+    - By default configures release build, could be changed with `-c
+      <configuration type>`, where configuration types are `Release` or `Debug`.
+    - By default release mode configuration does not use aggressive compile optimizations
+      in favour to short compile time, to enable more hard compile optimizations pass
+      `BUILD_WITH_MAX_OPTIMIZATIONS=ON` to the script.
+    - By default debug mode configuration does not use advanced debug compile options
+      in favour to short compile time, to enable more thorough debuging pass
+      `BUILD_WITH_MAX_DEBUGING_ANALYSIS=ON` to the script.
+    - To build rigid body solver which code resides in `tools/RigidBody` pass
+      `RIGID_BODY=ON` to the script, by default is disabled.
+
+    For example:
+
+        ./configure
+
+    or
+
+        ./configure -G "Ninja"
+
+    or
+
+        ./configure -G "Ninja"
+                    -c Debug                            # Release or Debug
+                    -prefix ../install                  # Installation path
+                    ANY_CMAKE_FLAG=VALUE                # Pass flags to CMake,
+                    ...                                 # will be prefixed by '-D'
+                    ...                                 # automatically
+                    BUILD_WITH_MAX_DEBUGING_ANALYSIS=ON # Enables additional debuging options
+                    RIGID_BODY=ON                       # Enables rigid body solver
+
+2. Execute building with `compile` command.
+    - By default, use Unix make tool.
+
+    For example:
+
+        ./compile
+
+    or to use `ninja` as a build tool
+
+        ./compile ninja
+
+     or set the `V` variable to `1`, what, in case of the Unix Makefiles,
+     makes output verbose:
+
+        ./compile V=1 # Make Unix Makefiles verbose
+
+     or pass any flags to the `compile` command that must be passed to the low-level
+     build system command:
+
+        ./compile -MyFlagToBuildSystem # Any flags will be passed
+                  ...                  # to build system command
+
+# Main Instructions
 
 ## Building instructions
 
@@ -27,12 +93,22 @@ CMake user guide.
 ### Steps
 
 1.  Execute configuration CMake command.
+    - By default release mode configuration does not use aggressive compile optimizations
+      in favour to short compile time, to enable more hard compile optimizations pass
+      `BUILD_WITH_MAX_OPTIMIZATIONS=ON` to the script.
+    - By default debug mode configuration does not use advanced debug compile options
+      in favour to short compile time, to enable more thorough debuging pass
+      `BUILD_WITH_MAX_DEBUGING_ANALYSIS=ON` to the script.
+    - To build rigid body solver which code resides in `tools/RigidBody` pass
+      `RIGID_BODY=ON` to the script, by default is disabled.
 
     For example:
 
         cmake -G "Unix Makefiles"
-              -DCMAKE_BUILD_TYPE=Release         # Release or Debug
-              -DCMAKE_INSTALL_PREFIX=../install # Installation Path
+              -DCMAKE_BUILD_TYPE=Release            # Release or Debug
+              -DCMAKE_INSTALL_PREFIX=../install     # Installation Path
+              -DBUILD_WITH_MAX_OPTIMIZATIONS=ON     # Enables additional optimizations
+              -DRIGID_BODY=ON                       # Enables rigid body solver
               ../
 
 2.  Execute building command.
@@ -117,71 +193,3 @@ The lookup of the following dependencies could be configured:
 
     + `PYTHON_LIBRARY` --- path to the python library.
     + `PYTHON_INCLUDE_DIR` --- path to where Python.h is found.
-
-# Optional Instructions
-
-## Prerequisites
-
-In addition to main prerequisites (mentioned above) it is required to have the
-following ones:
-
-* For running the build:
-    1. Unix Makefiles build system is recommended;
-    2. Python: version 2.7 >=.
-
-## Building instructions
-
-Here a few wrappers are used to simplify, speed up CMake usage.
-It is mostly effective for development, when the above commands have to be
-executed many times.
-These wrappers are tiny and implicitly run routine commands.
-To explore what is inside it is offered to look in the code which is supposed
-to be self-explanatory, the usage examples are presented below.
-
-### Steps
-
-1.  Execute CMake configuration with `configure` command.
-    - By default, generate Unix Makefiles scripts.
-    - By default, use 'build' directory in the `configure` script directory as a
-      build directory.
-    - By default, configure 'install' directory in the `configure` script
-      directory as an install directory.
-
-    For example:
-
-        ./configure
-
-    or
-
-        ./configure -G "Ninja"
-
-    or
-
-        ./configure -G "Ninja"
-                    -c Release           # Release or Debug
-                    -prefix ../install  # Installation path
-                    ANY_CMAKE_FLAG=VALUE # Pass flags to CMake,
-                    ...                  # will be prefixed by '-D'
-                    ...                  # automatically
-
-2. Execute building with `compile` command.
-    - By default, use Unix Makefiles.
-
-    For example:
-
-        ./compile
-
-    or to use `ninja` as a build tool
-
-        ./compile ninja
-
-     or set the `V` variable to `1`, what, in case of the Unix Makefiles,
-     makes output verbose:
-
-        ./compile V=1 # Make Unix Makefiles verbose
-
-     or pass any flags to the `compile` command that must be passed to the low-level
-     build system command:
-
-        ./compile -MyFlagToBuildSystem # Any flags will be passed
-                  ...                  # to build system command
