@@ -13,7 +13,7 @@ necessary arguments passed (e.g. `-n 1`).
 
   * `--debug,d` --- enable extra debug output from the fluid solver.
   * `--help, -h` --- produce a help message and leave the program.
-  * `--no-immersed-boundary, -n` --- disable immersed-boundary computation, i.e. disable PreCiCe usage.
+  * `--no-immersed-boundary, -n` --- disable immersed-boundary computation, i.e. disable PreCICE usage.
   * `--output-directory, -o` --- output directory path, default value: 'output'.
   * `--petsc, -e` --- PETSc configuration path, default value: 'petsc-config.xml'.
   * `--precice, -p` --- PreCICE configuration path, default value: 'precice-config.xml'.

@@ -120,7 +120,7 @@ parseArguments() {
     "enable extra debug output from the fluid solver")
     ("help,h", "produce a help message and leave the program")
     ("no-immersed-boundary,n",
-    "disable immersed-boundary computation, i.e. disable PreCiCe usage")
+    "disable immersed-boundary computation, i.e. disable PreCICE usage")
     ("output-directory,o",
     po::value<std::string>()->default_value("output"),
     "output directory path")
