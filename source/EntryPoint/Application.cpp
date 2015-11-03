@@ -357,7 +357,7 @@ createOutputDirectory() {
 void
 Application::
 initializePrecice() {
-  using fs = boost::filesystem;
+  namespace fs = boost::filesystem;
   using namespace precice;
 
   if (!_im->fluidConfiguration->doImmersedBoundary) {
