@@ -75,6 +75,7 @@ Features
 
 ![Bubble Scenario #1](https://dl.dropbox.com/s/zqt8b99hrzd7ggf/Free-Fall.gif)
 
+
 Build Guide
 -----------
 
@@ -195,7 +196,7 @@ CMake user guide.
 
         make
 
-#### Dependency lookup
+#### Dependency Lookup
 
 --------------------------------------------------------------------------------
 
@@ -208,7 +209,7 @@ go to the CMake manual (`find_path` for includes; `find_library` for libraries).
 > **NOTE:**
 > Python libraries must be the same that was used to compile PreCICE.
 
-#### Configuration of the dependency lookup
+#### Configuration of The Dependency Lookup
 
 --------------------------------------------------------------------------------
 
@@ -449,7 +450,7 @@ Copyright
 
 --------------------------------------------------------------------------------
 
-Copyright (C) 2015, Viacheslav Mikerov
+Copyright © Viacheslav Mikerov
 
 License
 -------
