@@ -19,8 +19,8 @@
 
 #include <functional>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TGrid,
           typename TStencilGenerator,
           typename TRhsGenerator,

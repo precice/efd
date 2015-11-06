@@ -4,8 +4,8 @@
 
 #include <Eigen/Core>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TScalar, unsigned TD>
 class Parameters {
 public:

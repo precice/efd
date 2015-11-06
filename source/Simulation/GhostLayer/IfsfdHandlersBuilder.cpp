@@ -10,8 +10,8 @@
 #include "Simulation/FsfdSolver.hpp"
 #include "Simulation/IfsfdMemory.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 namespace Private {
 template <typename SolverTraitsType,

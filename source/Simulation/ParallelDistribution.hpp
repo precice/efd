@@ -8,8 +8,8 @@
 
 #include <array>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 /**
  * TODO:
  * 1. Change name to DomainDecomposition

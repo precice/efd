@@ -2,8 +2,8 @@
 
 #include "Simulation/SfsfdMemory.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 template <typename T, int U, int D>
 SfsfdHandlersBuilder<T, U, D>::

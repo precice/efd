@@ -10,8 +10,8 @@
 #include <array>
 #include <string>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TSolverTraits>
 class Grid : public TSolverTraits::SubgridType {
 public:

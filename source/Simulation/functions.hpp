@@ -8,8 +8,8 @@
 #include <cmath>
 #include <limits>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 
 template <typename TScalar>
 inline TScalar

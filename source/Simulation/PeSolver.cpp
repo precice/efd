@@ -13,8 +13,8 @@
 #include "SfsfdMemory.hpp"
 #include "SolverTraits.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename T>
 void
 PeSolver<T, 0>::

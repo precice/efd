@@ -5,8 +5,8 @@
 
 #include <memory>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TSolverTraits,
           unsigned TSolverId>
 class PeSolver {};

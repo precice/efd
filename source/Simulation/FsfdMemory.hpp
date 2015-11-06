@@ -12,8 +12,8 @@
 #include <memory>
 #include <string>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 class Attribute {
 public:
   enum class Type {

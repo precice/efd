@@ -12,8 +12,8 @@
 
 #include <Uni/ExecutionControl/exception>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace Private {
 template <int TDimensions,
           typename TScalar,
@@ -21,7 +21,7 @@ template <int TDimensions,
           int TDebug>
 inline std::unique_ptr<SimulationController>
 _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug(
-  FluidSimulation::Configuration* configuration) {
+  Simulation::Configuration* configuration) {
   using SolverBuilderTraitsType
           = SolverBuilderTraits<TSolverType,
                                 TDebug,
@@ -34,7 +34,7 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
   using SimulationControllerType
           = ParticularSimulationController<SolverTraitsType>;
 
-  using namespace FluidSimulation;
+  using namespace Simulation;
 
   static_assert((SolverTraitsType::Dimensions > 1)
                 && (SolverTraitsType::Dimensions < 4),
@@ -68,7 +68,7 @@ _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
 template <int TDimensions, typename TScalar, int TSolverType>
 inline std::unique_ptr<SimulationController>
 _create_simulation_controller_nd_scalar_solver_type(
-  FluidSimulation::Configuration* configuration) {
+  Simulation::Configuration* configuration) {
   if (configuration->doDebug) {
     return
       _create_simulation_controller_nd_scalar_solver_type_immersed_boudnary_type_debug
@@ -89,7 +89,7 @@ _create_simulation_controller_nd_scalar_solver_type(
 template <int TDimensions, typename TScalar>
 inline std::unique_ptr<SimulationController>
 _create_simulation_controller_nd_scalar(
-  FluidSimulation::Configuration* configuration) {
+  Simulation::Configuration* configuration) {
   if (configuration->solverType == SolverEnum::Sfsfd) {
     return _create_simulation_controller_nd_scalar_solver_type
            <TDimensions, TScalar, 0>(configuration);
@@ -106,7 +106,7 @@ _create_simulation_controller_nd_scalar(
 template <int TDimensions>
 inline std::unique_ptr<SimulationController>
 _create_simulation_controller_nd(
-  FluidSimulation::Configuration* configuration) {
+  Simulation::Configuration* configuration) {
   if (configuration->scalarType == ScalarEnum::Float) {
     return _create_simulation_controller_nd_scalar<TDimensions, double>(
       configuration);
@@ -125,8 +125,8 @@ _create_simulation_controller_nd(
 }
 
 std::unique_ptr<SimulationController>
-create_simulation_controller(FluidSimulation::Configuration* configuration) {
-  using namespace FluidSimulation;
+create_simulation_controller(Simulation::Configuration* configuration) {
+  using namespace Simulation;
 
   if (configuration->dimensions == 2) {
     return Private::_create_simulation_controller_nd<2>(configuration);

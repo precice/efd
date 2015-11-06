@@ -2,7 +2,7 @@
 
 #include <Uni/Firewall/Implementation>
 
-namespace FsiSimulation {
+namespace Fluid {
 namespace EntryPoint {
 class ApplicationPrivateImplementation;
 

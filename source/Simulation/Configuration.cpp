@@ -7,10 +7,10 @@
 
 #include <map>
 
-using FsiSimulation::FluidSimulation::Configuration;
+using Fluid::Simulation::Configuration;
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename T1, typename T2>
 inline static std::string
 any_to_string(boost::any const& any) {

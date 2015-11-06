@@ -8,13 +8,13 @@
 
 #include <memory>
 
-namespace FsiSimulation {
+namespace Fluid {
 namespace EntryPoint {
 class XmlConfigurationParserImplementation;
 class XmlConfigurationParser {
 public:
   XmlConfigurationParser(
-    std::unique_ptr<FluidSimulation::Configuration> const& configuration,
+    std::unique_ptr<Simulation::Configuration> const& configuration,
     boost::filesystem::path const&                         filePath);
 
   XmlConfigurationParser(XmlConfigurationParser const&) = delete;

@@ -3,8 +3,8 @@
 
 #include <Uni/StructuredGrid/Basic/GlobalMultiIndex>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TSolverTraits>
 class SfsfdCellAccessor :
   public Uni::StructuredGrid::Basic::GlobalMultiIndex

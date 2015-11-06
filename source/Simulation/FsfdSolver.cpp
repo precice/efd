@@ -30,8 +30,8 @@
 #include <functional>
 #include <memory>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TVector>
 inline typename TVector::Scalar
 compute_cfl(typename TVector::Scalar const& re,
@@ -884,19 +884,19 @@ computeBodyForce() {
     total_force_turek += force_turek;
   }
 
-  FluidSimulation::Private::mpi_all_reduce(MPI_IN_PLACE,
+  Simulation::Private::mpi_all_reduce(MPI_IN_PLACE,
                                            total_force.data(),
                                            Dimensions,
                                            MPI_SUM,
                                            PETSC_COMM_WORLD);
 
-  FluidSimulation::Private::mpi_all_reduce(MPI_IN_PLACE,
+  Simulation::Private::mpi_all_reduce(MPI_IN_PLACE,
                                            total_force_v2.data(),
                                            Dimensions,
                                            MPI_SUM,
                                            PETSC_COMM_WORLD);
 
-  FluidSimulation::Private::mpi_all_reduce(MPI_IN_PLACE,
+  Simulation::Private::mpi_all_reduce(MPI_IN_PLACE,
                                            total_force_turek.data(),
                                            Dimensions,
                                            MPI_SUM,

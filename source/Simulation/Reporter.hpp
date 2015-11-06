@@ -4,8 +4,8 @@
 
 #include <boost/filesystem.hpp>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 class Reporter {
 public:
   using Path = boost::filesystem::path;

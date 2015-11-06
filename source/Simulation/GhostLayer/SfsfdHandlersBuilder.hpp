@@ -3,8 +3,8 @@
 
 #include "FsfdHandlersBuilder.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 namespace PetscExchange {
 class PpeRhsAcquiererAction1;

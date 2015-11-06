@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TCellAccessor>
 void
 compute_max_velocity(TCellAccessor const&                  accessor,

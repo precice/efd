@@ -11,8 +11,8 @@
 #include <petscdm.h>
 #include <petscdmda.h>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 namespace PetscExchange {
 template <int TSolverDimension,

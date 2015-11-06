@@ -10,8 +10,8 @@
 
 #include <limits>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace VtkOutput {
 template <typename TMemory>
 class Writer : public IterationResultWriter {

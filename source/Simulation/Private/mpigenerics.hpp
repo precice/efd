@@ -5,8 +5,8 @@
 
 #include <mpi.h>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace Private {
 template <typename TScalar>
 inline MPI_Datatype

@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace XdmfHdf5Output {
 template <typename TMemory>
 class Writer : public IterationResultWriter {

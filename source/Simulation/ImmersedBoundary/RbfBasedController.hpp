@@ -29,8 +29,8 @@
 #include <map>
 #include <vector>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace ImmersedBoundary {
 //
 

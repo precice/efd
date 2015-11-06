@@ -2,8 +2,8 @@
 
 #include "SfsfdHandlers.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 template <int TDimensions>
 class IfsfdHandlers : public SfsfdHandlers<TDimensions> {

@@ -5,8 +5,8 @@
 #include "Simulation/Configuration.hpp"
 #include "Simulation/computemaxvelocity.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 namespace Initialization {
 template <typename TSolverTraits,

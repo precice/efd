@@ -2,8 +2,8 @@
 
 #include "Controller.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace ImmersedBoundary {
 template <typename TVector>
 class EmptyInterfaceCell : public InterfaceCell<TVector> {

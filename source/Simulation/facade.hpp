@@ -2,8 +2,8 @@
 
 #include <memory>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 class SimulationController;
 class Configuration;
 

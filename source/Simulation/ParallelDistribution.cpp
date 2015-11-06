@@ -6,8 +6,8 @@
 
 #include <cstdlib>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <unsigned T>
 int
 ParallelDistribution<T>::

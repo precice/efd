@@ -4,8 +4,8 @@
 #include "FsfdMemory.hpp"
 #include "SolverTraits.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TSolverTraits>
 class SfsfdMemory : public FsfdMemory<TSolverTraits> {
   friend class FsfdMemory<TSolverTraits>;

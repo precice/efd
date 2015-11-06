@@ -8,8 +8,8 @@
 #include <petscdmda.h>
 #include <petscksp.h>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 #if ((PETSC_VERSION_MAJOR == 3) && (PETSC_VERSION_MINOR >= 5))
 template <int TD>
 using DMBoundaryTypeVector = Eigen::Matrix<DMBoundaryType, TD, 1>;

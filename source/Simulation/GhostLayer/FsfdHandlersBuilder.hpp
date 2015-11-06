@@ -4,8 +4,8 @@
 
 #include "Simulation/SolverTraits.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 class Configuration;
 namespace GhostLayer {
 namespace MpiExchange {

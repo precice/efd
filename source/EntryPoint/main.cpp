@@ -2,7 +2,7 @@
 
 int
 main(int argc, char* argv[]) {
-  using namespace FsiSimulation::EntryPoint;
+  using namespace Fluid::EntryPoint;
 
   Application application(argc, argv);
 

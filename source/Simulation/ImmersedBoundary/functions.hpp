@@ -9,8 +9,8 @@
 
 #include <Eigen/Core>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace ImmersedBoundary {
 template <unsigned TDimensions>
 inline unsigned

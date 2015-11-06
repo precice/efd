@@ -11,8 +11,8 @@
 #include <memory>
 #include <string>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 class ConfigurationImplementation;
 
 enum class SolverEnum {

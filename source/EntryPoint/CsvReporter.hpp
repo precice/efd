@@ -19,9 +19,9 @@
 #include <map>
 #include <vector>
 
-namespace FsiSimulation {
+namespace Fluid {
 namespace EntryPoint {
-class CsvReporter : public FluidSimulation::Reporter {
+class CsvReporter : public Simulation::Reporter {
 private:
   using FileMapping = boost::interprocess::file_mapping;
 

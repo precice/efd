@@ -14,8 +14,8 @@
 
 #include <mpi.h>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace ImmersedBoundary {
 template <typename TCellAccessor>
 inline Eigen::Matrix<int, 2* TCellAccessor::Dimensions, 1>
@@ -172,7 +172,7 @@ public:
 
 public:
   CouplingController(
-    typename FluidSimulation::Configuration const* configuration) {
+    typename Simulation::Configuration const* configuration) {
     _couplingForcesName
       = configuration->get<std::string>("/Ib/Options/CouplingForcesName");
   }

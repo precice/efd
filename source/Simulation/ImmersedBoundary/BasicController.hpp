@@ -25,8 +25,8 @@
 #include <array>
 #include <map>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace ImmersedBoundary {
 template <typename TValue>
 class IteratorBackEnd {

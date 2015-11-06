@@ -9,8 +9,8 @@
 
 #include <functional>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 template <typename TDataElement,
           unsigned TDataElementSize,

@@ -4,8 +4,8 @@
 
 #include <memory>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 class IterationResultWriter;
 namespace XdmfHdf5Output {
 template <typename TMemory>

@@ -4,8 +4,8 @@
 
 #include <Uni/StructuredGrid/Basic/Grid>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <unsigned D>
 class ParallelDistribution;
 template <typename T, unsigned D>

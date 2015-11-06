@@ -12,8 +12,8 @@
 #include <functional>
 #include <memory>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 namespace LsStencilGenerator {
 typedef std::function<void (Mat&)> Functor;

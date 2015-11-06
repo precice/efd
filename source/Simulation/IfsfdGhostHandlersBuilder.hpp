@@ -2,8 +2,8 @@
 
 #include "SfsfdGhostHandlersBuilder.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TSolver,
           int TDimension,
           int TDirection>

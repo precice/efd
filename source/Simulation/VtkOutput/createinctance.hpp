@@ -5,8 +5,8 @@
 
 #include <memory>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace VtkOutput {
 template <typename TMemory>
 std::unique_ptr<IterationResultWriter>

@@ -12,13 +12,13 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/regex.hpp>
 
-using FsiSimulation::EntryPoint::XmlConfigurationParser;
-using FsiSimulation::FluidSimulation::Configuration;
-using FsiSimulation::FluidSimulation::OutputEnum;
-using FsiSimulation::FluidSimulation::ScalarEnum;
-using FsiSimulation::FluidSimulation::SolverEnum;
+using Fluid::EntryPoint::XmlConfigurationParser;
+using Fluid::Simulation::Configuration;
+using Fluid::Simulation::OutputEnum;
+using Fluid::Simulation::ScalarEnum;
+using Fluid::Simulation::SolverEnum;
 
-namespace FsiSimulation {
+namespace Fluid {
 namespace EntryPoint {
 //
 static inline bool
@@ -587,7 +587,7 @@ private:
     }
   }
 
-  FluidSimulation::Configuration* configuration;
+  Simulation::Configuration* configuration;
   boost::filesystem::path         filePath;
 
   Uni_Firewall_INTERFACE_LINK(XmlConfigurationParser);
@@ -597,7 +597,7 @@ private:
 
 XmlConfigurationParser::
 XmlConfigurationParser(
-  std::unique_ptr<FluidSimulation::Configuration> const& configuration,
+  std::unique_ptr<Simulation::Configuration> const& configuration,
   boost::filesystem::path const&                         file_path)
   : _im(new XmlConfigurationParserImplementation(this)) {
   _im->configuration = configuration.get();

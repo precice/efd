@@ -5,8 +5,8 @@
 
 #include <Uni/Firewall/Implementation>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 class Configuration;
 
 template <typename TSolverTraits>

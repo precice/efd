@@ -12,8 +12,8 @@
 
 #include <functional>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename T>
 SolverBuilder<T>::
 SolverBuilder(Configuration* configuration, SolverType*    solver) :

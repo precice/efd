@@ -10,8 +10,8 @@
 #include <functional>
 #include <memory>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 namespace MpiExchange {
 typedef std::function<void ()> Functor;

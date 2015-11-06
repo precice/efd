@@ -24,15 +24,15 @@
 
 //
 
-using FsiSimulation::EntryPoint::Application;
+using Fluid::EntryPoint::Application;
 
-class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
+class Fluid::EntryPoint::ApplicationPrivateImplementation {
   using PreciceInterface = precice::SolverInterface;
 
   using UniquePreciceInterface = std::unique_ptr<PreciceInterface>;
 
   using UniqueSimulationController
-          = std::unique_ptr<FluidSimulation::SimulationController>;
+          = std::unique_ptr<Simulation::SimulationController>;
 
   using Path = boost::filesystem::path;
 
@@ -42,7 +42,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     argc(argc_),
     argv(argv_),
     masterRank(0),
-    fluidConfiguration(new FluidSimulation::Configuration()) {
+    fluidConfiguration(new Simulation::Configuration()) {
     namespace fs          = boost::filesystem;
     using LocaleGenerator = boost::locale::generator;
     globalLocale          = LocaleGenerator().generate("");
@@ -76,12 +76,12 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
   int rank;
   int processCount;
 
-  std::unique_ptr<FluidSimulation::Configuration> fluidConfiguration;
+  std::unique_ptr<Simulation::Configuration> fluidConfiguration;
 
   UniquePreciceInterface     preciceInterface;
   UniqueSimulationController simulationController;
 
-  std::unique_ptr<FluidSimulation::Reporter> reporter;
+  std::unique_ptr<Simulation::Reporter> reporter;
 
   bool
   isMaster() {
@@ -93,7 +93,7 @@ class FsiSimulation::EntryPoint::ApplicationPrivateImplementation {
     if (isMaster()) {
       reporter.reset(new CsvReporter());
     } else {
-      reporter.reset(new FluidSimulation::Reporter());
+      reporter.reset(new Simulation::Reporter());
     }
     reporter->initialize(outputDirectoryPath,
                          outputFileNamePrefix);
@@ -207,7 +207,7 @@ initialize() {
   initializePrecice();
 
   _im->simulationController
-    = FluidSimulation::create_simulation_controller(
+    = Simulation::create_simulation_controller(
     _im->fluidConfiguration.get());
 
   _im->initializeReporter();
@@ -215,11 +215,11 @@ initialize() {
   auto sendWallToReporter
     = [&] (unsigned t, unsigned u) {
         auto wallEnumToInt
-          = [&] (FluidSimulation::WallEnum en) {
+          = [&] (Simulation::WallEnum en) {
               return en
-                     == FluidSimulation::WallEnum::Input ? 0 : en
-                     == FluidSimulation::WallEnum::ParabolicInput ? 1 : en
-                     == FluidSimulation::WallEnum::Output ? 2
+                     == Simulation::WallEnum::Input ? 0 : en
+                     == Simulation::WallEnum::ParabolicInput ? 1 : en
+                     == Simulation::WallEnum::Output ? 2
                      : -1;
             };
 

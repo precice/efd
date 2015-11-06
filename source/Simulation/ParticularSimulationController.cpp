@@ -10,8 +10,8 @@
 #include <Uni/Firewall/Interface>
 #include <Uni/Logging/macros>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TSolverTraits>
 class ParticularSimulationControllerImplementation {
 public:

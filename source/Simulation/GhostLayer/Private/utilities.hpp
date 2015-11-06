@@ -5,8 +5,8 @@
 #include <array>
 #include <cmath>
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 namespace GhostLayer {
 template <typename TFunctor, int TD>
 using BasicFunctorStack = std::array<std::array<TFunctor, 2>, TD>;

@@ -3,8 +3,8 @@
 
 #include "SfsfdCellAccessor.hpp"
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 template <typename TSolverTraits>
 class IfsfdCellAccessor : public SfsfdCellAccessor<TSolverTraits> {
 public:

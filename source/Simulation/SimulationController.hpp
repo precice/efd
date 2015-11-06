@@ -6,8 +6,8 @@ namespace precice {
 class SolverInterface;
 }
 
-namespace FsiSimulation {
-namespace FluidSimulation {
+namespace Fluid {
+namespace Simulation {
 class Reporter;
 
 class SimulationController {
